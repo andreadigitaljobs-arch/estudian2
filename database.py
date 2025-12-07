@@ -3,31 +3,42 @@ from supabase import create_client, Client
 import datetime
 
 # --- INIT ---
-@st.cache_resource
+# Remove cache_resource to ensure fresh client with correct auth per run/user
 def init_supabase():
     try:
         url = st.secrets["SUPABASE_URL"]
         key = st.secrets["SUPABASE_KEY"]
-        return create_client(url, key)
+        client = create_client(url, key)
+        
+        # Hydrate Auth if session exists
+        if 'supabase_session' in st.session_state and st.session_state['supabase_session']:
+            try:
+                sess = st.session_state['supabase_session']
+                client.auth.set_session(sess.access_token, sess.refresh_token)
+            except Exception as e:
+                print(f"Auth Hydration Error: {e}")
+                
+        return client
     except Exception as e:
         st.error(f"Error conectando a Supabase: {e}")
         return None
 
 # --- AUTH ---
-# --- AUTH ---
 def sign_in(email, password):
     supabase = init_supabase()
     try:
         res = supabase.auth.sign_in_with_password({"email": email, "password": password})
+        # Store Session for RLS
+        if res.session:
+            st.session_state['supabase_session'] = res.session
         return res.user
     except Exception as e:
-        print(f"Login Error: {e}") # Log to console
-        # Extract meaningful message if possible
+        print(f"Login Error: {e}") 
         msg = str(e)
         if "Email not confirmed" in msg:
-            st.error("⚠️ Tu email no ha sido confirmado. Revisa tu bandeja de entrada o desactiva la confirmación en Supabase.")
+            st.error("⚠️ Tu email no ha sido confirmado.")
         elif "Invalid login credentials" in msg:
-            st.error("❌ Contraseña incorrecta o usuario no encontrado.")
+            st.error("❌ Contraseña incorrecta.")
         else:
             st.error(f"Error de Login: {msg}")
         return None
@@ -36,6 +47,9 @@ def sign_up(email, password):
     supabase = init_supabase()
     try:
         res = supabase.auth.sign_up({"email": email, "password": password})
+        # Store Session if auto-login
+        if res.session:
+            st.session_state['supabase_session'] = res.session
         return res.user
     except Exception as e:
         st.error(f"Error de Registro: {e}")

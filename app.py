@@ -403,6 +403,8 @@ with st.sidebar:
         st.markdown(f"👤 **{st.session_state['user'].email}**")
         if st.button("Cerrar Sesión", key="logout_btn", use_container_width=True):
             st.session_state['user'] = None
+            if 'supabase_session' in st.session_state:
+                del st.session_state['supabase_session']
             st.rerun()
         st.divider()
 
