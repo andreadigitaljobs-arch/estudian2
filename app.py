@@ -148,6 +148,14 @@ def get_global_context():
 
 # --- API KEY MANAGEMENT ---
 def load_api_key():
+    # 1. Try Streamlit Secrets (Best for Cloud)
+    try:
+        if "GOOGLE_API_KEY" in st.secrets:
+            return st.secrets["GOOGLE_API_KEY"]
+    except:
+        pass
+
+    # 2. Try Local File (Best for Local)
     if os.path.exists("api_key.txt"):
         with open("api_key.txt", "r") as f:
             return f.read().strip()
@@ -419,6 +427,7 @@ with st.sidebar:
     st.header("📂 Espacio de Trabajo")
     
     # scan for existing courses
+    existing_courses = []
     if os.path.exists(CORE_OUTPUT_ROOT):
         existing_courses = [d for d in os.listdir(CORE_OUTPUT_ROOT) if os.path.isdir(os.path.join(CORE_OUTPUT_ROOT, d))]
     
