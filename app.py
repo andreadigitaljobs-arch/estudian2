@@ -1115,20 +1115,6 @@ with tab5:
     st.markdown(tab5_html, unsafe_allow_html=True)
     
     col_lib, col_task = st.columns([1, 1], gap="large")
-    
-    # --- LEFT COLUMN: LIBRARY MANAGER ---
-    with col_lib:
-        st.markdown("### 📚 Biblioteca del Diplomado")
-        st.caption("Organiza aquí la 'Verdad Absoluta' del curso.")
-        
-        with st.expander("➕ Alimentar Memoria (Subir Contenido)", expanded=True):
-            st.markdown("##### 1. Destino")
-            is_global = st.checkbox("📌 Es Información Global (Temario, Reglas, Formatos)", help="Si marcas esto, estos archivos se usarán SIEMPRE en todas las tareas, sin que tengas que seleccionarlos.", value=False)
-            
-            unit_name = ""
-            topic_name = ""
-        # --- BULK IMPORT (CHAT RESCUE) ---
-        with st.expander("📥 Importar Historial de Chat (Rescatar Datos)", expanded=False):
             st.caption("Sube un archivo .txt con todo tu historial de ChatGPT desordenado. La IA lo organizará por temas.")
             chat_file = st.file_uploader("Subir Log de Chat (.txt)", type=['txt'], key="bulk_chat_upl")
             
