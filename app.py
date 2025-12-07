@@ -1161,7 +1161,9 @@ with tab5:
                                     time.sleep(1)
                                     st.rerun()
                                 else:
-                                    st.error("⛔ Error de Permisos: No se pudo crear la carpeta. \nPosible causa: Este Diplomado fue creado en una sesión anterior. \nSOLUCIÓN: Crea un **Nuevo Diplomado** en la barra lateral.")
+                                    from database import check_course_access
+                                    d_info = check_course_access(current_course_id)
+                                    st.error(f"⛔ Error de Permisos: No se pudo crear la carpeta. \nPosible causa: Este Diplomado fue creado en una sesión anterior. \nSOLUCIÓN: Crea un **Nuevo Diplomado** en la barra lateral.\n\n🔎 DEBUG INFO: Acceso al CourseID {current_course_id}: {d_info}")
 
                 else:
                     found = next((u for u in db_units if u['name'] == sel_opt), None)

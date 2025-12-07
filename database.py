@@ -211,3 +211,16 @@ def get_unit_context(unit_id):
                 unit_text += f"\n--- ARCHIVO: {u_name}/{f['name']} ---\n{f['content_text']}\n"
         return unit_text
     except: return ""
+
+# --- DEBUG HELPERS ---
+def check_course_access(course_id):
+    """
+    Tries to manually fetch the course to see if RLS allows reading it.
+    Useful for debugging 42501 errors on child tables.
+    """
+    supabase = init_supabase()
+    try:
+        res = supabase.table("courses").select("*").eq("id", course_id).execute()
+        return res.data
+    except Exception as e:
+        return [f"Error: {e}"]
