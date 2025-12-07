@@ -1085,13 +1085,12 @@ with tab5:
                 st.divider()
                 st.markdown("#### 🧐 Vista Previa de Temas Detectados")
                 
-                st.markdown("#### 🧐 Vista Previa de Temas Detectados")
+                # Fetch available units from DB
+                from database import get_units, create_unit, upload_file_to_db
                 
-                # Smart Folder Selection
-                existing_folders = []
-                lib_root = get_out_dir("library")
-                if os.path.exists(lib_root):
-                    existing_folders = [d for d in os.listdir(lib_root) if os.path.isdir(os.path.join(lib_root, d))]
+                current_course_id = st.session_state.get('current_course_id')
+                db_units = get_units(current_course_id) if current_course_id else []
+                existing_folders = [u['name'] for u in db_units]
                 
                 # Default "Rescate" if exists, otherwise first one
                 default_idx = 0
@@ -1104,10 +1103,11 @@ with tab5:
                     index=default_idx if existing_folders else 0
                 )
                 
+                new_folder_name = "01_Rescate_Importado"
                 if target_option == "✨ Nueva Carpeta...":
-                    target_unit_import = st.text_input("Nombre de la Nueva Carpeta:", value="01_Rescate_Importado")
+                    new_folder_name = st.text_input("Nombre de la Nueva Carpeta:", value="01_Rescate_Importado")
                 else:
-                    target_unit_import = target_option
+                    new_folder_name = target_option
                 
                 valid_items = [item for item in st.session_state['bulk_import_data'] if 'title' in item and 'content' in item]
                 
@@ -1116,24 +1116,37 @@ with tab5:
                         st.markdown(item['content'][:500] + "...")
                 
                 if st.button(f"💾 Guardar {len(valid_items)} Archivos en Biblioteca", key="save_bulk_all"):
-                    lib_root = get_out_dir("library") # Ensure explicit definition here
-                    import_path = os.path.join(lib_root, target_unit_import)
-                    os.makedirs(import_path, exist_ok=True)
-                    
-                    saved_count = 0
-                    for item in valid_items:
-                        # Sanitize filename
-                        safe_title = "".join([c if c.isalnum() else "_" for c in item['title']])
-                        f_path = os.path.join(import_path, f"{safe_title}.md")
-                        with open(f_path, "w", encoding="utf-8") as f:
-                            f.write(item['content'])
-                        saved_count += 1
-                    
-                    st.success(f"✅ ¡{saved_count} temas rescatados y guardados en '{target_unit_import}'!")
-                    st.session_state['bulk_import_data'] = None # Clear after save
-                    import time
-                    time.sleep(1)
-                    st.rerun()
+                    if not current_course_id:
+                        st.error("Selecciona un curso primero.")
+                    else:
+                        # Create Unit if needed
+                        target_unit_id = None
+                        if target_option == "✨ Nueva Carpeta...":
+                             u_res = create_unit(current_course_id, new_folder_name)
+                             if u_res: target_unit_id = u_res['id']
+                        else:
+                             # Find ID
+                             found = next((u for u in db_units if u['name'] == target_option), None)
+                             if found: target_unit_id = found['id']
+                        
+                        if target_unit_id:
+                            saved_count = 0
+                            progress_bar = st.progress(0)
+                            for idx, item in enumerate(valid_items):
+                                # Sanitize filename
+                                safe_title = "".join([c if c.isalnum() else "_" for c in item['title']])
+                                fname = f"{safe_title}.md"
+                                upload_file_to_db(target_unit_id, fname, item['content'], "text")
+                                saved_count += 1
+                                progress_bar.progress((idx + 1) / len(valid_items))
+                            
+                            st.success(f"✅ ¡{saved_count} temas rescatados y guardados en '{new_folder_name}'!")
+                            st.session_state['bulk_import_data'] = None # Clear after save
+                            import time
+                            time.sleep(1)
+                            st.rerun()
+                        else:
+                             st.error("No se pudo obtener la carpeta destino.")
 
         # Show existing library
         st.markdown(f"##### 📂 Contenido Guardado ({st.session_state.get('current_course', 'Sin Curso')}):")
