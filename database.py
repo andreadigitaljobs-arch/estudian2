@@ -3,19 +3,27 @@ from supabase import create_client, Client
 import datetime
 
 # --- INIT ---
-# Remove cache_resource to ensure fresh client with correct auth per run/user
+# --- INIT ---
+# Fix [Errno 24] Too many open files: Use Session State Singleton
 def init_supabase():
     try:
-        url = st.secrets["SUPABASE_URL"]
-        key = st.secrets["SUPABASE_KEY"]
-        client = create_client(url, key)
+        # Reuse existing client if available in this session
+        if 'supabase_client_inst' in st.session_state:
+            client = st.session_state['supabase_client_inst']
+        else:
+            # Create new if not exists
+            url = st.secrets["SUPABASE_URL"]
+            key = st.secrets["SUPABASE_KEY"]
+            client = create_client(url, key)
+            st.session_state['supabase_client_inst'] = client
         
-        # Hydrate Auth if session exists
+        # Hydrate Auth if session exists (Always update headers)
         if 'supabase_session' in st.session_state and st.session_state['supabase_session']:
             try:
                 sess = st.session_state['supabase_session']
+                # Update auth state on the shared client
                 client.auth.set_session(sess.access_token, sess.refresh_token)
-                # FORCE POSTGREST AUTH HEADER
+                # FORCE POSTGREST AUTH HEADER (Critical for RLS)
                 client.postgrest.auth(sess.access_token)
             except Exception as e:
                 print(f"Auth Hydration Error: {e}")
