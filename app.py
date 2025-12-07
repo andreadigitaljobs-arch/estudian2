@@ -587,15 +587,15 @@ with tab1:
         render_image_card("illustration_transcriber_1765052797646.png")
 
     with col_text:
-    tab1_html = '''
-    <div class="card-text">
-        <h2 style="margin-top:0;">1. Transcriptor de Videos</h2>
-        <p style="color: #64748b; font-size: 1.1rem; margin-bottom: 20px;">
-            Sube los videos de tu unidad para procesarlos automáticamente.
-        </p>
-    </div>
-    '''
-    st.markdown(tab1_html, unsafe_allow_html=True)
+        tab1_html = '''
+        <div class="card-text">
+            <h2 style="margin-top:0;">1. Transcriptor de Videos</h2>
+            <p style="color: #64748b; font-size: 1.1rem; margin-bottom: 20px;">
+                Sube los videos de tu unidad para procesarlos automáticamente.
+            </p>
+        </div>
+        '''
+        st.markdown(tab1_html, unsafe_allow_html=True)
         
         uploaded_files = st.file_uploader("Arrastra tus archivos aquí", type=['mp4', 'mov', 'avi', 'mkv'], accept_multiple_files=True, key="up1")
         
@@ -683,13 +683,13 @@ with tab2:
          render_image_card("illustration_notes_1765052810428.png")
          
     with col_text:
-    tab2_html = '''
-    <div class="card-text">
-        <h2 style="margin-top:0;">2. Generador de Apuntes</h2>
-        <p style="color: #64748b; font-size: 1.1rem;">Convierte transcripciones en apuntes claros y concisos.</p>
-    </div>
-    '''
-    st.markdown(tab2_html, unsafe_allow_html=True)
+        tab2_html = '''
+        <div class="card-text">
+            <h2 style="margin-top:0;">2. Generador de Apuntes</h2>
+            <p style="color: #64748b; font-size: 1.1rem;">Convierte transcripciones en apuntes claros y concisos.</p>
+        </div>
+        '''
+        st.markdown(tab2_html, unsafe_allow_html=True)
         
         c_id = st.session_state.get('current_course_id')
         if not c_id:
@@ -796,13 +796,13 @@ with tab3:
         render_image_card("illustration_guide_1765052821852.png")
     
     with col_text:
-    tab3_html = '''
-    <div class="card-text">
-        <h2 style="margin-top:0;">3. Guía de Estudio Estratégica</h2>
-        <p style="color: #64748b; font-size: 1.1rem;">Crea mapas, resúmenes y preguntas de examen.</p>
-    </div>
-    '''
-    st.markdown(tab3_html, unsafe_allow_html=True)
+        tab3_html = '''
+        <div class="card-text">
+            <h2 style="margin-top:0;">3. Guía de Estudio Estratégica</h2>
+            <p style="color: #64748b; font-size: 1.1rem;">Crea mapas, resúmenes y preguntas de examen.</p>
+        </div>
+        '''
+        st.markdown(tab3_html, unsafe_allow_html=True)
         
         c_id = st.session_state.get('current_course_id')
         if not c_id:
@@ -878,13 +878,13 @@ with tab4:
         render_image_card("illustration_quiz_1765052844536.png")
         
     with col_text:
-    tab4_html = '''
-    <div class="card-text">
-        <h2 style="margin-top:0;">4. Ayudante de Pruebas</h2>
-        <p style="color: #64748b; font-size: 1.1rem;">Modo Ráfaga: Sube múltiples preguntas y obtén las respuestas.</p>
-    </div>
-    '''
-    st.markdown(tab4_html, unsafe_allow_html=True)
+        tab4_html = '''
+        <div class="card-text">
+            <h2 style="margin-top:0;">4. Ayudante de Pruebas</h2>
+            <p style="color: #64748b; font-size: 1.1rem;">Modo Ráfaga: Sube múltiples preguntas y obtén las respuestas.</p>
+        </div>
+        '''
+        st.markdown(tab4_html, unsafe_allow_html=True)
         
         # Check Global Memory
         gl_ctx, gl_count = get_global_context()
