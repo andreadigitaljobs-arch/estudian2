@@ -532,25 +532,6 @@ with st.sidebar:
             <li>guides</li>
         </ul>
     </div>
-    """, unsafe_allow_html=True)
-
-# --- Session State Initialization ---
-if 'transcript_history' not in st.session_state: st.session_state['transcript_history'] = []
-
-# --- Session State Initialization ---
-if 'transcript_history' not in st.session_state: st.session_state['transcript_history'] = []
-if 'notes_result' not in st.session_state: st.session_state['notes_result'] = None
-if 'guide_result' not in st.session_state: st.session_state['guide_result'] = None
-if 'quiz_results' not in st.session_state: st.session_state['quiz_results'] = []
-if 'quiz_key' not in st.session_state: st.session_state['quiz_key'] = 0
-if 'pasted_images' not in st.session_state: st.session_state['pasted_images'] = []
-if 'homework_result' not in st.session_state: st.session_state['homework_result'] = None
-
-# --- MAIN TITLE & HEADER ---
-st.title("🎓 Estudian2")
-st.markdown("Tu compañero integral para estudiar diplomados: Transcribe, Resume, Guía y Practica.")
-
-# --- Tabs ---
 tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "📹 Transcriptor", 
     "📝 Apuntes Simples", 
