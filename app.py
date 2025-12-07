@@ -1115,6 +1115,83 @@ with tab5:
     st.markdown(tab5_html, unsafe_allow_html=True)
     
     col_lib, col_task = st.columns([1, 1], gap="large")
+    
+    # --- LEFT COLUMN: LIBRARY MANAGER ---
+    with col_lib:
+        st.markdown("### 📚 Biblioteca del Diplomado")
+        st.caption("Organiza aquí la 'Verdad Absoluta' del curso.")
+        
+        with st.expander("📤 Alimentar Memoria (Subir Contenido)", expanded=True):
+            st.markdown("##### 1. Destino")
+            is_global = st.checkbox("📌 Es Información Global (Temario, Reglas, Formatos)", help="Si marcas esto, estos archivos se usarán SIEMPRE en todas las tareas, sin que tengas que seleccionarlos.", value=False)
+            
+            # Helper: Get Units
+            from database import get_units, create_unit, upload_file_to_db
+            import os # Ensure os is available
+            
+            current_course_id = st.session_state.get('current_course_id')
+            db_units = get_units(current_course_id) if current_course_id else []
+            
+            target_unit_id = None
+            unit_name_input = ""
+            
+            if is_global:
+                st.info("ℹ️ Se guardará en **00_Memoria_Global**.")
+                global_unit = next((u for u in db_units if u['name'] == "00_Memoria_Global"), None)
+                if global_unit: target_unit_id = global_unit['id']
+            else:
+                existing_names = [u['name'] for u in db_units if u['name'] != "00_Memoria_Global"]
+                sel_opt = st.selectbox("Selecciona Unidad:", ["✨ Nueva Carpeta..."] + existing_names)
+                if sel_opt == "✨ Nueva Carpeta...":
+                    unit_name_input = st.text_input("Nombre de la Nueva Carpeta", placeholder="Ej: Unidad 1")
+                else:
+                    found = next((u for u in db_units if u['name'] == sel_opt), None)
+                    if found: target_unit_id = found['id']
+            
+            st.markdown("##### 2. Contenido")
+            upl_files = st.file_uploader("Sube archivos (PDF, TXT, MD)", type=['pdf', 'txt', 'md'], accept_multiple_files=True, key="manual_upl_files")
+            
+            if upl_files and st.button("💾 Guardar en Memoria", key="save_manual_upl"):
+                if not current_course_id:
+                     st.error("Selecciona un diplomado primero.")
+                else:
+                    # Resolve Target
+                    if is_global and not target_unit_id:
+                         ur = create_unit(current_course_id, "00_Memoria_Global")
+                         if ur: target_unit_id = ur['id']
+                    
+                    if not is_global and not target_unit_id and unit_name_input:
+                         ur = create_unit(current_course_id, unit_name_input)
+                         if ur: target_unit_id = ur['id']
+                    
+                    if not target_unit_id:
+                        st.error("Error: No se pudo crear/encontrar la carpeta.")
+                    else:
+                        success_count = 0
+                        with st.spinner("Subiendo archivos..."):
+                            for f in upl_files:
+                                content = ""
+                                f_name = f.name
+                                try:
+                                    if f.type == "application/pdf":
+                                        content = assistant.extract_text_from_pdf(f.getvalue(), f.type)
+                                        f_name = f"{os.path.splitext(f.name)[0]}.txt"
+                                    else:
+                                        content = f.getvalue().decode("utf-8", errors='ignore')
+                                    
+                                    if upload_file_to_db(target_unit_id, f_name, content, "text"):
+                                        success_count += 1
+                                except Exception as ex:
+                                    st.error(f"Error procesando {f.name}: {ex}")
+                        
+                        if success_count > 0:
+                            st.success(f"✅ {success_count} archivos guardados.")
+                            import time
+                            time.sleep(1)
+                            st.rerun()
+
+        # --- BULK IMPORT (CHAT RESCUE) ---
+        with st.expander("📥 Importar Historial de Chat (Rescatar Datos)", expanded=False):
             st.caption("Sube un archivo .txt con todo tu historial de ChatGPT desordenado. La IA lo organizará por temas.")
             chat_file = st.file_uploader("Subir Log de Chat (.txt)", type=['txt'], key="bulk_chat_upl")
             
