@@ -186,15 +186,20 @@ def get_global_context():
     return context_str, file_count
 
 # --- API KEY MANAGEMENT ---
+# --- API KEY MANAGEMENT ---
 def load_api_key():
-    # 1. Try Streamlit Secrets (Best for Cloud)
+    # 1. User Custom Key (Session) - Highest Priority
+    if 'custom_api_key' in st.session_state and st.session_state['custom_api_key']:
+        return st.session_state['custom_api_key']
+
+    # 2. Try Streamlit Secrets (Best for Cloud)
     try:
         if "GOOGLE_API_KEY" in st.secrets:
             return st.secrets["GOOGLE_API_KEY"]
     except:
         pass
 
-    # 2. Try Local File (Best for Local)
+    # 3. Try Local File (Best for Local)
     if os.path.exists("api_key.txt"):
         with open("api_key.txt", "r") as f:
             return f.read().strip()
@@ -460,13 +465,28 @@ with st.sidebar:
     
     st.divider()
 
-    st.header("⚙️ Configuración")
-    saved_key = load_api_key()
-    api_key = st.text_input("Clave API de Gemini", value=saved_key, type="password")
+    st.header("⚙️ Configuración Personal")
     
-    if st.button("Guardar Clave"):
-        save_api_key(api_key)
-        st.success("Guardada")
+    # Check if system key exists (for info only, do not show it)
+    has_system_key = False
+    try:
+        if "GOOGLE_API_KEY" in st.secrets: has_system_key = True
+    except: pass
+    
+    if has_system_key:
+        st.info("✅ Clave del Sistema Activa")
+    else:
+        st.warning("⚠️ Sin Clave del Sistema")
+        
+    user_key_input = st.text_input("Tu Clave API (Opcional)", type="password", help="Sobrescribe la clave del sistema para esta sesión.")
+    
+    if user_key_input:
+        st.session_state['custom_api_key'] = user_key_input
+        st.success("✅ Usando tu Clave Personal")
+    else:
+        # If user clears input, revert to system
+        if 'custom_api_key' in st.session_state:
+            del st.session_state['custom_api_key']
         
     st.divider()
     
