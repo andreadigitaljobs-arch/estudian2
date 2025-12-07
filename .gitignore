@@ -7,12 +7,13 @@ __pycache__/
 *.pyc
 temp_*
 *.wav
-# Enable specific assets
-!illustration_*.png
 # Ignore other images
 *.png
 *.jpg
 *.jpeg
+
+# Enable specific assets (Must come AFTER *.png)
+!illustration_*.png
 
 # Application Output (Content is local to user)
 output/
