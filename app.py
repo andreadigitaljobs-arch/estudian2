@@ -1032,12 +1032,13 @@ with tab4:
 
 # --- TAB 5: Ayudante de Tareas ---
 with tab5:
-    st.markdown("""
+    tab5_html = '''
     <div class="card-text">
         <h2 style="margin-top:0;">5. Ayudante de Tareas & Biblioteca</h2>
         <p style="color: #64748b; font-size: 1.1rem;">Tu "Segundo Cerebro": Guarda conocimientos y úsalos para resolver tareas.</p>
     </div>
-    """, unsafe_allow_html=True)
+    '''
+    st.markdown(tab5_html, unsafe_allow_html=True)
     
     col_lib, col_task = st.columns([1, 1], gap="large")
     
