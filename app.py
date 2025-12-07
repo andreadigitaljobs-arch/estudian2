@@ -1178,6 +1178,15 @@ with tab5:
             
             if not db_units:
                 st.info("📭 La biblioteca está vacía. Sube archivos arriba.")
+                
+                # DEBUG: Help user troubleshoot why it's empty
+                with st.expander("🕵️ Debug: ¿Por qué no veo mis archivos?"):
+                    user = st.session_state.get('user')
+                    uid = user.id if user else "No User"
+                    st.write(f"User ID: `{uid}`")
+                    st.write(f"Course ID: `{current_course_id}`")
+                    if st.button("🔄 Forzar Recarga"):
+                        st.rerun()
             
             for unit in db_units:
                 u_id = unit['id']
