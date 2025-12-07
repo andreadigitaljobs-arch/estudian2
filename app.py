@@ -123,6 +123,20 @@ def copy_to_clipboard(text):
         print(f"Clipboard error: {e}")
         return False
 
+def get_global_context():
+    """
+    Fetches all text content from the current course's files in DB.
+    Returns: (full_text_context, file_count)
+    """
+    from database import get_course_full_context
+    c_id = st.session_state.get('current_course_id')
+    if not c_id: return "", 0
+    
+    full_text = get_course_full_context(c_id)
+    # Count how many files are in there (approx based on our separator)
+    file_count = full_text.count("--- ARCHIVO:")
+    return full_text, file_count
+
 # --- API KEY MANAGEMENT ---
 def load_api_key():
     # 1. User Custom Key (Session) - Highest Priority
