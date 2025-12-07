@@ -1412,7 +1412,7 @@ with tab5:
                 **MI BORRADOR (Generado por Asistente):**
                 {full_text_response}
                 
-                Quiero que analicemos esto. ¿Qué opinas? ¿Podemos mejorarlo?
+                Quiero que analicemos esto. Qué opinas? Podemos mejorarlo?
                 """
                 
                 # Check if history exists
