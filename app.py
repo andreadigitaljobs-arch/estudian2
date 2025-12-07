@@ -20,6 +20,10 @@ if 'pasted_images' not in st.session_state: st.session_state['pasted_images'] = 
 if 'quiz_key' not in st.session_state: st.session_state['quiz_key'] = 0
 if 'tutor_chat_history' not in st.session_state: st.session_state['tutor_chat_history'] = []
 if 'current_course' not in st.session_state: st.session_state['current_course'] = None
+if 'homework_result' not in st.session_state: st.session_state['homework_result'] = ""
+if 'spotlight_query' not in st.session_state: st.session_state['spotlight_query'] = ""
+if 'spotlight_mode' not in st.session_state: st.session_state['spotlight_mode'] = "⚡ Concepto Rápido"
+if 'custom_api_key' not in st.session_state: st.session_state['custom_api_key'] = None
 
 # --- AUTHENTICATION CHECK ---
 if 'user' not in st.session_state:
