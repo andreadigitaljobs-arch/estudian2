@@ -1,0 +1,406 @@
+
+import os
+import google.generativeai as genai
+from PIL import Image
+
+class StudyAssistant:
+    def __init__(self, api_key):
+        genai.configure(api_key=api_key)
+        # Using 2.0 Flash as verified available
+        self.model = genai.GenerativeModel('gemini-2.0-flash')
+
+    def generate_notes(self, transcript_text, global_context=""):
+        """Generates progressive notes (3 levels) in JSON format."""
+        import json
+        
+        prompt = f"""
+        Actúa como un profesor experto. Tu objetivo es crear apuntes en 3 niveles de profundidad (Progresivos) basados en la transcripción.
+        
+        CONTEXTO GLOBAL (DEFINICIONES OFICIALES):
+        {global_context}
+        
+        INSTRUCCIONES:
+        Genera un objeto JSON estricto con las siguientes claves:
+        1. "ultracorto": 5 bullets points con lo esencial (Key takeaways).
+        2. "intermedio": 10-12 bullets con los conceptos clave explicados brevemente.
+        3. "profundo": Un resumen detallado (aprox 1 página) con ejemplos, estructura clara, y conectando conceptos con el Contexto Global si aplica.
+        
+        FORMATO DE SALIDA (JSON ÚNICAMENTE):
+        {{
+            "ultracorto": "Markdown string...",
+            "intermedio": "Markdown string...",
+            "profundo": "Markdown string..."
+        }}
+
+        TRANSCRIPCIÓN:
+        {transcript_text} 
+        """
+        
+        try:
+            response = self.model.generate_content(prompt)
+            # Clean response to ensure valid JSON parsing
+            clean_text = response.text.replace("```json", "").replace("```", "").strip()
+            return json.loads(clean_text)
+        except Exception as e:
+            # Fallback for error handling
+            return {
+                "ultracorto": "Error generando",
+                "intermedio": str(e),
+                "profundo": response.text if 'response' in locals() else "Error crítico"
+            }
+
+    def generate_study_guide(self, transcript_text, global_context=""):
+        """Generates a structured study guide."""
+        prompt = f"""
+        Actúa como un estratega de estudio. Crea una "Guía de Estudio" basada en esta transcripción.
+        Tu objetivo es que el estudiante apruebe el examen estudiando de forma eficiente.
+
+        CONTEXTO GLOBAL (DEFINICIONES OFICIALES):
+        {global_context}
+        (Asegúrate de que la estrategia se alinee con estas reglas/definiciones).
+
+        INSTRUCCIONES:
+        1. Crea un Mapa de la Unidad (Índice estructurado).
+        2. Lista los Conceptos Clave que seguramente saldrán en el examen.
+        3. Identifica "Trampas comunes" o errores frecuentes sobre este tema.
+        4. Crea un resumen final "En 5 minutos".
+
+        FORMATO DE SALIDA:
+        # Guía de Estudio Estratégica
+        ## 1. Mapa de la Unidad
+        [Esquema jerárquico]
+        
+        ## 2. Conceptos de Examen
+        [Conceptos clave y por qué son importantes]
+        
+        ## 3. Resumen "Si solo tienes 5 minutos"
+        [Puntos bala memorables]
+
+        TRANSCRIPCIÓN:
+        {transcript_text}
+        """
+        response = self.model.generate_content(prompt)
+        return response.text
+
+    def solve_quiz(self, image_path, global_context=""):
+        """Solves a quiz question from an image."""
+        img = Image.open(image_path)
+        
+        prompt = f"""
+        Analiza esta imagen de una pregunta de examen.
+        
+        CONTEXTO OFICIAL (DEFINICIONES):
+        {global_context}
+        (Si la pregunta se refiere a algo definido aquí, ÚSALO como verdad absoluta).
+
+        1. Identifica la pregunta y las opciones.
+        2. Indica cuál es la respuesta correcta usando primero el Contexto Oficial.
+        3. Si la respuesta NO está en el contexto, usa tu CONOCIMIENTO GENERAL de experto para deducirla.
+        4. Explica brevemente POR QUÉ es la correcta.
+        
+        Salida:
+        **Pregunta:** [Texto detectado]
+        **Respuesta Correcta:** [Opción]
+        **Explicación:** [Razonamiento]
+        """
+        
+        response = self.model.generate_content([prompt, img])
+        return response.text
+
+    def solve_homework(self, task_prompt, context_texts, task_attachment=None):
+        """Solves a homework task using specific library context and optional attachment."""
+        
+        # Merge all context into one block
+        full_context = "\n\n".join(context_texts)
+        
+        text_prompt = f"""
+        Actúa como un Asistente Experto del Diplomado.
+        Tu misión es ayudar al estudiante a realizar su tarea PERFECTAMENTE, basándote en la metodología oficial del curso.
+        
+        CONTEXTO OFICIAL (BIBLIOTECA):
+        A continuación tienes la información extraída directamente de las clases. USALA COMO TU PRIMERA FUENTE DE VERDAD.
+        ------------------------------------------------------------
+        {full_context}
+        ------------------------------------------------------------
+        
+        TAREA DEL USUARIO:
+        {task_prompt}
+        
+        (Si hay un archivo adjunto, contiene los detalles específicos o el PDF de la consigna. Úsalo como guía principal para la estructura de la tarea).
+        
+        INSTRUCCIONES:
+        1. Analiza la tarea y busca relaciones directas en el Contexto Oficial.
+        2. Si el contexto menciona un método paso a paso, ÚSALO.
+        3. No inventes metodologías externas si el curso ya provee una.
+        4. Si falta información en el contexto, usa tu conocimiento general pero advierte: "Nota: Esto no estaba en tus apuntes, así que uso conocimiento general".
+        5. Se práctico, directo y organizado.
+        
+        RESPUESTA SOLICITADA:
+        [Desarrolla la tarea o da la guía paso a paso basada en el material]
+        """
+        
+        content_parts = [text_prompt]
+        
+        if task_attachment:
+            # task_attachment is expected to be a dict: {"mime_type": str, "data": bytes}
+            # OR a PIL Image if strictly image.
+            # But for PDF/General support via Gemini API, we pass the blob.
+            import io
+             # If it's a PIL Image (legacy flow), convert to blob? 
+             # Let's assume input is raw bytes and mime_type from streamlit.
+            
+            # Helper to create the part object for google-generativeai
+            blob = {
+                "mime_type": task_attachment['mime_type'],
+                "data": task_attachment['data']
+            }
+            content_parts.append(blob)
+        
+        response = self.model.generate_content(content_parts)
+        return response.text
+
+    def extract_text_from_pdf(self, pdf_data, mime_type="application/pdf"):
+        """Extracts text from a PDF using Gemini (High Quality OCR/Layout analysis)."""
+        prompt = """
+        Extract ALL text from this document verbatim. 
+        Preserve the structure (headers, lists) using Markdown.
+        Do not summarize. Just output the full content.
+        """
+        
+        blob = {"mime_type": mime_type, "data": pdf_data}
+        try:
+            response = self.model.generate_content([prompt, blob])
+            return response.text
+        except Exception as e:
+            return f"Error reading PDF: {e}"
+
+    def search_knowledge_base(self, query, context, mode="Concepto Rápido"):
+        """Searches the knowledge base with specific mode."""
+        
+        if "Rápido" in mode:
+            prompt = f"""
+            Actúa como un Buscador Académico de Alta Precisión (Tipo Spotlight).
+            
+            CONSULTA: "{query}"
+            
+            CONTEXTO GENERAL (Toda la Bibliografía):
+            --------------------------------------------------
+            {context}
+            --------------------------------------------------
+            
+            OBJETIVO:
+            Da una definición DIRECTA y CONCISA.
+            Cita explícitamente el archivo o video de donde sale la información.
+            Si no está en el contexto, dilo claramente.
+            
+            FORMATO:
+            **Definición:** [Explicación breve]
+            **Fuente:** [Nombre del archivo/video exacto]
+            """
+        else:
+            prompt = f"""
+            Actúa como un Investigador Académico Senior.
+            
+            CONSULTA: "{query}"
+            
+            CONTEXTO GENERAL (Toda la Bibliografía):
+            --------------------------------------------------
+            {context}
+            --------------------------------------------------
+            
+            OBJETIVO:
+            Realiza un análisis profundo conectando puntos entre diferentes clases/archivos.
+            Explica la relación entre conceptos si es necesario.
+            Sintetiza la respuesta como un experto.
+            
+            FORMATO:
+            **Análisis Sintetizado:**
+            [Respuesta detallada y explicada]
+            
+            **Fuentes Consultadas:**
+            - [Archivo 1]
+            - [Archivo 2]
+            """
+
+        response = self.model.generate_content(prompt)
+        return response.text
+
+    def solve_argumentative_task(self, task_prompt, context_files=[], global_context=""):
+        """Solves complex tasks with a structured 4-part response (JSON)."""
+        import json
+        
+        # Build Context
+        context_str = global_context
+        if context_files:
+            context_str += "\n\n--- DOCUMENTOS ADJUNTOS ---\n"
+            for f in context_files:
+                context_str += f"[NOMBRE: {f['name']}]\n{f['content']}\n\n"
+        
+        prompt = f"""
+        Actúa como un CONSULTOR EXPERTO y ABOGADO DEL DIABLO. Tu misión es resolver la siguiente tarea académica compleja con un nivel de análisis profundo.
+        
+        CONTEXTO / FUENTES:
+        {context_str}
+        
+        TAREA DEL USUARIO:
+        {task_prompt}
+        
+        INSTRUCCIONES CLAVE:
+        1. Analiza el problema desde múltiples ángulos.
+        2. Usa las fuentes proporcionadas explícitamente SI EXISTEN.
+        3. Si NO hay fuentes o faltan datos, usa tu CONOCIMIENTO GENERAL EXPERTO para resolverlo, pero aclara que es información externa.
+        4. Anticipa críticas o fallos en tu propio razonamiento (Contra-argumento).
+        
+        FORMATO DE SALIDA (JSON ESTRICTO):
+        Debes devolver un JSON con estas 4 claves exactas:
+        1. "direct_response": La respuesta final pulida, lista para entregar. (Markdown).
+        2. "sources": Lista de archivos/conceptos específicos de la biblioteca que usaste. (Markdown).
+        3. "step_by_step": Tu proceso lógico de deducción para llegar a la respuesta. (Markdown).
+        4. "counter_argument": Objeciones sólidas a tu propia respuesta (Abogado del diablo). (Markdown).
+        
+        JSON:
+        {{
+            "direct_response": "...",
+            "sources": "...",
+            "step_by_step": "...",
+            "counter_argument": "..."
+        }}
+        """
+        
+        try:
+            response = self.model.generate_content(prompt)
+            clean_text = response.text.replace("```json", "").replace("```", "").strip()
+            return json.loads(clean_text)
+        except Exception as e:
+            return {
+                "direct_response": "Error generando respuesta estructurada.",
+                "sources": "N/A",
+                "step_by_step": str(e),
+                "counter_argument": "No se pudo generar."
+            }
+
+    def chat_tutor(self, current_user_msg, chat_history=[], context_files=[], global_context=""):
+        """
+        Conversational Tutor that remembers history and uses context.
+        chat_history: List of dicts {'role': 'user'/'model', 'content': '...'}
+        """
+        
+        # Build Context String
+        context_str = global_context
+        if context_files:
+            context_str += "\n\n--- ARCHIVOS ADJUNTOS EN ESTE MENSAJE ---\n"
+            for f in context_files:
+                context_str += f"[NOMBRE: {f['name']}]\n{f['content']}\n\n"
+        
+        # Construct System Prompt / History for Gemini
+        # We can use the chat API or a single prompt with history injection.
+        # For simplicity and control over context, prompt injection is often more robust for "persona" maintenance.
+        
+        system_instruction = f"""
+        Actúa como un PROFESOR UNIVERSITARIO PROACTIVO Y SAPIENTE.
+        Tu nombre es "Profe. IA".
+        
+        CONTEXTO DE CONOCIMIENTO (BIBLIOTECA):
+        {context_str}
+        (Usa esta información para responder, corregir o proponer ejemplos).
+        
+        INSTRUCCIONES:
+        1. Mantén un tono académico pero cercano.
+        2. Si el alumno te saluda, saluda y pregunta qué está estudiando hoy.
+        3. Si te envía una tarea, CORRÍGELA con rigor y explica los errores.
+        4. Si te hace una pregunta, respóndela conectando conceptos de la biblioteca.
+        5. SIEMPRE termina fomentando el pensamiento crítico con una pregunta de vuelta.
+        
+        HISTORIAL DE CONVERSACIÓN:
+        """
+        
+        # simple history flattener
+        history_str = ""
+        for msg in chat_history[-10:]: # Keep last 10 turns context window for efficiency
+             role = "ALUMNO" if msg['role'] == "user" else "PROFESOR"
+             history_str += f"{role}: {msg['content']}\n"
+             
+        final_prompt = f"{system_instruction}\n{history_str}\nALUMNO: {current_user_msg}\nPROFESOR:"
+        
+        try:
+            response = self.model.generate_content(final_prompt)
+            return response.text
+        except Exception as e:
+            return f"Error en la clase: {str(e)}"
+
+    def process_bulk_chat(self, raw_text):
+        """
+        Parses a massive unstructured chat log/text.
+        Since output limits (8k tokens) prevent processing huge files in one go,
+        we split the text into meaningful chunks and process them sequentially.
+        """
+        import json
+        
+        # 1. Chunking Strategy
+        # A safer chunk size for outputting full detailed markdown is around 15k-20k characters 
+        # (approx 4k-5k tokens input -> leaving room for <8k output).
+        CHUNK_SIZE = 15000
+        OVERLAP = 1000
+        
+        chunks = []
+        start = 0
+        while start < len(raw_text):
+            end = start + CHUNK_SIZE
+            # Try to cut at a newline to be cleaner
+            if end < len(raw_text):
+                # find last newline within the overlap window to avoid cutting sentences
+                lookback = raw_text.rfind('\n', end - 500, end)
+                if lookback != -1:
+                    end = lookback
+            
+            chunks.append(raw_text[start:end])
+            start = end - OVERLAP # overlap to catch context boundary
+            if start >= len(raw_text): break
+
+        combined_results = []
+        
+        # 2. Process each chunk
+        for i, chunk_text in enumerate(chunks):
+            # Prompt tweaked for partial processing
+            prompt = f"""
+            ACTÚA COMO UN BIBLIOTECARIO EXPERTO. ESTÁS PROCESANDO LA PARTE {i+1}/{len(chunks)} DE UN LOG MASIVO.
+            
+            TAREA:
+            Analiza este FRAGMENTO de texto y extrae TEMAS/SECCIONES completas.
+            
+            OBJETIVO:
+            1. Identificar nuevos temas o continuaciones de temas anteriores.
+            2. Extraer el contenido ÚTIL (transcripciones, apuntes, definiciones).
+            3. LIMPIAR la basura del chat ("hola", "gracias").
+            4. Si un tema parece cortado al final, extráelo hasta donde llegue.
+            
+            FORMATO JSON:
+            [
+                {{
+                    "title": "Titulo del Tema (ej: Unidad 1 - Parte {i+1})",
+                    "content": "Contenido completo en Markdown..."
+                }}
+            ]
+            
+            FRAGMENTO:
+            """
+            
+            full_prompt = prompt + "\n\n" + chunk_text + "\n\nJSON DE SALIDA:"
+            
+            generation_config = {
+                "temperature": 0.2,
+                "response_mime_type": "application/json"
+            }
+            
+            try:
+                response = self.model.generate_content(full_prompt, generation_config=generation_config)
+                chunk_data = json.loads(response.text)
+                if isinstance(chunk_data, list):
+                    combined_results.extend(chunk_data)
+            except Exception as e:
+                # If a chunk fails, we log it but continue
+                combined_results.append({"title": f"Error en Parte {i+1}", "content": f"Fallo al procesar este fragmento: {e}"})
+        
+        return combined_results
+
+

@@ -1,0 +1,30 @@
+# Security
+api_key.txt
+.env
+
+# Temporary and Generated Files
+__pycache__/
+*.pyc
+temp_*
+*.wav
+*.png
+*.jpg
+*.jpeg
+
+# Application Output (Content is local to user)
+output/
+
+# Backups
+backups/
+Mis_Respaldos/
+*_backup_*.py
+CODIGO_COMPLETO_APP.txt
+
+# System
+.DS_Store
+Thumbs.db
+
+# Virtual Environment
+venv/
+env/
+.venv/
