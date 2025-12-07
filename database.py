@@ -83,7 +83,7 @@ def get_units(course_id):
         return res.data
     except Exception as e:
         print(f"Error fetching units: {e}")
-        st.error(f"Debug: Error fetching units: {e}") # Uncomment for tough debugging
+        # st.error(f"Debug: Error fetching units: {e}") # Uncomment for tough debugging
         return []
 
 def create_unit(course_id, name):

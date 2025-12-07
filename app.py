@@ -7,6 +7,7 @@ from study_assistant import StudyAssistant
 from PIL import Image, ImageGrab
 import shutil
 import time
+import extra_streamlit_components as stx  # --- PERSISTENCE ---
 
 # --- PAGE CONFIG MUST BE FIRST ---
 st.set_page_config(page_title="Estudian2", page_icon="🎓", layout="wide")
@@ -29,6 +30,33 @@ if 'custom_api_key' not in st.session_state: st.session_state['custom_api_key'] 
 if 'user' not in st.session_state:
     st.session_state['user'] = None
 
+# --- COOKIE MANAGER (PERSISTENCE) ---
+@st.cache_resource
+def get_manager():
+    return stx.CookieManager()
+
+cookie_manager = get_manager()
+
+# --- AUTO-LOGIN CHECK ---
+if not st.session_state['user']:
+    # Try to get token from cookie
+    # We use REFERSH TOKEN for long-term persistence (simpler than session reconstruction)
+    try:
+        time.sleep(0.1)
+        refresh_token = cookie_manager.get("supabase_refresh_token")
+        if refresh_token:
+             from database import init_supabase
+             client = init_supabase()
+             res = client.auth.refresh_session(refresh_token)
+             if res.session:
+                 st.session_state['user'] = res.user
+                 st.session_state['supabase_session'] = res.session
+                 st.rerun()
+                 
+    except Exception as e:
+        print(f"Auto-login failed: {e}")
+
+
 # If not logged in, show Login Screen and STOP
 if not st.session_state['user']:
     st.markdown("## 🔐 Iniciar Sesión en Estudian2")
@@ -45,6 +73,11 @@ if not st.session_state['user']:
             user = sign_in(email, password)
             if user:
                 st.session_state['user'] = user
+                # SET COOKIE
+                if 'supabase_session' in st.session_state:
+                    sess = st.session_state['supabase_session']
+                    # Expire in 30 days
+                    cookie_manager.set("supabase_refresh_token", sess.refresh_token, expires_at=datetime.datetime.now() + datetime.timedelta(days=30))
                 st.success(f"¡Bienvenido!")
                 time.sleep(1)
                 st.rerun()
@@ -58,6 +91,9 @@ if not st.session_state['user']:
             from database import sign_up
             user = sign_up(new_email, new_pass)
             if user:
+                if 'supabase_session' in st.session_state:
+                     sess = st.session_state['supabase_session']
+                     cookie_manager.set("supabase_refresh_token", sess.refresh_token, expires_at=datetime.datetime.now() + datetime.timedelta(days=30))
                 st.success("Cuenta creada. Por favor inicia sesión.")
             else:
                 st.error("Error al crear cuenta.")
@@ -405,6 +441,10 @@ with st.sidebar:
             st.session_state['user'] = None
             if 'supabase_session' in st.session_state:
                 del st.session_state['supabase_session']
+            # DELETE COOKIE
+            try:
+                cookie_manager.delete("supabase_refresh_token")
+            except: pass
             st.rerun()
         st.divider()
 
@@ -1180,15 +1220,8 @@ with tab5:
             
             if not db_units:
                 st.info("📭 La biblioteca está vacía. Sube archivos arriba.")
-                
-                # DEBUG: Help user troubleshoot why it's empty
-                with st.expander("🕵️ Debug: ¿Por qué no veo mis archivos?"):
-                    user = st.session_state.get('user')
-                    uid = user.id if user else "No User"
-                    st.write(f"User ID: `{uid}`")
-                    st.write(f"Course ID: `{current_course_id}`")
-                    if st.button("🔄 Forzar Recarga"):
-                        st.rerun()
+                # Removed Debug Expander for production
+
             
             for unit in db_units:
                 u_id = unit['id']
