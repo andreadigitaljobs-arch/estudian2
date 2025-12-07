@@ -32,11 +32,7 @@ if 'user' not in st.session_state:
     st.session_state['user'] = None
 
 # --- COOKIE MANAGER (PERSISTENCE) ---
-@st.cache_resource
-def get_manager():
-    return stx.CookieManager()
-
-cookie_manager = get_manager()
+cookie_manager = stx.CookieManager()
 
 # --- AUTO-LOGIN CHECK ---
 if not st.session_state['user']:
