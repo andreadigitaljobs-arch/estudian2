@@ -91,10 +91,7 @@ def create_unit(course_id, name):
     try:
         # Check if exists first? Supabase might error on duplicate if we set unique constraint, 
         # but for now let's just insert.
-        user_id = st.session_state['user'].id if st.session_state.get('user') else None
         data = {"course_id": course_id, "name": name}
-        if user_id: data["user_id"] = user_id # Critical for RLS
-        
         res = supabase.table("units").insert(data).execute()
         return res.data[0] if res.data else None
     except Exception as e:
@@ -131,15 +128,12 @@ def upload_file_to_db(unit_id, name, content_text, file_type):
     """
     supabase = init_supabase()
     try:
-        user_id = st.session_state['user'].id if st.session_state.get('user') else None
         data = {
             "unit_id": unit_id,
             "name": name,
             "type": file_type,
             "content_text": content_text
         }
-        if user_id: data["user_id"] = user_id
-        
         res = supabase.table("files").insert(data).execute()
         return True
     except Exception as e:
