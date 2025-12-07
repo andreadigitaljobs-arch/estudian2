@@ -491,19 +491,31 @@ with st.sidebar:
 
     # DELETE OPTION
     with st.expander("🗑️ Borrar Diplomados"):
-        courses_to_del = st.multiselect("Selecciona para borrar:", existing_courses, key="del_courses_sel")
+        # Filter out "Crear Nuevo" if present or just use db_courses list
+        del_options = [c['name'] for c in db_courses]
+        courses_to_del = st.multiselect("Selecciona para borrar:", del_options, key="del_courses_sel")
+        
         if st.button("Eliminar Seleccionados", key="btn_del_courses"):
             if courses_to_del:
-                for c_del in courses_to_del:
-                    path_del = os.path.join(CORE_OUTPUT_ROOT, c_del)
-                    try:
-                        shutil.rmtree(path_del) # Recursive delete
-                    except Exception as e:
-                        st.error(f"Error {c_del}: {e}")
+                from database import delete_course
+                deleted_count = 0
+                for c_name in courses_to_del:
+                    # Find ID
+                    c_id_to_del = course_map.get(c_name)
+                    if c_id_to_del:
+                        if delete_course(c_id_to_del):
+                             deleted_count += 1
+                        else:
+                             st.error(f"Error borrando {c_name}")
                 
-                st.success("Eliminados correchamente.")
-                # Reset selection logic will handle the missing course on rerun
-                st.rerun()
+                if deleted_count > 0:
+                    st.success(f"¡{deleted_count} diplomados eliminados!")
+                    # Clear session if current was deleted
+                    if st.session_state.get('current_course') in courses_to_del:
+                         st.session_state['current_course'] = None
+                         st.session_state['current_course_id'] = None
+                    time.sleep(1)
+                    st.rerun()
 
     st.caption(f"Guardando en: `output/{st.session_state['current_course']}/...`")
     st.divider()
