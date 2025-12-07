@@ -815,34 +815,54 @@ with tab3:
         </div>
         """, unsafe_allow_html=True)
         
-        # File Manager
-        delete_files_ui(get_out_dir("transcripts"), "tab3")
-        
-        transcript_files = get_transcripts()
-        
-        # Check Global Memory
-        gl_ctx, gl_count = get_global_context()
-        if gl_count > 0:
-            st.success(f"✅ **Memoria Global Activa:** {gl_count} archivos base detectados.")
-
-        if not transcript_files:
-             st.info("Primero sube videos en la Pestaña 1.")
+        c_id = st.session_state.get('current_course_id')
+        if not c_id:
+             st.info("Selecciona Espacio de Trabajo.")
         else:
-            options_guide = [os.path.basename(f) for f in transcript_files]
-            selected_guide_file = st.selectbox("Archivo base:", options_guide, key="sel3")
+            from database import get_units, get_files, get_file_content, upload_file_to_db, create_unit
             
-            if selected_guide_file and st.button("Generar Guía", key="btn3"):
-                full_path = os.path.join(get_out_dir("transcripts"), selected_guide_file)
-                with open(full_path, "r", encoding="utf-8") as f: text = f.read()
-                    
-                with st.spinner("Diseñando estrategia de estudio..."):
-                    guide = assistant.generate_study_guide(text, global_context=gl_ctx)
-                    base_name = selected_guide_file.replace("_transcripcion.txt", "")
-                    save_path = os.path.join(get_out_dir("guides"), f"Guia_{base_name}.txt")
-                    with open(save_path, "w", encoding="utf-8") as f: f.write(guide)
-                    
-                    st.success("¡Guía lista!")
-                    st.session_state['guide_result'] = guide # Save to session
+            # Fetch Transcripts
+            units = get_units(c_id)
+            t_unit = next((u for u in units if u['name'] == "Transcripts"), None)
+            
+            transcript_files = []
+            if t_unit:
+                transcript_files = get_files(t_unit['id'])
+            
+            # Check Global Memory
+            gl_ctx, gl_count = get_global_context()
+            if gl_count > 0:
+                st.success(f"✅ **Memoria Global Activa:** {gl_count} archivos base detectados.")
+
+            if not transcript_files:
+                 st.info("Primero sube videos en la Pestaña 1.")
+            else:
+                options_guide = [f['name'] for f in transcript_files]
+                file_map_guide = {f['name']: f['id'] for f in transcript_files}
+                
+                selected_guide_file = st.selectbox("Archivo base:", options_guide, key="sel3")
+                
+                if selected_guide_file and st.button("Generar Guía", key="btn3"):
+                    # Get content from DB
+                    f_id = file_map_guide[selected_guide_file]
+                    text = get_file_content(f_id)
+                        
+                    with st.spinner("Diseñando estrategia de estudio..."):
+                        guide = assistant.generate_study_guide(text, global_context=gl_ctx)
+                        
+                        # Save to "Guides" Unit in DB
+                        g_unit = next((u for u in units if u['name'] == "Guides"), None)
+                        if not g_unit:
+                             g_unit = create_unit(c_id, "Guides")
+                        
+                        if g_unit:
+                             base_name = selected_guide_file.replace("_transcripcion.txt", "")
+                             fname = f"Guia_{base_name}.txt"
+                             upload_file_to_db(g_unit['id'], fname, guide, "guide")
+                             st.success(f"Guía guardada en 'Guides'/{fname}")
+
+                        st.success("¡Guía lista!")
+                        st.session_state['guide_result'] = guide # Save to session
             
             # --- PERSISTENT RESULTS DISPLAY ---
             if st.session_state['guide_result']:
