@@ -522,7 +522,7 @@ with st.sidebar:
     st.divider()
     
     # Custom Lilac Info Box
-    st.markdown("""
+    sidebar_html = '''
     <div style="background-color: #f3e8ff; padding: 15px; border-radius: 12px; border: 1px solid #d8b4fe; color: #6d28d9; font-size: 0.9rem;">
         <strong style="display: block; margin-bottom: 8px; display: flex; align-items: center; gap: 5px;">
             📂 Carpetas de Salida:
@@ -533,6 +533,9 @@ with st.sidebar:
             <li>guides</li>
         </ul>
     </div>
+    '''
+    st.markdown(sidebar_html, unsafe_allow_html=True)
+    
 tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "📹 Transcriptor", 
     "📝 Apuntes Simples", 
