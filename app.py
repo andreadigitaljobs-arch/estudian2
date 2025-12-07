@@ -203,7 +203,8 @@ if 'spotlight_query' in st.session_state and st.session_state['spotlight_query']
     st.divider()
 
 # --- Custom CSS for "Estudian2" Elegant Theme ---
-st.markdown("""
+# --- GLOBAL CSS ---
+CSS_STYLE = """
 <style>
 /* HIDE STREAMLIT STATUS WIDGET (Running man) */
 div[data-testid="stStatusWidget"] {
@@ -337,7 +338,6 @@ div[data-testid="stDecoration"] {
     img {
         border-radius: 20px;
     }
-
     
     /* Custom Button Styling (Transparent Icon Button) */
     div.stButton > button.copy-btn {
@@ -365,7 +365,8 @@ div[data-testid="stDecoration"] {
         transform: translateY(-1px);
     }
 </style>
-""", unsafe_allow_html=True)
+"""
+st.markdown(CSS_STYLE, unsafe_allow_html=True)
 
 # Sidebar
 with st.sidebar:
@@ -552,7 +553,7 @@ def render_image_card(img_path):
             img_data = f.read()
         b64_img = base64.b64encode(img_data).decode()
         
-        st.markdown(f"""
+        card_html = f'''
         <div style="
             background-color: #f3e8ff;
             border-radius: 20px;
@@ -569,7 +570,8 @@ def render_image_card(img_path):
                 filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
             ">
         </div>
-        """, unsafe_allow_html=True)
+        '''
+        st.markdown(card_html, unsafe_allow_html=True)
     else:
         st.error(f"Image not found: {img_path}")
 
