@@ -14,19 +14,32 @@ def init_supabase():
         return None
 
 # --- AUTH ---
+# --- AUTH ---
 def sign_in(email, password):
     supabase = init_supabase()
     try:
         res = supabase.auth.sign_in_with_password({"email": email, "password": password})
         return res.user
-    except: return None
+    except Exception as e:
+        print(f"Login Error: {e}") # Log to console
+        # Extract meaningful message if possible
+        msg = str(e)
+        if "Email not confirmed" in msg:
+            st.error("⚠️ Tu email no ha sido confirmado. Revisa tu bandeja de entrada o desactiva la confirmación en Supabase.")
+        elif "Invalid login credentials" in msg:
+            st.error("❌ Contraseña incorrecta o usuario no encontrado.")
+        else:
+            st.error(f"Error de Login: {msg}")
+        return None
 
 def sign_up(email, password):
     supabase = init_supabase()
     try:
         res = supabase.auth.sign_up({"email": email, "password": password})
         return res.user
-    except: return None
+    except Exception as e:
+        st.error(f"Error de Registro: {e}")
+        return None
 
 # --- COURSES (DIPLOMADOS) ---
 def get_user_courses(user_id):
