@@ -113,79 +113,6 @@ def copy_to_clipboard(text):
         print(f"Clipboard error: {e}")
         return False
 
-def delete_files_ui(folder_path, key_prefix):
-    """Render a multi-select UI to delete files from a folder."""
-    files = [f for f in os.listdir(folder_path) if f.endswith(".txt")]
-    if not files:
-        st.caption("No hay archivos para borrar.")
-        return
-
-    with st.expander("🗑️ Gestionar / Borrar Archivos"):
-        to_delete = st.multiselect("Selecciona archivos para ELIMINAR permanentemente:", files, key=f"del_{key_prefix}")
-        
-        c1, c2 = st.columns([1, 1])
-        with c1:
-            if to_delete:
-                if st.button(f"🗑️ Eliminar Selección ({len(to_delete)})", key=f"btn_del_{key_prefix}"):
-                    for file in to_delete:
-                        try:
-                            os.remove(os.path.join(folder_path, file))
-                        except Exception as e:
-                            st.error(f"Error borrando {file}: {e}")
-                    st.success("Archivos eliminados.")
-                    st.rerun()
-        with c2:
-            if st.button("🔥 Borrar TODO", key=f"btn_del_all_{key_prefix}", help="Borra TODOS los archivos de la lista"):
-                 for file in files:
-                    try:
-                        os.remove(os.path.join(folder_path, file))
-                    except Exception as e:
-                        st.error(f"Error borrando {file}: {e}")
-                 st.success("¡Todo limpio!")
-                 st.rerun()
-
-# --- Helper to list transcripts ---
-def get_transcripts():
-    directory = get_out_dir("transcripts")
-    return glob.glob(os.path.join(directory, "*.txt"))
-
-# --- Helper for Global Memory (All Course Content) ---
-def get_global_context():
-    """Reads ALL text context: Global Memory (Library) + All Transcripts."""
-    
-    context_str = ""
-    file_count = 0
-    
-    # 1. READ EVERYTHING IN LIBRARY (Recursive)
-    lib_path = get_out_dir("library") 
-    
-    if os.path.exists(lib_path):
-        for root, dirs, files in os.walk(lib_path):
-            for f in files:
-                if f.lower().endswith((".txt", ".md")):
-                    file_count += 1
-                    full_path = os.path.join(root, f)
-                    try:
-                        # Get folder name for context
-                        folder_name = os.path.basename(root)
-                        with open(full_path, "r", encoding="utf-8") as file:
-                            context_str += f"\n--- BIBLIOTECA / {folder_name} ({f}) ---\n{file.read()}\n"
-                    except: pass
-
-    # 2. Bulk/Knowledge: All Transcripts
-    transcripts_path = get_out_dir("transcripts")
-    if os.path.exists(transcripts_path):
-        for f in os.listdir(transcripts_path):
-             if f.lower().endswith((".txt", ".md")):
-                file_count += 1
-                try:
-                     with open(os.path.join(transcripts_path, f), "r", encoding="utf-8") as file:
-                         context_str += f"\n--- TRANSCRIPCIÓN DE CLASE ({f}) ---\n{file.read()}\n"
-                except: pass
-                
-    return context_str, file_count
-
-# --- API KEY MANAGEMENT ---
 # --- API KEY MANAGEMENT ---
 def load_api_key():
     # 1. User Custom Key (Session) - Highest Priority
@@ -491,32 +418,54 @@ with st.sidebar:
     st.divider()
     
     # --- COURSE SELECTOR (WORKSPACES) ---
+    # --- COURSE SELECTOR (WORKSPACES) ---
     st.header("📂 Espacio de Trabajo")
     
-    # scan for existing courses
-    existing_courses = []
-    if os.path.exists(CORE_OUTPUT_ROOT):
-        existing_courses = [d for d in os.listdir(CORE_OUTPUT_ROOT) if os.path.isdir(os.path.join(CORE_OUTPUT_ROOT, d))]
+    # 1. Fetch Courses from DB
+    from database import get_user_courses, create_course
     
-    # Setup default if absolutely nothing exists
-    if not existing_courses:
-        existing_courses = ["Diplomado_Marketing_Inicial"]
-        
+    current_user_id = st.session_state['user'].id
+    db_courses = get_user_courses(current_user_id) # Returns list of dicts
+    
+    # Map to names for Selectbox
+    course_names = [c['name'] for c in db_courses]
+    course_map = {c['name']: c['id'] for c in db_courses}
+    
+    # Setup default if nothing exists
+    if not course_names:
+        course_names = [] # Empty list initially
+    
     # Ensure current selection is valid
-    if 'current_course' not in st.session_state or st.session_state['current_course'] not in existing_courses:
-        st.session_state['current_course'] = existing_courses[0]
-        
-    selected_course = st.selectbox("Diplomado Actual:", existing_courses + ["➕ Crear Nuevo..."], index=existing_courses.index(st.session_state['current_course']) if st.session_state['current_course'] in existing_courses else 0)
+    if 'current_course' not in st.session_state or st.session_state['current_course'] not in course_names:
+        if course_names:
+            st.session_state['current_course'] = course_names[0]
+        else:
+            st.session_state['current_course'] = None
+            
+    # Selectbox logic
+    options = course_names + ["➕ Crear Nuevo..."]
+    index = course_names.index(st.session_state['current_course']) if st.session_state['current_course'] in course_names else 0
     
-    if selected_course == "➕ Crear Nuevo...":
+    selected_option = st.selectbox("Diplomado Actual:", options, index=index)
+    
+    if selected_option == "➕ Crear Nuevo...":
         new_course_name = st.text_input("Nombre del Nuevo Diplomado:", placeholder="Ej: Curso IA Contenido")
         if st.button("Crear Espacio"):
             if new_course_name:
-                safe_name = "".join([c for c in new_course_name if c.isalnum() or c in (' ', '-', '_')]).strip()
-                st.session_state['current_course'] = safe_name
-                st.rerun()
+                # Create in DB
+                new_c = create_course(current_user_id, new_course_name)
+                if new_c:
+                    st.session_state['current_course'] = new_c['name']
+                    st.success(f"Creado: {new_c['name']}")
+                    time.sleep(1)
+                    st.rerun()
+                else:
+                    st.error("Error al crear curso.")
     else:
-        st.session_state['current_course'] = selected_course
+        # Standard Selection
+        st.session_state['current_course'] = selected_option
+        st.session_state['current_course_id'] = course_map[selected_option] # Store ID for DB Ops
+        st.caption(f"ID: {st.session_state['current_course_id']}")
 
     # RENAME OPTION
     if st.session_state['current_course'] != "➕ Crear Nuevo...":
@@ -653,50 +602,70 @@ with tab1:
         
         if uploaded_files:
             if st.button("Iniciar Transcripción", key="btn1", use_container_width=True):
-                progress_bar = st.progress(0)
-                status_text = st.empty()
-                out_dir = get_out_dir("transcripts") # Dynamic Path
-                
-                for i, file in enumerate(uploaded_files):
-                    status_text.markdown(f"**Iniciando {file.name}... (0%)**")
-                    temp_path = file.name
-                    with open(temp_path, "wb") as f: f.write(file.getbuffer())
+                # Validation
+                c_id = st.session_state.get('current_course_id')
+                if not c_id:
+                    st.error("⚠️ Selecciona un Espacio de Trabajo en la barra lateral primero.")
+                else:
+                    progress_bar = st.progress(0)
+                    status_text = st.empty()
                     
-                    try:
-                        # Define callback to update UI with percentage
-                        def update_ui(msg, prog):
-                            pct = int(prog * 100)
-                            progress_bar.progress(prog)
-                            status_text.markdown(f"**{msg} ({pct}%)**")
+                    from database import get_units, create_unit, upload_file_to_db, get_files
+                    
+                    # Get/Create "Transcripts" Unit
+                    units = get_units(c_id)
+                    t_unit = next((u for u in units if u['name'] == "Transcripts"), None)
+                    if not t_unit:
+                         status_text.write("Creando carpeta 'Transcripts'...")
+                         t_unit = create_unit(c_id, "Transcripts")
+                    
+                    if t_unit:
+                        t_unit_id = t_unit['id']
+                        
+                        for i, file in enumerate(uploaded_files):
+                            status_text.markdown(f"**Iniciando {file.name}... (0%)**")
+                            temp_path = file.name
+                            with open(temp_path, "wb") as f: f.write(file.getbuffer())
+                            
+                            try:
+                                # Define callback
+                                def update_ui(msg, prog):
+                                    pct = int(prog * 100)
+                                    progress_bar.progress(prog)
+                                    status_text.markdown(f"**{msg} ({pct}%)**")
 
-                        # Process with callback
-                        txt_path = transcriber.process_video(temp_path, progress_callback=update_ui, chunk_length_sec=600)
+                                # Process
+                                txt_path = transcriber.process_video(temp_path, progress_callback=update_ui, chunk_length_sec=600)
+                                
+                                # Read and Upload to DB
+                                with open(txt_path, "r", encoding="utf-8") as f: 
+                                    trans_text = f.read()
+                                    
+                                upload_file_to_db(t_unit_id, os.path.basename(txt_path), trans_text, "transcript")
+                                
+                                st.success(f"✅ {file.name} guardado en Nube (Carpeta Transcripts)")
+                                
+                                # Store in session state for immediate display
+                                st.session_state['transcript_history'].append({"name": file.name, "text": trans_text})
+                                
+                                # Cleanup local temp files
+                                if os.path.exists(txt_path): os.remove(txt_path)
+                                
+                            except Exception as e:
+                                st.error(f"Error: {e}")
+                            finally:
+                                if os.path.exists(temp_path): os.remove(temp_path)
+                            
+                            progress_bar.progress(1.0)
                         
-                        final_path = os.path.join(out_dir, os.path.basename(txt_path))
-                        if os.path.exists(final_path): os.remove(final_path)
-                        os.rename(txt_path, final_path)
-                        
-                        st.success(f"✅ {file.name} procesado (100%)")
-                        
-                        with open(final_path, "r", encoding="utf-8") as f: trans_text = f.read()
-                        
-                        # Store in session state for persistence
-                        st.session_state['transcript_history'].append({"name": file.name, "text": trans_text})
-                        
-                    except Exception as e:
-                        st.error(f"Error: {e}")
-                    finally:
-                        if os.path.exists(temp_path): os.remove(temp_path)
-                    
-                    progress_bar.progress(1.0)
-                
-                status_text.success("¡Todo listo! (100%)")
+                        status_text.success("¡Todo listo! (100%)")
+                    else:
+                        st.error("No se pudo crear carpeta de transcripts.")
 
         # --- PERSISTENT RESULTS DISPLAY (Outside button block) ---
         if st.session_state['transcript_history']:
             for i, item in enumerate(st.session_state['transcript_history']):
                 st.divider()
-                # HEADER + COPY ICON
                 c_head, c_copy = st.columns([0.9, 0.1])
                 with c_head:
                     st.markdown(f"### 📄 Transcripción: {item['name']}")
@@ -705,8 +674,6 @@ with tab1:
                         clean_txt = clean_markdown(item['text'])
                         if copy_to_clipboard(clean_txt):
                             st.toast("¡Copiado!", icon='📋')
-                
-                # Visual Display
                 st.markdown(item['text'])
 
 # --- TAB 2: Apuntes Simples ---
@@ -724,81 +691,102 @@ with tab2:
         </div>
         """, unsafe_allow_html=True)
         
-        # File Manager
-        delete_files_ui(get_out_dir("transcripts"), "tab2")
-        
-        transcript_files = get_transcripts()
-        
-        # Check Global Memory
-        gl_ctx, gl_count = get_global_context()
-        if gl_count > 0:
-            st.success(f"✅ **Memoria Global Activa:** {gl_count} archivos base detectados.")
-        
-        if not transcript_files:
-            st.info("Primero sube videos en la Pestaña 1.")
+        c_id = st.session_state.get('current_course_id')
+        if not c_id:
+             st.info("Selecciona Espacio de Trabajo.")
         else:
-            options = [os.path.basename(f) for f in transcript_files]
-            selected_file = st.selectbox("Selecciona una transcripción:", options, key="sel2")
-            if selected_file and st.button("Generar Apuntes", key="btn2"):
-                full_path = os.path.join(get_out_dir("transcripts"), selected_file)
-                with open(full_path, "r", encoding="utf-8") as f: text = f.read()
+             # Fetch Transcripts from DB
+             from database import get_units, get_files, get_file_content, upload_file_to_db
+             
+             units = get_units(c_id)
+             t_unit = next((u for u in units if u['name'] == "Transcripts"), None)
+             
+             transcript_files = []
+             if t_unit:
+                 transcript_files = get_files(t_unit['id'])
+             
+             # Check Global Memory
+             gl_ctx, gl_count = get_global_context()
+             if gl_count > 0:
+                st.success(f"✅ **Memoria Global Activa:** {gl_count} archivos base detectados.")
+            
+             if not transcript_files:
+                st.info("No hay transcripciones. Sube videos en la Pestaña 1 (se creará carpeta 'Transcripts').")
+             else:
+                options = [f['name'] for f in transcript_files]
+                file_map = {f['name']: f['id'] for f in transcript_files}
                 
-                with st.spinner("Creando apuntes progresivos (3 Niveles)..."):
-                    # Now returns a JSON dict
-                    notes_data = assistant.generate_notes(text, global_context=gl_ctx)
-                    
-                    # Save as JSON for structure preservation
-                    base_name = selected_file.replace("_transcripcion.txt", "")
-                    save_path = os.path.join(get_out_dir("notes"), f"Apuntes_{base_name}.json")
-                    
-                    import json
-                    with open(save_path, "w", encoding="utf-8") as f: 
-                        json.dump(notes_data, f, ensure_ascii=False, indent=2)
-                    
-                    st.session_state['notes_result'] = notes_data
-                    st.success("¡Apuntes generados en 3 capas!")
-
-            # --- DISPLAY RESULTS ---
-            if st.session_state['notes_result']:
-                res = st.session_state['notes_result']
+                selected_file = st.selectbox("Selecciona una transcripción:", options, key="sel2")
                 
-                # Check if it's new dict format (Progressive) or old string (Legacy)
-                if isinstance(res, dict):
-                    st.markdown("### 📝 Apuntes Progresivos")
+                if selected_file and st.button("Generar Apuntes", key="btn2"):
+                    # Get content from DB
+                    f_id = file_map[selected_file]
+                    text = get_file_content(f_id)
                     
-                    # LEVEL 1: Ultracorto
-                    with st.expander("🟢 Nivel 1: Ultracorto (5 Puntos)", expanded=True):
-                        c1, c2 = st.columns([0.9, 0.1])
-                        with c1: st.markdown(res.get('ultracorto', ''))
-                        with c2:
-                            if st.button("📄", key="copy_l1", help="Copiar Nivel 1"):
-                                copy_to_clipboard(res.get('ultracorto', ''))
-                                st.toast("Copiado Nivel 1")
+                    with st.spinner("Creando apuntes progresivos (3 Niveles)..."):
+                        # Now returns a JSON dict
+                        notes_data = assistant.generate_notes(text, global_context=gl_ctx)
+                        
+                        # Save to "Notes" Unit in DB
+                        n_unit = next((u for u in units if u['name'] == "Notes"), None)
+                        if not n_unit:
+                             # Create Notes unit if not exists
+                             from database import create_unit
+                             n_unit = create_unit(c_id, "Notes")
+                        
+                        if n_unit:
+                             import json
+                             json_content = json.dumps(notes_data, ensure_ascii=False, indent=2)
+                             base_name = selected_file.replace("_transcripcion.txt", "")
+                             fname = f"Apuntes_{base_name}.json"
+                             
+                             upload_file_to_db(n_unit['id'], fname, json_content, "note")
+                             st.success(f"Apuntes guardados en 'Notes'/{fname}")
+                        
+                        st.session_state['notes_result'] = notes_data
+                        st.success("¡Apuntes generados en 3 capas!")
 
-                    # LEVEL 2: Intermedio
-                    with st.expander("🟡 Nivel 2: Intermedio (Conceptos Clave)", expanded=False):
-                        c1, c2 = st.columns([0.9, 0.1])
-                        with c1: st.markdown(res.get('intermedio', ''))
-                        with c2:
-                            if st.button("📄", key="copy_l2", help="Copiar Nivel 2"):
-                                copy_to_clipboard(res.get('intermedio', ''))
-                                st.toast("Copiado Nivel 2")
+                # --- DISPLAY RESULTS ---
+                if st.session_state['notes_result']:
+                    res = st.session_state['notes_result']
+                    
+                    # Check if it's new dict format (Progressive) or old string (Legacy)
+                    if isinstance(res, dict):
+                        st.markdown("### 📝 Apuntes Progresivos")
+                        
+                        # LEVEL 1: Ultracorto
+                        with st.expander("🟢 Nivel 1: Ultracorto (5 Puntos)", expanded=True):
+                            c1, c2 = st.columns([0.9, 0.1])
+                            with c1: st.markdown(res.get('ultracorto', ''))
+                            with c2:
+                                if st.button("📄", key="copy_l1", help="Copiar Nivel 1"):
+                                    copy_to_clipboard(res.get('ultracorto', ''))
+                                    st.toast("Copiado Nivel 1")
 
-                    # LEVEL 3: Profundo
-                    with st.expander("🔴 Nivel 3: Profundidad (Explicación Completa)", expanded=False):
-                        c1, c2 = st.columns([0.9, 0.1])
-                        with c1: st.markdown(res.get('profundo', ''))
-                        with c2:
-                             if st.button("📄", key="copy_l3", help="Copiar Nivel 3"):
-                                copy_to_clipboard(res.get('profundo', ''))
-                                st.toast("Copiado Nivel 3")
-                                
-                else:
-                    # Legacy String Display
-                    st.markdown(res)
-                    if st.button("Copiar Apuntes", key="copy_notes_btn"):
-                         copy_to_clipboard(res)
-                         st.toast("Copiado")
+                        # LEVEL 2: Intermedio
+                        with st.expander("🟡 Nivel 2: Intermedio (Conceptos Clave)", expanded=False):
+                            c1, c2 = st.columns([0.9, 0.1])
+                            with c1: st.markdown(res.get('intermedio', ''))
+                            with c2:
+                                if st.button("📄", key="copy_l2", help="Copiar Nivel 2"):
+                                    copy_to_clipboard(res.get('intermedio', ''))
+                                    st.toast("Copiado Nivel 2")
+
+                        # LEVEL 3: Profundo
+                        with st.expander("🔴 Nivel 3: Profundidad (Explicación Completa)", expanded=False):
+                            c1, c2 = st.columns([0.9, 0.1])
+                            with c1: st.markdown(res.get('profundo', ''))
+                            with c2:
+                                 if st.button("📄", key="copy_l3", help="Copiar Nivel 3"):
+                                    copy_to_clipboard(res.get('profundo', ''))
+                                    st.toast("Copiado Nivel 3")
+                                    
+                    else:
+                        # Legacy String Display
+                        st.markdown(res)
+                        if st.button("Copiar Apuntes", key="copy_notes_btn"):
+                             copy_to_clipboard(res)
+                             st.toast("Copiado")
 
 # --- TAB 3: Guía de Estudio ---
 with tab3:
@@ -1049,96 +1037,6 @@ with tab5:
             
             unit_name = ""
             topic_name = ""
-            
-            # Key management for auto-clear
-            if 'upl_counter' not in st.session_state: st.session_state['upl_counter'] = 0
-            
-            if not is_global:
-                 # Smart Folder Selection logic for Main Upload
-                 existing_folders_main = []
-                 lib_root_main = get_out_dir("library")
-                 if os.path.exists(lib_root_main):
-                     existing_folders_main = [d for d in os.listdir(lib_root_main) if os.path.isdir(os.path.join(lib_root_main, d)) and d != "00_Memoria_Global"]
-                 
-                 # Dropdown
-                 sel_option = st.selectbox("Selecciona Unidad (Carpeta):", options=["✨ Nueva Carpeta..."] + existing_folders_main)
-                 
-                 if sel_option == "✨ Nueva Carpeta...":
-                     unit_name = st.text_input("Nombre de la Nueva Carpeta", placeholder="Ej: Unidad 1 - Fundamentos", key=f"in_unit_name_{st.session_state['upl_counter']}").strip()
-                 else:
-                     unit_name = sel_option
-                 topic_name = st.text_input("Tema / Título del Archivo", placeholder="Ej: Publico_Objetivo", key=f"in_topic_name_{st.session_state['upl_counter']}").strip()
-            else:
-                st.info("ℹ️ Se guardará en **00_Memoria_Global** y se usará automáticamente en todo.")
-            
-            st.markdown("##### 2. Contenido")
-            content_source = st.radio("Fuente:", ["Subir PDFs (Temarios/Lecturas)", "Subir Archivos TXT/MD", "Pegar Texto"], horizontal=True)
-            
-            uploaded_pdfs = []
-            uploaded_txts = []
-            text_content = ""
-            
-            # Use dynamic keys for uploaders to allow clearing
-            upl_key = f"upl_{st.session_state['upl_counter']}"
-            
-            if content_source == "Subir PDFs (Temarios/Lecturas)":
-                 uploaded_pdfs = st.file_uploader("Sube uno o más PDFs", type=['pdf'], accept_multiple_files=True, key=f"pdf_{upl_key}")
-            elif content_source == "Subir Archivos TXT/MD":
-                uploaded_txts = st.file_uploader("Sube archivos de texto", type=['txt', 'md'], accept_multiple_files=True, key=f"txt_{upl_key}")
-            elif content_source == "Pegar Texto":
-                text_content = st.text_area("Pega aquí el contenido:", height=150, key=f"in_text_content_{st.session_state['upl_counter']}")
-            
-            if st.button("💾 Guardar en Memoria", key="save_lib"):
-                # Determine Destination
-                dest_unit = "00_Memoria_Global" if is_global else "".join([c for c in unit_name if c.isalnum() or c in (' ', '-', '_')]).strip()
-                
-                # Validation
-                if not is_global and not dest_unit:
-                    st.warning("⚠️ Escribe un nombre de Unidad.")
-                elif content_source == "Pegar Texto" and (not text_content or (not is_global and not topic_name)):
-                     st.warning("⚠️ Completa el texto y el título.")
-                elif content_source != "Pegar Texto" and not uploaded_pdfs and not uploaded_txts:
-                     st.warning("⚠️ Sube al menos un archivo.")
-                else:
-                    # Proceed to Save
-                    lib_base = get_out_dir("library")
-                    final_dir = os.path.join(lib_base, dest_unit)
-                    os.makedirs(final_dir, exist_ok=True)
-                    
-                    saved_count = 0
-                    
-                    # 1. Handle PDFs
-                    if uploaded_pdfs:
-                        with st.spinner(f"Procesando {len(uploaded_pdfs)} PDFs..."):
-                            for pdf in uploaded_pdfs:
-                                txt = assistant.extract_text_from_pdf(pdf.getvalue(), pdf.type)
-                                fname = f"{os.path.splitext(pdf.name)[0]}.txt"
-                                with open(os.path.join(final_dir, fname), "w", encoding="utf-8") as f: f.write(txt)
-                                saved_count += 1
-                                
-                    # 2. Handle TXTs
-                    if uploaded_txts:
-                        for txt_file in uploaded_txts:
-                             content = txt_file.read().decode("utf-8")
-                             with open(os.path.join(final_dir, txt_file.name), "w", encoding="utf-8") as f: f.write(content)
-                             saved_count += 1
-                             
-                    # 3. Handle Pasted Text
-                    if text_content:
-                        safe_topic = "".join([c for c in topic_name if c.isalnum() or c in (' ', '-', '_')]).strip()
-                        if not safe_topic: safe_topic = "Nota_Rapida"
-                        with open(os.path.join(final_dir, f"{safe_topic}.txt"), "w", encoding="utf-8") as f: f.write(text_content)
-                        saved_count += 1
-                        
-                    st.success(f"✅ ¡{saved_count} archivos guardados en '{dest_unit}'!")
-                    
-                    # Increment counter to reset ALL widgets
-                    st.session_state['upl_counter'] += 1
-                    
-                    import time
-                    time.sleep(1.0)
-                    st.rerun()
-        
         # --- BULK IMPORT (CHAT RESCUE) ---
         with st.expander("📥 Importar Historial de Chat (Rescatar Datos)", expanded=False):
             st.caption("Sube un archivo .txt con todo tu historial de ChatGPT desordenado. La IA lo organizará por temas.")
@@ -1206,129 +1104,128 @@ with tab5:
                     st.rerun()
 
         # Show existing library
-        st.markdown(f"##### 📂 Contenido Guardado ({st.session_state['current_course']}):")
-        lib_root = get_out_dir("library")
-        if os.path.exists(lib_root):
-             # Sort so 00_Memoria_Global is always first
-            units = sorted(os.listdir(lib_root))
-            for unit in units:
-                unit_path = os.path.join(lib_root, unit)
-                if not os.path.exists(unit_path): continue # Skip if renamed/deleted
-                if os.path.isdir(unit_path):
-                    # Icon logic
-                    icon = "🧠" if unit == "00_Memoria_Global" else "📁"
-                    label = "Memoria GLOBAL (Siempre activa)" if unit == "00_Memoria_Global" else unit
-                    
-                    with st.expander(f"{icon} {label}"):
-                        # --- UNIT MANAGEMENT ---
-                        if unit != "00_Memoria_Global":
-                            col_u_ren, col_u_act = st.columns([0.8, 0.2])
-                            with col_u_ren:
-                                # Rename Unit Interface
-                                if f"ren_u_{unit}" in st.session_state:
-                                    new_u_name = st.text_input("Nuevo nombre carpeta:", value=unit, key=f"in_u_{unit}")
-                                    if st.button("Guardar Nombre", key=f"save_u_{unit}"):
-                                        if new_u_name and new_u_name != unit:
-                                            try:
-                                                os.rename(unit_path, os.path.join(lib_root, new_u_name))
-                                                del st.session_state[f"ren_u_{unit}"]
-                                                st.success("Carpeta renombrada!")
-                                                time.sleep(0.5)
-                                                st.rerun()
-                                            except Exception as e:
-                                                st.error(f"Error: {e}")
-                                else:
-                                    st.caption(f"Carpeta: {unit}")
-                            with col_u_act:
-                                if f"ren_u_{unit}" not in st.session_state:
-                                    c_u_ren, c_u_del = st.columns([1, 1])
-                                    with c_u_ren:
-                                        if st.button("✏️", key=f"btn_ren_u_{unit}", help="Renombrar Carpeta"):
-                                            st.session_state[f"ren_u_{unit}"] = True
+        st.markdown(f"##### 📂 Contenido Guardado ({st.session_state.get('current_course', 'Sin Curso')}):")
+        
+        current_course_id = st.session_state.get('current_course_id')
+        if current_course_id:
+            from database import get_units, delete_unit, rename_unit, get_files, delete_file, rename_file, get_file_content
+            
+            db_units = get_units(current_course_id)
+            
+            if not db_units:
+                st.info("📭 La biblioteca está vacía. Sube archivos arriba.")
+            
+            for unit in db_units:
+                u_id = unit['id']
+                u_name = unit['name']
+                
+                # Icon logic
+                icon = "🧠" if u_name == "00_Memoria_Global" else "📁"
+                label = "Memoria GLOBAL (Siempre activa)" if u_name == "00_Memoria_Global" else u_name
+                
+                with st.expander(f"{icon} {label}"):
+                    # --- UNIT MANAGEMENT ---
+                    if u_name != "00_Memoria_Global":
+                        col_u_ren, col_u_act = st.columns([0.8, 0.2])
+                        with col_u_ren:
+                            # Rename Unit Interface
+                            if f"ren_u_{u_id}" in st.session_state:
+                                new_u_name = st.text_input("Nuevo nombre carpeta:", value=u_name, key=f"in_u_{u_id}")
+                                if st.button("Guardar Nombre", key=f"save_u_{u_id}"):
+                                    if new_u_name and new_u_name != u_name:
+                                        if rename_unit(u_id, new_u_name):
+                                            del st.session_state[f"ren_u_{u_id}"]
+                                            st.success("Carpeta renombrada!")
+                                            time.sleep(0.5)
                                             st.rerun()
-                                    with c_u_del:
-                                        # Confirm Delete Logic
-                                        if f"conf_del_u_{unit}" not in st.session_state:
-                                            if st.button("🗑️", key=f"btn_del_u_{unit}", help="Borrar Carpeta Completa"):
-                                                st.session_state[f"conf_del_u_{unit}"] = True
-                                                st.rerun()
                                         else:
-                                            if st.button("🔥", key=f"confirm_del_u_{unit}", help="¿Seguro? ¡Se borrará todo!"):
-                                                import shutil
-                                                shutil.rmtree(unit_path)
-                                                del st.session_state[f"conf_del_u_{unit}"]
-                                                st.rerun()
-                                            st.caption("¿Confirmar?")
-
-                        # --- FILE MANAGEMENT ---
-                        files = os.listdir(unit_path)
-                        if not files: st.caption("Vacío")
-                        
-                        for f in files:
-                            f_path = os.path.join(unit_path, f)
-                            
-                            # Single Row Layout: [Icon(5%) Name(65%) View(10%) Edit(10%) Del(10%)]
-                            # vertical_alignment="center" ensures buttons align with text
-                            c_icon, c_name, c_view, c_edit, c_del = st.columns([0.05, 0.65, 0.1, 0.1, 0.1], vertical_alignment="center")
-                            
-                            with c_icon:
-                                st.markdown("📄")
-                                
-                            with c_name:
-                                # Rename File Interface
-                                if f"ren_f_{f_path}" in st.session_state:
-                                    new_f_name = st.text_input("Renombrar:", value=f, key=f"in_f_{f_path}", label_visibility="collapsed")
-                                    if st.button("💾", key=f"save_f_{f_path}", help="Guardar nombre"):
-                                        if new_f_name and new_f_name != f:
-                                            try:
-                                                os.rename(f_path, os.path.join(unit_path, new_f_name))
-                                                del st.session_state[f"ren_f_{f_path}"]
-                                                st.rerun()
-                                            except Exception as e:
-                                                st.error(f"Error: {e}")
-                                else:
-                                    # Use caption or markdown to make it standard text size but aligned
-                                    st.markdown(f"{f}")
-                            
-                            if f"ren_f_{f_path}" not in st.session_state:
-                                with c_view:
-                                    # Toggle View
-                                    view_key = f"view_f_{f_path}"
-                                    icon_view = "👁️" if not st.session_state.get(view_key, False) else "🙈"
-                                    if st.button(icon_view, key=f"btn_view_{f_path}", help="Ver/Ocultar contenido"):
-                                        st.session_state[view_key] = not st.session_state.get(view_key, False)
-                                        st.rerun()
-                                        
-                                with c_edit:
-                                    if st.button("✏️", key=f"edit_{f_path}", help="Renombrar archivo"):
-                                        st.session_state[f"ren_f_{f_path}"] = True
-                                        st.rerun()
-                                with c_del:
-                                    if st.button("🗑️", key=f"del_{f_path}", help="Borrar archivo permanente"):
-                                        try:
-                                            os.remove(f_path)
-                                            st.rerun()
-                                        except Exception as e:
-                                            st.error(f"Error: {e}")
+                                            st.error("Error al renombrar.")
                             else:
-                                # Cancel button when renaming
-                                with c_view:
-                                    if st.button("❌", key=f"cancel_{f_path}", help="Cancelar"):
-                                        del st.session_state[f"ren_f_{f_path}"]
+                                st.caption(f"Carpeta: {u_name}")
+                        with col_u_act:
+                            if f"ren_u_{u_id}" not in st.session_state:
+                                c_u_ren, c_u_del = st.columns([1, 1])
+                                with c_u_ren:
+                                    if st.button("✏️", key=f"btn_ren_u_{u_id}", help="Renombrar Carpeta"):
+                                        st.session_state[f"ren_u_{u_id}"] = True
                                         st.rerun()
+                                with c_u_del:
+                                    # Confirm Delete Logic
+                                    if f"conf_del_u_{u_id}" not in st.session_state:
+                                        if st.button("🗑️", key=f"btn_del_u_{u_id}", help="Borrar Carpeta Completa"):
+                                            st.session_state[f"conf_del_u_{u_id}"] = True
+                                            st.rerun()
+                                    else:
+                                        if st.button("🔥", key=f"confirm_del_u_{u_id}", help="¿Seguro? ¡Se borrará todo!"):
+                                            if delete_unit(u_id):
+                                                del st.session_state[f"conf_del_u_{u_id}"]
+                                                st.rerun()
+                                            else:
+                                                st.error("Error borrando unidad.")
+                                        st.caption("¿Confirmar?")
+
+                    # --- FILE MANAGEMENT ---
+                    files = get_files(u_id)
+                    if not files: st.caption("Vacío")
+                    
+                    for f in files:
+                        f_id = f['id']
+                        f_name = f['name']
+                        
+                        # Single Row Layout: [Icon(5%) Name(65%) View(10%) Edit(10%) Del(10%)]
+                        c_icon, c_name, c_view, c_edit, c_del = st.columns([0.05, 0.65, 0.1, 0.1, 0.1], vertical_alignment="center")
+                        
+                        with c_icon:
+                            st.markdown("📄")
                             
-                            # CONTENT VIEWER
-                            if st.session_state.get(f"view_f_{f_path}", False):
-                                try:
-                                    with open(f_path, "r", encoding="utf-8") as f_read:
-                                        content_view = f_read.read()
-                                    st.info(f"📜 Contenido de: {f}")
-                                    st.code(content_view, language="markdown")
-                                    if st.button("Cerrar Visualización", key=f"close_{f_path}"):
-                                        st.session_state[f"view_f_{f_path}"] = False
+                        with c_name:
+                            # Rename File Interface
+                            if f"ren_f_{f_id}" in st.session_state:
+                                new_f_name = st.text_input("Renombrar:", value=f_name, key=f"in_f_{f_id}", label_visibility="collapsed")
+                                if st.button("💾", key=f"save_f_{f_id}", help="Guardar nombre"):
+                                    if new_f_name and new_f_name != f_name:
+                                        if rename_file(f_id, new_f_name):
+                                            del st.session_state[f"ren_f_{f_id}"]
+                                            st.rerun()
+                                        else:
+                                            st.error("Error renovando archivo.")
+                            else:
+                                st.markdown(f"{f_name}")
+                        
+                        if f"ren_f_{f_id}" not in st.session_state:
+                            with c_view:
+                                # Toggle View
+                                view_key = f"view_f_{f_id}"
+                                icon_view = "👁️" if not st.session_state.get(view_key, False) else "🙈"
+                                if st.button(icon_view, key=f"btn_view_{f_id}", help="Ver/Ocultar contenido"):
+                                    st.session_state[view_key] = not st.session_state.get(view_key, False)
+                                    st.rerun()
+                                    
+                            with c_edit:
+                                if st.button("✏️", key=f"edit_{f_id}", help="Renombrar archivo"):
+                                    st.session_state[f"ren_f_{f_id}"] = True
+                                    st.rerun()
+                            with c_del:
+                                if st.button("🗑️", key=f"del_{f_id}", help="Borrar archivo permanente"):
+                                    if delete_file(f_id):
                                         st.rerun()
-                                except Exception as e:
-                                    st.error(f"No se pudo leer el archivo: {e}")
+                                    else:
+                                        st.error("Error borrando archivo.")
+                        else:
+                            # Cancel button when renaming
+                            with c_view:
+                                if st.button("❌", key=f"cancel_{f_id}", help="Cancelar"):
+                                    del st.session_state[f"ren_f_{f_id}"]
+                                    st.rerun()
+                        
+                        # CONTENT VIEWER
+                        if st.session_state.get(f"view_f_{f_id}", False):
+                            content_view = get_file_content(f_id)
+                            st.info(f"📜 Contenido de: {f_name}")
+                            st.code(content_view, language="markdown")
+                            if st.button("Cerrar Visualización", key=f"close_{f_id}"):
+                                st.session_state[f"view_f_{f_id}"] = False
+                                st.rerun()
     
     # --- RIGHT COLUMN: HOMEWORK SOLVER ---
     with col_task:
@@ -1347,22 +1244,27 @@ with tab5:
         # 1. Select Context
         st.markdown("**1. ¿Qué conocimientos uso?** (Selección por Unidad)")
         
-        # Check for Global Memory
-        global_path = os.path.join(lib_root, "00_Memoria_Global")
-        has_global = os.path.exists(global_path) and os.listdir(global_path)
+        # DB Logic for Context Selection
+        from database import get_units, get_unit_context
+        
+        current_course_id = st.session_state.get('current_course_id')
+        db_units = get_units(current_course_id) if current_course_id else []
+        
+        # Find Global Unit
+        global_unit = next((u for u in db_units if u['name'] == "00_Memoria_Global"), None)
+        has_global = global_unit is not None
         
         if has_global:
-            global_files = [f for f in os.listdir(global_path) if f.endswith(".txt")]
-            st.success(f"✅ **Memoria Global Activa:** Usando {len(global_files)} archivos base (Temarios/Reglas).")
+            st.success(f"✅ **Memoria Global Activa** (Temarios/Reglas).")
             
         st.caption("ℹ️ Además de la Memoria Global, selecciona las unidades específicas para esta tarea:")
         
-        available_units = []
-        if os.path.exists(lib_root):
-            # Exclude Global from selection list to avoid redundancy
-            available_units = [d for d in os.listdir(lib_root) if os.path.isdir(os.path.join(lib_root, d)) and d != "00_Memoria_Global"]
+        # Filter available units (excluding Global)
+        available_units_objs = [u for u in db_units if u['name'] != "00_Memoria_Global"]
+        available_unit_names = [u['name'] for u in available_units_objs]
+        unit_map = {u['name']: u['id'] for u in available_units_objs}
         
-        selected_units = st.multiselect("Unidades Específicas:", available_units, placeholder="Ej: Unidad 1...")
+        selected_units = st.multiselect("Unidades Específicas:", available_unit_names, placeholder="Ej: Unidad 1...")
         
         # 2. Input Task
         st.markdown("**2. Tu Tarea:**")
@@ -1388,17 +1290,16 @@ with tab5:
                 
                 # 1. Add Global Context
                 if has_global:
-                    for f_name in os.listdir(global_path):
-                         with open(os.path.join(global_path, f_name), "r", encoding="utf-8") as f:
-                                gathered_texts.append(f"--- [MEMORIA GLOBAL / OBLIGATORIO]: {f_name} ---\n{f.read()}\n")
+                    g_text = get_unit_context(global_unit['id'])
+                    if g_text:
+                        gathered_texts.append(f"--- [MEMORIA GLOBAL / OBLIGATORIO] ---\n{g_text}\n")
 
                 # 2. Add Selected Units
-                for unit in selected_units:
-                    unit_path = os.path.join(lib_root, unit)
-                    for f_name in os.listdir(unit_path):
-                        if f_name.endswith(".txt") or f_name.endswith(".md"):
-                            with open(os.path.join(unit_path, f_name), "r", encoding="utf-8") as f:
-                                gathered_texts.append(f"--- ARCHIVO: {unit}/{f_name} ---\n{f.read()}\n")
+                for u_name in selected_units:
+                    u_id = unit_map[u_name]
+                    u_text = get_unit_context(u_id)
+                    if u_text:
+                        gathered_texts.append(u_text)
                 
                 # Prepare Attachment
                 attachment_data = None
@@ -1411,14 +1312,6 @@ with tab5:
                 with st.spinner("Analizando caso... (Modo Experto)" if arg_mode else "Consultando biblioteca..."):
                     try:
                         if arg_mode:
-                            # Context files structure for arg mode is list of dicts?
-                            # Current gathered_texts is list of strings.
-                            # Changing study_assistant to accept list of strings as usual or list of dicts.
-                            # Wait, solve_argumentative_task expects context_files=[], global_context=""
-                            # gather_texts currently merges everything.
-                            # Let's just pass the merged text as global_context for simplicity, 
-                            # or re-parse gathered_texts into the list format if highly needed.
-                            # Simpler: Pass merged text as "global_context" strings.
                             full_context_str = "\n".join(gathered_texts)
                             solution = assistant.solve_argumentative_task(task_prompt, context_files=[], global_context=full_context_str)
                         else:

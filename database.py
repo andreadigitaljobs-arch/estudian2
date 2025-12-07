@@ -143,3 +143,52 @@ def rename_file(file_id, new_name):
         supabase.table("files").update({"name": new_name}).eq("id", file_id).execute()
         return True
     except: return False
+
+def get_course_full_context(course_id):
+    """
+    Efficiently fetches all text content for a course (from all units).
+    Returns a string with concatenated content.
+    """
+    supabase = init_supabase()
+    try:
+        # 1. Get all units for course
+        units = supabase.table("units").select("id, name").eq("course_id", course_id).execute().data
+        if not units: return ""
+        
+        unit_ids = [u['id'] for u in units]
+        unit_map = {u['id']: u['name'] for u in units}
+        
+        # 2. Get all files for these units
+        # Supabase Python client 'in_' filter for array
+        files = supabase.table("files").select("unit_id, name, content_text").in_("unit_id", unit_ids).execute().data
+        
+        full_context = ""
+        for f in files:
+            u_name = unit_map.get(f['unit_id'], "Unknown Unit")
+            if f['content_text']:
+                full_context += f"\n--- ARCHIVO: {u_name}/{f['name']} ---\n{f['content_text']}\n"
+                
+        return full_context
+    except Exception as e:
+        print(f"Error fetching global context: {e}")
+        return ""
+
+def get_unit_context(unit_id):
+    """
+    Efficiently fetches text content for a specific unit.
+    """
+    supabase = init_supabase()
+    try:
+        # Get unit name for labeling
+        u_res = supabase.table("units").select("name").eq("id", unit_id).single().execute()
+        u_name = u_res.data['name'] if u_res.data else "Unknown Unit"
+        
+        # Get files
+        files = supabase.table("files").select("name, content_text").eq("unit_id", unit_id).execute().data
+        
+        unit_text = ""
+        for f in files:
+            if f['content_text']:
+                unit_text += f"\n--- ARCHIVO: {u_name}/{f['name']} ---\n{f['content_text']}\n"
+        return unit_text
+    except: return ""
