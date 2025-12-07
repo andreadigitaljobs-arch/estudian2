@@ -7,6 +7,7 @@ from study_assistant import StudyAssistant
 from PIL import Image, ImageGrab
 import shutil
 import time
+import datetime
 import extra_streamlit_components as stx  # --- PERSISTENCE ---
 
 # --- PAGE CONFIG MUST BE FIRST ---
