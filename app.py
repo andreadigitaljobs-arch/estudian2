@@ -337,7 +337,7 @@ div[data-testid="stDecoration"] {
     img {
         border-radius: 20px;
     }
-""
+
     
     /* Custom Button Styling (Transparent Icon Button) */
     div.stButton > button.copy-btn {
