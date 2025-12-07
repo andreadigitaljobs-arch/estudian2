@@ -11,6 +11,16 @@ import time
 # --- PAGE CONFIG MUST BE FIRST ---
 st.set_page_config(page_title="Estudian2", page_icon="🎓", layout="wide")
 
+# --- SESSION STATE INITIALIZATION ---
+if 'transcript_history' not in st.session_state: st.session_state['transcript_history'] = []
+if 'notes_result' not in st.session_state: st.session_state['notes_result'] = ""
+if 'guide_result' not in st.session_state: st.session_state['guide_result'] = ""
+if 'quiz_results' not in st.session_state: st.session_state['quiz_results'] = []
+if 'pasted_images' not in st.session_state: st.session_state['pasted_images'] = []
+if 'quiz_key' not in st.session_state: st.session_state['quiz_key'] = 0
+if 'tutor_chat_history' not in st.session_state: st.session_state['tutor_chat_history'] = []
+if 'current_course' not in st.session_state: st.session_state['current_course'] = None
+
 # --- AUTHENTICATION CHECK ---
 if 'user' not in st.session_state:
     st.session_state['user'] = None
