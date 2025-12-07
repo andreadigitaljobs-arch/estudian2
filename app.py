@@ -11,6 +11,45 @@ import time
 # --- PAGE CONFIG MUST BE FIRST ---
 st.set_page_config(page_title="Estudian2", page_icon="🎓", layout="wide")
 
+# --- AUTHENTICATION CHECK ---
+if 'user' not in st.session_state:
+    st.session_state['user'] = None
+
+# If not logged in, show Login Screen and STOP
+if not st.session_state['user']:
+    st.markdown("## 🔐 Iniciar Sesión en Estudian2")
+    st.caption("Modo Nube Multi-Usuario (Supabase)")
+    
+    # Simple formatting for Login
+    tab_login, tab_signup = st.tabs(["Ingresar", "Registrarse"])
+    
+    with tab_login:
+        email = st.text_input("Email", key="login_email")
+        password = st.text_input("Contraseña", type="password", key="login_pass")
+        if st.button("Entrar", key="btn_login"):
+            from database import sign_in
+            user = sign_in(email, password)
+            if user:
+                st.session_state['user'] = user
+                st.success(f"¡Bienvenido!")
+                time.sleep(1)
+                st.rerun()
+            else:
+                st.error("Credenciales incorrectas o error de conexión.")
+
+    with tab_signup:
+        new_email = st.text_input("Email", key="reg_email")
+        new_pass = st.text_input("Contraseña", type="password", key="reg_pass")
+        if st.button("Crear Cuenta", key="btn_reg"):
+            from database import sign_up
+            user = sign_up(new_email, new_pass)
+            if user:
+                st.success("Cuenta creada. Por favor inicia sesión.")
+            else:
+                st.error("Error al crear cuenta.")
+    
+    st.stop() # Stop execution here if not logged in
+
 # --- CONFIGURATION & MIGRATION ---
 CORE_OUTPUT_ROOT = "output"
 
@@ -398,6 +437,14 @@ div[data-testid="stDecoration"] {
 
 # Sidebar
 with st.sidebar:
+    # --- USER PROFILE ---
+    if st.session_state.get('user'):
+        st.markdown(f"👤 **{st.session_state['user'].email}**")
+        if st.button("Cerrar Sesión", key="logout_btn", use_container_width=True):
+            st.session_state['user'] = None
+            st.rerun()
+        st.divider()
+
     # --- SPOTLIGHT SEARCH (Universal) ---
     st.markdown("### 🔍 Spotlight Académico")
     search_query = st.text_input("¿Qué buscas hoy?", placeholder="Ej: 'Concepto de Lead' o 'Relación entre X y Y'")
