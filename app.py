@@ -1160,6 +1160,9 @@ with tab5:
                                     st.success(f"Carpeta '{unit_name_input}' creada.")
                                     time.sleep(1)
                                     st.rerun()
+                                else:
+                                    st.error("⛔ Error de Permisos: No se pudo crear la carpeta. \nPosible causa: Este Diplomado fue creado en una sesión anterior. \nSOLUCIÓN: Crea un **Nuevo Diplomado** en la barra lateral.")
+
                 else:
                     found = next((u for u in db_units if u['name'] == sel_opt), None)
                     if found: target_unit_id = found['id']
@@ -1191,14 +1194,20 @@ with tab5:
                     # 1. Resolve Target Unit
                     if is_global and not target_unit_id:
                          ur = create_unit(current_course_id, "00_Memoria_Global")
-                         if ur: target_unit_id = ur['id']
+                         if ur: 
+                            target_unit_id = ur['id']
+                         else:
+                            st.error("⛔ Error creando Memoria Global. Prueba creando un Nuevo Diplomado.")
                     
                     if not is_global and not target_unit_id and unit_name_input:
                          ur = create_unit(current_course_id, unit_name_input)
-                         if ur: target_unit_id = ur['id']
+                         if ur: 
+                            target_unit_id = ur['id']
+                         else:
+                            st.error("⛔ Error creando carpeta. ¿Eres el dueño de este Diplomado? Intenta crear uno nuevo.")
                     
                     if not target_unit_id:
-                        st.error("Error: No se ha definido o creado la carpeta destino.")
+                        st.warning("⚠️ No se seleccionó ni se pudo crear la carpeta destino.")
                     else:
                         success_count = 0
                         
@@ -1254,85 +1263,6 @@ with tab5:
                                     time.sleep(1)
                                     st.rerun()
 
-        # --- BULK IMPORT (CHAT RESCUE) ---
-        with st.expander("📥 Importar Historial de Chat (Rescatar Datos)", expanded=False):
-            st.caption("Sube un archivo .txt con todo tu historial de ChatGPT desordenado. La IA lo organizará por temas.")
-            chat_file = st.file_uploader("Subir Log de Chat (.txt)", type=['txt'], key="bulk_chat_upl")
-            
-            if chat_file and st.button("🧩 Procesar y Organizar", key="proc_bulk"):
-                raw_text = chat_file.getvalue().decode("utf-8", errors='ignore')
-                with st.spinner("⏳ Leyendo tu historial masivo y organizando temas... (Esto puede tardar un poco)"):
-                    structured_data = assistant.process_bulk_chat(raw_text)
-                    st.session_state['bulk_import_data'] = structured_data
-            
-            # Review and Save
-            if 'bulk_import_data' in st.session_state and st.session_state['bulk_import_data']:
-                st.divider()
-                st.markdown("#### 🧐 Vista Previa de Temas Detectados")
-                
-                # Fetch available units from DB
-                from database import get_units, create_unit, upload_file_to_db
-                
-                current_course_id = st.session_state.get('current_course_id')
-                db_units = get_units(current_course_id) if current_course_id else []
-                existing_folders = [u['name'] for u in db_units]
-                
-                # Default "Rescate" if exists, otherwise first one
-                default_idx = 0
-                if "01_Rescate_Importado" in existing_folders:
-                     default_idx = existing_folders.index("01_Rescate_Importado")
-                
-                target_option = st.selectbox(
-                    "¿Dónde guardamos estos archivos?", 
-                    options=existing_folders + ["✨ Nueva Carpeta..."],
-                    index=default_idx if existing_folders else 0
-                )
-                
-                new_folder_name = "01_Rescate_Importado"
-                if target_option == "✨ Nueva Carpeta...":
-                    new_folder_name = st.text_input("Nombre de la Nueva Carpeta:", value="01_Rescate_Importado")
-                else:
-                    new_folder_name = target_option
-                
-                valid_items = [item for item in st.session_state['bulk_import_data'] if 'title' in item and 'content' in item]
-                
-                for idx, item in enumerate(valid_items):
-                    with st.expander(f"📄 {item['title']}"):
-                        st.markdown(item['content'][:500] + "...")
-                
-                if st.button(f"💾 Guardar {len(valid_items)} Archivos en Biblioteca", key="save_bulk_all"):
-                    if not current_course_id:
-                        st.error("Selecciona un curso primero.")
-                    else:
-                        # Create Unit if needed
-                        target_unit_id = None
-                        if target_option == "✨ Nueva Carpeta...":
-                             u_res = create_unit(current_course_id, new_folder_name)
-                             if u_res: target_unit_id = u_res['id']
-                        else:
-                             # Find ID
-                             found = next((u for u in db_units if u['name'] == target_option), None)
-                             if found: target_unit_id = found['id']
-                        
-                        if target_unit_id:
-                            saved_count = 0
-                            progress_bar = st.progress(0)
-                            for idx, item in enumerate(valid_items):
-                                # Sanitize filename
-                                safe_title = "".join([c if c.isalnum() else "_" for c in item['title']])
-                                fname = f"{safe_title}.md"
-                                upload_file_to_db(target_unit_id, fname, item['content'], "text")
-                                saved_count += 1
-                                progress_bar.progress((idx + 1) / len(valid_items))
-                            
-                            st.success(f"✅ ¡{saved_count} temas rescatados y guardados en '{new_folder_name}'!")
-                            st.session_state['bulk_import_data'] = None # Clear after save
-                            import time
-                            time.sleep(1)
-                            st.rerun()
-                        else:
-                             st.error("No se pudo obtener la carpeta destino.")
-
         # Show existing library
         st.markdown(f"##### 📂 Contenido Guardado ({st.session_state.get('current_course', 'Sin Curso')}):")
         
@@ -1344,8 +1274,6 @@ with tab5:
             
             if not db_units:
                 st.info("📭 La biblioteca está vacía. Sube archivos arriba.")
-                # Removed Debug Expander for production
-
             
             for unit in db_units:
                 u_id = unit['id']
@@ -1458,6 +1386,85 @@ with tab5:
                             if st.button("Cerrar Visualización", key=f"close_{f_id}"):
                                 st.session_state[f"view_f_{f_id}"] = False
                                 st.rerun()
+
+        # --- BULK IMPORT (CHAT RESCUE) ---
+        with st.expander("📥 Importar Historial de Chat (Rescatar Datos)", expanded=False):
+            st.caption("Sube un archivo .txt con todo tu historial de ChatGPT desordenado. La IA lo organizará por temas.")
+            chat_file = st.file_uploader("Subir Log de Chat (.txt)", type=['txt'], key="bulk_chat_upl")
+            
+            if chat_file and st.button("🧩 Procesar y Organizar", key="proc_bulk"):
+                raw_text = chat_file.getvalue().decode("utf-8", errors='ignore')
+                with st.spinner("⏳ Leyendo tu historial masivo y organizando temas... (Esto puede tardar un poco)"):
+                    structured_data = assistant.process_bulk_chat(raw_text)
+                    st.session_state['bulk_import_data'] = structured_data
+            
+            # Review and Save
+            if 'bulk_import_data' in st.session_state and st.session_state['bulk_import_data']:
+                st.divider()
+                st.markdown("#### 🧐 Vista Previa de Temas Detectados")
+                
+                # Fetch available units from DB
+                from database import get_units, create_unit, upload_file_to_db
+                
+                current_course_id = st.session_state.get('current_course_id')
+                db_units = get_units(current_course_id) if current_course_id else []
+                existing_folders = [u['name'] for u in db_units]
+                
+                # Default "Rescate" if exists, otherwise first one
+                default_idx = 0
+                if "01_Rescate_Importado" in existing_folders:
+                     default_idx = existing_folders.index("01_Rescate_Importado")
+                
+                target_option = st.selectbox(
+                    "¿Dónde guardamos estos archivos?", 
+                    options=existing_folders + ["✨ Nueva Carpeta..."],
+                    index=default_idx if existing_folders else 0
+                )
+                
+                new_folder_name = "01_Rescate_Importado"
+                if target_option == "✨ Nueva Carpeta...":
+                    new_folder_name = st.text_input("Nombre de la Nueva Carpeta:", value="01_Rescate_Importado")
+                else:
+                    new_folder_name = target_option
+                
+                valid_items = [item for item in st.session_state['bulk_import_data'] if 'title' in item and 'content' in item]
+                
+                for idx, item in enumerate(valid_items):
+                    with st.expander(f"📄 {item['title']}"):
+                        st.markdown(item['content'][:500] + "...")
+                
+                if st.button(f"💾 Guardar {len(valid_items)} Archivos en Biblioteca", key="save_bulk_all"):
+                    if not current_course_id:
+                        st.error("Selecciona un curso primero.")
+                    else:
+                        # Create Unit if needed
+                        target_unit_id = None
+                        if target_option == "✨ Nueva Carpeta...":
+                             u_res = create_unit(current_course_id, new_folder_name)
+                             if u_res: target_unit_id = u_res['id']
+                        else:
+                             # Find ID
+                             found = next((u for u in db_units if u['name'] == target_option), None)
+                             if found: target_unit_id = found['id']
+                        
+                        if target_unit_id:
+                            saved_count = 0
+                            progress_bar = st.progress(0)
+                            for idx, item in enumerate(valid_items):
+                                # Sanitize filename
+                                safe_title = "".join([c if c.isalnum() else "_" for c in item['title']])
+                                fname = f"{safe_title}.md"
+                                upload_file_to_db(target_unit_id, fname, item['content'], "text")
+                                saved_count += 1
+                                progress_bar.progress((idx + 1) / len(valid_items))
+                            
+                            st.success(f"✅ ¡{saved_count} temas rescatados y guardados en '{new_folder_name}'!")
+                            st.session_state['bulk_import_data'] = None # Clear after save
+                            import time
+                            time.sleep(1)
+                            st.rerun()
+                        else:
+                             st.error("No se pudo obtener la carpeta destino.")
     
     # --- RIGHT COLUMN: HOMEWORK SOLVER ---
     with col_task:
