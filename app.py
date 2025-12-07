@@ -1122,12 +1122,13 @@ with tab5:
         st.caption("Organiza aquí la 'Verdad Absoluta' del curso.")
         
         with st.expander("📤 Alimentar Memoria (Subir Contenido)", expanded=True):
+            # --- 1. DESTINO (Where?) ---
             st.markdown("##### 1. Destino")
-            is_global = st.checkbox("📌 Es Información Global (Temario, Reglas, Formatos)", help="Si marcas esto, estos archivos se usarán SIEMPRE en todas las tareas, sin que tengas que seleccionarlos.", value=False)
+            is_global = st.checkbox("📌 Es Información Global (Temario, Reglas, Formatos)", help="Si marcas esto, estos archivos se usarán SIEMPRE en todas las tareas.", value=False)
             
             # Helper: Get Units
             from database import get_units, create_unit, upload_file_to_db
-            import os # Ensure os is available
+            import os 
             
             current_course_id = st.session_state.get('current_course_id')
             db_units = get_units(current_course_id) if current_course_id else []
@@ -1141,21 +1142,53 @@ with tab5:
                 if global_unit: target_unit_id = global_unit['id']
             else:
                 existing_names = [u['name'] for u in db_units if u['name'] != "00_Memoria_Global"]
-                sel_opt = st.selectbox("Selecciona Unidad:", ["✨ Nueva Carpeta..."] + existing_names)
+                # Use columns for smoother layout
+                c_sel, c_new = st.columns([1, 1])
+                
+                with c_sel:
+                    sel_opt = st.selectbox("Selecciona Carpeta:", ["✨ Nueva Carpeta..."] + existing_names)
+                
                 if sel_opt == "✨ Nueva Carpeta...":
-                    unit_name_input = st.text_input("Nombre de la Nueva Carpeta", placeholder="Ej: Unidad 1")
+                    with c_new:
+                        unit_name_input = st.text_input("Nombre de la Nueva Carpeta", placeholder="Ej: Unidad 1").strip()
+                        # Button to create folder ONLY
+                        if unit_name_input and st.button("Crear Solo Carpeta", key="btn_create_only"):
+                            if not current_course_id:
+                                st.error("Sin diplomado.")
+                            else:
+                                if create_unit(current_course_id, unit_name_input):
+                                    st.success(f"Carpeta '{unit_name_input}' creada.")
+                                    time.sleep(1)
+                                    st.rerun()
                 else:
                     found = next((u for u in db_units if u['name'] == sel_opt), None)
                     if found: target_unit_id = found['id']
-            
+
+            st.divider()
+
+            # --- 2. CONTENIDO (What?) ---
             st.markdown("##### 2. Contenido")
-            upl_files = st.file_uploader("Sube archivos (PDF, TXT, MD)", type=['pdf', 'txt', 'md'], accept_multiple_files=True, key="manual_upl_files")
             
-            if upl_files and st.button("💾 Guardar en Memoria", key="save_manual_upl"):
+            # FILE NAME INPUT (Requested by User)
+            topic_name = st.text_input("Tema / Título del Archivo (Opcional)", placeholder="Ej: Publico_Objetivo").strip()
+            
+            # SOURCE SELECTION
+            source_type = st.radio("Formato:", ["📂 Subir Archivos", "📝 Pegar Texto"], horizontal=True)
+            
+            pasted_text = ""
+            upl_files = []
+            
+            if source_type == "📂 Subir Archivos":
+                upl_files = st.file_uploader("Sube archivos (PDF, TXT, MD)", type=['pdf', 'txt', 'md'], accept_multiple_files=True, key="manual_upl_files")
+            else:
+                pasted_text = st.text_area("Pega tu texto aquí:", height=150, placeholder="Copia y pega el contenido aquí...")
+
+            # --- ACTION BUTTON ---
+            if st.button("💾 Guardar en Memoria", key="save_manual_upl", type="primary"):
                 if not current_course_id:
                      st.error("Selecciona un diplomado primero.")
                 else:
-                    # Resolve Target
+                    # 1. Resolve Target Unit
                     if is_global and not target_unit_id:
                          ur = create_unit(current_course_id, "00_Memoria_Global")
                          if ur: target_unit_id = ur['id']
@@ -1165,30 +1198,61 @@ with tab5:
                          if ur: target_unit_id = ur['id']
                     
                     if not target_unit_id:
-                        st.error("Error: No se pudo crear/encontrar la carpeta.")
+                        st.error("Error: No se ha definido o creado la carpeta destino.")
                     else:
                         success_count = 0
-                        with st.spinner("Subiendo archivos..."):
-                            for f in upl_files:
-                                content = ""
-                                f_name = f.name
-                                try:
-                                    if f.type == "application/pdf":
-                                        content = assistant.extract_text_from_pdf(f.getvalue(), f.type)
-                                        f_name = f"{os.path.splitext(f.name)[0]}.txt"
-                                    else:
-                                        content = f.getvalue().decode("utf-8", errors='ignore')
-                                    
-                                    if upload_file_to_db(target_unit_id, f_name, content, "text"):
-                                        success_count += 1
-                                except Exception as ex:
-                                    st.error(f"Error procesando {f.name}: {ex}")
                         
-                        if success_count > 0:
-                            st.success(f"✅ {success_count} archivos guardados.")
-                            import time
-                            time.sleep(1)
-                            st.rerun()
+                        # LOGIC: PASTE TEXT
+                        if source_type == "📝 Pegar Texto":
+                            if not pasted_text:
+                                st.warning("El cuadro de texto está vacío.")
+                            elif not topic_name:
+                                st.warning("Por favor, escribe un 'Tema / Título' para este texto.")
+                            else:
+                                # Save text
+                                safe_name = "".join([c if c.isalnum() else "_" for c in topic_name]) + ".txt"
+                                if upload_file_to_db(target_unit_id, safe_name, pasted_text, "text"):
+                                    st.success(f"✅ Texto guardado como '{safe_name}'")
+                                    time.sleep(1)
+                                    st.rerun()
+
+                        # LOGIC: UPLOAD FILES
+                        else:
+                            if not upl_files:
+                                st.warning("No has seleccionado archivos.")
+                            else:
+                                with st.spinner("Subiendo archivos..."):
+                                    for idx, f in enumerate(upl_files):
+                                        content = ""
+                                        # Use topic_name only for the first file if multiple, or append suffix?
+                                        # If multiple files, topic_name might overwrite. 
+                                        # Strategy: If topic_name exists, use it. If multiple, append index.
+                                        
+                                        base_name = f.name
+                                        if topic_name:
+                                            # If single file, use topic name. If multiple, topic_1, topic_2...
+                                            if len(upl_files) == 1:
+                                                base_name = topic_name + os.path.splitext(f.name)[1]
+                                            else:
+                                                base_name = f"{topic_name}_{idx+1}{os.path.splitext(f.name)[1]}"
+                                        
+                                        try:
+                                            if f.type == "application/pdf":
+                                                content = assistant.extract_text_from_pdf(f.getvalue(), f.type)
+                                                # Ensure .txt extension for text storage check
+                                                if not base_name.endswith(".txt"): base_name = os.path.splitext(base_name)[0] + ".txt"
+                                            else:
+                                                content = f.getvalue().decode("utf-8", errors='ignore')
+                                            
+                                            if upload_file_to_db(target_unit_id, base_name, content, "text"):
+                                                success_count += 1
+                                        except Exception as ex:
+                                            st.error(f"Error procesando {f.name}: {ex}")
+                                
+                                if success_count > 0:
+                                    st.success(f"✅ {success_count} archivos guardados.")
+                                    time.sleep(1)
+                                    st.rerun()
 
         # --- BULK IMPORT (CHAT RESCUE) ---
         with st.expander("📥 Importar Historial de Chat (Rescatar Datos)", expanded=False):
