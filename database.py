@@ -15,6 +15,8 @@ def init_supabase():
             try:
                 sess = st.session_state['supabase_session']
                 client.auth.set_session(sess.access_token, sess.refresh_token)
+                # FORCE POSTGREST AUTH HEADER
+                client.postgrest.auth(sess.access_token)
             except Exception as e:
                 print(f"Auth Hydration Error: {e}")
                 
