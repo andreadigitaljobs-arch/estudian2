@@ -680,12 +680,13 @@ with tab2:
          render_image_card("illustration_notes_1765052810428.png")
          
     with col_text:
-        st.markdown("""
-        <div class="card-text">
-            <h2 style="margin-top:0;">2. Generador de Apuntes</h2>
-            <p style="color: #64748b; font-size: 1.1rem;">Convierte transcripciones en apuntes claros y concisos.</p>
-        </div>
-        """, unsafe_allow_html=True)
+    tab2_html = '''
+    <div class="card-text">
+        <h2 style="margin-top:0;">2. Generador de Apuntes</h2>
+        <p style="color: #64748b; font-size: 1.1rem;">Convierte transcripciones en apuntes claros y concisos.</p>
+    </div>
+    '''
+    st.markdown(tab2_html, unsafe_allow_html=True)
         
         c_id = st.session_state.get('current_course_id')
         if not c_id:
