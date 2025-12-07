@@ -1403,7 +1403,7 @@ with tab5:
                 else:
                     full_text_response = str(res)
                 
-                bridge_msg = f"""
+                bridge_msg = f'''
                 Hola Profe IA. Acabo de generar una respuesta para esta tarea:
                 
                 **CONSIGNA:**
@@ -1413,7 +1413,7 @@ with tab5:
                 {full_text_response}
                 
                 Quiero que analicemos esto. Qué opinas? Podemos mejorarlo?
-                """
+                '''
                 
                 # Check if history exists
                 if 'tutor_chat_history' not in st.session_state:
@@ -1448,12 +1448,13 @@ with tab5:
 if 'tutor_chat_history' not in st.session_state: st.session_state['tutor_chat_history'] = []
 
 with tab6:
-    st.markdown("""
+    tutor_html = '''
     <div class="card-text">
         <h2 style="margin-top:0;">6. Tutoría Personalizada (Profesor IA)</h2>
         <p style="color: #64748b; font-size: 1.1rem;">Tu profesor particular. Pregunta, sube tareas para corregir y dialoga en tiempo real.</p>
     </div>
-    """, unsafe_allow_html=True)
+    '''
+    st.markdown(tutor_html, unsafe_allow_html=True)
     
     col_chat, col_info = st.columns([2, 1], gap="large")
     
