@@ -7,6 +7,9 @@ __pycache__/
 *.pyc
 temp_*
 *.wav
+# Enable specific assets
+!illustration_*.png
+# Ignore other images
 *.png
 *.jpg
 *.jpeg
