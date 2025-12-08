@@ -729,14 +729,14 @@ with tab1:
         render_image_card("illustration_transcriber_1765052797646.png")
 
     with col_text:
-        tab1_html = '''
-        <div class="card-text">
-            <h2 style="margin-top:0;">1. Transcriptor de Videos</h2>
-            <p style="color: #64748b; font-size: 1.1rem; margin-bottom: 20px;">
-                Sube los videos de tu unidad para procesarlos automáticamente.
-            </p>
-        </div>
-        '''
+        tab1_html = """
+<div class="card-text">
+    <h2 style="margin-top:0;">1. Transcriptor de Videos</h2>
+    <p style="color: #64748b; font-size: 1.1rem; margin-bottom: 20px;">
+        Sube los videos de tu unidad para procesarlos automáticamente.
+    </p>
+</div>
+"""
         st.markdown(tab1_html, unsafe_allow_html=True)
         
         uploaded_files = st.file_uploader("Arrastra tus archivos aquí", type=['mp4', 'mov', 'avi', 'mkv'], accept_multiple_files=True, key="up1")
