@@ -270,7 +270,7 @@ if 'spotlight_query' in st.session_state and st.session_state['spotlight_query']
 # --- GLOBAL CSS ---
 CSS_STYLE = """
 <style>
-    /* Import Google Fonts */
+/* Import Google Fonts */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
     /* HIDE STREAMLIT STATUS WIDGET */
@@ -565,7 +565,6 @@ CSS_STYLE = """
         color: #64748b;
         font-weight: 600;
     }
-</style>
 
     /* --- GLOBAL BUTTON STYLING (Universal Consistency) --- */
     
@@ -607,7 +606,6 @@ CSS_STYLE = """
     /* Specific overrides for "Green" actions can be handled via key-specific CSS if needed, 
        but for now "Iniciar Transcripción" will become Purple, which fits "Morados en su mayoría". */
 </style>
-
 """
 st.markdown(CSS_STYLE, unsafe_allow_html=True)
 
