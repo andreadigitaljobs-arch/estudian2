@@ -825,12 +825,12 @@ with tab2:
          render_image_card("illustration_notes_1765052810428.png")
          
     with col_text:
-        tab2_html = '''
-        <div class="card-text">
-            <h2 style="margin-top:0;">2. Generador de Apuntes</h2>
-            <p style="color: #64748b; font-size: 1.1rem;">Convierte transcripciones en apuntes claros y concisos.</p>
-        </div>
-        '''
+        tab2_html = """
+<div class="card-text">
+    <h2 style="margin-top:0;">2. Generador de Apuntes</h2>
+    <p style="color: #64748b; font-size: 1.1rem;">Convierte transcripciones en apuntes claros y concisos.</p>
+</div>
+"""
         st.markdown(tab2_html, unsafe_allow_html=True)
         
         c_id = st.session_state.get('current_course_id')
@@ -938,12 +938,12 @@ with tab3:
         render_image_card("illustration_guide_1765052821852.png")
     
     with col_text:
-        tab3_html = '''
-        <div class="card-text">
-            <h2 style="margin-top:0;">3. Guía de Estudio Estratégica</h2>
-            <p style="color: #64748b; font-size: 1.1rem;">Crea mapas, resúmenes y preguntas de examen.</p>
-        </div>
-        '''
+        tab3_html = """
+<div class="card-text">
+    <h2 style="margin-top:0;">3. Guía de Estudio Estratégica</h2>
+    <p style="color: #64748b; font-size: 1.1rem;">Crea mapas, resúmenes y preguntas de examen.</p>
+</div>
+"""
         st.markdown(tab3_html, unsafe_allow_html=True)
         
         c_id = st.session_state.get('current_course_id')
