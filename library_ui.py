@@ -240,7 +240,7 @@ def render_upload_modal(course_id, assistant):
             st.rerun()
 
     elif mode == "📥 Importar Chat (Masivo)":
-        st.markdown("#### 🤖 Asistente de Importación")
+        st.markdown("#### 🤖 Asistente de Importación ")
         st.caption("Conversa con tu archivo para organizarlo perfectamente.")
 
         # --- STATE MANAGEMENT FOR IMPORT ---
