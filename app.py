@@ -426,7 +426,7 @@ CSS_STYLE = """
     
     /* 1. Sidebar Headers (h4) -> Deep Purple */
     [data-testid="stSidebar"] h4 {
-        color: #5F3FB9 !important;
+        color: #4B22DD !important;
         font-weight: 700 !important;
         font-size: 1.1rem !important;
         margin-bottom: 0.5rem !important;
@@ -524,7 +524,7 @@ CSS_STYLE = """
     
     /* Titles */
     h2.transcriptor-title {
-        color: #5F3FB9 !important; /* Authentic Ref Purple */
+        color: #4B22DD !important; /* Authentic Ref Purple */
         font-family: 'Inter', sans-serif !important;
         font-weight: 800 !important;
         font-size: 2.2rem !important;
