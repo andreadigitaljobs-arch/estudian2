@@ -839,7 +839,7 @@ with st.sidebar:
                 position: absolute;
                 top: 50%;
                 transform: translateY(-50%);
-                background-color: #7c3aed;
+                background-color: #4B22DD;
                 color: white;
                 border: none;
                 border-radius: 50%;
