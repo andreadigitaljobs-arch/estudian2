@@ -48,31 +48,32 @@ def render_library(assistant):
     current_unit_id = st.session_state['lib_current_unit_id']
 
     # --- BREADCRUMBS UI ---
-    # --- BREADCRUMBS UI ---
-    # Using columns to align Home button and Path text
-    bc_cols = st.columns([0.08, 0.92])
+    # --- NAVIGATION UI (Simplified) ---
+    # Minimalist Home Button only. Path text removed as requested.
     
-    with bc_cols[0]:
-        if st.button("🏠", help="Ir a Inicio", key="home_btn"):
+    # Custom CSS for this specific button to make it "Purple Text/Icon" style if possible
+    # We target the button with key 'home_btn' vaguely?
+    # Actually, simpler: Use 'type="primary"' if that maps to Purple in my theme?
+    # Or just keep it simple.
+    
+    col_nav = st.columns([0.1, 0.9])
+    
+    with col_nav[0]:
+        # Simple minimal home button
+        # The user requested 'icono morado'.
+        # If I can't enforce color easily on a generic button emoji, 
+        # I rely on the global button style (Purple Pill). 
+        # But if that's "ugly" or "too much", maybe she wants a transparent button with purple icon.
+        # Streamlit doesn't support 'transparent' button natively without hacks.
+        # I will revert to a standard button but REMOVE the path, which was the main annoyance.
+        
+        if st.button("🏠", key="home_btn", help="Volver al Inicio"):
              st.session_state['lib_current_unit_id'] = None
              st.session_state['lib_current_unit_name'] = None
              st.session_state['lib_breadcrumbs'] = []
              st.rerun()
              
-    with bc_cols[1]:
-        # Logic to build clean path string
-        # Breadcrumbs should contain the full path including current
-        if st.session_state['lib_breadcrumbs']:
-             path_str = " / ".join([b['name'] for b in st.session_state['lib_breadcrumbs']])
-        else:
-             # Fallback if accessed directly or state inconsistency
-             path_str = st.session_state.get('lib_current_unit_name', 'Inicio')
-
-        # Check if "Inicio" is needed prefix? Or just the folders. 
-        # User saw "Unidad 1 / Unidad 1".
-        
-        # Make it look like a header to align with the button height and be readable
-        st.markdown(f"#### 📂 {path_str}")
+    # Path display removed.
 
     st.divider()
 
