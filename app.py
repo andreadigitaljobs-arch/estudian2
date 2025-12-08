@@ -1020,12 +1020,12 @@ with tab4:
         render_image_card("illustration_quiz_1765052844536.png")
         
     with col_text:
-        tab4_html = '''
-        <div class="card-text">
-            <h2 style="margin-top:0;">4. Ayudante de Pruebas</h2>
-            <p style="color: #64748b; font-size: 1.1rem;">Modo Ráfaga: Sube múltiples preguntas y obtén las respuestas.</p>
-        </div>
-        '''
+        tab4_html = """
+<div class="card-text">
+    <h2 style="margin-top:0;">4. Ayudante de Pruebas</h2>
+    <p style="color: #64748b; font-size: 1.1rem;">Modo Ráfaga: Sube múltiples preguntas y obtén las respuestas.</p>
+</div>
+"""
         st.markdown(tab4_html, unsafe_allow_html=True)
         
         # Check Global Memory
@@ -1181,12 +1181,12 @@ with tab4:
 
 # --- TAB 5: Ayudante de Tareas ---
 with tab5:
-    tab5_html = '''
-    <div class="card-text">
-        <h2 style="margin-top:0;">5. Ayudante de Tareas & Biblioteca</h2>
-        <p style="color: #64748b; font-size: 1.1rem;">Tu "Segundo Cerebro": Guarda conocimientos y úsalos para resolver tareas.</p>
-    </div>
-    '''
+    tab5_html = """
+<div class="card-text">
+    <h2 style="margin-top:0;">5. Ayudante de Tareas & Biblioteca</h2>
+    <p style="color: #64748b; font-size: 1.1rem;">Tu "Segundo Cerebro": Guarda conocimientos y úsalos para resolver tareas.</p>
+</div>
+"""
     st.markdown(tab5_html, unsafe_allow_html=True)
     
     # --- LAYOUT REFOCUSED ON TASK SOLVER ---
@@ -1342,17 +1342,17 @@ with tab5:
                 else:
                     full_text_response = str(res)
                 
-                bridge_msg = f'''
-                Hola Profe IA. Acabo de generar una respuesta para esta tarea:
-                
-                **CONSIGNA:**
-                _{task_prompt}_
-                
-                **MI BORRADOR (Generado por Asistente):**
-                {full_text_response}
-                
-                Quiero que analicemos esto. Qué opinas? Podemos mejorarlo?
-                '''
+                bridge_msg = f"""
+Hola Profe IA. Acabo de generar una respuesta para esta tarea:
+
+**CONSIGNA:**
+_{task_prompt}_
+
+**MI BORRADOR (Generado por Asistente):**
+{full_text_response}
+
+Quiero que analicemos esto. Qué opinas? Podemos mejorarlo?
+"""
                 
                 # Check if history exists
                 if 'tutor_chat_history' not in st.session_state:
@@ -1387,12 +1387,12 @@ with tab5:
 if 'tutor_chat_history' not in st.session_state: st.session_state['tutor_chat_history'] = []
 
 with tab6:
-    tutor_html = '''
-    <div class="card-text">
-        <h2 style="margin-top:0;">6. Tutoría Personalizada (Profesor IA)</h2>
-        <p style="color: #64748b; font-size: 1.1rem;">Tu profesor particular. Pregunta, sube tareas para corregir y dialoga en tiempo real.</p>
-    </div>
-    '''
+    tutor_html = """
+<div class="card-text">
+    <h2 style="margin-top:0;">6. Tutoría Personalizada (Profesor IA)</h2>
+    <p style="color: #64748b; font-size: 1.1rem;">Tu profesor particular. Pregunta, sube tareas para corregir y dialoga en tiempo real.</p>
+</div>
+"""
     st.markdown(tutor_html, unsafe_allow_html=True)
     
     col_chat, col_info = st.columns([2, 1], gap="large")
