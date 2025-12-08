@@ -485,6 +485,78 @@ CSS_STYLE = """
     [data-testid="stSidebar"] span[data-baseweb="tag"] {
         border-radius: 15px !important;
     }
+
+    /* --- TAB 1 REBRAND CSS --- */
+    
+    /* File Uploader Container */
+    div[data-testid="stFileUploader"] section[data-testid="stFileUploaderDropzone"] {
+        background-color: #F8F9FE;
+        border: 2px dashed #B8B9E0 !important;
+        border-radius: 20px !important;
+        padding: 30px !important;
+    }
+    
+    /* "Browse files" Button -> Bright Green */
+    div[data-testid="stFileUploader"] button[kind="secondary"] {
+        background-color: #6CC04A !important;
+        color: white !important;
+        border-radius: 10px !important;
+        border: none !important;
+        font-weight: 700 !important;
+        padding: 0.6rem 1.8rem !important;
+        text-transform: none !important;
+        box-shadow: 0 4px 10px rgba(108, 192, 74, 0.4) !important;
+    }
+    div[data-testid="stFileUploader"] button[kind="secondary"]:hover {
+        background-color: #5ab03a !important;
+        color: white !important;
+        transform: translateY(-1px);
+    }
+    
+    /* Titles */
+    h2.transcriptor-title {
+        color: #4B22DD !important;
+        font-family: 'Inter', sans-serif !important;
+        font-weight: 800 !important;
+        font-size: 2.2rem !important;
+        letter-spacing: -1px !important;
+        margin-bottom: 0.5rem !important;
+    }
+    
+    p.transcriptor-subtitle {
+        color: #4A4A4A !important;
+        font-size: 1.05rem !important;
+        margin-bottom: 30px !important;
+        line-height: 1.6;
+    }
+    
+    /* Green Placeholder Frame */
+    .green-frame {
+        background-color: #6CC04A;
+        border-radius: 30px;
+        padding: 20px;
+        box-shadow: 0 15px 30px rgba(108, 192, 74, 0.25);
+        height: 100%;
+        min-height: 400px; /* Taller as per ref */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .green-frame-inner {
+        background-color: #E2E8F0;
+        border-radius: 20px;
+        width: 100%;
+        height: 100%;
+        min-height: 360px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        color: #64748b;
+        font-weight: 600;
+    }
+</style>
 </style>
 
 """
@@ -777,26 +849,36 @@ with tab_lib:
 
 # --- TAB 1: Transcriptor ---
 with tab1:
-    # LAYOUT: Image Left (1) | Text Right (1.5)
-    col_img, col_text = st.columns([1, 1.5], gap="large")
+    # LAYOUT: Image Left (1) | Text Right (1.4)
+    col_img, col_text = st.columns([1, 1.4], gap="large")
     
     with col_img:
-        render_image_card("illustration_transcriber_1765052797646.png")
+        # Green Frame Placeholder
+        st.markdown('''
+            <div class="green-frame">
+                <div class="green-frame-inner">
+                    <div style="font-size: 3rem; margin-bottom: 10px;">🖼️</div>
+                    <div>Espacio para Imagen</div>
+                    <div style="font-size: 0.8rem; opacity: 0.7;">(Se integrará al final)</div>
+                </div>
+            </div>
+        ''', unsafe_allow_html=True)
 
     with col_text:
-        tab1_html = (
-            '<div class="card-text">'
-            '<h2 style="margin-top:0;">1. Transcriptor de Videos</h2>'
-            '<p style="color: #64748b; font-size: 1.1rem; margin-bottom: 20px;">'
-            'Sube los videos de tu unidad para procesarlos automáticamente.'
-            '</p>'
-            '</div>'
-        )
-        st.markdown(tab1_html, unsafe_allow_html=True)
+        # Styled Title & Subtitle via HTML
+        st.markdown('''
+            <h2 class="transcriptor-title">1. Transcriptor de Videos</h2>
+            <p class="transcriptor-subtitle">
+                Sube los videos de tu unidad para procesarlos automáticamente.<br>
+                <span style="font-size: 0.9rem; color: #888; font-weight: 500;">Arrastra tus archivos aquí</span>
+            </p>
+        ''', unsafe_allow_html=True)
         
-        uploaded_files = st.file_uploader("Arrastra tus archivos aquí", type=['mp4', 'mov', 'avi', 'mkv'], accept_multiple_files=True, key="up1")
+        # File Uploader
+        uploaded_files = st.file_uploader("Upload", type=['mp4', 'mov', 'avi', 'mkv'], accept_multiple_files=True, key="up1", label_visibility="collapsed")
         
         if uploaded_files:
+            st.write("")
             if st.button("Iniciar Transcripción", key="btn1", use_container_width=True):
                 # Validation
                 c_id = st.session_state.get('current_course_id')
@@ -824,27 +906,20 @@ with tab1:
                             with open(temp_path, "wb") as f: f.write(file.getbuffer())
                             
                             try:
-                                # Define callback
                                 def update_ui(msg, prog):
                                     pct = int(prog * 100)
                                     progress_bar.progress(prog)
                                     status_text.markdown(f"**{msg} ({pct}%)**")
 
-                                # Process
                                 txt_path = transcriber.process_video(temp_path, progress_callback=update_ui, chunk_length_sec=600)
                                 
-                                # Read and Upload to DB
                                 with open(txt_path, "r", encoding="utf-8") as f: 
                                     trans_text = f.read()
                                     
                                 upload_file_to_db(t_unit_id, os.path.basename(txt_path), trans_text, "transcript")
-                                
                                 st.success(f"✅ {file.name} guardado en Nube (Carpeta Transcripts)")
-                                
-                                # Store in session state for immediate display
                                 st.session_state['transcript_history'].append({"name": file.name, "text": trans_text})
                                 
-                                # Cleanup local temp files
                                 if os.path.exists(txt_path): os.remove(txt_path)
                                 
                             except Exception as e:
@@ -858,19 +933,13 @@ with tab1:
                     else:
                         st.error("No se pudo crear carpeta de transcripts.")
 
-        # --- PERSISTENT RESULTS DISPLAY (Outside button block) ---
+        # History
         if st.session_state['transcript_history']:
             for i, item in enumerate(st.session_state['transcript_history']):
                 st.divider()
-                c_head, c_copy = st.columns([0.9, 0.1])
-                with c_head:
-                    st.markdown(f"### 📄 Transcripción: {item['name']}")
-                with c_copy:
-                    if st.button("📄", key=f"cp_t_{i}", help="Copiar Texto Limpio"):
-                        clean_txt = clean_markdown(item['text'])
-                        if copy_to_clipboard(clean_txt):
-                            st.toast("¡Copiado!", icon='📋')
+                st.markdown(f"### 📄 Transcripción: {item['name']}")
                 st.markdown(item['text'])
+
 
 # --- TAB 2: Apuntes Simples ---
 with tab2:
