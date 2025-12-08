@@ -683,6 +683,7 @@ tab1, tab2, tab3, tab4, tab_lib, tab5, tab6 = st.tabs([
 
 
 # --- Helper for styled image container ---
+# --- Helper for styled image container ---
 def render_image_card(img_path):
     import base64
     if os.path.exists(img_path):
