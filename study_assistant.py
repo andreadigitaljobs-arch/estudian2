@@ -387,23 +387,23 @@ class StudyAssistant:
         4. Si el usuario pide "Saca el resumen y las fechas", crea DOS archivos separados en el mismo turno.
         
         FORMATO DE ACCIÓN (JSON OBLIGATORIO PARA COMANDOS):
-        {
+        {{
             "thoughts": "Breve razonamiento de qué vas a hacer...",
             "actions": [
-                {
+                {{
                     "action_type": "save_file",
                     "target_folder": "Nombre Carpeta",
                     "file_name": "Resumen.md",
                     "content": "..."
-                },
-                {
+                }},
+                {{
                     "action_type": "save_file",
                     "target_folder": "Nombre Carpeta",
                     "file_name": "Fechas.md",
                     "content": "..."
-                }
+                }}
             ]
-        }
+        }}
         
         SI ES SOLO CONVERSACIÓN:
         Simplemente responde con texto plano.
