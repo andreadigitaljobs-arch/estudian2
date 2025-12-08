@@ -160,21 +160,21 @@ def get_files(unit_id):
 
 def upload_file_to_db(unit_id, name, content_text, file_type):
     """
-    Saves file metadata and content (text) to DB.
+    Saves file metadata and content (text) to DB via RPC (Bypass API Cache).
     """
     supabase = init_supabase()
     try:
-        data = {
-            "unit_id": unit_id,
-            "name": name,
-            "type": file_type,
-            "content_text": content_text
+        # Use RPC to ensure content_text is passed correctly even if API schema is stale
+        params = {
+            "p_unit_id": unit_id,
+            "p_name": name,
+            "p_content": content_text,
+            "p_type": file_type
         }
-        # st.info(f"DEBUG: Inserting {len(content_text) if content_text else 0} chars into content_text")
-        res = supabase.table("library_files").insert(data).execute()
+        res = supabase.rpc("create_library_file", params).execute()
         return True
     except Exception as e:
-        st.error(f"Error uploading file: {e}")
+        st.error(f"Error uploading file (RPC): {e}")
         return False
 
 def get_file_content(file_id):
