@@ -919,7 +919,7 @@ def render_image_card(img_path):
 # --- TAB LIBRARY ---
 with tab_lib:
     if 'assistant' in locals() and assistant:
-         render_library_v2(assistant)
+         render_library(assistant)
     else:
          st.info("⚠️ Configura tu API Key en la barra lateral para activar la Biblioteca IA.")
 
