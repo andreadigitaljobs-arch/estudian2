@@ -48,7 +48,9 @@ def render_library(assistant):
     current_unit_id = st.session_state['lib_current_unit_id']
 
     # --- BREADCRUMBS UI ---
-    bc_cols = st.columns([0.1, 0.9])
+    # --- BREADCRUMBS UI ---
+    # Using columns to align Home button and Path text
+    bc_cols = st.columns([0.08, 0.92])
     
     with bc_cols[0]:
         if st.button("🏠", help="Ir a Inicio", key="home_btn"):
@@ -58,16 +60,19 @@ def render_library(assistant):
              st.rerun()
              
     with bc_cols[1]:
-        # Show path: Home > Folder A > Folder B
-        path_str = " / ".join([b['name'] for b in st.session_state['lib_breadcrumbs']])
-        if current_unit_id:
-             current_name = st.session_state.get('lib_current_unit_name', 'Carpeta')
-             if not path_str: path_str = f"{current_name}"
-             else: path_str += f" / {current_name}"
+        # Logic to build clean path string
+        # Breadcrumbs should contain the full path including current
+        if st.session_state['lib_breadcrumbs']:
+             path_str = " / ".join([b['name'] for b in st.session_state['lib_breadcrumbs']])
         else:
-             path_str = "Inicio"
+             # Fallback if accessed directly or state inconsistency
+             path_str = st.session_state.get('lib_current_unit_name', 'Inicio')
+
+        # Check if "Inicio" is needed prefix? Or just the folders. 
+        # User saw "Unidad 1 / Unidad 1".
         
-        st.caption(f"📍 {path_str}")
+        # Make it look like a header to align with the button height and be readable
+        st.markdown(f"#### 📂 {path_str}")
 
     st.divider()
 
