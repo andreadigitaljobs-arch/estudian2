@@ -467,7 +467,6 @@ CSS_STYLE = """
         color: #1A1A1A !important;
         font-weight: 500 !important;
     }
-</style>
 
     /* FORCE ALL SIDEBAR BUTTONS TO BE ROUNDED */
     [data-testid="stSidebar"] button {
@@ -486,7 +485,6 @@ CSS_STYLE = """
     [data-testid="stSidebar"] span[data-baseweb="tag"] {
         border-radius: 15px !important;
     }
-</style>
 </style>
 
 """
