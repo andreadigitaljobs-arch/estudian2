@@ -138,18 +138,6 @@ def render_library(assistant):
                 with c2:
                     st.markdown(f"**{f['name']}**")
                     st.caption(f"{f['created_at'][:10]}")
-                    
-                    # PREVIEW EXPANDER
-                    with st.expander("👁️ Ver Contenido"):
-                        # DEBUG: Show raw data to diagnose why content is missing
-                        if st.checkbox("Debug Info", key=f"dbg_{f['id']}"):
-                            st.json(f)
-                        
-                        content = f.get('content_text')
-                        if content:
-                            st.markdown(content, unsafe_allow_html=True)
-                        else:
-                            st.info("⚠️ La base de datos devolvió contenido vacío/nulo.") 
                 with c3:
                     # Rename File
                     new_name = st.text_input("Renombrar:", value=f['name'], key=f"ren_f_{f['id']}", label_visibility="collapsed")
@@ -164,6 +152,13 @@ def render_library(assistant):
                             st.success("Eliminado")
                             time.sleep(0.5)
                             st.rerun()
+                
+                # Full Width Preview
+                content = f.get('content_text')
+                if content:
+                    with st.expander("👁️ Ver Contenido"):
+                        st.markdown(content, unsafe_allow_html=True)
+                
                 st.divider()
 
 def render_upload_modal(course_id, assistant):
@@ -252,35 +247,10 @@ def render_upload_modal(course_id, assistant):
             st.rerun()
 
     elif mode == "📥 Importar Chat (Masivo)":
-        st.markdown("#### 🤖 Asistente de Importación <span style='color:gray; font-size: 0.8em'>System v2.5</span>", unsafe_allow_html=True)
+        st.markdown("#### 🤖 Asistente de Importación")
         st.caption("Conversa con tu archivo para organizarlo perfectamente.")
 
-        # --- DIAGNOSTICS (Emergency Fix) ---
-        with st.expander("🛠️ Diagnóstico del Sistema (Si falla al guardar)"):
-            st.info("Si los archivos se guardan vacíos, prueba este botón para verificar la base de datos.")
-            if st.button("📝 Crear Archivo de Prueba MANUAL"):
-                try:
-                    # Hardcoded test
-                    test_body = "CONTENIDO DE PRUEBA MANUAL.\nSi lees esto, la base de datos funciona perfectamente.\nFecha: " + str(time.time())
-                    # Ensure we have a valid unit (fallback to current or first)
-                    u_id = st.session_state.get('lib_current_unit_id')
-                    if not u_id:
-                        units = get_units(course_id)
-                        if units: u_id = units[0]['id']
-                    
-                    if u_id:
-                        success = upload_file_to_db(u_id, "Test_System_v2.md", test_body, "text")
-                        if success:
-                            st.success(f"✅ Archivo 'Test_System_v2.md' creado correctamente en carpeta ID {u_id}.")
-                            time.sleep(2)
-                            st.rerun()
-                        else:
-                            st.error("❌ Falló la escritura en Base de Datos (upload_file_to_db retornó False).")
-                    else:
-                        st.error("❌ No hay carpetas disponibles para guardar el archivo de prueba.")
-                except Exception as e:
-                    st.error(f"❌ Excepción crítica: {e}")
-        # -----------------------------------
+        # --- STATE MANAGEMENT FOR IMPORT ---
 
         # --- STATE MANAGEMENT FOR IMPORT ---
         if 'imp_stage' not in st.session_state: st.session_state['imp_stage'] = 'upload'
