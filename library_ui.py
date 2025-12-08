@@ -45,6 +45,8 @@ def render_library(assistant):
     if 'lib_current_unit_name' not in st.session_state: st.session_state['lib_current_unit_name'] = None
     if 'lib_breadcrumbs' not in st.session_state: st.session_state['lib_breadcrumbs'] = []
 
+    current_unit_id = st.session_state['lib_current_unit_id']
+
     # --- BREADCRUMBS UI ---
     bc_cols = st.columns([0.1, 0.9])
     
