@@ -39,6 +39,10 @@ def render_library(assistant):
     if not current_course_id:
         st.info("👈 Selecciona un Diplomado en la barra lateral para ver su Biblioteca.")
         return
+
+    # --- BREADCRUMBS UI ---
+    bc_cols = st.columns([0.1, 0.9])
+    
     with bc_cols[0]:
         if st.button("🏠", help="Ir a Inicio", key="home_btn"):
              st.session_state['lib_current_unit_id'] = None
