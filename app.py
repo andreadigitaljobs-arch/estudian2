@@ -281,7 +281,7 @@ CSS_STYLE = """
     :root {
         --primary-purple: #4B22DD;
         --accent-green: #6CC04A;
-        --bg-color: #F8F9FE; /* Light Gray/Blueish for Body */
+        --bg-color: #F8F9FE;
         --card-bg: #FFFFFF;
         --text-color: #1A1A1A;
         --border-color: #E3E4EA;
@@ -296,7 +296,7 @@ CSS_STYLE = """
     /* 1. APP BACKGROUND (Light) */
     .stApp {
         background-color: var(--bg-color);
-        background-image: none; /* Clean */
+        background-image: none;
     }
     
     /* 2. TOP HEADER BAR - PURPLE */
@@ -304,20 +304,16 @@ CSS_STYLE = """
         background-color: var(--primary-purple);
         box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     }
-    
-    /* Toolbar colors inside header need fix? usually they invert automatically or stay dark/light. 
-       We force white icons if possible, but simpler to just keep header purple. */
 
     /* 3. THE CENTER CARD (Content) */
     .main .block-container {
         background-color: #ffffff;
         border-radius: 30px;
         padding: 3rem 4rem !important;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.08); /* Softer shadow */
+        box-shadow: 0 10px 40px rgba(0,0,0,0.08);
         margin-top: 20px;
         max-width: 95%;
     }
-    /* Fallback selector */
     div[data-testid="block-container"] {
         background-color: #ffffff;
         border-radius: 30px;
@@ -327,7 +323,7 @@ CSS_STYLE = """
         max-width: 95%;
     }
 
-    /* SIDEBAR */
+    /* SIDEBAR CONTAINER */
     section[data-testid="stSidebar"], div[data-testid="stSidebar"] {
         background-color: #FFFFFF;
         border-right: 1px solid var(--border-color);
@@ -339,41 +335,58 @@ CSS_STYLE = """
         font-weight: 700;
         letter-spacing: -0.5px;
     }
+    h1 { font-size: 2.5rem; }
+
+    /* --- SIDEBAR SPECIFIC STYLES (MATCH REF IMAGE) --- */
     
-    h1 {
-        font-size: 2.5rem;
+    /* Custom "Logout" Button -> Purple Block */
+    div[data-testid="stSidebar"] div.stButton button {
+        background-color: var(--primary-purple) !important;
+        color: white !important;
+        border-radius: 30px !important; /* Pill shape like reference */
+        text-align: center !important;
+        justify-content: center !important;
+        font-weight: 600 !important;
+        border: none !important;
+        padding: 0.5rem 1rem !important;
+        margin-top: 10px;
+    }
+    div[data-testid="stSidebar"] div.stButton button:hover {
+        background-color: #3b1aa3 !important;
+        color: white !important;
     }
 
-    /* BUTTONS - PRIMARY */
-    div.stButton > button {
-        background-color: var(--primary-purple);
-        color: white;
+    /* Sidebar Inputs -> Light Lilac BG */
+    [data-testid="stSidebar"] div.stTextInput input, 
+    [data-testid="stSidebar"] div[data-baseweb="select"] > div {
+        background-color: #F4F1FF !important; /* Very light purple */
+        border: 1px solid #E0D4FC !important;
+        border-radius: 12px !important;
+        color: #4B22DD !important;
+    }
+
+    /* "Clave del Sistema Activa" Box */
+    .system-key-box {
+        background-color: #E6F4EA;
+        color: #1E4620;
+        padding: 10px;
         border-radius: 8px;
-        border: none;
-        padding: 0.6rem 2rem;
-        font-weight: 600;
-        box-shadow: 0 4px 10px rgba(75, 34, 221, 0.2);
-        transition: all 0.2s;
-    }
-    div.stButton > button:hover {
-        background-color: #3a1ab9;
-        transform: translateY(-1px);
-        box-shadow: 0 6px 12px rgba(75, 34, 221, 0.3);
+        font-size: 0.9rem;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid #CEEAD6;
     }
 
-    /* GREEN BUTTONS (If we want accent) - Assuming Primary is Purple */
-    
     /* TABS */
     .stTabs [data-baseweb="tab-list"] {
         gap: 10px;
-        background-color: transparent; /* Clean look above card content? Or inside? */
+        background-color: transparent;
         padding: 0px;
         margin-bottom: 20px;
         border-bottom: 2px solid #F0F0F0;
-        border-radius: 0;
-        box-shadow: none;
     }
-    
     .stTabs [data-baseweb="tab"] {
         background-color: #F5F6FA;
         border-radius: 8px 8px 0 0;
@@ -382,226 +395,108 @@ CSS_STYLE = """
         padding: 10px 20px;
         border: none;
     }
-    
     .stTabs [aria-selected="true"] {
         background-color: var(--primary-purple) !important;
         color: white !important;
         border-radius: 8px 8px 0 0;
     }
     
-    /* Remove tab highlight line */
-    .stTabs [data-baseweb="tab-highlight"] { display: none; }
-
-    /* INPUTS */
-    .stTextInput > div > div > input, .stTextArea > div > div > textarea {
-        border-radius: 8px;
-        border: 1px solid #E3E4EA;
-        background-color: #FFFFFF;
-    }
-    
-    /* SIDEBAR BUTTONS */
-    [data-testid="stSidebar"] .stButton > button {
-        background: transparent !important;
-        border: 1px solid transparent !important;
-        color: #475569 !important;
-        width: 100%;
-        text-align: left;
-        justify-content: flex-start;
-        box-shadow: none !important;
-        font-weight: 500;
-    }
-    [data-testid="stSidebar"] .stButton > button:hover {
-        background: #F3F0FF !important;
-        color: var(--primary-purple) !important;
-        border-radius: 8px;
-    }
 </style>
 """
 st.markdown(CSS_STYLE, unsafe_allow_html=True)
 
+
 # Sidebar
 with st.sidebar:
-    # --- USER PROFILE ---
+    # --- 1. LOGO & USER ---
+    st.image("assets/logo_sidebar.png", use_container_width=True)
+    
     if st.session_state.get('user'):
         st.markdown(f"👤 **{st.session_state['user'].email}**")
         if st.button("Cerrar Sesión", key="logout_btn", use_container_width=True):
             st.session_state['user'] = None
-            if 'supabase_session' in st.session_state:
-                del st.session_state['supabase_session']
-            # DELETE COOKIE
-            try:
-                cookie_manager.delete("supabase_refresh_token")
+            if 'supabase_session' in st.session_state: del st.session_state['supabase_session']
+            try: cookie_manager.delete("supabase_refresh_token")
             except: pass
             st.rerun()
-        st.divider()
-
-    # --- VISUAL IDENTITY (Sidebar) ---
-    if os.path.exists("assets/logo_main.png"):
-        st.image("assets/logo_main.png", use_container_width=True)
-    else:
-        st.markdown("## 🎓 e-education")
     
     st.divider()
 
-    # --- SPOTLIGHT SEARCH (Universal) ---
-    st.markdown("### 🔍 Spotlight Académico")
-    search_query = st.text_input("¿Qué buscas hoy?", placeholder="Ej: 'Concepto de Lead' o 'Relación entre X y Y'")
-    search_mode = st.radio("Modo:", ["⚡ Concepto Rápido", "🕵️ Análisis Profundo"], horizontal=True, label_visibility="collapsed")
+    # --- 2. SPOTLIGHT ACADÉMICO ---
+    st.markdown("#### 🔍 Spotlight Académico")
+    st.caption("¿Qué buscas hoy?")
     
-    if st.button("Buscar 🔍", key="btn_spotlight"):
+    # Styled Input defined in CSS
+    search_query = st.text_input("Busqueda", placeholder="Ej: 'Concepto de Lead'...", label_visibility="collapsed")
+    
+    # Radio with custom icons workaround via emoji
+    search_mode = st.radio("Modo:", ["⚡ Concepto Rápido", "🕵️ Análisis Profundo"], horizontal=False, label_visibility="collapsed")
+    
+    # Search Button (Purple Pill via CSS)
+    if st.button("Buscar 🔍", key="btn_spotlight", use_container_width=True):
         if search_query:
             st.session_state['spotlight_query'] = search_query
             st.session_state['spotlight_mode'] = search_mode
             st.rerun()
-        else:
-            st.warning("Escribe algo para buscar.")
     
     st.divider()
 
-    st.header("⚙️ Configuración Personal")
+    # --- 3. CONFIGURACIÓN PERSONAL ---
+    st.markdown("#### ⚙️ Configuración Personal")
     
-    # Check if system key exists (for info only, do not show it)
+    # Check system key
     has_system_key = False
     try:
         if "GOOGLE_API_KEY" in st.secrets: has_system_key = True
     except: pass
     
     if has_system_key:
-        st.info("✅ Clave del Sistema Activa")
+        st.markdown('<div class="system-key-box">✅ Clave del Sistema Activa</div>', unsafe_allow_html=True)
     else:
         st.warning("⚠️ Sin Clave del Sistema")
         
-    user_key_input = st.text_input("Tu Clave API (Opcional)", type="password", help="Sobrescribe la clave del sistema para esta sesión.")
-    
+    st.write("") # Spacer
+    user_key_input = st.text_input("Tu Clave API (Opcional)", type="password", help="Sobrescribe la clave del sistema.")
     if user_key_input:
         st.session_state['custom_api_key'] = user_key_input
-        st.success("✅ Usando tu Clave Personal")
-    else:
-        # If user clears input, revert to system
-        if 'custom_api_key' in st.session_state:
-            del st.session_state['custom_api_key']
-        
+
     st.divider()
     
-    # --- COURSE SELECTOR (WORKSPACES) ---
-    # --- COURSE SELECTOR (WORKSPACES) ---
-    st.header("📂 Espacio de Trabajo")
+    # --- 4. ESPACIO DE TRABAJO ---
+    st.markdown("#### 📂 Espacio de Trabajo")
+    st.caption("Diplomado Actual:")
     
-    # 1. Fetch Courses from DB
+    # DB Ops
     from database import get_user_courses, create_course
-    
     current_user_id = st.session_state['user'].id
-    db_courses = get_user_courses(current_user_id) # Returns list of dicts
-    
-    # Map to names for Selectbox
+    db_courses = get_user_courses(current_user_id)
     course_names = [c['name'] for c in db_courses]
     course_map = {c['name']: c['id'] for c in db_courses}
     
-    # Setup default if nothing exists
-    if not course_names:
-        course_names = [] # Empty list initially
-    
-    # Ensure current selection is valid
+    if not course_names: course_names = []
     if 'current_course' not in st.session_state or st.session_state['current_course'] not in course_names:
-        if course_names:
-            st.session_state['current_course'] = course_names[0]
-        else:
-            st.session_state['current_course'] = None
-            
-    # Selectbox logic
+        st.session_state['current_course'] = course_names[0] if course_names else None
+
     options = course_names + ["➕ Crear Nuevo..."]
-    index = course_names.index(st.session_state['current_course']) if st.session_state['current_course'] in course_names else 0
+    idx = 0
+    if st.session_state['current_course'] in course_names: idx = course_names.index(st.session_state['current_course'])
     
-    selected_option = st.selectbox("Diplomado Actual:", options, index=index)
-    
+    selected_option = st.selectbox("Diplomado", options, index=idx, label_visibility="collapsed")
+
     if selected_option == "➕ Crear Nuevo...":
-        new_course_name = st.text_input("Nombre del Nuevo Diplomado:", placeholder="Ej: Curso IA Contenido")
-        if st.button("Crear Espacio"):
-            if new_course_name:
-                # Create in DB
-                new_c = create_course(current_user_id, new_course_name)
-                if new_c:
-                    st.session_state['current_course'] = new_c['name']
-                    st.success(f"Creado: {new_c['name']}")
-                    time.sleep(1)
+        new_name = st.text_input("Nombre Nuevo:", placeholder="Ej: Curso IA")
+        if st.button("Crear"):
+            if new_name:
+                nc = create_course(current_user_id, new_name)
+                if nc: 
+                    st.session_state['current_course'] = nc['name']
                     st.rerun()
-                else:
-                    st.error("Error al crear curso.")
     else:
-        # Standard Selection
         st.session_state['current_course'] = selected_option
-        st.session_state['current_course_id'] = course_map[selected_option] # Store ID for DB Ops
-        st.caption(f"ID: {st.session_state['current_course_id']}")
+        st.session_state['current_course_id'] = course_map[selected_option]
 
-    # RENAME OPTION
-    if st.session_state['current_course'] != "➕ Crear Nuevo...":
-        with st.expander("✏️ Renombrar Diplomado"):
-            rename_input = st.text_input("Nuevo nombre:", value=st.session_state['current_course'], key="rename_input")
-            if st.button("Confirmar Cambio"):
-                    if rename_input and rename_input != st.session_state['current_course']:
-                        safe_rename = "".join([c for c in rename_input if c.isalnum() or c in (' ', '-', '_')]).strip()
-                        src = os.path.join(CORE_OUTPUT_ROOT, st.session_state['current_course'])
-                        dst = os.path.join(CORE_OUTPUT_ROOT, safe_rename)
-                        
-                        # 1. DB Update (Primary)
-                        c_id = st.session_state.get('current_course_id')
-                        success = False
-                        if c_id:
-                             success = rename_course(c_id, safe_rename)
-                        
-                        if success:
-                             # 2. Local Update (Secondary - Best Effort)
-                             if os.path.exists(dst):
-                                 st.warning("El nombre se actualizó en la base de datos, pero la carpeta local ya existía (se omitió renombre local).")
-                             else:
-                                 try:
-                                     if os.path.exists(src):
-                                         os.rename(src, dst)
-                                     else:
-                                         # Create new folder if it doesn't exist (ensure sync)
-                                         os.makedirs(dst, exist_ok=True)
-                                 except Exception as e:
-                                     st.warning(f"Nombre actualizado en DB, pero error local: {e}")
 
-                             st.session_state['current_course'] = safe_rename
-                             st.success("¡Renombrado!")
-                             st.rerun()
-                        else:
-                             st.error("Error actualizando base de datos.")
-
-    # DELETE OPTION
-    with st.expander("🗑️ Borrar Diplomados"):
-        # Filter out "Crear Nuevo" if present or just use db_courses list
-        del_options = [c['name'] for c in db_courses]
-        courses_to_del = st.multiselect("Selecciona para borrar:", del_options, key="del_courses_sel")
-        
-        if st.button("Eliminar Seleccionados", key="btn_del_courses"):
-            if courses_to_del:
-                deleted_count = 0
-                for c_name in courses_to_del:
-                    # Find ID
-                    c_id_to_del = course_map.get(c_name)
-                    if c_id_to_del:
-                        if delete_course(c_id_to_del):
-                             deleted_count += 1
-                        else:
-                             st.error(f"Error borrando {c_name}")
-                
-                if deleted_count > 0:
-                    st.success(f"¡{deleted_count} diplomados eliminados!")
-                    # Clear session if current was deleted
-                    if st.session_state.get('current_course') in courses_to_del:
-                         st.session_state['current_course'] = None
-                         st.session_state['current_course_id'] = None
-                    time.sleep(1)
-                    st.rerun()
-
-    st.caption(f"Guardando en: `output/{st.session_state['current_course']}/...`")
-    st.divider()
-    
-    # (Removed Carpetas de Salida Info Box as per user request)
-
-    # --- INJECT CUSTOM TAB SCROLL BUTTONS (JS) ---
+# --- INJECT CUSTOM TAB SCROLL BUTTONS (JS) ---
     st.components.v1.html("""
     <script>
     function addTabScrollButtons() {
