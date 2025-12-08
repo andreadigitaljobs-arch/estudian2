@@ -314,45 +314,60 @@ def render_upload_modal(course_id, assistant):
                     )
                     
                     # Check if Action (JSON)
-                    if isinstance(response, dict) and 'action_type' in response:
-                        action = response
-                        result_msg = ""
-                        
-                        if action['action_type'] == 'create_folder':
-                             # Create Folder
-                             create_unit(course_id, action['target_folder'])
-                             result_msg = f"✅ Carpeta creada: **{action['target_folder']}**"
+                    if isinstance(response, dict):
+                         # --- SMART BULK HANDLER (v3.0) ---
+                         
+                         # 1. Normalize actions to list
+                         actions_list = []
+                         if 'actions' in response:
+                             actions_list = response['actions']
+                         elif 'action_type' in response:
+                             # Legacy single action
+                             actions_list = [response]
                              
-                        elif action['action_type'] == 'save_file':
-                             # Ensure folder exists first
-                             target_id = None
-                             # Refresh units
-                             fresh_units = get_units(course_id)
-                             found = next((u for u in fresh_units if u['name'] == action['target_folder']), None)
+                         results = []
+                         if not actions_list:
+                             results.append("🤔 La IA respondió con JSON pero sin acciones claras.")
+
+                         # 2. Iterate and Execute
+                         for action in actions_list:
+                             act_type = action.get('action_type')
                              
-                             if not found:
-                                 # Auto-create if not found
-                                 ur = create_unit(course_id, action['target_folder'])
-                                 target_id = ur['id'] if ur else None
-                             else:
-                                 target_id = found['id']
-                             
-                             if target_id:
-                                 content_to_save = action.get('content', '')
-                                 if not content_to_save:
-                                     result_msg = f"⚠️ Error: La IA no generó contenido para {action['file_name']}. Intenta ser más específico."
-                                 else:
-                                     success = upload_file_to_db(target_id, action['file_name'], content_to_save, "text")
-                                     if success:
-                                         result_msg = f"✅ Guardado: **{action['file_name']}** ({len(content_to_save)} chars) en *{action['target_folder']}*"
-                                     else:
-                                         result_msg = "❌ Error al guardar en base de datos."
-                             else:
-                                 result_msg = f"❌ Error: No se pudo encontrar/crear la carpeta {action['target_folder']}"
-                        
-                        # Add system confirmation to history
-                        st.session_state['imp_history'].append({"role": "assistant", "content": result_msg})
-                        st.rerun()
+                             if act_type == 'create_folder':
+                                  t_folder = action.get('target_folder', 'Sin Titulo')
+                                  create_unit(course_id, t_folder)
+                                  results.append(f"📁 Carpeta creada: **{t_folder}**")
+                                  
+                             elif act_type == 'save_file':
+                                  t_folder = action.get('target_folder', 'General')
+                                  f_name = action.get('file_name', 'archivo_ia.md')
+                                  content_to_save = action.get('content', '')
+                                  
+                                  # Resolve Folder ID
+                                  fresh_units = get_units(course_id)
+                                  found = next((u for u in fresh_units if u['name'] == t_folder), None)
+                                  
+                                  target_id = None
+                                  if not found:
+                                      ur = create_unit(course_id, t_folder)
+                                      target_id = ur['id'] if ur else None
+                                  else:
+                                      target_id = found['id']
+                                      
+                                  # Write to DB (RPC)
+                                  if target_id and content_to_save:
+                                      success = upload_file_to_db(target_id, f_name, content_to_save, "text")
+                                      if success:
+                                          results.append(f"✅ Guardado: **{f_name}** en *{t_folder}*")
+                                      else:
+                                          results.append(f"❌ Error DB al guardar {f_name}")
+                                  else:
+                                      results.append(f"⚠️ Contenido vacío para {f_name}")
+                         
+                         # 3. Consolidate Feedback
+                         final_msg = "\n\n".join(results)
+                         st.session_state['imp_history'].append({"role": "assistant", "content": final_msg})
+                         st.rerun()
                         
                     else:
                         # Normal Text Response

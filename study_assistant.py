@@ -380,22 +380,33 @@ class StudyAssistant:
         
         CARPETAS EXISTENTES: {folders_str}
         
-        INSTRUCCIONES CLAVE:
-        1. Si el usuario te pide guardar algo, GENERA EL JSON DE ACCIÓN.
-        2. Si el usuario solo conversa o pregunta qué hay, RESPONDE CON TEXTO NORMAL.
-        3. Puedes crear carpetas nuevas si el usuario lo pide.
-        4. SEPARA el contenido lógicamente. Si el usuario dice "Saca las fechas", extrae SOLO las fechas.
+        INSTRUCCIONES CLAVE (MODO EXPERTO):
+        1. Eres un arquitecto de información. Tu objetivo es ESTRUCTURAR el contenido.
+        2. Puedes ejecutar MÚLTIPLES acciones en una sola respuesta.
+        3. SIEMPRE usa formato JSON para acciones (guardar, crear carpetas).
+        4. Si el usuario pide "Saca el resumen y las fechas", crea DOS archivos separados en el mismo turno.
         
-        FORMATO DE ACCIÓN (JSON):
-        {{
-            "action_type": "save_file",  (o "create_folder")
-            "target_folder": "Nombre Carpeta Exacto" (Si no existe, se creará),
-            "file_name": "NombreArchivo.md",
-            "content": "El contenido extraido..."
-        }}
+        FORMATO DE ACCIÓN (JSON OBLIGATORIO PARA COMANDOS):
+        {
+            "thoughts": "Breve razonamiento de qué vas a hacer...",
+            "actions": [
+                {
+                    "action_type": "save_file",
+                    "target_folder": "Nombre Carpeta",
+                    "file_name": "Resumen.md",
+                    "content": "..."
+                },
+                {
+                    "action_type": "save_file",
+                    "target_folder": "Nombre Carpeta",
+                    "file_name": "Fechas.md",
+                    "content": "..."
+                }
+            ]
+        }
         
-        SI ES SOLO RESPUESTA:
-        Simplemente escribe el texto.
+        SI ES SOLO CONVERSACIÓN:
+        Simplemente responde con texto plano.
         
         ARCHIVO (Contexto):
         {snippet}
@@ -404,7 +415,7 @@ class StudyAssistant:
         HISTORIAL:
         {history_text}
         USUARIO: {user_message}
-        ASISTENTE (Responde texto o JSON):
+        ASISTENTE (JSON 'actions' o Texto):
         """
         
         try:
