@@ -395,11 +395,20 @@ CSS_STYLE = """
         padding: 10px 20px;
         border: none;
     }
+    
+    /* UPDATED TAB STYLES: GREEN BOTTOM LINE */
     .stTabs [aria-selected="true"] {
         background-color: var(--primary-purple) !important;
         color: white !important;
-        border-radius: 8px 8px 0 0;
+        border-radius: 8px 8px 0 0 !important;
+        border-bottom: 4px solid #6CC04A !important; /* THE GREEN LINE */
     }
+    
+    /* Remove default Streamlit tab highlight if present */
+    .stTabs [data-baseweb="tab-highlight"] {
+        background-color: #6CC04A !important;
+    }
+
     
 
     /* REMOVE SIDEBAR TOP PADDING */
