@@ -412,6 +412,62 @@ CSS_STYLE = """
     [data-testid="stSidebar"] img {
         margin-top: -20px; /* Pull up slightly if Streamlit forces gap */
     }
+
+    /* --- SIDEBAR FINE TUNING (REF IMAGE MATCH) --- */
+    
+    /* 1. Sidebar Headers (h4) -> Deep Purple */
+    [data-testid="stSidebar"] h4 {
+        color: #4B22DD !important;
+        font-weight: 700 !important;
+        font-size: 1.1rem !important;
+        margin-bottom: 0.5rem !important;
+    }
+    
+    /* 2. Sidebar Inputs (Text & Select) -> Light Lilac Background */
+    /* Target the inner input element */
+    [data-testid="stSidebar"] input {
+        background-color: #F4F1FF !important;
+        color: #4B22DD !important;
+        font-weight: 500 !important;
+        border-radius: 8px !important;
+        border: 1px solid #D8CCF6 !important;
+    }
+    /* Target the container background for Selectbox */
+    [data-testid="stSidebar"] [data-baseweb="select"] > div {
+        background-color: #F4F1FF !important;
+        border-color: #D8CCF6 !important;
+        color: #4B22DD !important;
+    }
+    
+    /* 3. Sidebar Buttons (Pill Shape, Purple) */
+    /* We target the button element specifically inside sidebar */
+    [data-testid="stSidebar"] button[kind="secondary"] {
+        background-color: #4B22DD !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 20px !important; /* Pill */
+        margin-top: 10px !important;
+        box-shadow: 0 4px 6px rgba(75, 34, 221, 0.2) !important;
+    }
+    [data-testid="stSidebar"] button[kind="secondary"]:hover {
+        background-color: #3b1aa3 !important;
+        transform: translateY(-1px);
+    }
+    
+    /* 4. "System Key" Box Tweaks */
+    .system-key-box {
+        background-color: #E6F4EA !important;
+        border: 1px solid #CEEAD6 !important;
+        color: #1E4620 !important;
+        font-weight: 600 !important;
+    }
+    
+    /* 5. Radio Buttons -> Custom Coloring if possible (Streamlit limits this) */
+    [data-testid="stSidebar"] [role="radiogroup"] label {
+        color: #1A1A1A !important;
+        font-weight: 500 !important;
+    }
+</style>
 </style>
 
 """
