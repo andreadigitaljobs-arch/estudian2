@@ -138,6 +138,10 @@ def render_library(assistant):
                 with c2:
                     st.markdown(f"**{f['name']}**")
                     st.caption(f"{f['created_at'][:10]}")
+                    
+                    # PREVIEW EXPANDER
+                    with st.expander("👁️ Ver Contenido"):
+                        st.markdown(f['content'], unsafe_allow_html=True) 
                 with c3:
                     # Rename File
                     new_name = st.text_input("Renombrar:", value=f['name'], key=f"ren_f_{f['id']}", label_visibility="collapsed")
