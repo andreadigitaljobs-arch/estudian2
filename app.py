@@ -281,7 +281,7 @@ CSS_STYLE = """
     :root {
         --primary-purple: #4B22DD;
         --accent-green: #6CC04A;
-        --bg-color: #4B22DD; /* Main Background is Purple */
+        --bg-color: #4B22DD;
         --card-bg: #FFFFFF;
         --text-color: #1A1A1A;
         --border-color: #E3E4EA;
@@ -296,26 +296,26 @@ CSS_STYLE = """
     /* 1. APP BACKGROUND (The Bottom Layer) */
     .stApp {
         background-color: var(--bg-color);
-        /* Optional: Subtle pattern to make it less flat? */
         background-image: radial-gradient(rgba(255,255,255,0.1) 1px, transparent 1px);
-        background-size: 30px 30px;
+        background-size: 24px 24px;
+        background-attachment: fixed;
     }
 
     /* 2. THE FLOATING WHITE CARD (The Top Layer) */
-    /* Target the main container where content lives */
-    section.main > div.block-container {
+    /* Using multiple selectors to ensure we hit the container */
+    section.main > div.block-container, 
+    div[data-testid="block-container"] {
         background-color: #ffffff;
-        border-radius: 40px; /* Requested Rounded Look */
+        border-radius: 30px;
         padding: 3rem !important;
-        box-shadow: 0 20px 50px rgba(0,0,0,0.3); /* Deep shadow for pop */
-        max-width: 95% !important;
-        margin-top: 30px;
-        margin-bottom: 30px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        margin: 20px auto; 
+        max-width: 92% !important; /* Cap width to ensure margins show */
     }
 
     /* SIDEBAR */
-    section[data-testid="stSidebar"] {
-        background-color: #FFFFFF; /* White Sidebar */
+    section[data-testid="stSidebar"], div[data-testid="stSidebar"] {
+        background-color: #FFFFFF;
         border-right: 1px solid var(--border-color);
     }
     
@@ -326,9 +326,8 @@ CSS_STYLE = """
         font-family: 'Inter', sans-serif;
     }
     
-    /* Main Title Special Stlye */
     h1 {
-        font-size: 2.8rem;
+        font-size: 2.5rem;
         letter-spacing: -1px;
     }
 
@@ -336,7 +335,7 @@ CSS_STYLE = """
     div.stButton > button {
         background: linear-gradient(135deg, #4B22DD 0%, #3a1ab9 100%);
         color: white;
-        border-radius: 12px;
+        border-radius: 10px;
         border: none;
         padding: 0.6rem 2rem;
         font-weight: 600;
@@ -350,18 +349,18 @@ CSS_STYLE = """
 
     /* TABS */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 10px;
+        gap: 8px;
         background-color: #F8FAFC;
-        padding: 10px;
-        border-radius: 20px;
-        box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+        padding: 8px;
+        border-radius: 16px;
+        box-shadow: inset 0 1px 3px rgba(0,0,0,0.02);
     }
     .stTabs [data-baseweb="tab"] {
         background-color: transparent;
-        border-radius: 12px;
+        border-radius: 10px;
         color: #64748b;
         font-weight: 500;
-        padding: 8px 20px;
+        padding: 8px 16px;
     }
     .stTabs [aria-selected="true"] {
         background-color: var(--primary-purple) !important;
@@ -374,7 +373,6 @@ CSS_STYLE = """
         border-radius: 10px;
         border: 1px solid var(--border-color);
         background-color: #FAFAFA;
-        padding: 10px;
     }
     
     /* IMAGES */
