@@ -144,7 +144,7 @@ def render_library(assistant):
     new_folder_name = None
     
     # Fetch ALL units (recursive) so we can upload to subfolders
-    db_units = get_units(course_id, fetch_all=True)
+    db_units = get_units(current_course_id, fetch_all=True)
     unit_names = [u['name'] for u in db_units]
     
     if not current_unit_id:
