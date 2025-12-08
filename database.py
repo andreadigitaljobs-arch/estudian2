@@ -171,6 +171,16 @@ def rename_file(file_id, new_name):
         return True
     except: return False
 
+def get_files(unit_id):
+    supabase = init_supabase()
+    try:
+        # Fetch metadata for listing
+        res = supabase.table("files").select("id, name, type, created_at").eq("unit_id", unit_id).order("created_at", desc=True).execute()
+        return res.data
+    except Exception as e:
+        print(f"Error fetching files: {e}")
+        return []
+
 def get_course_full_context(course_id):
     """
     Efficiently fetches all text content for a course (from all units).

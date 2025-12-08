@@ -9,6 +9,7 @@ import shutil
 import time
 import datetime
 import extra_streamlit_components as stx  # --- PERSISTENCE ---
+from library_ui import render_library # --- LIBRARY UI ---
 
 # --- PAGE CONFIG MUST BE FIRST ---
 st.set_page_config(page_title="Estudian2", page_icon="🎓", layout="wide")
@@ -603,11 +604,12 @@ with st.sidebar:
     '''
     st.markdown(sidebar_html, unsafe_allow_html=True)
     
-tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+tab1, tab2, tab3, tab4, tab_lib, tab5, tab6 = st.tabs([
     "📹 Transcriptor", 
     "📝 Apuntes Simples", 
     "🗺️ Guía de Estudio", 
     "🧠 Ayudante Quiz",
+    "📂 Biblioteca",
     "👩‍🏫 Ayudante de Tareas",
     "📚 Tutoría 1 a 1"
 ])
@@ -644,6 +646,13 @@ def render_image_card(img_path):
         st.markdown(card_html, unsafe_allow_html=True)
     else:
         st.error(f"Image not found: {img_path}")
+
+# --- TAB LIBRARY ---
+with tab_lib:
+    if 'assistant' in locals() and assistant:
+         render_library(assistant)
+    else:
+         st.info("⚠️ Configura tu API Key en la barra lateral para activar la Biblioteca IA.")
 
 # --- TAB 1: Transcriptor ---
 with tab1:
@@ -1114,359 +1123,12 @@ with tab5:
     '''
     st.markdown(tab5_html, unsafe_allow_html=True)
     
-    col_lib, col_task = st.columns([1, 1], gap="large")
+    # --- LAYOUT REFOCUSED ON TASK SOLVER ---
+    col_task = st.container()
     
-    # --- LEFT COLUMN: LIBRARY MANAGER ---
-    with col_lib:
-        st.markdown("### 📚 Biblioteca del Diplomado")
-        st.caption("Organiza aquí la 'Verdad Absoluta' del curso.")
-        
-        with st.expander("📤 Alimentar Memoria (Subir Contenido)", expanded=True):
-            # --- 1. DESTINO (Where?) ---
-            st.markdown("##### 1. Destino")
-            is_global = st.checkbox("📌 Es Información Global (Temario, Reglas, Formatos)", help="Si marcas esto, estos archivos se usarán SIEMPRE en todas las tareas.", value=False)
-            
-            # Helper: Get Units
-            from database import get_units, create_unit, upload_file_to_db
-            import os 
-            
-            current_course_id = st.session_state.get('current_course_id')
-            db_units = get_units(current_course_id) if current_course_id else []
-            
-            target_unit_id = None
-            unit_name_input = ""
-            
-            if is_global:
-                st.info("ℹ️ Se guardará en **00_Memoria_Global**.")
-                global_unit = next((u for u in db_units if u['name'] == "00_Memoria_Global"), None)
-                if global_unit: target_unit_id = global_unit['id']
-            else:
-                existing_names = [u['name'] for u in db_units if u['name'] != "00_Memoria_Global"]
-                # Use columns for smoother layout
-                c_sel, c_new = st.columns([1, 1])
-                
-                with c_sel:
-                    sel_opt = st.selectbox("Selecciona Carpeta:", ["✨ Nueva Carpeta..."] + existing_names)
-                
-                if sel_opt == "✨ Nueva Carpeta...":
-                    with c_new:
-                        unit_name_input = st.text_input("Nombre de la Nueva Carpeta", placeholder="Ej: Unidad 1").strip()
-                        # Button to create folder ONLY
-                        if unit_name_input and st.button("Crear Solo Carpeta", key="btn_create_only"):
-                            if not current_course_id:
-                                st.error("Sin diplomado.")
-                            else:
-                                if create_unit(current_course_id, unit_name_input):
-                                    st.success(f"Carpeta '{unit_name_input}' creada.")
-                                    time.sleep(1)
-                                    st.rerun()
-                                else:
-                                    st.error("⛔ Error de Permisos: No se pudo crear la carpeta. \nPosible causa: Este Diplomado fue creado en una sesión anterior. \nSOLUCIÓN: Crea un **Nuevo Diplomado** en la barra lateral.")
+    st.info("💡 Gestiona tus archivos, sube documentos y organiza carpetas en la nueva pestaña '📂 Biblioteca'.")
 
-                else:
-                    found = next((u for u in db_units if u['name'] == sel_opt), None)
-                    if found: target_unit_id = found['id']
-
-            st.divider()
-
-            # --- 2. CONTENIDO (What?) ---
-            st.markdown("##### 2. Contenido")
-            
-            # FILE NAME INPUT (Requested by User)
-            topic_name = st.text_input("Tema / Título del Archivo (Opcional)", placeholder="Ej: Publico_Objetivo").strip()
-            
-            # SOURCE SELECTION
-            source_type = st.radio("Formato:", ["📂 Subir Archivos", "📝 Pegar Texto"], horizontal=True)
-            
-            pasted_text = ""
-            upl_files = []
-            
-            if source_type == "📂 Subir Archivos":
-                upl_files = st.file_uploader("Sube archivos (PDF, TXT, MD)", type=['pdf', 'txt', 'md'], accept_multiple_files=True, key="manual_upl_files")
-            else:
-                pasted_text = st.text_area("Pega tu texto aquí:", height=150, placeholder="Copia y pega el contenido aquí...")
-
-            # --- ACTION BUTTON ---
-            if st.button("💾 Guardar en Memoria", key="save_manual_upl", type="primary"):
-                if not current_course_id:
-                     st.error("Selecciona un diplomado primero.")
-                else:
-                    # 1. Resolve Target Unit
-                    if is_global and not target_unit_id:
-                         ur = create_unit(current_course_id, "00_Memoria_Global")
-                         if ur: 
-                            target_unit_id = ur['id']
-                         else:
-                            st.error("⛔ Error creando Memoria Global. Prueba creando un Nuevo Diplomado.")
-                    
-                    if not is_global and not target_unit_id and unit_name_input:
-                         ur = create_unit(current_course_id, unit_name_input)
-                         if ur: 
-                            target_unit_id = ur['id']
-                         else:
-                            st.error("⛔ Error creando carpeta. ¿Eres el dueño de este Diplomado? Intenta crear uno nuevo.")
-                    
-                    if not target_unit_id:
-                        st.warning("⚠️ No se seleccionó ni se pudo crear la carpeta destino.")
-                    else:
-                        success_count = 0
-                        
-                        # LOGIC: PASTE TEXT
-                        if source_type == "📝 Pegar Texto":
-                            if not pasted_text:
-                                st.warning("El cuadro de texto está vacío.")
-                            elif not topic_name:
-                                st.warning("Por favor, escribe un 'Tema / Título' para este texto.")
-                            else:
-                                # Save text
-                                safe_name = "".join([c if c.isalnum() else "_" for c in topic_name]) + ".txt"
-                                if upload_file_to_db(target_unit_id, safe_name, pasted_text, "text"):
-                                    st.success(f"✅ Texto guardado como '{safe_name}'")
-                                    time.sleep(1)
-                                    st.rerun()
-
-                        # LOGIC: UPLOAD FILES
-                        else:
-                            if not upl_files:
-                                st.warning("No has seleccionado archivos.")
-                            else:
-                                with st.spinner("Subiendo archivos..."):
-                                    for idx, f in enumerate(upl_files):
-                                        content = ""
-                                        # Use topic_name only for the first file if multiple, or append suffix?
-                                        # If multiple files, topic_name might overwrite. 
-                                        # Strategy: If topic_name exists, use it. If multiple, append index.
-                                        
-                                        base_name = f.name
-                                        if topic_name:
-                                            # If single file, use topic name. If multiple, topic_1, topic_2...
-                                            if len(upl_files) == 1:
-                                                base_name = topic_name + os.path.splitext(f.name)[1]
-                                            else:
-                                                base_name = f"{topic_name}_{idx+1}{os.path.splitext(f.name)[1]}"
-                                        
-                                        try:
-                                            if f.type == "application/pdf":
-                                                content = assistant.extract_text_from_pdf(f.getvalue(), f.type)
-                                                # Ensure .txt extension for text storage check
-                                                if not base_name.endswith(".txt"): base_name = os.path.splitext(base_name)[0] + ".txt"
-                                            else:
-                                                content = f.getvalue().decode("utf-8", errors='ignore')
-                                            
-                                            if upload_file_to_db(target_unit_id, base_name, content, "text"):
-                                                success_count += 1
-                                        except Exception as ex:
-                                            st.error(f"Error procesando {f.name}: {ex}")
-                                
-                                if success_count > 0:
-                                    st.success(f"✅ {success_count} archivos guardados.")
-                                    time.sleep(1)
-                                    st.rerun()
-
-        # Show existing library
-        st.markdown(f"##### 📂 Contenido Guardado ({st.session_state.get('current_course', 'Sin Curso')}):")
-        
-        current_course_id = st.session_state.get('current_course_id')
-        if current_course_id:
-            from database import get_units, delete_unit, rename_unit, get_files, delete_file, rename_file, get_file_content
-            
-            db_units = get_units(current_course_id)
-            
-            if not db_units:
-                st.info("📭 La biblioteca está vacía. Sube archivos arriba.")
-            
-            for unit in db_units:
-                u_id = unit['id']
-                u_name = unit['name']
-                
-                # Icon logic
-                icon = "🧠" if u_name == "00_Memoria_Global" else "📁"
-                label = "Memoria GLOBAL (Siempre activa)" if u_name == "00_Memoria_Global" else u_name
-                
-                with st.expander(f"{icon} {label}"):
-                    # --- UNIT MANAGEMENT ---
-                    if u_name != "00_Memoria_Global":
-                        col_u_ren, col_u_act = st.columns([0.8, 0.2])
-                        with col_u_ren:
-                            # Rename Unit Interface
-                            if f"ren_u_{u_id}" in st.session_state:
-                                new_u_name = st.text_input("Nuevo nombre carpeta:", value=u_name, key=f"in_u_{u_id}")
-                                if st.button("Guardar Nombre", key=f"save_u_{u_id}"):
-                                    if new_u_name and new_u_name != u_name:
-                                        if rename_unit(u_id, new_u_name):
-                                            del st.session_state[f"ren_u_{u_id}"]
-                                            st.success("Carpeta renombrada!")
-                                            time.sleep(0.5)
-                                            st.rerun()
-                                        else:
-                                            st.error("Error al renombrar.")
-                            else:
-                                st.caption(f"Carpeta: {u_name}")
-                        with col_u_act:
-                            if f"ren_u_{u_id}" not in st.session_state:
-                                c_u_ren, c_u_del = st.columns([1, 1])
-                                with c_u_ren:
-                                    if st.button("✏️", key=f"btn_ren_u_{u_id}", help="Renombrar Carpeta"):
-                                        st.session_state[f"ren_u_{u_id}"] = True
-                                        st.rerun()
-                                with c_u_del:
-                                    # Confirm Delete Logic
-                                    if f"conf_del_u_{u_id}" not in st.session_state:
-                                        if st.button("🗑️", key=f"btn_del_u_{u_id}", help="Borrar Carpeta Completa"):
-                                            st.session_state[f"conf_del_u_{u_id}"] = True
-                                            st.rerun()
-                                    else:
-                                        if st.button("🔥", key=f"confirm_del_u_{u_id}", help="¿Seguro? ¡Se borrará todo!"):
-                                            if delete_unit(u_id):
-                                                del st.session_state[f"conf_del_u_{u_id}"]
-                                                st.rerun()
-                                            else:
-                                                st.error("Error borrando unidad.")
-                                        st.caption("¿Confirmar?")
-
-                    # --- FILE MANAGEMENT ---
-                    files = get_files(u_id)
-                    if not files: st.caption("Vacío")
-                    
-                    for f in files:
-                        f_id = f['id']
-                        f_name = f['name']
-                        
-                        # Single Row Layout: [Icon(5%) Name(65%) View(10%) Edit(10%) Del(10%)]
-                        c_icon, c_name, c_view, c_edit, c_del = st.columns([0.05, 0.65, 0.1, 0.1, 0.1], vertical_alignment="center")
-                        
-                        with c_icon:
-                            st.markdown("📄")
-                            
-                        with c_name:
-                            # Rename File Interface
-                            if f"ren_f_{f_id}" in st.session_state:
-                                new_f_name = st.text_input("Renombrar:", value=f_name, key=f"in_f_{f_id}", label_visibility="collapsed")
-                                if st.button("💾", key=f"save_f_{f_id}", help="Guardar nombre"):
-                                    if new_f_name and new_f_name != f_name:
-                                        if rename_file(f_id, new_f_name):
-                                            del st.session_state[f"ren_f_{f_id}"]
-                                            st.rerun()
-                                        else:
-                                            st.error("Error renovando archivo.")
-                            else:
-                                st.markdown(f"{f_name}")
-                        
-                        if f"ren_f_{f_id}" not in st.session_state:
-                            with c_view:
-                                # Toggle View
-                                view_key = f"view_f_{f_id}"
-                                icon_view = "👁️" if not st.session_state.get(view_key, False) else "🙈"
-                                if st.button(icon_view, key=f"btn_view_{f_id}", help="Ver/Ocultar contenido"):
-                                    st.session_state[view_key] = not st.session_state.get(view_key, False)
-                                    st.rerun()
-                                    
-                            with c_edit:
-                                if st.button("✏️", key=f"edit_{f_id}", help="Renombrar archivo"):
-                                    st.session_state[f"ren_f_{f_id}"] = True
-                                    st.rerun()
-                            with c_del:
-                                if st.button("🗑️", key=f"del_{f_id}", help="Borrar archivo permanente"):
-                                    if delete_file(f_id):
-                                        st.rerun()
-                                    else:
-                                        st.error("Error borrando archivo.")
-                        else:
-                            # Cancel button when renaming
-                            with c_view:
-                                if st.button("❌", key=f"cancel_{f_id}", help="Cancelar"):
-                                    del st.session_state[f"ren_f_{f_id}"]
-                                    st.rerun()
-                        
-                        # CONTENT VIEWER
-                        if st.session_state.get(f"view_f_{f_id}", False):
-                            content_view = get_file_content(f_id)
-                            st.info(f"📜 Contenido de: {f_name}")
-                            st.code(content_view, language="markdown")
-                            if st.button("Cerrar Visualización", key=f"close_{f_id}"):
-                                st.session_state[f"view_f_{f_id}"] = False
-                                st.rerun()
-
-        # --- BULK IMPORT (CHAT RESCUE) ---
-        with st.expander("📥 Importar Historial de Chat (Rescatar Datos)", expanded=False):
-            st.caption("Sube un archivo .txt con todo tu historial de ChatGPT desordenado. La IA lo organizará por temas.")
-            chat_file = st.file_uploader("Subir Log de Chat (.txt)", type=['txt'], key="bulk_chat_upl")
-            
-            if chat_file and st.button("🧩 Procesar y Organizar", key="proc_bulk"):
-                raw_text = chat_file.getvalue().decode("utf-8", errors='ignore')
-                with st.spinner("⏳ Leyendo tu historial masivo y organizando temas... (Esto puede tardar un poco)"):
-                    structured_data = assistant.process_bulk_chat(raw_text)
-                    st.session_state['bulk_import_data'] = structured_data
-            
-            # Review and Save
-            if 'bulk_import_data' in st.session_state and st.session_state['bulk_import_data']:
-                st.divider()
-                st.markdown("#### 🧐 Vista Previa de Temas Detectados")
-                
-                # Fetch available units from DB
-                from database import get_units, create_unit, upload_file_to_db
-                
-                current_course_id = st.session_state.get('current_course_id')
-                db_units = get_units(current_course_id) if current_course_id else []
-                existing_folders = [u['name'] for u in db_units]
-                
-                # Default "Rescate" if exists, otherwise first one
-                default_idx = 0
-                if "01_Rescate_Importado" in existing_folders:
-                     default_idx = existing_folders.index("01_Rescate_Importado")
-                
-                target_option = st.selectbox(
-                    "¿Dónde guardamos estos archivos?", 
-                    options=existing_folders + ["✨ Nueva Carpeta..."],
-                    index=default_idx if existing_folders else 0
-                )
-                
-                new_folder_name = "01_Rescate_Importado"
-                if target_option == "✨ Nueva Carpeta...":
-                    new_folder_name = st.text_input("Nombre de la Nueva Carpeta:", value="01_Rescate_Importado")
-                else:
-                    new_folder_name = target_option
-                
-                valid_items = [item for item in st.session_state['bulk_import_data'] if 'title' in item and 'content' in item]
-                
-                for idx, item in enumerate(valid_items):
-                    with st.expander(f"📄 {item['title']}"):
-                        st.markdown(item['content'][:500] + "...")
-                
-                if st.button(f"💾 Guardar {len(valid_items)} Archivos en Biblioteca", key="save_bulk_all"):
-                    if not current_course_id:
-                        st.error("Selecciona un curso primero.")
-                    else:
-                        # Create Unit if needed
-                        target_unit_id = None
-                        if target_option == "✨ Nueva Carpeta...":
-                             u_res = create_unit(current_course_id, new_folder_name)
-                             if u_res: target_unit_id = u_res['id']
-                        else:
-                             # Find ID
-                             found = next((u for u in db_units if u['name'] == target_option), None)
-                             if found: target_unit_id = found['id']
-                        
-                        if target_unit_id:
-                            saved_count = 0
-                            progress_bar = st.progress(0)
-                            for idx, item in enumerate(valid_items):
-                                # Sanitize filename
-                                safe_title = "".join([c if c.isalnum() else "_" for c in item['title']])
-                                fname = f"{safe_title}.md"
-                                upload_file_to_db(target_unit_id, fname, item['content'], "text")
-                                saved_count += 1
-                                progress_bar.progress((idx + 1) / len(valid_items))
-                            
-                            st.success(f"✅ ¡{saved_count} temas rescatados y guardados en '{new_folder_name}'!")
-                            st.session_state['bulk_import_data'] = None # Clear after save
-                            import time
-                            time.sleep(1)
-                            st.rerun()
-                        else:
-                             st.error("No se pudo obtener la carpeta destino.")
-    
-    # --- RIGHT COLUMN: HOMEWORK SOLVER ---
+    # --- RIGHT COLUMN: HOMEWORK SOLVER (Now Main) ---
     with col_task:
         c_title, c_trash = st.columns([0.85, 0.15])
         with c_title:
