@@ -7,18 +7,6 @@ from study_assistant import StudyAssistant
 from PIL import Image, ImageGrab
 import shutil
 import time
-import datetime
-import extra_streamlit_components as stx  # --- PERSISTENCE ---
-from library_ui import render_library # --- LIBRARY UI ---
-from database import delete_course, rename_course # Force import availability
-
-# --- PAGE CONFIG MUST BE FIRST ---
-st.set_page_config(page_title="Estudian2", page_icon="app_icon.png", layout="wide")
-
-# --- SESSION STATE INITIALIZATION ---
-if 'transcript_history' not in st.session_state: st.session_state['transcript_history'] = []
-if 'notes_result' not in st.session_state: st.session_state['notes_result'] = ""
-if 'guide_result' not in st.session_state: st.session_state['guide_result'] = ""
 if 'quiz_results' not in st.session_state: st.session_state['quiz_results'] = []
 if 'pasted_images' not in st.session_state: st.session_state['pasted_images'] = []
 if 'quiz_key' not in st.session_state: st.session_state['quiz_key'] = 0
