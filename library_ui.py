@@ -264,6 +264,26 @@ def render_upload_modal(course_id, assistant):
                 # Read immediately
                 raw = c_file.getvalue().decode("utf-8", errors='ignore')
                 st.session_state['imp_file_content'] = raw
+                
+                # --- AUTO-SAVE SOURCE (Core Upgrade) ---
+                # Save the raw file immediately so it's never lost
+                if not st.session_state.get('imp_source_saved'):
+                    u_id = st.session_state.get('lib_current_unit_id')
+                    if not u_id:
+                        # Fallback: try to find a default or create one? 
+                        # Ideally user should be in a folder. If not, maybe skip or save to "General"?
+                        # For now, let's try to get the first unit available.
+                        units = get_units(course_id)
+                        if units: u_id = units[0]['id']
+                    
+                    if u_id:
+                         # Prefix with [FUENTE] to distinguish
+                         src_name = f"[FUENTE] {c_file.name}"
+                         upload_file_to_db(u_id, src_name, raw, "text")
+                         st.toast(f"💾 Fuente original guardada: {src_name}")
+                         st.session_state['imp_source_saved'] = True
+                # ---------------------------------------
+
                 st.session_state['imp_stage'] = 'analyzing'
                 st.rerun()
 
