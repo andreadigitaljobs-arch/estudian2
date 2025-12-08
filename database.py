@@ -151,15 +151,16 @@ def rename_unit(unit_id, new_name):
 def get_files(unit_id):
     supabase = init_supabase()
     try:
-        res = supabase.table("files").select("*").eq("unit_id", unit_id).order("name").execute()
+        # Explicitly ask for content_text to force error if missing
+        res = supabase.table("files").select("id, name, type, created_at, content_text").eq("unit_id", unit_id).order("name").execute()
         return res.data
-    except: return []
+    except Exception as e:
+        st.error(f"Error fetching files (Schema mismatch?): {e}")
+        return []
 
 def upload_file_to_db(unit_id, name, content_text, file_type):
     """
     Saves file metadata and content (text) to DB.
-    For MVP we store text content directly in DB column 'content_text'.
-    For binaries (images/PDFs) we would use Storage, but for now we focus on Text content for RAG.
     """
     supabase = init_supabase()
     try:
@@ -169,6 +170,7 @@ def upload_file_to_db(unit_id, name, content_text, file_type):
             "type": file_type,
             "content_text": content_text
         }
+        # st.info(f"DEBUG: Inserting {len(content_text) if content_text else 0} chars into content_text")
         res = supabase.table("files").insert(data).execute()
         return True
     except Exception as e:
