@@ -98,6 +98,15 @@ def delete_course(course_id):
         st.error(f"Error deleting course: {e}")
         return False
 
+def rename_course(course_id, new_name):
+    supabase = init_supabase()
+    try:
+        supabase.table("courses").update({"name": new_name}).eq("id", course_id).execute()
+        return True
+    except Exception as e:
+        st.error(f"Error renaming course: {e}")
+        return False
+
 # --- UNITS (CARPETAS) ---
 def get_units(course_id):
     supabase = init_supabase()

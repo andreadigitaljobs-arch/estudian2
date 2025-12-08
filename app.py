@@ -10,7 +10,8 @@ import time
 import datetime
 import extra_streamlit_components as stx  # --- PERSISTENCE ---
 from library_ui import render_library # --- LIBRARY UI ---
-from database import delete_course # Force import availability
+from library_ui import render_library # --- LIBRARY UI ---
+from database import delete_course, rename_course # Force import availability
 
 # --- PAGE CONFIG MUST BE FIRST ---
 st.set_page_config(page_title="Estudian2", page_icon="🎓", layout="wide")
@@ -548,16 +549,30 @@ with st.sidebar:
                     dst = os.path.join(CORE_OUTPUT_ROOT, safe_rename)
                     
                     if os.path.exists(dst):
-                        st.error("¡Ese nombre ya existe!")
+                        st.error("¡Ese nombre ya existe (carpeta local)!")
                     else:
-                        try:
-                            # Close any potentially open handles by relying on OS, simply rename
-                            os.rename(src, dst)
-                            st.session_state['current_course'] = safe_rename
-                            st.success("¡Renombrado!")
-                            st.rerun()
-                        except Exception as e:
-                            st.error(f"Error al renombrar: {e}")
+                        # 1. DB Update (Primary)
+                        c_id = st.session_state.get('current_course_id')
+                        success = False
+                        if c_id:
+                             success = rename_course(c_id, safe_rename)
+                        
+                        if success:
+                             # 2. Local Update (Secondary - Best Effort)
+                             try:
+                                 if os.path.exists(src):
+                                     os.rename(src, dst)
+                                 else:
+                                     # Create new folder if it doesn't exist (ensure sync)
+                                     os.makedirs(dst, exist_ok=True)
+                             except Exception as e:
+                                 st.warning(f"Nombre actualizado en DB, pero error local: {e}")
+
+                             st.session_state['current_course'] = safe_rename
+                             st.success("¡Renombrado!")
+                             st.rerun()
+                        else:
+                             st.error("Error actualizando base de datos.")
 
     # DELETE OPTION
     with st.expander("🗑️ Borrar Diplomados"):
