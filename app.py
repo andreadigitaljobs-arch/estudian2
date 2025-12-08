@@ -401,7 +401,19 @@ CSS_STYLE = """
         border-radius: 8px 8px 0 0;
     }
     
+
+    /* REMOVE SIDEBAR TOP PADDING */
+    /* Target the container inside the sidebar */
+    section[data-testid="stSidebar"] > div > div:first-child {
+        padding-top: 1rem !important; /* Reduce specific top padding */
+    }
+    
+    /* Also target the image explicitly if needed, but usually it's the container */
+    [data-testid="stSidebar"] img {
+        margin-top: -20px; /* Pull up slightly if Streamlit forces gap */
+    }
 </style>
+
 """
 st.markdown(CSS_STYLE, unsafe_allow_html=True)
 
