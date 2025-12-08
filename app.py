@@ -586,18 +586,61 @@ with st.sidebar:
                         st.error("Error al renombrar.")
 
         # DELETE
+        
+        # DELETE (Safe & Multi)
         with st.expander("🗑️ Borrar"):
-            st.caption("Borrar el diplomado actual y sus datos.")
-            if st.button("Eliminar Diplomado Actual", type="primary"):
-                from database import delete_course
-                c_id = st.session_state.get('current_course_id')
-                if c_id and delete_course(c_id):
-                    st.success("Eliminado.")
-                    st.session_state['current_course'] = None
-                    st.rerun()
-                else:
-                    st.error("Error al eliminar.")
-
+            st.caption("Selecciona uno o varios diplomados para borrar.")
+            
+            # 1. Multi-Select (Exclude 'Crear Nuevo' logic implies just listing course names)
+            # We already have course_names and course_map available from above scope
+            
+            courses_to_delete = st.multiselect(
+                "Seleccionar Diplomados:", 
+                options=course_names,
+                format_func=lambda x: f"🗑️ {x}",
+                key="multi_delete_select"
+            )
+            
+            if courses_to_delete:
+                st.write("")
+                # 2. First Trigger Button
+                if st.button("Solicitar Eliminación", type="primary", key="btn_req_del"):
+                    st.session_state['delete_confirmation_pending'] = True
+                
+                # 3. Safety Confirmation (Only if requested)
+                if st.session_state.get('delete_confirmation_pending'):
+                    st.warning(f"⚠️ ¿Estás seguro? Vas a eliminar {len(courses_to_delete)} diplomado(s). Esta acción NO se puede deshacer.")
+                    
+                    col_confirm_a, col_confirm_b = st.columns(2)
+                    with col_confirm_a:
+                        if st.button("❌ Cancelar", key="btn_cancel_del"):
+                            st.session_state['delete_confirmation_pending'] = False
+                            st.rerun()
+                    
+                    with col_confirm_b:
+                        if st.button("✅ SÍ, CONFIRMAR", type="primary", key="btn_confirm_del"):
+                            from database import delete_course
+                            success_count = 0
+                            
+                            for c_name in courses_to_delete:
+                                c_id_del = course_map.get(c_name)
+                                if c_id_del:
+                                    if delete_course(c_id_del):
+                                        success_count += 1
+                            
+                            if success_count > 0:
+                                st.success(f"Se eliminaron {success_count} diplomados.")
+                                st.session_state['delete_confirmation_pending'] = False
+                                # Reset current course if it was deleted
+                                if st.session_state.get('current_course') in courses_to_delete:
+                                    st.session_state['current_course'] = None
+                                st.rerun()
+                            else:
+                                st.error("No se pudo completar la eliminación.")
+            else:
+                # Reset confirmation if selection is cleared
+                if st.session_state.get('delete_confirmation_pending'):
+                    st.session_state['delete_confirmation_pending'] = False
 
 
 # --- INJECT CUSTOM TAB SCROLL BUTTONS (JS) ---
