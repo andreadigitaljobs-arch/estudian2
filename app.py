@@ -691,24 +691,24 @@ def render_image_card(img_path):
             img_data = f.read()
         b64_img = base64.b64encode(img_data).decode()
         
-        card_html = f"""
-<div style="
-    background-color: #f3e8ff;
-    border-radius: 20px;
-    padding: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-">
-    <img src="data:image/png;base64,{b64_img}" style="
-        width: 100%; 
-        max-width: 400px;
-        height: auto; 
-        filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
-    ">
-</div>
-"""
+        card_html = (
+            f'<div style="'
+            f'    background-color: #f3e8ff;'
+            f'    border-radius: 20px;'
+            f'    padding: 40px;'
+            f'    display: flex;'
+            f'    align-items: center;'
+            f'    justify-content: center;'
+            f'    height: 100%;'
+            f'">'
+            f'    <img src="data:image/png;base64,{b64_img}" style="'
+            f'        width: 100%; '
+            f'        max-width: 400px;'
+            f'        height: auto; '
+            f'        filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));'
+            f'    ">'
+            f'</div>'
+        )
         st.markdown(card_html, unsafe_allow_html=True)
     else:
         st.error(f"Image not found: {img_path}")
@@ -729,14 +729,14 @@ with tab1:
         render_image_card("illustration_transcriber_1765052797646.png")
 
     with col_text:
-        tab1_html = """
-<div class="card-text">
-    <h2 style="margin-top:0;">1. Transcriptor de Videos</h2>
-    <p style="color: #64748b; font-size: 1.1rem; margin-bottom: 20px;">
-        Sube los videos de tu unidad para procesarlos automáticamente.
-    </p>
-</div>
-"""
+        tab1_html = (
+            '<div class="card-text">'
+            '<h2 style="margin-top:0;">1. Transcriptor de Videos</h2>'
+            '<p style="color: #64748b; font-size: 1.1rem; margin-bottom: 20px;">'
+            'Sube los videos de tu unidad para procesarlos automáticamente.'
+            '</p>'
+            '</div>'
+        )
         st.markdown(tab1_html, unsafe_allow_html=True)
         
         uploaded_files = st.file_uploader("Arrastra tus archivos aquí", type=['mp4', 'mov', 'avi', 'mkv'], accept_multiple_files=True, key="up1")
@@ -825,12 +825,12 @@ with tab2:
          render_image_card("illustration_notes_1765052810428.png")
          
     with col_text:
-        tab2_html = """
-<div class="card-text">
-    <h2 style="margin-top:0;">2. Generador de Apuntes</h2>
-    <p style="color: #64748b; font-size: 1.1rem;">Convierte transcripciones en apuntes claros y concisos.</p>
-</div>
-"""
+        tab2_html = (
+            '<div class="card-text">'
+            '<h2 style="margin-top:0;">2. Generador de Apuntes</h2>'
+            '<p style="color: #64748b; font-size: 1.1rem;">Convierte transcripciones en apuntes claros y concisos.</p>'
+            '</div>'
+        )
         st.markdown(tab2_html, unsafe_allow_html=True)
         
         c_id = st.session_state.get('current_course_id')
@@ -938,12 +938,12 @@ with tab3:
         render_image_card("illustration_guide_1765052821852.png")
     
     with col_text:
-        tab3_html = """
-<div class="card-text">
-    <h2 style="margin-top:0;">3. Guía de Estudio Estratégica</h2>
-    <p style="color: #64748b; font-size: 1.1rem;">Crea mapas, resúmenes y preguntas de examen.</p>
-</div>
-"""
+        tab3_html = (
+            '<div class="card-text">'
+            '<h2 style="margin-top:0;">3. Guía de Estudio Estratégica</h2>'
+            '<p style="color: #64748b; font-size: 1.1rem;">Crea mapas, resúmenes y preguntas de examen.</p>'
+            '</div>'
+        )
         st.markdown(tab3_html, unsafe_allow_html=True)
         
         c_id = st.session_state.get('current_course_id')
@@ -1020,12 +1020,12 @@ with tab4:
         render_image_card("illustration_quiz_1765052844536.png")
         
     with col_text:
-        tab4_html = """
-<div class="card-text">
-    <h2 style="margin-top:0;">4. Ayudante de Pruebas</h2>
-    <p style="color: #64748b; font-size: 1.1rem;">Modo Ráfaga: Sube múltiples preguntas y obtén las respuestas.</p>
-</div>
-"""
+        tab4_html = (
+            '<div class="card-text">'
+            '<h2 style="margin-top:0;">4. Ayudante de Pruebas</h2>'
+            '<p style="color: #64748b; font-size: 1.1rem;">Modo Ráfaga: Sube múltiples preguntas y obtén las respuestas.</p>'
+            '</div>'
+        )
         st.markdown(tab4_html, unsafe_allow_html=True)
         
         # Check Global Memory
@@ -1181,12 +1181,12 @@ with tab4:
 
 # --- TAB 5: Ayudante de Tareas ---
 with tab5:
-    tab5_html = """
-<div class="card-text">
-    <h2 style="margin-top:0;">5. Ayudante de Tareas & Biblioteca</h2>
-    <p style="color: #64748b; font-size: 1.1rem;">Tu "Segundo Cerebro": Guarda conocimientos y úsalos para resolver tareas.</p>
-</div>
-"""
+    tab5_html = (
+        '<div class="card-text">'
+        '<h2 style="margin-top:0;">5. Ayudante de Tareas & Biblioteca</h2>'
+        '<p style="color: #64748b; font-size: 1.1rem;">Tu "Segundo Cerebro": Guarda conocimientos y úsalos para resolver tareas.</p>'
+        '</div>'
+    )
     st.markdown(tab5_html, unsafe_allow_html=True)
     
     # --- LAYOUT REFOCUSED ON TASK SOLVER ---
@@ -1342,17 +1342,12 @@ with tab5:
                 else:
                     full_text_response = str(res)
                 
-                bridge_msg = f"""
-Hola Profe IA. Acabo de generar una respuesta para esta tarea:
-
-**CONSIGNA:**
-_{task_prompt}_
-
-**MI BORRADOR (Generado por Asistente):**
-{full_text_response}
-
-Quiero que analicemos esto. Qué opinas? Podemos mejorarlo?
-"""
+                bridge_msg = (
+                    f"Hola Profe IA. Acabo de generar una respuesta para esta tarea:\n\n"
+                    f"**CONSIGNA:**\n_{task_prompt}_\n\n"
+                    f"**MI BORRADOR (Generado por Asistente):**\n{full_text_response}\n\n"
+                    f"Quiero que analicemos esto. Qué opinas? Podemos mejorarlo?"
+                )
                 
                 # Check if history exists
                 if 'tutor_chat_history' not in st.session_state:
@@ -1387,12 +1382,12 @@ Quiero que analicemos esto. Qué opinas? Podemos mejorarlo?
 if 'tutor_chat_history' not in st.session_state: st.session_state['tutor_chat_history'] = []
 
 with tab6:
-    tutor_html = """
-<div class="card-text">
-    <h2 style="margin-top:0;">6. Tutoría Personalizada (Profesor IA)</h2>
-    <p style="color: #64748b; font-size: 1.1rem;">Tu profesor particular. Pregunta, sube tareas para corregir y dialoga en tiempo real.</p>
-</div>
-"""
+    tutor_html = (
+        '<div class="card-text">'
+        '<h2 style="margin-top:0;">6. Tutoría Personalizada (Profesor IA)</h2>'
+        '<p style="color: #64748b; font-size: 1.1rem;">Tu profesor particular. Pregunta, sube tareas para corregir y dialoga en tiempo real.</p>'
+        '</div>'
+    )
     st.markdown(tutor_html, unsafe_allow_html=True)
     
     col_chat, col_info = st.columns([2, 1], gap="large")
