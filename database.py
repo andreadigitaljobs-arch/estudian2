@@ -88,7 +88,11 @@ def create_course(user_id, name):
 def delete_course(course_id):
     supabase = init_supabase()
     try:
-        supabase.table("courses").delete().eq("id", course_id).execute()
+        res = supabase.table("courses").delete().eq("id", course_id).execute()
+        # If no data returned, nothing was deleted (likely RLS)
+        if not res.data:
+            st.error(f"No se pudo borrar el diplomado (posible bloqueo de seguridad RLS).")
+            return False
         return True
     except Exception as e:
         st.error(f"Error deleting course: {e}")
