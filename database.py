@@ -152,7 +152,7 @@ def get_files(unit_id):
     supabase = init_supabase()
     try:
         # Explicitly ask for content_text to force error if missing
-        res = supabase.table("files").select("id, name, type, created_at, content_text").eq("unit_id", unit_id).order("name").execute()
+        res = supabase.table("library_files").select("id, name, type, created_at, content_text").eq("unit_id", unit_id).order("name").execute()
         return res.data
     except Exception as e:
         st.error(f"Error fetching files (Schema mismatch?): {e}")
@@ -171,7 +171,7 @@ def upload_file_to_db(unit_id, name, content_text, file_type):
             "content_text": content_text
         }
         # st.info(f"DEBUG: Inserting {len(content_text) if content_text else 0} chars into content_text")
-        res = supabase.table("files").insert(data).execute()
+        res = supabase.table("library_files").insert(data).execute()
         return True
     except Exception as e:
         st.error(f"Error uploading file: {e}")
@@ -180,21 +180,21 @@ def upload_file_to_db(unit_id, name, content_text, file_type):
 def get_file_content(file_id):
     supabase = init_supabase()
     try:
-        res = supabase.table("files").select("content_text").eq("id", file_id).single().execute()
+        res = supabase.table("library_files").select("content_text").eq("id", file_id).single().execute()
         return res.data['content_text'] if res.data else ""
     except: return ""
 
 def delete_file(file_id):
     supabase = init_supabase()
     try:
-        supabase.table("files").delete().eq("id", file_id).execute()
+        supabase.table("library_files").delete().eq("id", file_id).execute()
         return True
     except: return False
 
 def rename_file(file_id, new_name):
     supabase = init_supabase()
     try:
-        supabase.table("files").update({"name": new_name}).eq("id", file_id).execute()
+        supabase.table("library_files").update({"name": new_name}).eq("id", file_id).execute()
         return True
     except: return False
 
@@ -202,7 +202,7 @@ def get_files(unit_id):
     supabase = init_supabase()
     try:
         # Fetch metadata for listing
-        res = supabase.table("files").select("id, name, type, created_at").eq("unit_id", unit_id).order("created_at", desc=True).execute()
+        res = supabase.table("library_files").select("id, name, type, created_at").eq("unit_id", unit_id).order("created_at", desc=True).execute()
         return res.data
     except Exception as e:
         print(f"Error fetching files: {e}")
@@ -224,7 +224,7 @@ def get_course_full_context(course_id):
         
         # 2. Get all files for these units
         # Supabase Python client 'in_' filter for array
-        files = supabase.table("files").select("unit_id, name, content_text").in_("unit_id", unit_ids).execute().data
+        files = supabase.table("library_files").select("unit_id, name, content_text").in_("unit_id", unit_ids).execute().data
         
         full_context = ""
         for f in files:
@@ -248,7 +248,7 @@ def get_unit_context(unit_id):
         u_name = u_res.data['name'] if u_res.data else "Unknown Unit"
         
         # Get files
-        files = supabase.table("files").select("name, content_text").eq("unit_id", unit_id).execute().data
+        files = supabase.table("library_files").select("name, content_text").eq("unit_id", unit_id).execute().data
         
         unit_text = ""
         for f in files:
