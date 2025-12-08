@@ -328,7 +328,7 @@ class StudyAssistant:
         except Exception as e:
             return f"Error en la clase: {str(e)}"
 
-    def process_bulk_chat(self, raw_text):
+    def process_bulk_chat(self, raw_text, user_instructions=""):
         """
         Parses a massive unstructured chat log/text.
         Since output limits (8k tokens) prevent processing huge files in one go,
@@ -363,21 +363,24 @@ class StudyAssistant:
         for i, chunk_text in enumerate(chunks):
             # Prompt tweaked for partial processing
             prompt = f"""
-            ACTÚA COMO UN BIBLIOTECARIO EXPERTO. ESTÁS PROCESANDO LA PARTE {i+1}/{len(chunks)} DE UN LOG MASIVO.
+            ACTÚA COMO UN BIBLIOTECARIO EXPERTO. ESTÁS PROCESANDO LA PARTE {{i+1}}/{{len(chunks)}} DE UN LOG MASIVO.
+            
+            INSTRUCCIONES DEL USUARIO (PRIORIDAD ALTA):
+            "{user_instructions if user_instructions else "Extrae temas lógicos y descarta la basura."}"
             
             TAREA:
-            Analiza este FRAGMENTO de texto y extrae TEMAS/SECCIONES completas.
+            Analiza este FRAGMENTO de texto y extrae TEMAS/SECCIONES completas siguiendo las instrucciones del usuario.
             
             OBJETIVO:
             1. Identificar nuevos temas o continuaciones de temas anteriores.
             2. Extraer el contenido ÚTIL (transcripciones, apuntes, definiciones).
-            3. LIMPIAR la basura del chat ("hola", "gracias").
+            3. LIMPIAR la basura del chat ("hola", "gracias") a menos que el usuario pida lo contrario.
             4. Si un tema parece cortado al final, extráelo hasta donde llegue.
             
             FORMATO JSON:
             [
                 {{
-                    "title": "Titulo del Tema (ej: Unidad 1 - Parte {i+1})",
+                    "title": "Titulo del Tema (ej: Unidad 1 - Parte {{i+1}})",
                     "content": "Contenido completo en Markdown..."
                 }}
             ]

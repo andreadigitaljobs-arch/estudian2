@@ -245,10 +245,15 @@ def render_upload_modal(course_id, assistant):
         
         c_file = st.file_uploader("Archivo Chat (.txt):", type=["txt"])
         
+        # New Instruction Input
+        instructions = st.text_area("Instrucciones para la IA (Opcional):", 
+                                  placeholder="Ej: 'Separa por fechas', 'Extrae solo los resúmenes', 'Ignora las conversaciones sobre saludos'...",
+                                  help="Dile a la IA cómo quieres que corte o organice este archivo gigante.")
+        
         if c_file and st.button("Procesar y Guardar", type="primary"):
              raw = c_file.getvalue().decode("utf-8", errors='ignore')
              with st.spinner("Procesando historial..."):
-                 structured = assistant.process_bulk_chat(raw)
+                 structured = assistant.process_bulk_chat(raw, user_instructions=instructions)
                  
                  # Resolve Target
                  if not target_unit_id:
