@@ -14,7 +14,7 @@ from library_ui import render_library # --- LIBRARY UI ---
 from database import delete_course, rename_course # Force import availability
 
 # --- PAGE CONFIG MUST BE FIRST ---
-st.set_page_config(page_title="Estudian2", page_icon="🎓", layout="wide")
+st.set_page_config(page_title="Estudian2", page_icon="app_icon.png", layout="wide")
 
 # --- SESSION STATE INITIALIZATION ---
 if 'transcript_history' not in st.session_state: st.session_state['transcript_history'] = []

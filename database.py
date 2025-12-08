@@ -101,7 +101,10 @@ def delete_course(course_id):
 def rename_course(course_id, new_name):
     supabase = init_supabase()
     try:
-        supabase.table("courses").update({"name": new_name}).eq("id", course_id).execute()
+        res = supabase.table("courses").update({"name": new_name}).eq("id", course_id).execute()
+        if not res.data:
+            # Silent RLS failure or ID not found
+            return False
         return True
     except Exception as e:
         st.error(f"Error renaming course: {e}")
