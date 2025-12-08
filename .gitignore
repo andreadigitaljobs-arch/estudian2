@@ -14,6 +14,7 @@ temp_*
 
 # Enable specific assets (Must come AFTER *.png)
 !illustration_*.png
+!assets/*.png
 
 # Application Output (Content is local to user)
 output/
