@@ -151,11 +151,11 @@ def rename_unit(unit_id, new_name):
 def get_files(unit_id):
     supabase = init_supabase()
     try:
-        # Explicitly ask for content_text to force error if missing
-        res = supabase.table("library_files").select("id, name, type, created_at, content_text").eq("unit_id", unit_id).order("name").execute()
+        # RPC Bypass for API Cache issues
+        res = supabase.rpc("get_unit_files", {"p_unit_id": unit_id}).execute()
         return res.data
     except Exception as e:
-        st.error(f"Error fetching files (Schema mismatch?): {e}")
+        st.error(f"Error fetching files (RPC): {e}")
         return []
 
 def upload_file_to_db(unit_id, name, content_text, file_type):
@@ -180,8 +180,9 @@ def upload_file_to_db(unit_id, name, content_text, file_type):
 def get_file_content(file_id):
     supabase = init_supabase()
     try:
-        res = supabase.table("library_files").select("content_text").eq("id", file_id).single().execute()
-        return res.data['content_text'] if res.data else ""
+        res = supabase.rpc("read_file_text", {"p_file_id": file_id}).execute()
+        # RPC returns the string directly or as data
+        return res.data if res.data else ""
     except: return ""
 
 def delete_file(file_id):
@@ -198,15 +199,7 @@ def rename_file(file_id, new_name):
         return True
     except: return False
 
-def get_files(unit_id):
-    supabase = init_supabase()
-    try:
-        # Fetch metadata for listing
-        res = supabase.table("library_files").select("id, name, type, created_at").eq("unit_id", unit_id).order("created_at", desc=True).execute()
-        return res.data
-    except Exception as e:
-        print(f"Error fetching files: {e}")
-        return []
+
 
 def get_course_full_context(course_id):
     """
