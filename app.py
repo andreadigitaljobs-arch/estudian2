@@ -277,11 +277,11 @@ CSS_STYLE = """
     div[data-testid="stStatusWidget"] { visibility: hidden; }
     div[data-testid="stDecoration"] { visibility: hidden; }
 
-    /* --- GLOBAL VARIABLES & BODY --- */
+    /* --- GLOBAL VARIABLES --- */
     :root {
         --primary-purple: #4B22DD;
         --accent-green: #6CC04A;
-        --bg-color: #4B22DD; /* Main Background is Purple */
+        --bg-color: #F8F9FE; /* Light Gray/Blueish for Body */
         --card-bg: #FFFFFF;
         --text-color: #1A1A1A;
         --border-color: #E3E4EA;
@@ -293,34 +293,38 @@ CSS_STYLE = """
         background-color: var(--bg-color);
     }
 
-    /* 1. APP BACKGROUND (The Bottom Layer) */
+    /* 1. APP BACKGROUND (Light) */
     .stApp {
         background-color: var(--bg-color);
-        background-image: radial-gradient(rgba(255,255,255,0.1) 1px, transparent 1px);
-        background-size: 24px 24px;
-        background-attachment: fixed;
-    }
-
-    /* 2. THE FLOATING WHITE CARD */
-    /* FORCE OVERRIDE for main container */
-    .main .block-container {
-        background-color: #ffffff;
-        border-radius: 40px;
-        padding: 3rem 3rem !important;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.4);
-        margin-top: 40px;
-        margin-bottom: 40px;
-        max-width: 90%;
+        background-image: none; /* Clean */
     }
     
-    /* Fallback selector if .main .block-container fails */
+    /* 2. TOP HEADER BAR - PURPLE */
+    header[data-testid="stHeader"] {
+        background-color: var(--primary-purple);
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    /* Toolbar colors inside header need fix? usually they invert automatically or stay dark/light. 
+       We force white icons if possible, but simpler to just keep header purple. */
+
+    /* 3. THE CENTER CARD (Content) */
+    .main .block-container {
+        background-color: #ffffff;
+        border-radius: 30px;
+        padding: 3rem 4rem !important;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.08); /* Softer shadow */
+        margin-top: 20px;
+        max-width: 95%;
+    }
+    /* Fallback selector */
     div[data-testid="block-container"] {
         background-color: #ffffff;
-        border-radius: 40px;
+        border-radius: 30px;
         padding: 3rem !important;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.4);
-        margin: 40px auto;
-        max-width: 90%;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+        margin: 20px auto;
+        max-width: 95%;
     }
 
     /* SIDEBAR */
@@ -333,72 +337,83 @@ CSS_STYLE = """
     h1, h2, h3, h4 {
         color: var(--primary-purple);
         font-weight: 700;
-        font-family: 'Inter', sans-serif;
+        letter-spacing: -0.5px;
     }
     
     h1 {
-        font-size: 3rem;
-        letter-spacing: -2px;
+        font-size: 2.5rem;
     }
 
     /* BUTTONS - PRIMARY */
     div.stButton > button {
-        background: linear-gradient(135deg, #4B22DD 0%, #3a1ab9 100%);
+        background-color: var(--primary-purple);
         color: white;
-        border-radius: 12px;
+        border-radius: 8px;
         border: none;
         padding: 0.6rem 2rem;
         font-weight: 600;
-        box-shadow: 0 4px 10px rgba(75, 34, 221, 0.3);
+        box-shadow: 0 4px 10px rgba(75, 34, 221, 0.2);
         transition: all 0.2s;
     }
     div.stButton > button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 15px rgba(75, 34, 221, 0.4);
+        background-color: #3a1ab9;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 12px rgba(75, 34, 221, 0.3);
     }
 
+    /* GREEN BUTTONS (If we want accent) - Assuming Primary is Purple */
+    
     /* TABS */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 8px;
-        background-color: #F8FAFC;
-        padding: 8px;
-        border-radius: 24px; /* Pill shape container */
-        box-shadow: inset 0 1px 3px rgba(0,0,0,0.02);
+        gap: 10px;
+        background-color: transparent; /* Clean look above card content? Or inside? */
+        padding: 0px;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #F0F0F0;
+        border-radius: 0;
+        box-shadow: none;
     }
+    
     .stTabs [data-baseweb="tab"] {
-        background-color: transparent;
-        border-radius: 20px;
+        background-color: #F5F6FA;
+        border-radius: 8px 8px 0 0;
         color: #64748b;
-        font-weight: 500;
-        padding: 8px 20px;
+        font-weight: 600;
+        padding: 10px 20px;
+        border: none;
     }
+    
     .stTabs [aria-selected="true"] {
         background-color: var(--primary-purple) !important;
         color: white !important;
-        box-shadow: 0 4px 6px rgba(75, 34, 221, 0.2);
+        border-radius: 8px 8px 0 0;
     }
+    
+    /* Remove tab highlight line */
+    .stTabs [data-baseweb="tab-highlight"] { display: none; }
 
     /* INPUTS */
     .stTextInput > div > div > input, .stTextArea > div > div > textarea {
-        border-radius: 12px;
-        border: 1px solid var(--border-color);
-        background-color: #FAFAFA;
+        border-radius: 8px;
+        border: 1px solid #E3E4EA;
+        background-color: #FFFFFF;
     }
     
     /* SIDEBAR BUTTONS */
     [data-testid="stSidebar"] .stButton > button {
-        background: #FFFFFF !important;
-        border: 1px solid var(--border-color) !important;
+        background: transparent !important;
+        border: 1px solid transparent !important;
         color: #475569 !important;
         width: 100%;
         text-align: left;
         justify-content: flex-start;
         box-shadow: none !important;
+        font-weight: 500;
     }
     [data-testid="stSidebar"] .stButton > button:hover {
-        border-color: var(--primary-purple) !important;
+        background: #F3F0FF !important;
         color: var(--primary-purple) !important;
-        background-color: #f5f3ff !important;
+        border-radius: 8px;
     }
 </style>
 """
