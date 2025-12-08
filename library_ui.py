@@ -40,6 +40,11 @@ def render_library(assistant):
         st.info("👈 Selecciona un Diplomado en la barra lateral para ver su Biblioteca.")
         return
 
+    # --- STATE MANAGEMENT ---
+    if 'lib_current_unit_id' not in st.session_state: st.session_state['lib_current_unit_id'] = None
+    if 'lib_current_unit_name' not in st.session_state: st.session_state['lib_current_unit_name'] = None
+    if 'lib_breadcrumbs' not in st.session_state: st.session_state['lib_breadcrumbs'] = []
+
     # --- BREADCRUMBS UI ---
     bc_cols = st.columns([0.1, 0.9])
     
