@@ -94,41 +94,97 @@ def render_library(assistant):
 
     st.divider()
 
-    # --- MAIN VIEW ---
-    if st.session_state['lib_current_unit_id'] is None:
-        # === ROOT VIEW (FOLDERS) ===
-        db_units = get_units(current_course_id)
+    # --- STATE INIT ---
+    if 'lib_breadcrumbs' not in st.session_state: st.session_state['lib_breadcrumbs'] = []
+    
+    current_unit_id = st.session_state['lib_current_unit_id']
+    
+    # --- BREADCRUMBS UI ---
+    bc_cols = st.columns([0.1, 0.9])
+    with bc_cols[0]:
+        if st.button("🏠", help="Ir a Inicio", key="home_btn"):
+             st.session_state['lib_current_unit_id'] = None
+             st.session_state['lib_current_unit_name'] = None
+             st.session_state['lib_breadcrumbs'] = []
+             st.rerun()
+             
+    with bc_cols[1]:
+        # Show path: Home > Folder A > Folder B
+        path_str = " / ".join([b['name'] for b in st.session_state['lib_breadcrumbs']])
+        if current_unit_id:
+             current_name = st.session_state.get('lib_current_unit_name', 'Carpeta')
+             if not path_str: path_str = f"{current_name}"
+             else: path_str += f" / {current_name}"
+        else:
+             path_str = "Inicio"
         
-        # Add "Global Memory" card first?
-        # Regular Folders
-        
-        if not db_units:
-            st.caption("Carpeta vacía. ¡Crea la primera!")
-            
-        # Grid Layout (3 cols)
+        st.caption(f"📍 {path_str}")
+
+    st.divider()
+
+    # --- MAIN VIEW (UNIFIED) ---
+    
+    # 1. FETCH SUBFOLDERS
+    # We pass current_unit_id as parent_id (or None for root)
+    subfolders = get_units(current_course_id, parent_id=current_unit_id)
+    
+    # 2. RENDER FOLDERS (Grid)
+    if subfolders:
+        st.markdown("##### 📁 Carpetas")
         cols = st.columns(3)
-        for i, unit in enumerate(db_units):
+        for i, unit in enumerate(subfolders):
             with cols[i % 3]:
-                # Hack to make button look like card
                 label = f"📁 {unit['name']}"
                 if st.button(label, key=f"btn_unit_{unit['id']}", use_container_width=True):
+                    # ENTER FOLDER
                     st.session_state['lib_current_unit_id'] = unit['id']
                     st.session_state['lib_current_unit_name'] = unit['name']
+                    # Add to breadcrumbs
+                    st.session_state['lib_breadcrumbs'].append({'id': unit['id'], 'name': unit['name']})
                     st.rerun()
+                    
+        # --- BULK DELETE (For current level) ---
+        with st.expander("🗑️ Gestión Masiva / Papelera"):
+            st.caption("Selecciona carpetas de este nivel para eliminar.")
+            unit_options = {u['name']: u['id'] for u in subfolders}
+            selected_names = st.multiselect("Carpetas:", list(unit_options.keys()), key=f"bd_{current_unit_id}")
+            
+            if selected_names:
+                st.warning(f"⚠️ Eliminarás {len(selected_names)} carpetas y TODO su contenido.")
+                if st.button(f"🗑️ Eliminar Selección", key=f"del_sel_{current_unit_id}", type="primary"):
+                    deleted_count = 0
+                    for name in selected_names:
+                        if delete_unit(unit_options[name]): deleted_count += 1
+                    
+                    if deleted_count > 0:
+                        st.success(f"✅ {deleted_count} eliminados.")
+                        time.sleep(1)
+                        st.rerun()
+        st.divider()
+    elif not current_unit_id:
+        st.info("No hay carpetas. Crea una nueva ➕")
 
-    else:
-        # === FOLDER VIEW (FILES) ===
-        unit_id = st.session_state['lib_current_unit_id']
-        files = get_files(unit_id)
+    # 3. RENDER FILES (If not root, or if root allows files)
+    # We usually only show files if we are INSIDE a folder (unit_id is not None)
+    # But if your app supports root files, remove the check. 
+    # Provided code only fetches files for unit_id.
+    
+    if current_unit_id:
+        st.markdown(f"##### 📄 Archivos en '{st.session_state.get('lib_current_unit_name')}'")
+        files = get_files(current_unit_id)
         
         if not files:
-            st.info("Carpeta vacía. Usa el botón '➕ Nuevo' arriba para subir contenido.")
+            st.caption("Esta carpeta no tiene archivos.")
         else:
-            # Table View
-            # Using dataframes for clean look? Or custom list?
-            # Custom list allows actions.
-            
-            for f in files:
+             # ... EXISTING FILE RENDERING LOOP ...
+             # Since I am replacing the outer block, I need to keep the inner file loop.
+             # I will copy the file loop from previous context or rewrite it concisely?
+             # I should try to preserve the existing logic.
+             pass 
+             # Wait, replace_file_content replaces the BLOCK.
+             # I need to output the file loop here.
+             
+             for f in files:
                 c1, c2, c3, c4 = st.columns([0.5, 3, 1, 1])
                 with c1:
                     icon = "📄"
@@ -139,21 +195,19 @@ def render_library(assistant):
                     st.markdown(f"**{f['name']}**")
                     st.caption(f"{f['created_at'][:10]}")
                 with c3:
-                    # Rename File
                     new_name = st.text_input("Renombrar:", value=f['name'], key=f"ren_f_{f['id']}", label_visibility="collapsed")
                     if new_name != f['name']:
-                         if st.button("💾", key=f"save_ren_f_{f['id']}", help="Guardar nombre"):
+                         if st.button("💾", key=f"save_ren_f_{f['id']}", help="Guardar"):
                              rename_file(f['id'], new_name)
                              st.rerun()
 
                 with c4:
-                    if st.button("🗑️", key=f"del_f_{f['id']}", help="Eliminar archivo"):
+                    if st.button("🗑️", key=f"del_f_{f['id']}", help="Eliminar"):
                         if delete_file(f['id']):
                             st.success("Eliminado")
                             time.sleep(0.5)
                             st.rerun()
                 
-                # Full Width Preview
                 content = f.get('content_text')
                 if content:
                     with st.expander("👁️ Ver Contenido"):
@@ -168,7 +222,8 @@ def render_upload_modal(course_id, assistant):
     current_unit_id = st.session_state.get('lib_current_unit_id')
     target_unit_id = current_unit_id
     
-    db_units = get_units(course_id)
+    # Fetch ALL units (recursive) so we can upload to subfolders
+    db_units = get_units(course_id, fetch_all=True)
     unit_names = [u['name'] for u in db_units]
     
     if not current_unit_id:

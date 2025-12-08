@@ -111,22 +111,41 @@ def rename_course(course_id, new_name):
         return False
 
 # --- UNITS (CARPETAS) ---
-def get_units(course_id):
+def get_units(course_id, parent_id=None, fetch_all=False):
+    """
+    Fetch folders.
+    - If fetch_all=True, returns ALL folders (flat list) for the course.
+    - If fetch_all=False (default):
+        - If parent_id is None: returns only ROOT folders.
+        - If parent_id is set: returns only direct CHILDREN of that folder.
+    """
     supabase = init_supabase()
     try:
-        res = supabase.table("units").select("*").eq("course_id", course_id).order("name").execute()
+        query = supabase.table("units").select("*").eq("course_id", course_id)
+        
+        if not fetch_all:
+            if parent_id is None:
+                # Fetch Root Folders
+                query = query.is_("parent_id", "null")
+            else:
+                # Fetch Subfolders
+                query = query.eq("parent_id", parent_id)
+                
+        res = query.order("name").execute()
         return res.data
     except Exception as e:
         print(f"Error fetching units: {e}")
-        # st.error(f"Debug: Error fetching units: {e}") # Uncomment for tough debugging
         return []
 
-def create_unit(course_id, name):
+def create_unit(course_id, name, parent_id=None):
     supabase = init_supabase()
     try:
         # Check if exists first? Supabase might error on duplicate if we set unique constraint, 
         # but for now let's just insert.
         data = {"course_id": course_id, "name": name}
+        if parent_id:
+            data["parent_id"] = parent_id
+            
         res = supabase.table("units").insert(data).execute()
         return res.data[0] if res.data else None
     except Exception as e:
