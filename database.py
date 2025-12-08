@@ -85,6 +85,15 @@ def create_course(user_id, name):
         st.error(f"Error creating course: {e}")
         return None
 
+def delete_course(course_id):
+    supabase = init_supabase()
+    try:
+        supabase.table("courses").delete().eq("id", course_id).execute()
+        return True
+    except Exception as e:
+        st.error(f"Error deleting course: {e}")
+        return False
+
 # --- UNITS (CARPETAS) ---
 def get_units(course_id):
     supabase = init_supabase()

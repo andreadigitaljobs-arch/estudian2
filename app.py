@@ -10,6 +10,7 @@ import time
 import datetime
 import extra_streamlit_components as stx  # --- PERSISTENCE ---
 from library_ui import render_library # --- LIBRARY UI ---
+from database import delete_course # Force import availability
 
 # --- PAGE CONFIG MUST BE FIRST ---
 st.set_page_config(page_title="Estudian2", page_icon="🎓", layout="wide")
@@ -566,7 +567,6 @@ with st.sidebar:
         
         if st.button("Eliminar Seleccionados", key="btn_del_courses"):
             if courses_to_del:
-                from database import delete_course
                 deleted_count = 0
                 for c_name in courses_to_del:
                     # Find ID
