@@ -1655,3 +1655,5 @@ with tab6:
             
             # 4. Save Response
             st.session_state['tutor_chat_history'].append({"role": "assistant", "content": response})
+
+# Force Reload Triggered
