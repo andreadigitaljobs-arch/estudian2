@@ -9,8 +9,8 @@ import shutil
 import time
 import datetime
 import extra_streamlit_components as stx  # --- PERSISTENCE ---
-from library_ui import render_library # --- LIBRARY UI ---
-from library_ui import render_library # --- LIBRARY UI ---
+from library_ui import render_library_v2 # --- LIBRARY UI ---
+from library_ui import render_library_v2 # --- LIBRARY UI ---
 from database import delete_course, rename_course # Force import availability
 
 # --- PAGE CONFIG MUST BE FIRST ---
@@ -920,7 +920,7 @@ def render_image_card(img_path):
 # --- TAB LIBRARY ---
 with tab_lib:
     if 'assistant' in locals() and assistant:
-         render_library(assistant)
+         render_library_v2(assistant)
     else:
          st.info("⚠️ Configura tu API Key en la barra lateral para activar la Biblioteca IA.")
 

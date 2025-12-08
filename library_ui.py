@@ -5,7 +5,7 @@ import os
 import pandas as pd
 from database import get_units, create_unit, upload_file_to_db, get_files, delete_file, rename_file, rename_unit, delete_unit
 
-def render_library(assistant):
+def render_library_v2(assistant):
     """
     Renders the dedicated "Digital Library" (Drive-style) tab.
     """
