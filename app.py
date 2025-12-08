@@ -1,4 +1,4 @@
-﻿
+
 import streamlit as st
 import os
 import glob
@@ -27,7 +27,7 @@ if 'tutor_chat_history' not in st.session_state: st.session_state['tutor_chat_hi
 if 'current_course' not in st.session_state: st.session_state['current_course'] = None
 if 'homework_result' not in st.session_state: st.session_state['homework_result'] = ""
 if 'spotlight_query' not in st.session_state: st.session_state['spotlight_query'] = ""
-if 'spotlight_mode' not in st.session_state: st.session_state['spotlight_mode'] = "âš¡ Concepto RÃ¡pido"
+if 'spotlight_mode' not in st.session_state: st.session_state['spotlight_mode'] = "⚡ Concepto Rápido"
 if 'custom_api_key' not in st.session_state: st.session_state['custom_api_key'] = None
 
 # --- AUTHENTICATION CHECK ---
@@ -59,7 +59,7 @@ if not st.session_state['user']:
 
 # If not logged in, show Login Screen and STOP
 if not st.session_state['user']:
-    st.markdown("## ðŸ” Iniciar SesiÃ³n en Estudian2")
+    st.markdown("## 🔐 Iniciar Sesión en Estudian2")
     st.caption("Modo Nube Multi-Usuario (Supabase)")
     
     # Simple formatting for Login
@@ -67,7 +67,7 @@ if not st.session_state['user']:
     
     with tab_login:
         email = st.text_input("Email", key="login_email")
-        password = st.text_input("ContraseÃ±a", type="password", key="login_pass")
+        password = st.text_input("Contraseña", type="password", key="login_pass")
         if st.button("Entrar", key="btn_login"):
             from database import sign_in
             user = sign_in(email, password)
@@ -78,15 +78,15 @@ if not st.session_state['user']:
                     sess = st.session_state['supabase_session']
                     # Expire in 30 days
                     cookie_manager.set("supabase_refresh_token", sess.refresh_token, expires_at=datetime.datetime.now() + datetime.timedelta(days=30))
-                st.success(f"Â¡Bienvenido!")
+                st.success(f"¡Bienvenido!")
                 time.sleep(1)
                 st.rerun()
             else:
-                st.error("Credenciales incorrectas o error de conexiÃ³n.")
+                st.error("Credenciales incorrectas o error de conexión.")
 
     with tab_signup:
         new_email = st.text_input("Email", key="reg_email")
-        new_pass = st.text_input("ContraseÃ±a", type="password", key="reg_pass")
+        new_pass = st.text_input("Contraseña", type="password", key="reg_pass")
         if st.button("Crear Cuenta", key="btn_reg"):
             from database import sign_up
             user = sign_up(new_email, new_pass)
@@ -94,7 +94,7 @@ if not st.session_state['user']:
                 if 'supabase_session' in st.session_state:
                      sess = st.session_state['supabase_session']
                      cookie_manager.set("supabase_refresh_token", sess.refresh_token, expires_at=datetime.datetime.now() + datetime.timedelta(days=30))
-                st.success("Cuenta creada. Por favor inicia sesiÃ³n.")
+                st.success("Cuenta creada. Por favor inicia sesión.")
             else:
                 st.error("Error al crear cuenta.")
     
@@ -224,20 +224,20 @@ if api_key:
 # --- SPOTLIGHT RESULT DISPLAY ---
 if 'spotlight_query' in st.session_state and st.session_state['spotlight_query']:
     query = st.session_state['spotlight_query']
-    mode = st.session_state.get('spotlight_mode', "âš¡ Concepto RÃ¡pido")
+    mode = st.session_state.get('spotlight_mode', "⚡ Concepto Rápido")
     
     # Visual Container
-    st.markdown(f"#### ðŸ” Resultados de Spotlight: *{query}*")
+    st.markdown(f"#### 🔍 Resultados de Spotlight: *{query}*")
     
-    with st.spinner(f"Investigando en tu bibliografÃ­a ({mode})..."):
+    with st.spinner(f"Investigando en tu bibliografía ({mode})..."):
         if not assistant:
-             st.error("âš ï¸ Configura tu API Key en la barra lateral primero.")
+             st.error("⚠️ Configura tu API Key en la barra lateral primero.")
         else:
             # 1. Get Context (Efficiency: Only load if we search)
             gl_ctx, gl_count = get_global_context()
             
             if gl_count == 0:
-                st.warning("âš ï¸ Tu cerebro digital estÃ¡ vacÃ­o. Sube videos o archivos a la Biblioteca primero.")
+                st.warning("⚠️ Tu cerebro digital está vacío. Sube videos o archivos a la Biblioteca primero.")
             else:
                 # 2. Search
                 try:
@@ -252,15 +252,15 @@ if 'spotlight_query' in st.session_state and st.session_state['spotlight_query']
                     final_res = st.session_state[search_key]
                     
                     # Display
-                    if "RÃ¡pido" in mode:
-                        st.info(final_res, icon="âš¡")
+                    if "Rápido" in mode:
+                        st.info(final_res, icon="⚡")
                     else:
-                        st.success(final_res, icon="ðŸ•µï¸")
+                        st.success(final_res, icon="🕵️")
                         
                 except Exception as e:
                     st.error(f"Error en Spotlight: {e}")
             
-    if st.button("Cerrar BÃºsqueda", key="close_spot"):
+    if st.button("Cerrar Búsqueda", key="close_spot"):
         st.session_state['spotlight_query'] = ""
         st.rerun()
 
@@ -295,7 +295,6 @@ CSS_STYLE = """
     /* APP BACKGROUND */
     .stApp {
         background-color: var(--bg-color);
-        /* Clean background, no dots */
     }
 
     /* SIDEBAR */
@@ -315,7 +314,7 @@ CSS_STYLE = """
     div.stButton > button {
         background-color: var(--primary-purple);
         color: white;
-        border-radius: 8px; /* Professional Rounded Rect */
+        border-radius: 8px;
         border: none;
         padding: 0.5rem 1.5rem;
         font-weight: 600;
@@ -323,7 +322,7 @@ CSS_STYLE = """
         box-shadow: 0 4px 6px -1px rgba(75, 34, 221, 0.2);
     }
     div.stButton > button:hover {
-        background-color: #3a1ab9; /* Darker Purple */
+        background-color: #3a1ab9;
         color: white;
         transform: translateY(-1px);
         box-shadow: 0 10px 15px -3px rgba(75, 34, 221, 0.3);
@@ -382,15 +381,14 @@ CSS_STYLE = """
     }
 </style>
 """
-
 st.markdown(CSS_STYLE, unsafe_allow_html=True)
 
 # Sidebar
 with st.sidebar:
     # --- USER PROFILE ---
     if st.session_state.get('user'):
-        st.markdown(f"ðŸ‘¤ **{st.session_state['user'].email}**")
-        if st.button("Cerrar SesiÃ³n", key="logout_btn", use_container_width=True):
+        st.markdown(f"👤 **{st.session_state['user'].email}**")
+        if st.button("Cerrar Sesión", key="logout_btn", use_container_width=True):
             st.session_state['user'] = None
             if 'supabase_session' in st.session_state:
                 del st.session_state['supabase_session']
@@ -405,16 +403,16 @@ with st.sidebar:
     if os.path.exists("assets/logo_main.png"):
         st.image("assets/logo_main.png", use_container_width=True)
     else:
-        st.markdown("## ðŸŽ“ e-education")
+        st.markdown("## 🎓 e-education")
     
     st.divider()
 
     # --- SPOTLIGHT SEARCH (Universal) ---
-    st.markdown("### ðŸ” Spotlight AcadÃ©mico")
-    search_query = st.text_input("Â¿QuÃ© buscas hoy?", placeholder="Ej: 'Concepto de Lead' o 'RelaciÃ³n entre X y Y'")
-    search_mode = st.radio("Modo:", ["âš¡ Concepto RÃ¡pido", "ðŸ•µï¸ AnÃ¡lisis Profundo"], horizontal=True, label_visibility="collapsed")
+    st.markdown("### 🔍 Spotlight Académico")
+    search_query = st.text_input("¿Qué buscas hoy?", placeholder="Ej: 'Concepto de Lead' o 'Relación entre X y Y'")
+    search_mode = st.radio("Modo:", ["⚡ Concepto Rápido", "🕵️ Análisis Profundo"], horizontal=True, label_visibility="collapsed")
     
-    if st.button("Buscar ðŸ”", key="btn_spotlight"):
+    if st.button("Buscar 🔍", key="btn_spotlight"):
         if search_query:
             st.session_state['spotlight_query'] = search_query
             st.session_state['spotlight_mode'] = search_mode
@@ -424,7 +422,7 @@ with st.sidebar:
     
     st.divider()
 
-    st.header("âš™ï¸ ConfiguraciÃ³n Personal")
+    st.header("⚙️ Configuración Personal")
     
     # Check if system key exists (for info only, do not show it)
     has_system_key = False
@@ -433,15 +431,15 @@ with st.sidebar:
     except: pass
     
     if has_system_key:
-        st.info("âœ… Clave del Sistema Activa")
+        st.info("✅ Clave del Sistema Activa")
     else:
-        st.warning("âš ï¸ Sin Clave del Sistema")
+        st.warning("⚠️ Sin Clave del Sistema")
         
-    user_key_input = st.text_input("Tu Clave API (Opcional)", type="password", help="Sobrescribe la clave del sistema para esta sesiÃ³n.")
+    user_key_input = st.text_input("Tu Clave API (Opcional)", type="password", help="Sobrescribe la clave del sistema para esta sesión.")
     
     if user_key_input:
         st.session_state['custom_api_key'] = user_key_input
-        st.success("âœ… Usando tu Clave Personal")
+        st.success("✅ Usando tu Clave Personal")
     else:
         # If user clears input, revert to system
         if 'custom_api_key' in st.session_state:
@@ -451,7 +449,7 @@ with st.sidebar:
     
     # --- COURSE SELECTOR (WORKSPACES) ---
     # --- COURSE SELECTOR (WORKSPACES) ---
-    st.header("ðŸ“‚ Espacio de Trabajo")
+    st.header("📂 Espacio de Trabajo")
     
     # 1. Fetch Courses from DB
     from database import get_user_courses, create_course
@@ -475,12 +473,12 @@ with st.sidebar:
             st.session_state['current_course'] = None
             
     # Selectbox logic
-    options = course_names + ["âž• Crear Nuevo..."]
+    options = course_names + ["➕ Crear Nuevo..."]
     index = course_names.index(st.session_state['current_course']) if st.session_state['current_course'] in course_names else 0
     
     selected_option = st.selectbox("Diplomado Actual:", options, index=index)
     
-    if selected_option == "âž• Crear Nuevo...":
+    if selected_option == "➕ Crear Nuevo...":
         new_course_name = st.text_input("Nombre del Nuevo Diplomado:", placeholder="Ej: Curso IA Contenido")
         if st.button("Crear Espacio"):
             if new_course_name:
@@ -500,8 +498,8 @@ with st.sidebar:
         st.caption(f"ID: {st.session_state['current_course_id']}")
 
     # RENAME OPTION
-    if st.session_state['current_course'] != "âž• Crear Nuevo...":
-        with st.expander("âœï¸ Renombrar Diplomado"):
+    if st.session_state['current_course'] != "➕ Crear Nuevo...":
+        with st.expander("✏️ Renombrar Diplomado"):
             rename_input = st.text_input("Nuevo nombre:", value=st.session_state['current_course'], key="rename_input")
             if st.button("Confirmar Cambio"):
                     if rename_input and rename_input != st.session_state['current_course']:
@@ -518,7 +516,7 @@ with st.sidebar:
                         if success:
                              # 2. Local Update (Secondary - Best Effort)
                              if os.path.exists(dst):
-                                 st.warning("El nombre se actualizÃ³ en la base de datos, pero la carpeta local ya existÃ­a (se omitiÃ³ renombre local).")
+                                 st.warning("El nombre se actualizó en la base de datos, pero la carpeta local ya existía (se omitió renombre local).")
                              else:
                                  try:
                                      if os.path.exists(src):
@@ -530,13 +528,13 @@ with st.sidebar:
                                      st.warning(f"Nombre actualizado en DB, pero error local: {e}")
 
                              st.session_state['current_course'] = safe_rename
-                             st.success("Â¡Renombrado!")
+                             st.success("¡Renombrado!")
                              st.rerun()
                         else:
                              st.error("Error actualizando base de datos.")
 
     # DELETE OPTION
-    with st.expander("ðŸ—‘ï¸ Borrar Diplomados"):
+    with st.expander("🗑️ Borrar Diplomados"):
         # Filter out "Crear Nuevo" if present or just use db_courses list
         del_options = [c['name'] for c in db_courses]
         courses_to_del = st.multiselect("Selecciona para borrar:", del_options, key="del_courses_sel")
@@ -554,7 +552,7 @@ with st.sidebar:
                              st.error(f"Error borrando {c_name}")
                 
                 if deleted_count > 0:
-                    st.success(f"Â¡{deleted_count} diplomados eliminados!")
+                    st.success(f"¡{deleted_count} diplomados eliminados!")
                     # Clear session if current was deleted
                     if st.session_state.get('current_course') in courses_to_del:
                          st.session_state['current_course'] = None
@@ -583,13 +581,13 @@ with st.sidebar:
             // Create Left Button
             const btnLeft = doc.createElement('button');
             btnLeft.id = 'tab-scroll-left';
-            btnLeft.innerHTML = 'â—€';
+            btnLeft.innerHTML = '◀';
             btnLeft.onclick = () => tabList.scrollBy({left: -200, behavior: 'smooth'});
             
             // Create Right Button
             const btnRight = doc.createElement('button');
             btnRight.id = 'tab-scroll-right';
-            btnRight.innerHTML = 'â–¶';
+            btnRight.innerHTML = '▶';
             btnRight.onclick = () => tabList.scrollBy({left: 200, behavior: 'smooth'});
             
             // Shared Styles
@@ -632,13 +630,13 @@ with st.sidebar:
 
     # --- TABS DEFINITION ---
 tab1, tab2, tab3, tab4, tab_lib, tab5, tab6 = st.tabs([
-    "ðŸ“¹ Transcriptor", 
-    "ðŸ“ Apuntes Simples", 
-    "ðŸ—ºï¸ GuÃ­a de Estudio", 
-    "ðŸ§  Ayudante Quiz",
-    "ðŸ“‚ Biblioteca",
-    "ðŸ‘©â€ðŸ« Ayudante de Tareas",
-    "ðŸ“š TutorÃ­a 1 a 1"
+    "📹 Transcriptor", 
+    "📝 Apuntes Simples", 
+    "🗺️ Guía de Estudio", 
+    "🧠 Ayudante Quiz",
+    "📂 Biblioteca",
+    "👩‍🏫 Ayudante de Tareas",
+    "📚 Tutoría 1 a 1"
 ])
 
 # --- Helper for ECharts Visualization ---
@@ -680,7 +678,7 @@ with tab_lib:
     if 'assistant' in locals() and assistant:
          render_library(assistant)
     else:
-         st.info("âš ï¸ Configura tu API Key en la barra lateral para activar la Biblioteca IA.")
+         st.info("⚠️ Configura tu API Key en la barra lateral para activar la Biblioteca IA.")
 
 # --- TAB 1: Transcriptor ---
 with tab1:
@@ -695,20 +693,20 @@ with tab1:
             '<div class="card-text">'
             '<h2 style="margin-top:0;">1. Transcriptor de Videos</h2>'
             '<p style="color: #64748b; font-size: 1.1rem; margin-bottom: 20px;">'
-            'Sube los videos de tu unidad para procesarlos automÃ¡ticamente.'
+            'Sube los videos de tu unidad para procesarlos automáticamente.'
             '</p>'
             '</div>'
         )
         st.markdown(tab1_html, unsafe_allow_html=True)
         
-        uploaded_files = st.file_uploader("Arrastra tus archivos aquÃ­", type=['mp4', 'mov', 'avi', 'mkv'], accept_multiple_files=True, key="up1")
+        uploaded_files = st.file_uploader("Arrastra tus archivos aquí", type=['mp4', 'mov', 'avi', 'mkv'], accept_multiple_files=True, key="up1")
         
         if uploaded_files:
-            if st.button("Iniciar TranscripciÃ³n", key="btn1", use_container_width=True):
+            if st.button("Iniciar Transcripción", key="btn1", use_container_width=True):
                 # Validation
                 c_id = st.session_state.get('current_course_id')
                 if not c_id:
-                    st.error("âš ï¸ Selecciona un Espacio de Trabajo en la barra lateral primero.")
+                    st.error("⚠️ Selecciona un Espacio de Trabajo en la barra lateral primero.")
                 else:
                     progress_bar = st.progress(0)
                     status_text = st.empty()
@@ -746,7 +744,7 @@ with tab1:
                                     
                                 upload_file_to_db(t_unit_id, os.path.basename(txt_path), trans_text, "transcript")
                                 
-                                st.success(f"âœ… {file.name} guardado en Nube (Carpeta Transcripts)")
+                                st.success(f"✅ {file.name} guardado en Nube (Carpeta Transcripts)")
                                 
                                 # Store in session state for immediate display
                                 st.session_state['transcript_history'].append({"name": file.name, "text": trans_text})
@@ -761,7 +759,7 @@ with tab1:
                             
                             progress_bar.progress(1.0)
                         
-                        status_text.success("Â¡Todo listo! (100%)")
+                        status_text.success("¡Todo listo! (100%)")
                     else:
                         st.error("No se pudo crear carpeta de transcripts.")
 
@@ -771,12 +769,12 @@ with tab1:
                 st.divider()
                 c_head, c_copy = st.columns([0.9, 0.1])
                 with c_head:
-                    st.markdown(f"### ðŸ“„ TranscripciÃ³n: {item['name']}")
+                    st.markdown(f"### 📄 Transcripción: {item['name']}")
                 with c_copy:
-                    if st.button("ðŸ“„", key=f"cp_t_{i}", help="Copiar Texto Limpio"):
+                    if st.button("📄", key=f"cp_t_{i}", help="Copiar Texto Limpio"):
                         clean_txt = clean_markdown(item['text'])
                         if copy_to_clipboard(clean_txt):
-                            st.toast("Â¡Copiado!", icon='ðŸ“‹')
+                            st.toast("¡Copiado!", icon='📋')
                 st.markdown(item['text'])
 
 # --- TAB 2: Apuntes Simples ---
@@ -812,15 +810,15 @@ with tab2:
              # Check Global Memory
              gl_ctx, gl_count = get_global_context()
              if gl_count > 0:
-                st.success(f"âœ… **Memoria Global Activa:** {gl_count} archivos base detectados.")
+                st.success(f"✅ **Memoria Global Activa:** {gl_count} archivos base detectados.")
             
              if not transcript_files:
-                st.info("No hay transcripciones. Sube videos en la PestaÃ±a 1 (se crearÃ¡ carpeta 'Transcripts').")
+                st.info("No hay transcripciones. Sube videos en la Pestaña 1 (se creará carpeta 'Transcripts').")
              else:
                 options = [f['name'] for f in transcript_files]
                 file_map = {f['name']: f['id'] for f in transcript_files}
                 
-                selected_file = st.selectbox("Selecciona una transcripciÃ³n:", options, key="sel2")
+                selected_file = st.selectbox("Selecciona una transcripción:", options, key="sel2")
                 
                 if selected_file and st.button("Generar Apuntes", key="btn2"):
                     # Get content from DB
@@ -848,7 +846,7 @@ with tab2:
                              st.success(f"Apuntes guardados en 'Notes'/{fname}")
                         
                         st.session_state['notes_result'] = notes_data
-                        st.success("Â¡Apuntes generados en 3 capas!")
+                        st.success("¡Apuntes generados en 3 capas!")
 
                 # --- DISPLAY RESULTS ---
                 if st.session_state['notes_result']:
@@ -856,32 +854,32 @@ with tab2:
                     
                     # Check if it's new dict format (Progressive) or old string (Legacy)
                     if isinstance(res, dict):
-                        st.markdown("### ðŸ“ Apuntes Progresivos")
+                        st.markdown("### 📝 Apuntes Progresivos")
                         
                         # LEVEL 1: Ultracorto
-                        with st.expander("ðŸŸ¢ Nivel 1: Ultracorto (5 Puntos)", expanded=True):
+                        with st.expander("🟢 Nivel 1: Ultracorto (5 Puntos)", expanded=True):
                             c1, c2 = st.columns([0.9, 0.1])
                             with c1: st.markdown(res.get('ultracorto', ''))
                             with c2:
-                                if st.button("ðŸ“„", key="copy_l1", help="Copiar Nivel 1"):
+                                if st.button("📄", key="copy_l1", help="Copiar Nivel 1"):
                                     copy_to_clipboard(res.get('ultracorto', ''))
                                     st.toast("Copiado Nivel 1")
 
                         # LEVEL 2: Intermedio
-                        with st.expander("ðŸŸ¡ Nivel 2: Intermedio (Conceptos Clave)", expanded=False):
+                        with st.expander("🟡 Nivel 2: Intermedio (Conceptos Clave)", expanded=False):
                             c1, c2 = st.columns([0.9, 0.1])
                             with c1: st.markdown(res.get('intermedio', ''))
                             with c2:
-                                if st.button("ðŸ“„", key="copy_l2", help="Copiar Nivel 2"):
+                                if st.button("📄", key="copy_l2", help="Copiar Nivel 2"):
                                     copy_to_clipboard(res.get('intermedio', ''))
                                     st.toast("Copiado Nivel 2")
 
                         # LEVEL 3: Profundo
-                        with st.expander("ðŸ”´ Nivel 3: Profundidad (ExplicaciÃ³n Completa)", expanded=False):
+                        with st.expander("🔴 Nivel 3: Profundidad (Explicación Completa)", expanded=False):
                             c1, c2 = st.columns([0.9, 0.1])
                             with c1: st.markdown(res.get('profundo', ''))
                             with c2:
-                                 if st.button("ðŸ“„", key="copy_l3", help="Copiar Nivel 3"):
+                                 if st.button("📄", key="copy_l3", help="Copiar Nivel 3"):
                                     copy_to_clipboard(res.get('profundo', ''))
                                     st.toast("Copiado Nivel 3")
                                     
@@ -892,7 +890,7 @@ with tab2:
                              copy_to_clipboard(res)
                              st.toast("Copiado")
 
-# --- TAB 3: GuÃ­a de Estudio ---
+# --- TAB 3: Guía de Estudio ---
 with tab3:
     col_img, col_text = st.columns([1, 1.5], gap="large") # Swapped to Image Left
     
@@ -902,8 +900,8 @@ with tab3:
     with col_text:
         tab3_html = (
             '<div class="card-text">'
-            '<h2 style="margin-top:0;">3. GuÃ­a de Estudio EstratÃ©gica</h2>'
-            '<p style="color: #64748b; font-size: 1.1rem;">Crea mapas, resÃºmenes y preguntas de examen.</p>'
+            '<h2 style="margin-top:0;">3. Guía de Estudio Estratégica</h2>'
+            '<p style="color: #64748b; font-size: 1.1rem;">Crea mapas, resúmenes y preguntas de examen.</p>'
             '</div>'
         )
         st.markdown(tab3_html, unsafe_allow_html=True)
@@ -925,22 +923,22 @@ with tab3:
             # Check Global Memory
             gl_ctx, gl_count = get_global_context()
             if gl_count > 0:
-                st.success(f"âœ… **Memoria Global Activa:** {gl_count} archivos base detectados.")
+                st.success(f"✅ **Memoria Global Activa:** {gl_count} archivos base detectados.")
 
             if not transcript_files:
-                 st.info("Primero sube videos en la PestaÃ±a 1.")
+                 st.info("Primero sube videos en la Pestaña 1.")
             else:
                 options_guide = [f['name'] for f in transcript_files]
                 file_map_guide = {f['name']: f['id'] for f in transcript_files}
                 
                 selected_guide_file = st.selectbox("Archivo base:", options_guide, key="sel3")
                 
-                if selected_guide_file and st.button("Generar GuÃ­a", key="btn3"):
+                if selected_guide_file and st.button("Generar Guía", key="btn3"):
                     # Get content from DB
                     f_id = file_map_guide[selected_guide_file]
                     text = get_file_content(f_id)
                         
-                    with st.spinner("DiseÃ±ando estrategia de estudio..."):
+                    with st.spinner("Diseñando estrategia de estudio..."):
                         guide = assistant.generate_study_guide(text, global_context=gl_ctx)
                         
                         # Save to "Guides" Unit in DB
@@ -952,9 +950,9 @@ with tab3:
                              base_name = selected_guide_file.replace("_transcripcion.txt", "")
                              fname = f"Guia_{base_name}.txt"
                              upload_file_to_db(g_unit['id'], fname, guide, "guide")
-                             st.success(f"GuÃ­a guardada en 'Guides'/{fname}")
+                             st.success(f"Guía guardada en 'Guides'/{fname}")
 
-                        st.success("Â¡GuÃ­a lista!")
+                        st.success("¡Guía lista!")
                         st.session_state['guide_result'] = guide # Save to session
             
             # --- PERSISTENT RESULTS DISPLAY ---
@@ -964,12 +962,12 @@ with tab3:
                 # HEADER + COPY ICON
                 c_head, c_copy = st.columns([0.9, 0.1])
                 with c_head:
-                    st.markdown("### ðŸ—ºï¸ Tu GuÃ­a de Estudio")
+                    st.markdown("### 🗺️ Tu Guía de Estudio")
                 with c_copy:
-                    if st.button("ðŸ“„", key="cp_guide", help="Copiar GuÃ­a Limpia"):
+                    if st.button("📄", key="cp_guide", help="Copiar Guía Limpia"):
                         clean_txt = clean_markdown(st.session_state['guide_result'])
                         if copy_to_clipboard(clean_txt):
-                            st.toast("Â¡Copiado!", icon='ðŸ“‹')
+                            st.toast("¡Copiado!", icon='📋')
                 
                 # Visual Display
                 st.markdown(st.session_state['guide_result'])
@@ -985,7 +983,7 @@ with tab4:
         tab4_html = (
             '<div class="card-text">'
             '<h2 style="margin-top:0;">4. Ayudante de Pruebas</h2>'
-            '<p style="color: #64748b; font-size: 1.1rem;">Modo RÃ¡faga: Sube mÃºltiples preguntas y obtÃ©n las respuestas.</p>'
+            '<p style="color: #64748b; font-size: 1.1rem;">Modo Ráfaga: Sube múltiples preguntas y obtén las respuestas.</p>'
             '</div>'
         )
         st.markdown(tab4_html, unsafe_allow_html=True)
@@ -993,13 +991,13 @@ with tab4:
         # Check Global Memory
         gl_ctx, gl_count = get_global_context()
         if gl_count > 0:
-            st.success(f"âœ… **Memoria Global Activa:** Usando {gl_count} archivos para mayor precisiÃ³n.")
+            st.success(f"✅ **Memoria Global Activa:** Usando {gl_count} archivos para mayor precisión.")
         
         # RESET BUTTON
         col_up, col_reset = st.columns([0.9, 0.1])
         with col_reset:
              # Use the same 'copy-btn' style or just a clean emoji button
-             if st.button("ðŸ—‘ï¸", key="reset_quiz", help="Borrar todo para empezar de cero"):
+             if st.button("🗑️", key="reset_quiz", help="Borrar todo para empezar de cero"):
                  st.session_state['quiz_results'] = []
                  st.session_state['pasted_images'] = []
                  st.session_state['quiz_key'] += 1
@@ -1007,14 +1005,14 @@ with tab4:
                  
         with col_up:
             # Clipboard Paste Button
-            if st.button("ðŸ“‹ Pegar Imagen (Portapapeles)", key="paste_btn", help="Haz Ctrl+V en tu PC, luego click aquÃ­ para cargar la imagen."):
+            if st.button("📋 Pegar Imagen (Portapapeles)", key="paste_btn", help="Haz Ctrl+V en tu PC, luego click aquí para cargar la imagen."):
                 try:
                     img = ImageGrab.grabclipboard()
                     if isinstance(img, Image.Image):
                         # Convert to RGB to avoid alpha issues
                         if img.mode == 'RGBA': img = img.convert('RGB')
                         st.session_state['pasted_images'].append(img)
-                        st.toast("Imagen pegada con Ã©xito!", icon='ðŸ“¸')
+                        st.toast("Imagen pegada con éxito!", icon='📸')
                     else:
                         st.warning("No hay imagen en el portapapeles. (Haz PrtScrn o Copiar Imagen primero)")
                 except Exception as e:
@@ -1022,7 +1020,7 @@ with tab4:
 
             # Show Pasted Thumbnails
             if st.session_state['pasted_images']:
-                st.caption(f"ðŸ“¸ {len(st.session_state['pasted_images'])} capturas pegadas:")
+                st.caption(f"📸 {len(st.session_state['pasted_images'])} capturas pegadas:")
                 cols_past = st.columns(len(st.session_state['pasted_images']))
                 for idx, p_img in enumerate(st.session_state['pasted_images']):
                     with cols_past[idx]:
@@ -1094,7 +1092,7 @@ with tab4:
                         # If still failing, ignore it (will be cleaned up later or overwritten)
                 
             progress_bar.progress(1.0)
-            status.success("Â¡AnÃ¡lisis Terminado! (100%)")
+            status.success("¡Análisis Terminado! (100%)")
             st.session_state['quiz_results'] = results # Save results
 
         # --- PERSISTENT RESULTS DISPLAY ---
@@ -1104,7 +1102,7 @@ with tab4:
             # HEADER + COPY ICON
             c_head, c_copy = st.columns([0.9, 0.1])
             with c_head:
-                st.markdown("### ðŸ“‹ Resultados de Quiz")
+                st.markdown("### 📋 Resultados de Quiz")
             with c_copy:
                 # Compile text for copying inside the button action
                 full_report_copy = "--- HOJA DE RESPUESTAS ---\n\n"
@@ -1114,14 +1112,14 @@ with tab4:
                 for i, res in enumerate(st.session_state['quiz_results']):
                      full_report_copy += f"\n[FOTO {i+1}]\n{res['full']}\n"
                      
-                if st.button("ðŸ“„", key="cp_quiz", help="Copiar Resultados Limpios"):
+                if st.button("📄", key="cp_quiz", help="Copiar Resultados Limpios"):
                     clean_txt = clean_markdown(full_report_copy)
                     if copy_to_clipboard(clean_txt):
-                        st.toast("Â¡Copiado!", icon='ðŸ“‹')
+                        st.toast("¡Copiado!", icon='📋')
             
             # --- RESULTS DISPLAY ---
             # Visual Display (Markdown instead of Code Block)
-            st.markdown("#### ðŸ“ Hoja de Respuestas RÃ¡pida")
+            st.markdown("#### 📝 Hoja de Respuestas Rápida")
             
             # Build a nice markdown list for visual display
             md_list = ""
@@ -1130,7 +1128,7 @@ with tab4:
             st.markdown(md_list)
             
             st.divider()
-            st.markdown("#### ðŸ” Detalles por Pregunta")
+            st.markdown("#### 🔍 Detalles por Pregunta")
             
             for i, res in enumerate(st.session_state['quiz_results']):
                 with st.expander(f"Ver detalle de Foto {i+1}"):
@@ -1146,7 +1144,7 @@ with tab5:
     tab5_html = (
         '<div class="card-text">'
         '<h2 style="margin-top:0;">5. Ayudante de Tareas & Biblioteca</h2>'
-        '<p style="color: #64748b; font-size: 1.1rem;">Tu "Segundo Cerebro": Guarda conocimientos y Ãºsalos para resolver tareas.</p>'
+        '<p style="color: #64748b; font-size: 1.1rem;">Tu "Segundo Cerebro": Guarda conocimientos y úsalos para resolver tareas.</p>'
         '</div>'
     )
     st.markdown(tab5_html, unsafe_allow_html=True)
@@ -1154,24 +1152,24 @@ with tab5:
     # --- LAYOUT REFOCUSED ON TASK SOLVER ---
     col_task = st.container()
     
-    st.info("ðŸ’¡ Gestiona tus archivos, sube documentos y organiza carpetas en la nueva pestaÃ±a 'ðŸ“‚ Biblioteca'.")
+    st.info("💡 Gestiona tus archivos, sube documentos y organiza carpetas en la nueva pestaña '📂 Biblioteca'.")
 
     # --- RIGHT COLUMN: HOMEWORK SOLVER (Now Main) ---
     with col_task:
         c_title, c_trash = st.columns([0.85, 0.15])
         with c_title:
-            st.markdown("### ðŸ§  Ayudante Inteligente")
-            st.caption("Resuelve tareas usando SOLO la informaciÃ³n de tu biblioteca.")
+            st.markdown("### 🧠 Ayudante Inteligente")
+            st.caption("Resuelve tareas usando SOLO la información de tu biblioteca.")
         with c_trash:
-            if st.button("ðŸ—‘ï¸", key="clear_hw_btn", help="Borrar tarea y empezar de cero"):
+            if st.button("🗑️", key="clear_hw_btn", help="Borrar tarea y empezar de cero"):
                 st.session_state['homework_result'] = None
                 st.rerun()
         
         # MODE TOGGLE
-        arg_mode = st.toggle("ðŸ§  Activar Modo Argumentador (Abogado del Diablo)", key="arg_mode_toggle", help="Activa un anÃ¡lisis profundo con 4 dimensiones: Respuesta, Fuentes, Paso a Paso y Contra-argumento.")
+        arg_mode = st.toggle("🧠 Activar Modo Argumentador (Abogado del Diablo)", key="arg_mode_toggle", help="Activa un análisis profundo con 4 dimensiones: Respuesta, Fuentes, Paso a Paso y Contra-argumento.")
         
         # 1. Select Context
-        st.markdown("**1. Â¿QuÃ© conocimientos uso?** (SelecciÃ³n por Unidad)")
+        st.markdown("**1. ¿Qué conocimientos uso?** (Selección por Unidad)")
         
         # DB Logic for Context Selection
         from database import get_units, get_unit_context
@@ -1184,29 +1182,29 @@ with tab5:
         has_global = global_unit is not None
         
         if has_global:
-            st.success(f"âœ… **Memoria Global Activa** (Temarios/Reglas).")
+            st.success(f"✅ **Memoria Global Activa** (Temarios/Reglas).")
             
-        st.caption("â„¹ï¸ AdemÃ¡s de la Memoria Global, selecciona las unidades especÃ­ficas para esta tarea:")
+        st.caption("ℹ️ Además de la Memoria Global, selecciona las unidades específicas para esta tarea:")
         
         # Filter available units (excluding Global)
         available_units_objs = [u for u in db_units if u['name'] != "00_Memoria_Global"]
         available_unit_names = [u['name'] for u in available_units_objs]
         unit_map = {u['name']: u['id'] for u in available_units_objs}
         
-        selected_units = st.multiselect("Unidades EspecÃ­ficas:", available_unit_names, placeholder="Ej: Unidad 1...")
+        selected_units = st.multiselect("Unidades Específicas:", available_unit_names, placeholder="Ej: Unidad 1...")
         
         # 2. Input Task
         st.markdown("**2. Tu Tarea:**")
-        task_prompt = st.text_area("Describe la tarea o pega la consigna:", height=100, placeholder="Ej: Crea un perfil de cliente ideal usando el mÃ©todo de la Unidad 1...")
+        task_prompt = st.text_area("Describe la tarea o pega la consigna:", height=100, placeholder="Ej: Crea un perfil de cliente ideal usando el método de la Unidad 1...")
         
         # ATTACHMENT UPLOADER
         task_file = st.file_uploader("Adjuntar consigna (PDF, Imagen, TXT)", type=['pdf', 'png', 'jpg', 'jpeg', 'txt'])
         
-        btn_label = "âš”ï¸ Debatir y Solucionar" if arg_mode else "ðŸš€ Resolver Tarea"
+        btn_label = "⚔️ Debatir y Solucionar" if arg_mode else "🚀 Resolver Tarea"
         
         if st.button(btn_label, key="solve_task", use_container_width=True):
             if not task_prompt and not task_file:
-                st.warning("âš ï¸ Escribe la tarea o sube un archivo.")
+                st.warning("⚠️ Escribe la tarea o sube un archivo.")
             else:
                 # Gather context
                 gathered_texts = []
@@ -1215,7 +1213,7 @@ with tab5:
                 using_general_knowledge = False
                 if not selected_units and not has_global:
                     using_general_knowledge = True
-                    st.toast("âš ï¸ Sin biblioteca seleccionada. Usando Conocimiento General de Gemini.", icon="ðŸŒ")
+                    st.toast("⚠️ Sin biblioteca seleccionada. Usando Conocimiento General de Gemini.", icon="🌐")
                 
                 # 1. Add Global Context
                 if has_global:
@@ -1258,26 +1256,26 @@ with tab5:
             
             # ARGUMENTATOR MODE DISPLAY (Dict/JSON)
             if isinstance(res, dict):
-                 st.markdown("### ðŸ›¡ï¸ AnÃ¡lisis del Consultor (Modo Argumentador)")
+                 st.markdown("### 🛡️ Análisis del Consultor (Modo Argumentador)")
                  
                  # Tabs for Output
-                 t_resp, t_src, t_steps = st.tabs(["ðŸ’¡ Respuesta", "ðŸ“š Fuentes", "ðŸ‘£ Paso a Paso"])
+                 t_resp, t_src, t_steps = st.tabs(["💡 Respuesta", "📚 Fuentes", "👣 Paso a Paso"])
                  
                  with t_resp:
                      st.markdown(res.get('direct_response', ''))
-                     if st.button("ðŸ“„ Copiar Respuesta", key="cp_arg_resp"):
+                     if st.button("📄 Copiar Respuesta", key="cp_arg_resp"):
                          copy_to_clipboard(res.get('direct_response', ''))
                          st.toast("Copiada Respuesta")
                          
                  with t_src:
-                     st.markdown(res.get('sources', 'No se citaron fuentes especÃ­ficas.'))
+                     st.markdown(res.get('sources', 'No se citaron fuentes específicas.'))
                      
                  with t_steps:
                      st.markdown(res.get('step_by_step', ''))
                      
                  # Counter Argument (Hidden)
-                 with st.expander("ðŸ§¨ Ver Contra-Argumento (Abogado del Diablo)"):
-                     st.warning("âš ï¸ Estas son las objeciones que un profesor estricto te harÃ­a:")
+                 with st.expander("🧨 Ver Contra-Argumento (Abogado del Diablo)"):
+                     st.warning("⚠️ Estas son las objeciones que un profesor estricto te haría:")
                      st.markdown(res.get('counter_argument', ''))
                      
             else:
@@ -1285,18 +1283,18 @@ with tab5:
                 # HEADER + COPY ICON
                 c_head, c_copy = st.columns([0.9, 0.1])
                 with c_head:
-                    st.markdown("### âœ… Respuesta")
+                    st.markdown("### ✅ Respuesta")
                 with c_copy:
-                     if st.button("ðŸ“„", key="cp_hw", help="Copiar Respuesta"):
+                     if st.button("📄", key="cp_hw", help="Copiar Respuesta"):
                         clean_txt = clean_markdown(res)
                         if copy_to_clipboard(clean_txt):
-                            st.toast("Â¡Copiado!", icon='ðŸ“‹')
+                            st.toast("¡Copiado!", icon='📋')
                 
                 st.markdown(res)
 
             # --- BRIDGE TO TUTOR ---
             st.divider()
-            if st.button("ðŸ—£ï¸ Debatir esta respuesta con el Profesor (Ir a TutorÃ­a)", key="btn_bridge_tutor", help="EnvÃ­a esta tarea y respuesta al chat de TutorÃ­a para discutirla."):
+            if st.button("🗣️ Debatir esta respuesta con el Profesor (Ir a Tutoría)", key="btn_bridge_tutor", help="Envía esta tarea y respuesta al chat de Tutoría para discutirla."):
                 # Format the context for the tutor
                 full_text_response = ""
                 if isinstance(res, dict):
@@ -1308,7 +1306,7 @@ with tab5:
                     f"Hola Profe IA. Acabo de generar una respuesta para esta tarea:\n\n"
                     f"**CONSIGNA:**\n_{task_prompt}_\n\n"
                     f"**MI BORRADOR (Generado por Asistente):**\n{full_text_response}\n\n"
-                    f"Quiero que analicemos esto. QuÃ© opinas? Podemos mejorarlo?"
+                    f"Quiero que analicemos esto. Qué opinas? Podemos mejorarlo?"
                 )
                 
                 # Check if history exists
@@ -1322,7 +1320,7 @@ with tab5:
                 # Prepare Context (Global)
                 gl_ctx_bridge, _ = get_global_context()
                 
-                with st.spinner("El profesor estÃ¡ analizando tu respuesta..."):
+                with st.spinner("El profesor está analizando tu respuesta..."):
                     try:
                         # We use the same chat_tutor method
                         response_bridge = assistant.chat_tutor(
@@ -1334,19 +1332,19 @@ with tab5:
                         # Append Assistant Response
                         st.session_state['tutor_chat_history'].append({"role": "assistant", "content": response_bridge})
                         
-                        st.success("âœ… Â¡InformaciÃ³n enviada y el Profesor YA TE RESPONDIÃ“!")
-                        st.info("ðŸ‘ˆ Ve ahora a la pestaÃ±a 'ðŸ“š TutorÃ­a 1 a 1' para ver su correcciÃ³n.")
+                        st.success("✅ ¡Información enviada y el Profesor YA TE RESPONDIÓ!")
+                        st.info("👈 Ve ahora a la pestaña '📚 Tutoría 1 a 1' para ver su corrección.")
                         
                     except Exception as e:
-                        st.error(f"Error generando respuesta automÃ¡tica del tutor: {e}")
+                        st.error(f"Error generando respuesta automática del tutor: {e}")
 
-# --- TAB 6: TutorÃ­a 1 a 1 (Docente Artificial) ---
+# --- TAB 6: Tutoría 1 a 1 (Docente Artificial) ---
 if 'tutor_chat_history' not in st.session_state: st.session_state['tutor_chat_history'] = []
 
 with tab6:
     tutor_html = (
         '<div class="card-text">'
-        '<h2 style="margin-top:0;">6. TutorÃ­a Personalizada (Profesor IA)</h2>'
+        '<h2 style="margin-top:0;">6. Tutoría Personalizada (Profesor IA)</h2>'
         '<p style="color: #64748b; font-size: 1.1rem;">Tu profesor particular. Pregunta, sube tareas para corregir y dialoga en tiempo real.</p>'
         '</div>'
     )
@@ -1355,12 +1353,12 @@ with tab6:
     col_chat, col_info = st.columns([2, 1], gap="large")
     
     with col_info:
-        st.info("â„¹ï¸ **Memoria Activa:** El profesor recuerda vuestra conversaciÃ³n y tiene acceso total a la Biblioteca Global.")
+        st.info("ℹ️ **Memoria Activa:** El profesor recuerda vuestra conversación y tiene acceso total a la Biblioteca Global.")
         st.divider()
-        st.markdown("### ðŸ“Ž Adjunto RÃ¡pido")
+        st.markdown("### 📎 Adjunto Rápido")
         tutor_file = st.file_uploader("Subir archivo al chat", type=['pdf', 'txt', 'png', 'jpg'], key="tutor_up")
         
-        if st.button("ðŸ—‘ï¸ Borrar Historial", key="clear_chat"):
+        if st.button("🗑️ Borrar Historial", key="clear_chat"):
             st.session_state['tutor_chat_history'] = []
             st.rerun()
 
@@ -1371,7 +1369,7 @@ with tab6:
                 st.markdown(msg['content'])
         
         # User Input
-        if prompt := st.chat_input("Â¿En quÃ© puedo ayudarte hoy, alumno?"):
+        if prompt := st.chat_input("¿En qué puedo ayudarte hoy, alumno?"):
             # 1. Add User Message
             st.session_state['tutor_chat_history'].append({"role": "user", "content": prompt})
             with st.chat_message("user"):
@@ -1397,13 +1395,13 @@ with tab6:
                            content = "Archivo binario/imagen no procesado en texto crudo."
                     
                     chat_files.append({"name": tutor_file.name, "content": content})
-                    st.toast(f"ðŸ“Ž Archivo {tutor_file.name} enviado al profesor.")
+                    st.toast(f"📎 Archivo {tutor_file.name} enviado al profesor.")
                 except Exception as e:
                     st.error(f"Error leyendo archivo: {e}")
 
             # 3. Generate Response
             with st.chat_message("assistant"):
-                with st.spinner("El profesor estÃ¡ escribiendo..."):
+                with st.spinner("El profesor está escribiendo..."):
                     response = assistant.chat_tutor(
                         prompt, 
                         chat_history=st.session_state['tutor_chat_history'], 
@@ -1414,4 +1412,3 @@ with tab6:
             
             # 4. Save Response
             st.session_state['tutor_chat_history'].append({"role": "assistant", "content": response})
-
