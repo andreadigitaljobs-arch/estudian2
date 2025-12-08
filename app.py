@@ -468,6 +468,25 @@ CSS_STYLE = """
         font-weight: 500 !important;
     }
 </style>
+
+    /* FORCE ALL SIDEBAR BUTTONS TO BE ROUNDED */
+    [data-testid="stSidebar"] button {
+        border-radius: 25px !important; /* High value for Pill shape */
+        border: none !important;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
+        transition: transform 0.1s, box-shadow 0.1s !important;
+    }
+    
+    [data-testid="stSidebar"] button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 8px rgba(0,0,0,0.15) !important;
+    }
+    
+    /* Ensure Multiselect tags are also rounded if possible (Optional polish) */
+    [data-testid="stSidebar"] span[data-baseweb="tag"] {
+        border-radius: 15px !important;
+    }
+</style>
 </style>
 
 """
