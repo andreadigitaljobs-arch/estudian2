@@ -691,24 +691,24 @@ def render_image_card(img_path):
             img_data = f.read()
         b64_img = base64.b64encode(img_data).decode()
         
-        card_html = f'''
-        <div style="
-            background-color: #f3e8ff;
-            border-radius: 20px;
-            padding: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-        ">
-            <img src="data:image/png;base64,{b64_img}" style="
-                width: 100%; 
-                max-width: 400px;
-                height: auto; 
-                filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
-            ">
-        </div>
-        '''
+        card_html = f"""
+<div style="
+    background-color: #f3e8ff;
+    border-radius: 20px;
+    padding: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+">
+    <img src="data:image/png;base64,{b64_img}" style="
+        width: 100%; 
+        max-width: 400px;
+        height: auto; 
+        filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+    ">
+</div>
+"""
         st.markdown(card_html, unsafe_allow_html=True)
     else:
         st.error(f"Image not found: {img_path}")
