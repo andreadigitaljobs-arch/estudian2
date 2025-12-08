@@ -341,8 +341,15 @@ def render_upload_modal(course_id, assistant):
                                  target_id = found['id']
                              
                              if target_id:
-                                 upload_file_to_db(target_id, action['file_name'], action['content'], "text")
-                                 result_msg = f"✅ Archivo guardado: **{action['file_name']}** en *{action['target_folder']}*"
+                                 content_to_save = action.get('content', '')
+                                 if not content_to_save:
+                                     result_msg = f"⚠️ Error: La IA no generó contenido para {action['file_name']}. Intenta ser más específico."
+                                 else:
+                                     success = upload_file_to_db(target_id, action['file_name'], content_to_save, "text")
+                                     if success:
+                                         result_msg = f"✅ Guardado: **{action['file_name']}** ({len(content_to_save)} chars) en *{action['target_folder']}*"
+                                     else:
+                                         result_msg = "❌ Error al guardar en base de datos."
                              else:
                                  result_msg = f"❌ Error: No se pudo encontrar/crear la carpeta {action['target_folder']}"
                         

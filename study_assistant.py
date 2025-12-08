@@ -409,13 +409,20 @@ class StudyAssistant:
         
         try:
              response = self.model.generate_content(prompt)
-             txt = response.text.replace("```json", "").replace("```", "").strip()
+             txt = response.text.strip()
              
-             # Try parse JSON
-             if txt.startswith("{") and txt.endswith("}"):
-                 return json.loads(txt) # It's an action!
-             else:
-                 return txt # It's just talk
+             # Robust Parsing: Find first { and last }
+             import re
+             json_match = re.search(r"\{.*\}", txt, re.DOTALL)
+             
+             if json_match:
+                 try:
+                     clean_json = json_match.group(0)
+                     return json.loads(clean_json)
+                 except:
+                     pass # Fallback to text if malformed
+             
+             return txt
         except Exception as e:
             return f"Error pensando: {e}"
 
