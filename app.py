@@ -281,7 +281,7 @@ CSS_STYLE = """
     :root {
         --primary-purple: #4B22DD;
         --accent-green: #6CC04A;
-        --bg-color: #4B22DD;
+        --bg-color: #4B22DD; /* Main Background is Purple */
         --card-bg: #FFFFFF;
         --text-color: #1A1A1A;
         --border-color: #E3E4EA;
@@ -301,16 +301,26 @@ CSS_STYLE = """
         background-attachment: fixed;
     }
 
-    /* 2. THE FLOATING WHITE CARD (The Top Layer) */
-    /* Using multiple selectors to ensure we hit the container */
-    section.main > div.block-container, 
+    /* 2. THE FLOATING WHITE CARD */
+    /* FORCE OVERRIDE for main container */
+    .main .block-container {
+        background-color: #ffffff;
+        border-radius: 40px;
+        padding: 3rem 3rem !important;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+        margin-top: 40px;
+        margin-bottom: 40px;
+        max-width: 90%;
+    }
+    
+    /* Fallback selector if .main .block-container fails */
     div[data-testid="block-container"] {
         background-color: #ffffff;
-        border-radius: 30px;
+        border-radius: 40px;
         padding: 3rem !important;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-        margin: 20px auto; 
-        max-width: 92% !important; /* Cap width to ensure margins show */
+        box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+        margin: 40px auto;
+        max-width: 90%;
     }
 
     /* SIDEBAR */
@@ -327,15 +337,15 @@ CSS_STYLE = """
     }
     
     h1 {
-        font-size: 2.5rem;
-        letter-spacing: -1px;
+        font-size: 3rem;
+        letter-spacing: -2px;
     }
 
     /* BUTTONS - PRIMARY */
     div.stButton > button {
         background: linear-gradient(135deg, #4B22DD 0%, #3a1ab9 100%);
         color: white;
-        border-radius: 10px;
+        border-radius: 12px;
         border: none;
         padding: 0.6rem 2rem;
         font-weight: 600;
@@ -352,15 +362,15 @@ CSS_STYLE = """
         gap: 8px;
         background-color: #F8FAFC;
         padding: 8px;
-        border-radius: 16px;
+        border-radius: 24px; /* Pill shape container */
         box-shadow: inset 0 1px 3px rgba(0,0,0,0.02);
     }
     .stTabs [data-baseweb="tab"] {
         background-color: transparent;
-        border-radius: 10px;
+        border-radius: 20px;
         color: #64748b;
         font-weight: 500;
-        padding: 8px 16px;
+        padding: 8px 20px;
     }
     .stTabs [aria-selected="true"] {
         background-color: var(--primary-purple) !important;
@@ -370,16 +380,11 @@ CSS_STYLE = """
 
     /* INPUTS */
     .stTextInput > div > div > input, .stTextArea > div > div > textarea {
-        border-radius: 10px;
+        border-radius: 12px;
         border: 1px solid var(--border-color);
         background-color: #FAFAFA;
     }
     
-    /* IMAGES */
-    img {
-        border-radius: 16px;
-    }
-
     /* SIDEBAR BUTTONS */
     [data-testid="stSidebar"] .stButton > button {
         background: #FFFFFF !important;
