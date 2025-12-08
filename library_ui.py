@@ -56,24 +56,16 @@ def render_library(assistant):
     # Actually, simpler: Use 'type="primary"' if that maps to Purple in my theme?
     # Or just keep it simple.
     
-    col_nav = st.columns([0.1, 0.9])
+    col_nav = st.columns([0.15, 0.85])
     
     with col_nav[0]:
-        # Simple minimal home button
-        # The user requested 'icono morado'.
-        # If I can't enforce color easily on a generic button emoji, 
-        # I rely on the global button style (Purple Pill). 
-        # But if that's "ugly" or "too much", maybe she wants a transparent button with purple icon.
-        # Streamlit doesn't support 'transparent' button natively without hacks.
-        # I will revert to a standard button but REMOVE the path, which was the main annoyance.
-        
-        if st.button("🏠", key="home_btn", help="Volver al Inicio"):
+        # Rebranded Home Button: "⌂ Inicio"
+        # This text change will PROVE the file is updating.
+        if st.button("⌂ Inicio", key="home_btn", help="Volver al Inicio"):
              st.session_state['lib_current_unit_id'] = None
              st.session_state['lib_current_unit_name'] = None
              st.session_state['lib_breadcrumbs'] = []
              st.rerun()
-             
-    # Path display removed.
 
     st.divider()
 
