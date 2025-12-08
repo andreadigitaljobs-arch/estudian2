@@ -602,7 +602,6 @@ with st.sidebar:
         </ul>
     </div>
     '''
-    '''
     st.markdown(sidebar_html, unsafe_allow_html=True)
 
     # --- INJECT CUSTOM TAB SCROLL BUTTONS (JS) ---
