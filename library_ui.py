@@ -240,38 +240,105 @@ def render_upload_modal(course_id, assistant):
             st.rerun()
 
     elif mode == "📥 Importar Chat (Masivo)":
-        st.markdown("#### Rescatar Historial de ChatGPT")
-        st.caption("Sube el .txt con tu historial desordenado.")
-        
-        c_file = st.file_uploader("Archivo Chat (.txt):", type=["txt"])
-        
-        # New Instruction Input
-        instructions = st.text_area("Instrucciones para la IA (Opcional):", 
-                                  placeholder="Ej: 'Separa por fechas', 'Extrae solo los resúmenes', 'Ignora las conversaciones sobre saludos'...",
-                                  help="Dile a la IA cómo quieres que corte o organice este archivo gigante.")
-        
-        if c_file and st.button("Procesar y Guardar", type="primary"):
-             raw = c_file.getvalue().decode("utf-8", errors='ignore')
-             with st.spinner("Procesando historial..."):
-                 structured = assistant.process_bulk_chat(raw, user_instructions=instructions)
-                 
-                 # Resolve Target
-                 if not target_unit_id:
-                    if sel_opt == "✨ Nueva Carpeta..." and new_folder_name:
-                        ur = create_unit(course_id, new_folder_name)
-                        if ur: target_unit_id = ur['id']
-                    else: 
-                        # Default to new folder if not specified
-                        ur = create_unit(course_id, "01_Rescate_Chat")
-                        target_unit_id = ur['id']
-                 
-                 if target_unit_id:
-                     count = 0
-                     for item in structured:
-                         if 'title' in item and 'content' in item:
-                             safe = "".join([c if c.isalnum() else "_" for c in item['title']]) + ".md"
-                             upload_file_to_db(target_unit_id, safe, item['content'], "text")
-                             count += 1
-                     st.success(f"✅ {count} conversaciones guardadas!")
-                     time.sleep(1.5)
-                     st.rerun()
+        st.markdown("#### 🤖 Asistente de Importación")
+        st.caption("Conversa con tu archivo para organizarlo perfectamente.")
+
+        # --- STATE MANAGEMENT FOR IMPORT ---
+        if 'imp_stage' not in st.session_state: st.session_state['imp_stage'] = 'upload'
+        if 'imp_file_content' not in st.session_state: st.session_state['imp_file_content'] = None
+        if 'imp_history' not in st.session_state: st.session_state['imp_history'] = []
+
+        # 1. UPLOAD STAGE
+        if st.session_state['imp_stage'] == 'upload':
+            c_file = st.file_uploader("Sube tu archivo (.txt):", type=["txt"], key="imp_uploader")
+            if c_file:
+                # Read immediately
+                raw = c_file.getvalue().decode("utf-8", errors='ignore')
+                st.session_state['imp_file_content'] = raw
+                st.session_state['imp_stage'] = 'analyzing'
+                st.rerun()
+
+        # 2. ANALYSIS STAGE (Auto-Transition)
+        elif st.session_state['imp_stage'] == 'analyzing':
+            with st.spinner("Leyendo archivo..."):
+                summary = assistant.analyze_import_file(st.session_state['imp_file_content'])
+                st.session_state['imp_history'].append({"role": "assistant", "content": summary})
+                st.session_state['imp_stage'] = 'chatting'
+                st.rerun()
+
+        # 3. CHATTING STAGE
+        elif st.session_state['imp_stage'] == 'chatting':
+            # Restart Button
+            if st.button("🔄 Subir otro archivo"):
+                st.session_state['imp_stage'] = 'upload'
+                st.session_state['imp_history'] = []
+                st.session_state['imp_file_content'] = None
+                st.rerun()
+
+            st.divider()
+            
+            # Chat Container
+            chat_container = st.container(height=400)
+            with chat_container:
+                for msg in st.session_state['imp_history']:
+                    with st.chat_message(msg['role']):
+                        st.markdown(msg['content'])
+
+            # Input
+            if prompt := st.chat_input("Ej: 'Guarda las fechas en la carpeta Calendario'"):
+                # User Message
+                st.session_state['imp_history'].append({"role": "user", "content": prompt})
+                with chat_container:
+                     with st.chat_message("user"):
+                         st.markdown(prompt)
+
+                # Assistant Response (Action or Text)
+                with st.spinner("Procesando..."):
+                    # Get available folders for context
+                    db_units = get_units(course_id)
+                    
+                    response = assistant.chat_with_import_file(
+                        st.session_state['imp_file_content'], 
+                        prompt, 
+                        st.session_state['imp_history'],
+                        db_units
+                    )
+                    
+                    # Check if Action (JSON)
+                    if isinstance(response, dict) and 'action_type' in response:
+                        action = response
+                        result_msg = ""
+                        
+                        if action['action_type'] == 'create_folder':
+                             # Create Folder
+                             create_unit(course_id, action['target_folder'])
+                             result_msg = f"✅ Carpeta creada: **{action['target_folder']}**"
+                             
+                        elif action['action_type'] == 'save_file':
+                             # Ensure folder exists first
+                             target_id = None
+                             # Refresh units
+                             fresh_units = get_units(course_id)
+                             found = next((u for u in fresh_units if u['name'] == action['target_folder']), None)
+                             
+                             if not found:
+                                 # Auto-create if not found
+                                 ur = create_unit(course_id, action['target_folder'])
+                                 target_id = ur['id'] if ur else None
+                             else:
+                                 target_id = found['id']
+                             
+                             if target_id:
+                                 upload_file_to_db(target_id, action['file_name'], action['content'], "text")
+                                 result_msg = f"✅ Archivo guardado: **{action['file_name']}** en *{action['target_folder']}*"
+                             else:
+                                 result_msg = f"❌ Error: No se pudo encontrar/crear la carpeta {action['target_folder']}"
+                        
+                        # Add system confirmation to history
+                        st.session_state['imp_history'].append({"role": "assistant", "content": result_msg})
+                        st.rerun()
+                        
+                    else:
+                        # Normal Text Response
+                        st.session_state['imp_history'].append({"role": "assistant", "content": response})
+                        st.rerun()

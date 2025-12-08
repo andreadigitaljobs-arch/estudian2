@@ -329,81 +329,94 @@ class StudyAssistant:
             return f"Error en la clase: {str(e)}"
 
     def process_bulk_chat(self, raw_text, user_instructions=""):
+        # ... (Existing logic kept for fallback or specific manual triggers if needed) ...
+        # (Actually, we might repurpose this heavily, but for now lets add the NEW flexible methods)
+        pass
+
+    def analyze_import_file(self, raw_text):
         """
-        Parses a massive unstructured chat log/text.
-        Since output limits (8k tokens) prevent processing huge files in one go,
-        we split the text into meaningful chunks and process them sequentially.
+        Generates a high-level summary of the file to start the conversation.
+        """
+        snippet = raw_text[:10000] # Analyze first 10k chars for speed + random sample if needed
+        prompt = f"""
+        Actúa como un Asistente de Archivos Inteligente.
+        Acabas de recibir este archivo de texto (Chat exportado o apuntes).
+        
+        Tu misión: Dar un resumen brevísimo de qué contiene para preguntarle al usuario qué hacer.
+        
+        FRAGMENTO (Primeros caracteres):
+        {snippet}
+        ...
+        
+        SALIDA ESPERADA (Solo texto, tono amable y servicial):
+        "Hola! He leído tu archivo. Parece contener [X, Y, Z]. Veo fechas de [Tema] y apuntes sobre [Tema]. ¿Cómo quieres que lo organice?"
+        """
+        response = self.model.generate_content(prompt)
+        return response.text
+
+    def chat_with_import_file(self, raw_text, user_message, chat_history, available_folders=[]):
+        """
+        The core logic for the Import Assistant.
+        Decides whether to reply to the user OR generate a JSON Action to modify the DB.
         """
         import json
         
-        # 1. Chunking Strategy
-        # A safer chunk size for outputting full detailed markdown is around 15k-20k characters 
-        # (approx 4k-5k tokens input -> leaving room for <8k output).
-        CHUNK_SIZE = 15000
-        OVERLAP = 1000
+        # Build prompt
+        folders_str = ", ".join([f['name'] for f in available_folders])
         
-        chunks = []
-        start = 0
-        while start < len(raw_text):
-            end = start + CHUNK_SIZE
-            # Try to cut at a newline to be cleaner
-            if end < len(raw_text):
-                # find last newline within the overlap window to avoid cutting sentences
-                lookback = raw_text.rfind('\n', end - 500, end)
-                if lookback != -1:
-                    end = lookback
-            
-            chunks.append(raw_text[start:end])
-            start = end - OVERLAP # overlap to catch context boundary
-            if start >= len(raw_text): break
-
-        combined_results = []
+        history_text = ""
+        for msg in chat_history[-6:]:
+            role = "USUARIO" if msg['role'] == "user" else "ASISTENTE"
+            history_text += f"{role}: {msg['content']}\n"
         
-        # 2. Process each chunk
-        for i, chunk_text in enumerate(chunks):
-            # Prompt tweaked for partial processing
-            prompt = f"""
-            ACTÚA COMO UN BIBLIOTECARIO EXPERTO. ESTÁS PROCESANDO LA PARTE {{i+1}}/{{len(chunks)}} DE UN LOG MASIVO.
-            
-            INSTRUCCIONES DEL USUARIO (PRIORIDAD ALTA):
-            "{user_instructions if user_instructions else "Extrae temas lógicos y descarta la basura."}"
-            
-            TAREA:
-            Analiza este FRAGMENTO de texto y extrae TEMAS/SECCIONES completas siguiendo las instrucciones del usuario.
-            
-            OBJETIVO:
-            1. Identificar nuevos temas o continuaciones de temas anteriores.
-            2. Extraer el contenido ÚTIL (transcripciones, apuntes, definiciones).
-            3. LIMPIAR la basura del chat ("hola", "gracias") a menos que el usuario pida lo contrario.
-            4. Si un tema parece cortado al final, extráelo hasta donde llegue.
-            
-            FORMATO JSON:
-            [
-                {{
-                    "title": "Titulo del Tema (ej: Unidad 1 - Parte {{i+1}})",
-                    "content": "Contenido completo en Markdown..."
-                }}
-            ]
-            
-            FRAGMENTO:
-            """
-            
-            full_prompt = prompt + "\n\n" + chunk_text + "\n\nJSON DE SALIDA:"
-            
-            generation_config = {
-                "temperature": 0.2,
-                "response_mime_type": "application/json"
-            }
-            
-            try:
-                response = self.model.generate_content(full_prompt, generation_config=generation_config)
-                chunk_data = json.loads(response.text)
-                if isinstance(chunk_data, list):
-                    combined_results.extend(chunk_data)
-            except Exception as e:
-                # If a chunk fails, we log it but continue
-                combined_results.append({"title": f"Error en Parte {i+1}", "content": f"Fallo al procesar este fragmento: {e}"})
+        snippet = raw_text[:20000] # Context window limit
         
-        return combined_results
+        prompt = f"""
+        ERES UN GESTOR DE ARCHIVOS INTELIGENTE (IMPORT ASSISTANT).
+        Estás conversando con el usuario para ayudarle a guardar partes de este archivo en su Biblioteca.
+        
+        TU CAPACIDAD:
+        Puedes EJECUTAR ACCIONES devolviendo un JSON.
+        
+        CARPETAS EXISTENTES: {folders_str}
+        
+        INSTRUCCIONES CLAVE:
+        1. Si el usuario te pide guardar algo, GENERA EL JSON DE ACCIÓN.
+        2. Si el usuario solo conversa o pregunta qué hay, RESPONDE CON TEXTO NORMAL.
+        3. Puedes crear carpetas nuevas si el usuario lo pide.
+        4. SEPARA el contenido lógicamente. Si el usuario dice "Saca las fechas", extrae SOLO las fechas.
+        
+        FORMATO DE ACCIÓN (JSON):
+        {{
+            "action_type": "save_file",  (o "create_folder")
+            "target_folder": "Nombre Carpeta Exacto" (Si no existe, se creará),
+            "file_name": "NombreArchivo.md",
+            "content": "El contenido extraido..."
+        }}
+        
+        SI ES SOLO RESPUESTA:
+        Simplemente escribe el texto.
+        
+        ARCHIVO (Contexto):
+        {snippet}
+        ...
+        
+        HISTORIAL:
+        {history_text}
+        USUARIO: {user_message}
+        ASISTENTE (Responde texto o JSON):
+        """
+        
+        try:
+             response = self.model.generate_content(prompt)
+             txt = response.text.replace("```json", "").replace("```", "").strip()
+             
+             # Try parse JSON
+             if txt.startswith("{") and txt.endswith("}"):
+                 return json.loads(txt) # It's an action!
+             else:
+                 return txt # It's just talk
+        except Exception as e:
+            return f"Error pensando: {e}"
 
 
