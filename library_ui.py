@@ -3,7 +3,7 @@ import streamlit as st
 import time
 import os
 import pandas as pd
-from database import get_units, create_unit, upload_file_to_db, get_files, delete_file, rename_file
+from database import get_units, create_unit, upload_file_to_db, get_files, delete_file, rename_file, rename_unit, delete_unit
 
 def render_library(assistant):
     """
@@ -49,9 +49,41 @@ def render_library(assistant):
     with col_head:
         if st.session_state['lib_current_unit_id']:
             # Breadcrumb
-            if st.button("⬅️ Mi Unidad", type="secondary"):
+            if st.button("⬅️ Mi Unidad", key="back_root", type="secondary"):
                 st.session_state['lib_current_unit_id'] = None
-            st.markdown(f"## 📂 {st.session_state['lib_current_unit_name']}")
+                st.rerun()
+                
+            u_name = st.session_state['lib_current_unit_name']
+            u_id = st.session_state['lib_current_unit_id']
+            
+            # FOLDER MANAGEMENT (Rename/Delete)
+            c_name, c_tools = st.columns([0.6, 0.4])
+            with c_name:
+                st.markdown(f"## 📂 {u_name}")
+            with c_tools:
+                # Rename Popover
+                with st.popover("⚙️ Ajustes Carpeta"):
+                    new_u = st.text_input("Renombrar Carpeta:", value=u_name)
+                    if st.button("Guardar Nombre"):
+                        if new_u and new_u != u_name:
+                             rename_unit(u_id, new_u)
+                             st.session_state['lib_current_unit_name'] = new_u
+                             st.success("Renombrado")
+                             time.sleep(1)
+                             st.rerun()
+                    
+                    st.divider()
+                    
+                    # Delete
+                    if st.button("🗑️ Borrar Carpeta", type="primary"):
+                        if delete_unit(u_id):
+                            st.session_state['lib_current_unit_id'] = None
+                            st.success("Carpeta borrada")
+                            time.sleep(1)
+                            st.rerun()
+                        else:
+                            st.error("No se pudo borrar (¿Tiene archivos?)")
+
         else:
             st.markdown(f"## ☁️ Mi Unidad: {current_course_name}")
 
@@ -107,8 +139,13 @@ def render_library(assistant):
                     st.markdown(f"**{f['name']}**")
                     st.caption(f"{f['created_at'][:10]}")
                 with c3:
-                    # Rename
-                    pass 
+                    # Rename File
+                    new_name = st.text_input("Renombrar:", value=f['name'], key=f"ren_f_{f['id']}", label_visibility="collapsed")
+                    if new_name != f['name']:
+                         if st.button("💾", key=f"save_ren_f_{f['id']}", help="Guardar nombre"):
+                             rename_file(f['id'], new_name)
+                             st.rerun()
+
                 with c4:
                     if st.button("🗑️", key=f"del_f_{f['id']}", help="Eliminar archivo"):
                         if delete_file(f['id']):
@@ -121,9 +158,6 @@ def render_upload_modal(course_id, assistant):
     st.markdown("### Subir Contenido")
     
     # 1. Target (If passing course_id, we need to know where to put it)
-    # If inside a folder, default to that folder.
-    # If at root, ask for folder.
-    
     current_unit_id = st.session_state.get('lib_current_unit_id')
     target_unit_id = current_unit_id
     
@@ -136,8 +170,7 @@ def render_upload_modal(course_id, assistant):
         
         new_folder_name = ""
         if sel_opt == "✨ Nueva Carpeta...":
-             new_folder_name = st.text_input("Nombre:", placeholder="Ej: Unidad 1")
-             # Logic to create folder happens on SAVE
+             new_folder_name = st.text_input("Nombre de carpeta:", placeholder="Ej: Unidad 1")
         else:
             found = next((u for u in db_units if u['name'] == sel_opt), None)
             if found: target_unit_id = found['id']
@@ -145,8 +178,8 @@ def render_upload_modal(course_id, assistant):
         st.info(f"Guardando en: **{st.session_state['lib_current_unit_name']}**")
 
     # 2. Content
-    topic = st.text_input("Nombre (Opcional):", placeholder="Ej: Resumen")
-    mode = st.radio("Tipo:", ["📂 Archivo", "📝 Texto"], horizontal=True)
+    topic = st.text_input("Nombre de archivo:", placeholder="Ej: Resumen")
+    mode = st.radio("Tipo:", ["📂 Archivo", "📝 Texto", "📥 Importar Chat (Masivo)"], horizontal=True)
     
     if mode == "📂 Archivo":
         files = st.file_uploader("Elige archivos:", accept_multiple_files=True)
@@ -157,16 +190,11 @@ def render_upload_modal(course_id, assistant):
                  
             # Resolve Target
             if not target_unit_id:
-                # Create Folder Logic
                 if sel_opt == "✨ Nueva Carpeta..." and new_folder_name:
                     ur = create_unit(course_id, new_folder_name)
                     if ur: target_unit_id = ur['id']
-                    else: 
-                        st.error("Error creando carpeta")
-                        return
-                else:
-                    st.error("Selecciona carpeta")
-                    return
+                    else: return
+                else: return
 
             # Upload Logic
             with st.spinner("Subiendo..."):
@@ -178,7 +206,7 @@ def render_upload_modal(course_id, assistant):
                             content = assistant.extract_text_from_pdf(f.getvalue(), f.type)
                         except: content = "Error reading PDF"
                     elif f.type == "text/plain":
-                        content = str(f.read(), "utf-8")
+                         content = str(f.read(), "utf-8", errors='ignore')
                     
                     # Name logic
                     fname = f.name
@@ -191,24 +219,54 @@ def render_upload_modal(course_id, assistant):
                 time.sleep(1)
                 st.rerun()
 
-    else:
+    elif mode == "📝 Texto":
         txt = st.text_area("Pega texto:")
         if st.button("Guardar Texto", type="primary"):
             if not txt or not topic:
                 st.error("Falta texto o nombre")
                 return
             
-             # Resolve Target (Copy Paste logic from above if needed, reusable?)
+            # Resolve Target
             if not target_unit_id:
                 if sel_opt == "✨ Nueva Carpeta..." and new_folder_name:
                     ur = create_unit(course_id, new_folder_name)
                     if ur: target_unit_id = ur['id']
-                    else: 
-                        st.error("Error creando carpeta")
-                        return
-                        
+                    else: return
+
             safe_name = "".join([c if c.isalnum() else "_" for c in topic]) + ".txt"
             upload_file_to_db(target_unit_id, safe_name, txt, "text")
             st.success("Texto Guardado")
             time.sleep(1)
             st.rerun()
+
+    elif mode == "📥 Importar Chat (Masivo)":
+        st.markdown("#### Rescatar Historial de ChatGPT")
+        st.caption("Sube el .txt con tu historial desordenado.")
+        
+        c_file = st.file_uploader("Archivo Chat (.txt):", type=["txt"])
+        
+        if c_file and st.button("Procesar y Guardar", type="primary"):
+             raw = c_file.getvalue().decode("utf-8", errors='ignore')
+             with st.spinner("Procesando historial..."):
+                 structured = assistant.process_bulk_chat(raw)
+                 
+                 # Resolve Target
+                 if not target_unit_id:
+                    if sel_opt == "✨ Nueva Carpeta..." and new_folder_name:
+                        ur = create_unit(course_id, new_folder_name)
+                        if ur: target_unit_id = ur['id']
+                    else: 
+                        # Default to new folder if not specified
+                        ur = create_unit(course_id, "01_Rescate_Chat")
+                        target_unit_id = ur['id']
+                 
+                 if target_unit_id:
+                     count = 0
+                     for item in structured:
+                         if 'title' in item and 'content' in item:
+                             safe = "".join([c if c.isalnum() else "_" for c in item['title']]) + ".md"
+                             upload_file_to_db(target_unit_id, safe, item['content'], "text")
+                             count += 1
+                     st.success(f"✅ {count} conversaciones guardadas!")
+                     time.sleep(1.5)
+                     st.rerun()
