@@ -559,9 +559,45 @@ with st.sidebar:
                 if nc: 
                     st.session_state['current_course'] = nc['name']
                     st.rerun()
+
     else:
         st.session_state['current_course'] = selected_option
         st.session_state['current_course_id'] = course_map[selected_option]
+        
+        # --- RESTORED ACTIONS (RENAME / DELETE) ---
+        st.write("") # Micro spacer
+        
+        # RENAME
+        with st.expander("✏️ Renombrar"):
+            rename_input = st.text_input("Nuevo nombre:", value=st.session_state['current_course'], key="rename_input_sb")
+            if st.button("Guardar Nombre"):
+                if rename_input and rename_input != st.session_state['current_course']:
+                    # Simple sanitize
+                    safe_rename = "".join([c for c in rename_input if c.isalnum() or c in (' ', '-', '_')]).strip()
+                    
+                    # DB Update
+                    from database import rename_course
+                    c_id = st.session_state.get('current_course_id')
+                    if c_id and rename_course(c_id, safe_rename):
+                        st.session_state['current_course'] = safe_rename
+                        st.success("Renombrado!")
+                        st.rerun()
+                    else:
+                        st.error("Error al renombrar.")
+
+        # DELETE
+        with st.expander("🗑️ Borrar"):
+            st.caption("Borrar el diplomado actual y sus datos.")
+            if st.button("Eliminar Diplomado Actual", type="primary"):
+                from database import delete_course
+                c_id = st.session_state.get('current_course_id')
+                if c_id and delete_course(c_id):
+                    st.success("Eliminado.")
+                    st.session_state['current_course'] = None
+                    st.rerun()
+                else:
+                    st.error("Error al eliminar.")
+
 
 
 # --- INJECT CUSTOM TAB SCROLL BUTTONS (JS) ---
