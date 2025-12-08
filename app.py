@@ -543,14 +543,11 @@ with st.sidebar:
         with st.expander("✏️ Renombrar Diplomado"):
             rename_input = st.text_input("Nuevo nombre:", value=st.session_state['current_course'], key="rename_input")
             if st.button("Confirmar Cambio"):
-                if rename_input and rename_input != st.session_state['current_course']:
-                    safe_rename = "".join([c for c in rename_input if c.isalnum() or c in (' ', '-', '_')]).strip()
-                    src = os.path.join(CORE_OUTPUT_ROOT, st.session_state['current_course'])
-                    dst = os.path.join(CORE_OUTPUT_ROOT, safe_rename)
-                    
-                    if os.path.exists(dst):
-                        st.error("¡Ese nombre ya existe (carpeta local)!")
-                    else:
+                    if rename_input and rename_input != st.session_state['current_course']:
+                        safe_rename = "".join([c for c in rename_input if c.isalnum() or c in (' ', '-', '_')]).strip()
+                        src = os.path.join(CORE_OUTPUT_ROOT, st.session_state['current_course'])
+                        dst = os.path.join(CORE_OUTPUT_ROOT, safe_rename)
+                        
                         # 1. DB Update (Primary)
                         c_id = st.session_state.get('current_course_id')
                         success = False
@@ -559,14 +556,17 @@ with st.sidebar:
                         
                         if success:
                              # 2. Local Update (Secondary - Best Effort)
-                             try:
-                                 if os.path.exists(src):
-                                     os.rename(src, dst)
-                                 else:
-                                     # Create new folder if it doesn't exist (ensure sync)
-                                     os.makedirs(dst, exist_ok=True)
-                             except Exception as e:
-                                 st.warning(f"Nombre actualizado en DB, pero error local: {e}")
+                             if os.path.exists(dst):
+                                 st.warning("El nombre se actualizó en la base de datos, pero la carpeta local ya existía (se omitió renombre local).")
+                             else:
+                                 try:
+                                     if os.path.exists(src):
+                                         os.rename(src, dst)
+                                     else:
+                                         # Create new folder if it doesn't exist (ensure sync)
+                                         os.makedirs(dst, exist_ok=True)
+                                 except Exception as e:
+                                     st.warning(f"Nombre actualizado en DB, pero error local: {e}")
 
                              st.session_state['current_course'] = safe_rename
                              st.success("¡Renombrado!")
