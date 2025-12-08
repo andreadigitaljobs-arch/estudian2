@@ -602,8 +602,73 @@ with st.sidebar:
         </ul>
     </div>
     '''
+    '''
     st.markdown(sidebar_html, unsafe_allow_html=True)
-    
+
+    # --- INJECT CUSTOM TAB SCROLL BUTTONS (JS) ---
+    st.components.v1.html("""
+    <script>
+    function addTabScrollButtons() {
+        const doc = window.parent.document;
+        const tabList = doc.querySelector('div[role="tablist"]');
+        
+        if (tabList && !doc.getElementById('tab-scroll-left')) {
+            // Style the tabList for scroll
+            tabList.style.overflowX = 'auto';
+            tabList.style.scrollBehavior = 'smooth';
+            tabList.style.scrollbarWidth = 'none'; // Hide scrollbar
+            
+            // Create Left Button
+            const btnLeft = doc.createElement('button');
+            btnLeft.id = 'tab-scroll-left';
+            btnLeft.innerHTML = '◀';
+            btnLeft.onclick = () => tabList.scrollBy({left: -200, behavior: 'smooth'});
+            
+            // Create Right Button
+            const btnRight = doc.createElement('button');
+            btnRight.id = 'tab-scroll-right';
+            btnRight.innerHTML = '▶';
+            btnRight.onclick = () => tabList.scrollBy({left: 200, behavior: 'smooth'});
+            
+            // Shared Styles
+            const btnStyle = `
+                position: absolute;
+                top: 50%;
+                transform: translateY(-50%);
+                background-color: #7c3aed;
+                color: white;
+                border: none;
+                border-radius: 50%;
+                width: 30px;
+                height: 30px;
+                cursor: pointer;
+                z-index: 100;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 12px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            `;
+            
+            btnLeft.style.cssText = btnStyle + 'left: 0px;';
+            btnRight.style.cssText = btnStyle + 'right: 0px;';
+            
+            // Find container to attach relative positioning
+            const parent = tabList.parentElement;
+            parent.style.position = 'relative';
+            parent.style.padding = '0 35px'; // Make space for buttons
+            
+            parent.appendChild(btnLeft);
+            parent.appendChild(btnRight);
+        }
+    }
+    // Run after a slight delay to ensure DOM is ready
+    setTimeout(addTabScrollButtons, 500);
+    setTimeout(addTabScrollButtons, 1500); // Retry
+    </script>
+    """, height=0)
+
+    # --- TABS DEFINITION ---
 tab1, tab2, tab3, tab4, tab_lib, tab5, tab6 = st.tabs([
     "📹 Transcriptor", 
     "📝 Apuntes Simples", 
