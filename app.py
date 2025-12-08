@@ -281,7 +281,8 @@ CSS_STYLE = """
     :root {
         --primary-purple: #4B22DD;
         --accent-green: #6CC04A;
-        --bg-color: #F5F6FA;
+        --bg-color: #4B22DD; /* Main Background is Purple */
+        --card-bg: #FFFFFF;
         --text-color: #1A1A1A;
         --border-color: #E3E4EA;
     }
@@ -292,14 +293,29 @@ CSS_STYLE = """
         background-color: var(--bg-color);
     }
 
-    /* APP BACKGROUND */
+    /* 1. APP BACKGROUND (The Bottom Layer) */
     .stApp {
         background-color: var(--bg-color);
+        /* Optional: Subtle pattern to make it less flat? */
+        background-image: radial-gradient(rgba(255,255,255,0.1) 1px, transparent 1px);
+        background-size: 30px 30px;
+    }
+
+    /* 2. THE FLOATING WHITE CARD (The Top Layer) */
+    /* Target the main container where content lives */
+    section.main > div.block-container {
+        background-color: #ffffff;
+        border-radius: 40px; /* Requested Rounded Look */
+        padding: 3rem !important;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.3); /* Deep shadow for pop */
+        max-width: 95% !important;
+        margin-top: 30px;
+        margin-bottom: 30px;
     }
 
     /* SIDEBAR */
     section[data-testid="stSidebar"] {
-        background-color: #FFFFFF;
+        background-color: #FFFFFF; /* White Sidebar */
         border-right: 1px solid var(--border-color);
     }
     
@@ -309,62 +325,64 @@ CSS_STYLE = """
         font-weight: 700;
         font-family: 'Inter', sans-serif;
     }
+    
+    /* Main Title Special Stlye */
+    h1 {
+        font-size: 2.8rem;
+        letter-spacing: -1px;
+    }
 
-    /* BUTTONS - PRIMARY (Purple) */
+    /* BUTTONS - PRIMARY */
     div.stButton > button {
-        background-color: var(--primary-purple);
+        background: linear-gradient(135deg, #4B22DD 0%, #3a1ab9 100%);
         color: white;
-        border-radius: 8px;
+        border-radius: 12px;
         border: none;
-        padding: 0.5rem 1.5rem;
+        padding: 0.6rem 2rem;
         font-weight: 600;
+        box-shadow: 0 4px 10px rgba(75, 34, 221, 0.3);
         transition: all 0.2s;
-        box-shadow: 0 4px 6px -1px rgba(75, 34, 221, 0.2);
     }
     div.stButton > button:hover {
-        background-color: #3a1ab9;
-        color: white;
-        transform: translateY(-1px);
-        box-shadow: 0 10px 15px -3px rgba(75, 34, 221, 0.3);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 15px rgba(75, 34, 221, 0.4);
     }
 
     /* TABS */
     .stTabs [data-baseweb="tab-list"] {
         gap: 10px;
-        background-color: #FFFFFF;
+        background-color: #F8FAFC;
         padding: 10px;
-        border-radius: 12px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        border-radius: 20px;
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
     }
     .stTabs [data-baseweb="tab"] {
         background-color: transparent;
-        border-radius: 8px;
+        border-radius: 12px;
         color: #64748b;
         font-weight: 500;
-        padding: 8px 16px;
+        padding: 8px 20px;
     }
     .stTabs [aria-selected="true"] {
         background-color: var(--primary-purple) !important;
         color: white !important;
+        box-shadow: 0 4px 6px rgba(75, 34, 221, 0.2);
     }
 
-    /* INPUTS & CARDS */
+    /* INPUTS */
     .stTextInput > div > div > input, .stTextArea > div > div > textarea {
-        border-radius: 8px;
+        border-radius: 10px;
         border: 1px solid var(--border-color);
-        background-color: #FFFFFF;
-    }
-    
-    /* CUSTOM IMAGE CARD */
-    .img-card {
-        background: #FFFFFF;
-        border: 1px solid var(--border-color);
-        border-radius: 12px;
+        background-color: #FAFAFA;
         padding: 10px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
     }
     
-    /* SIDEBAR BUTTONS OVERRIDE */
+    /* IMAGES */
+    img {
+        border-radius: 16px;
+    }
+
+    /* SIDEBAR BUTTONS */
     [data-testid="stSidebar"] .stButton > button {
         background: #FFFFFF !important;
         border: 1px solid var(--border-color) !important;
