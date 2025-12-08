@@ -604,20 +604,7 @@ with st.sidebar:
     st.caption(f"Guardando en: `output/{st.session_state['current_course']}/...`")
     st.divider()
     
-    # Custom Lilac Info Box
-    sidebar_html = '''
-    <div style="background-color: #f3e8ff; padding: 15px; border-radius: 12px; border: 1px solid #d8b4fe; color: #6d28d9; font-size: 0.9rem;">
-        <strong style="display: block; margin-bottom: 8px; display: flex; align-items: center; gap: 5px;">
-            📂 Carpetas de Salida:
-        </strong>
-        <ul style="margin: 0; padding-left: 20px; list-style-type: circle;">
-            <li style="margin-bottom: 3px;">transcripts</li>
-            <li style="margin-bottom: 3px;">notes</li>
-            <li>guides</li>
-        </ul>
-    </div>
-    '''
-    st.markdown(sidebar_html, unsafe_allow_html=True)
+    # (Removed Carpetas de Salida Info Box as per user request)
 
     # --- INJECT CUSTOM TAB SCROLL BUTTONS (JS) ---
     st.components.v1.html("""
