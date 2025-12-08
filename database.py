@@ -4,34 +4,36 @@ import datetime
 
 # --- INIT ---
 # --- INIT ---
-# Fix [Errno 24] Too many open files: Use Session State Singleton
+
+# Fix [Errno 24] Too many open files: Use st.cache_resource
+@st.cache_resource(ttl=3600)
 def init_supabase():
     try:
-        # Reuse existing client if available in this session
-        if 'supabase_client_inst' in st.session_state:
-            client = st.session_state['supabase_client_inst']
-        else:
-            # Create new if not exists
-            url = st.secrets["SUPABASE_URL"]
-            key = st.secrets["SUPABASE_KEY"]
-            client = create_client(url, key)
-            st.session_state['supabase_client_inst'] = client
-        
-        # Hydrate Auth if session exists (Always update headers)
-        if 'supabase_session' in st.session_state and st.session_state['supabase_session']:
-            try:
-                sess = st.session_state['supabase_session']
-                # Update auth state on the shared client
-                client.auth.set_session(sess.access_token, sess.refresh_token)
-                # FORCE POSTGREST AUTH HEADER (Critical for RLS)
-                client.postgrest.auth(sess.access_token)
-            except Exception as e:
-                print(f"Auth Hydration Error: {e}")
-                
+        url = st.secrets["SUPABASE_URL"]
+        key = st.secrets["SUPABASE_KEY"]
+        client = create_client(url, key)
         return client
     except Exception as e:
-        st.error(f"Error conectando a Supabase: {e}")
+        print(f"Supabase Init Error: {e}")
         return None
+
+# Auth Hydration Helper (Separate from Init)
+def hydrate_auth(client):
+    if 'supabase_session' in st.session_state and st.session_state['supabase_session']:
+        try:
+            sess = st.session_state['supabase_session']
+            client.auth.set_session(sess.access_token, sess.refresh_token)
+            client.postgrest.auth(sess.access_token)
+        except Exception as e:
+            print(f"Auth Hydration Error: {e}")
+
+# Wrapper to ensure we always get a hydrated client used in app
+def get_supabase():
+    client = init_supabase()
+    if client:
+        hydrate_auth(client)
+    return client
+
 
 # --- AUTH ---
 def sign_in(email, password):

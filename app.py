@@ -12,6 +12,7 @@ import extra_streamlit_components as stx  # --- PERSISTENCE ---
 from library_ui import render_library # --- LIBRARY UI ---
 from database import delete_course, rename_course # Force import availability
 
+
 # --- PAGE CONFIG MUST BE FIRST ---
 st.set_page_config(
     page_title="Streamlit - Estudian2",
@@ -20,13 +21,8 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- DEBUG: VERSION CONTROL ---
-# Banner to confirm active version
-st.error("⚠️ VERSIÓN DE PRUEBA ACTIVA ⚠️")
-st.caption(f"Server Path: {os.getcwd()}")
-# ------------------------------
-
 if 'quiz_results' not in st.session_state: st.session_state['quiz_results'] = []
+
 if 'pasted_images' not in st.session_state: st.session_state['pasted_images'] = []
 if 'quiz_key' not in st.session_state: st.session_state['quiz_key'] = 0
 if 'tutor_chat_history' not in st.session_state: st.session_state['tutor_chat_history'] = []
