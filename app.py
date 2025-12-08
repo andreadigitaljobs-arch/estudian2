@@ -566,6 +566,46 @@ CSS_STYLE = """
         font-weight: 600;
     }
 </style>
+
+    /* --- GLOBAL BUTTON STYLING (Universal Consistency) --- */
+    
+    /* Target ALL standard buttons in the main app area */
+    div.stButton > button {
+        background-color: #4B22DD !important; /* Brand Purple */
+        color: white !important;
+        border-radius: 30px !important; /* Full Pill Shape */
+        border: none !important;
+        padding: 0.6rem 2rem !important;
+        font-weight: 600 !important;
+        box-shadow: 0 4px 6px rgba(75, 34, 221, 0.2) !important;
+        transition: all 0.2s ease !important;
+    }
+    
+    div.stButton > button:hover {
+        background-color: #3b1aa3 !important; /* Darker Purple */
+        color: white !important;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(75, 34, 221, 0.3) !important;
+    }
+    
+    /* Target Primary Buttons (if any are used, e.g. Delete, ensuring they are also round) */
+    div.stButton > button[kind="primary"] {
+        border-radius: 30px !important;
+        /* Optionally keep them Red if they are destructive, or make them Green if positive. 
+           User said "Morados en su mayoría y si no verdes". 
+           Let's double check if we want to force EVERYTHING purple. 
+           For "primary", Streamlit usually uses Red (User's ref). 
+           I will enforce the SHAPE primarily. 
+        */
+    }
+    
+    div.stButton > button:active {
+        background-color: #2a1275 !important;
+        transform: translateY(0);
+    }
+    
+    /* Specific overrides for "Green" actions can be handled via key-specific CSS if needed, 
+       but for now "Iniciar Transcripción" will become Purple, which fits "Morados en su mayoría". */
 </style>
 
 """
