@@ -240,10 +240,24 @@ def render_upload_modal(course_id, assistant):
         st.info(f"Guardando en: **{st.session_state['lib_current_unit_name']}**")
 
     # 2. Content
-    topic = st.text_input("Nombre de archivo:", placeholder="Ej: Resumen")
-    mode = st.radio("Tipo:", ["📂 Archivo", "📝 Texto", "📥 Importar Chat (Masivo)"], horizontal=True)
+    topic = st.text_input("Nombre de archivo (Opcional para carpetas):", placeholder="Ej: Resumen")
+    mode = st.radio("Tipo:", ["📂 Archivo", "📝 Texto", "📥 Importar Chat (Masivo)", "✨ Crear Carpeta"], horizontal=True)
     
-    if mode == "📂 Archivo":
+    if mode == "✨ Crear Carpeta":
+        st.info("Crea una carpeta vacía dentro de la ubicación actual.")
+        new_folder_pure = st.text_input("Nombre de la Nueva Carpeta:", placeholder="Ej: Capítulos")
+        
+        if st.button("Crear Carpeta Sola", type="primary"):
+            if new_folder_pure:
+                # Use current_unit_id as parent so it nests correctly
+                create_unit(course_id, new_folder_pure, parent_id=current_unit_id)
+                st.success(f"Carpeta '{new_folder_pure}' creada.")
+                time.sleep(1)
+                st.rerun()
+            else:
+                st.error("Escribe un nombre.")
+
+    elif mode == "📂 Archivo":
         files = st.file_uploader("Elige archivos:", accept_multiple_files=True)
         if st.button("Subir", type="primary"):
             if not files: 
