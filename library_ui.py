@@ -141,7 +141,15 @@ def render_library(assistant):
                     
                     # PREVIEW EXPANDER
                     with st.expander("👁️ Ver Contenido"):
-                        st.markdown(f.get('content_text', '_Contenido vacío_'), unsafe_allow_html=True) 
+                        # DEBUG: Show raw data to diagnose why content is missing
+                        if st.checkbox("Debug Info", key=f"dbg_{f['id']}"):
+                            st.json(f)
+                        
+                        content = f.get('content_text')
+                        if content:
+                            st.markdown(content, unsafe_allow_html=True)
+                        else:
+                            st.info("⚠️ La base de datos devolvió contenido vacío/nulo.") 
                 with c3:
                     # Rename File
                     new_name = st.text_input("Renombrar:", value=f['name'], key=f"ren_f_{f['id']}", label_visibility="collapsed")
