@@ -151,7 +151,7 @@ def rename_unit(unit_id, new_name):
 def get_files(unit_id):
     supabase = init_supabase()
     try:
-        res = supabase.table("files").select("id, name, type, created_at").eq("unit_id", unit_id).order("name").execute()
+        res = supabase.table("files").select("id, name, type, created_at, content_text").eq("unit_id", unit_id).order("name").execute()
         return res.data
     except: return []
 

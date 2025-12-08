@@ -141,7 +141,7 @@ def render_library(assistant):
                     
                     # PREVIEW EXPANDER
                     with st.expander("👁️ Ver Contenido"):
-                        st.markdown(f['content'], unsafe_allow_html=True) 
+                        st.markdown(f.get('content_text', '_Contenido vacío_'), unsafe_allow_html=True) 
                 with c3:
                     # Rename File
                     new_name = st.text_input("Renombrar:", value=f['name'], key=f"ren_f_{f['id']}", label_visibility="collapsed")
