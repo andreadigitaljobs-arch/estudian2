@@ -381,22 +381,6 @@ CSS_STYLE = """
 
     /* TABS */
 
-    /* TAB SCROLL ARROWS (Override default styles) */
-    .stTabs [data-baseweb="tab-list"] button,
-    .stTabs [data-baseweb="button"] { 
-        /* Attempting to target the specific scroll buttons */
-        /* usually they have data-baseweb="button" and are direct children of the tab header area */
-        background-color: #4B22DD !important;
-        color: white !important;
-        border-radius: 50% !important; /* Make them round */
-        width: 30px !important;
-        height: 30px !important;
-    }
-    
-    /* Ensure the icon inside is visible (it's usually an SVG) */
-    .stTabs [data-baseweb="button"] svg {
-        fill: white !important;
-    }
 
     .stTabs [data-baseweb="tab-list"] {
         gap: 10px;
@@ -623,6 +607,34 @@ CSS_STYLE = """
     
     /* Specific overrides for "Green" actions can be handled via key-specific CSS if needed, 
        but for now "Iniciar Transcripción" will become Purple, which fits "Morados en su mayoría". */
+
+
+    /* TAB SCROLL ARROWS (Corrected) */
+    /* Target buttons in the tab list that are NOT tabs */
+    .stTabs [data-baseweb="tab-list"] button:not([role="tab"]) {
+        background-color: #4B22DD !important; /* Brand Purple */
+        color: white !important;
+        border-radius: 50% !important; /* Round */
+        width: 30px !important;
+        height: 30px !important;
+        border: none !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+    }
+    
+    /* Ensure Icon is White */
+    .stTabs [data-baseweb="tab-list"] button:not([role="tab"]) svg {
+        fill: white !important;
+        color: white !important;
+    }
+
+    /* Hover State */
+    .stTabs [data-baseweb="tab-list"] button:not([role="tab"]):hover {
+        background-color: #3b1aa3 !important;
+    }
+
 </style>
 """
 st.markdown(CSS_STYLE, unsafe_allow_html=True)
