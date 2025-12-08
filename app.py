@@ -380,6 +380,24 @@ CSS_STYLE = """
     }
 
     /* TABS */
+
+    /* TAB SCROLL ARROWS (Override default styles) */
+    .stTabs [data-baseweb="tab-list"] button,
+    .stTabs [data-baseweb="button"] { 
+        /* Attempting to target the specific scroll buttons */
+        /* usually they have data-baseweb="button" and are direct children of the tab header area */
+        background-color: #4B22DD !important;
+        color: white !important;
+        border-radius: 50% !important; /* Make them round */
+        width: 30px !important;
+        height: 30px !important;
+    }
+    
+    /* Ensure the icon inside is visible (it's usually an SVG) */
+    .stTabs [data-baseweb="button"] svg {
+        fill: white !important;
+    }
+
     .stTabs [data-baseweb="tab-list"] {
         gap: 10px;
         background-color: transparent;
