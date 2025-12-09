@@ -177,7 +177,7 @@ def render_library(assistant):
     else:
         new_folder_name = None
     
-    tab1, tab2, tab3 = st.tabs(["📂 Subir Archivos", "✨ Crear Carpeta", "📥 Importar chat masivo"])
+    tab1, tab2, tab3, tab4 = st.tabs(["📂 Subir Archivos", "✨ Crear Carpeta", "📥 Importar chat masivo", "✍️ Crear Nota"])
     
     with tab1:
         upl_files = st.file_uploader("Archivos (PDF, TXT, Imágenes):", accept_multiple_files=True)
@@ -220,6 +220,38 @@ def render_library(assistant):
             if nf_name:
                 create_unit(current_course_id, nf_name, parent_id=current_unit_id)
                 st.rerun()
+
+    with tab4:
+        st.markdown("###### 📝 Editor de Texto Simple")
+        note_title = st.text_input("Título de la nota (ej: Resumen.txt):", placeholder="Mi_Nota.txt", key="new_note_title")
+        note_content = st.text_area("Contenido:", height=200, placeholder="Escribe o pega tu texto aquí...", key="new_note_content")
+        
+        if st.button("💾 Guardar Nota", type="primary"):
+            if not target_unit_id:
+                  # Check if user entered a new folder name
+                 if new_folder_name:
+                     res = create_unit(current_course_id, new_folder_name, parent_id=None)
+                     if res: target_unit_id = res['id']
+                 else:
+                     st.error("Selecciona una carpeta destino o crea una nueva.")
+                     st.stop()
+            
+            if not note_title:
+                st.error("Escribe un título para la nota.")
+            elif not note_content:
+                st.error("La nota está vacía.")
+            else:
+                # Append .txt if missing
+                final_name = note_title
+                if "." not in final_name: final_name += ".txt"
+                
+                try:
+                    upload_file_to_db(target_unit_id, final_name, note_content, "text")
+                    st.success(f"✅ Nota '{final_name}' guardada correctamente.")
+                    time.sleep(1)
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Error guardando nota: {e}")
 
     with tab3:
         st.markdown("###### 🧠 Importador Inteligente de Historiales")
