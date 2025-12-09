@@ -1,0 +1,3 @@
+- Las mentorías pueden revisarse en el Módulo 0 del campus.
+- Se realizan revisiones en las sesiones en vivo y en los drives de trabajo.
+- Se ofrece ayuda y orientación a través del grupo o vía mensaje directo.

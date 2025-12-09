@@ -1,0 +1,34 @@
+Entonces, ha identificado sus segmentos de mercado objetivo, tal vez con la ayuda de la agrupación de IA, y ahora es el momento de hacer que estos segmentos se sientan reales para que realmente pueda empatizar con ellos y hablar su idioma.
+
+Hacemos esto creando una persona de cliente. Una persona es un personaje ficticio pero realista que creas para representar un segmento clave de clientes. Pero aquí está el giro moderno.
+
+Las personas ya no son solo artículos creativos estáticos, deben ser perfiles enriquecidos con datos que sean dinámicos y evolucionen a medida que aprende más sobre sus clientes.
+
+Para construir uno, comenzarás con las preguntas fundamentales.
+¿Quiénes son?
+Aquí es donde humanizas los datos. Por lo tanto, deseas darle a la persona un nombre ficticio que represente ese segmento, como Eric con conciencia ecológica o Brenda una madre ocupada, junto con sus detalles demográficos clave.
+
+A continuación, ¿cuáles son sus principales objetivos y motivaciones, especialmente en relación con lo que ofreces?
+
+Y finalmente, ¿cuáles son sus mayores puntos débiles, frustraciones o desafíos que tu producto o servicio puede ayudar a resolver?
+
+Ahora, en lugar de recordar solo en suposiciones, puede enriquecer estas respuestas con datos reales. Desea extraer información de los análisis de tu sitio web para comprender el comportamiento en línea.
+¿Qué páginas visitan más tus clientes?
+¿Con qué contenido pasan tiempo?
+¿Qué términos de búsqueda los llevaron a ti?
+Mira tus datos de primera mano desde tu CRM o plataforma de comercio electrónico.
+¿Qué han comprado antes?
+¿Con qué frecuencia compran?
+¿Cuál es el valor promedio de su pedido?
+
+Y luego incorporar datos psicográficos. ¿Cuáles son sus intereses, valores y elecciones de estilo de vida? Y puedes recopilar esto en encuestas, escucha de redes sociales o incluso agrupación de IA.
+
+Y luego usar datos cualitativos. Incluye citas directas de entrevistas con clientes, encuestas o incluso tickets de soporte para capturar su voz y sentimiento real.
+
+Imaginemos una empresa de fitness en línea. Tienen una personalidad para Amy activa y esto se expandirá a Amy de 28 años, una coordinadora de marketing que vive en un apartamento de la ciudad. Los datos muestran que normalmente se involucra con videos de ejercicios rápidos en Instagram durante su hora de almuerzo, ha comprado una colchoneta de yoga para principiantes y las encuestas sugieren que está buscando formas de desestresarse después del trabajo sin un largo viaje al gimnasio.
+
+¿Ves lo procesable que puede ser esa persona? Active Amy representa todo un grupo de personas como ella y su personalidad se basa en datos conductuales, demográficos y psicográficos reales.
+
+Ahora, generalmente tendrás un puñado de personas que representan los diversos segmentos a los que te dirigirás y puedes crear y manejar estas personas en documentos compartidos, herramientas de pizarra colaborativa como Miro o incluso dentro de software especializado en creación de personas, o incluso tu propio CRM.
+
+El objetivo es crear una instantánea dinámica y realista que todo tu equipo pueda usar para preguntarse constantemente si lo que estamos creando realmente va a resonar y ayudar a Amy.

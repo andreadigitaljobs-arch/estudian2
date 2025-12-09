@@ -5,17 +5,15 @@ import datetime
 # --- INIT ---
 # --- INIT ---
 
+
 # Fix [Errno 24] Too many open files: Use st.cache_resource
+# TTL 1h. If it fails, it raises Exception and DOES NOT CACHE.
 @st.cache_resource(ttl=3600)
 def init_supabase():
-    try:
-        url = st.secrets["SUPABASE_URL"]
-        key = st.secrets["SUPABASE_KEY"]
-        client = create_client(url, key)
-        return client
-    except Exception as e:
-        print(f"Supabase Init Error: {e}")
-        return None
+    url = st.secrets["SUPABASE_URL"]
+    key = st.secrets["SUPABASE_KEY"]
+    return create_client(url, key)
+
 
 # Auth Hydration Helper (Separate from Init)
 def hydrate_auth(client):
@@ -27,12 +25,19 @@ def hydrate_auth(client):
         except Exception as e:
             print(f"Auth Hydration Error: {e}")
 
+
 # Wrapper to ensure we always get a hydrated client used in app
 def get_supabase():
-    client = init_supabase()
-    if client:
-        hydrate_auth(client)
-    return client
+    try:
+        client = init_supabase()
+        if client:
+            hydrate_auth(client)
+        return client
+    except Exception as e:
+        st.error(f"⚠️ Error Crítico de Conexión: {e}")
+        st.cache_resource.clear() # Emergency Cache Clear
+        return None
+
 
 
 # --- AUTH ---
@@ -142,8 +147,18 @@ def get_units(course_id, parent_id=None, fetch_all=False):
 def create_unit(course_id, name, parent_id=None):
     supabase = init_supabase()
     try:
-        # Check if exists first? Supabase might error on duplicate if we set unique constraint, 
-        # but for now let's just insert.
+        # Check if exists first to avoid duplicates
+        query = supabase.table("units").select("*").eq("course_id", course_id).eq("name", name)
+        if parent_id:
+            query = query.eq("parent_id", parent_id)
+        else:
+            query = query.is_("parent_id", "null")
+            
+        existing = query.execute()
+        if existing.data:
+            return existing.data[0] # Return existing folder
+            
+        # Create new if not exists
         data = {"course_id": course_id, "name": name}
         if parent_id:
             data["parent_id"] = parent_id
@@ -270,3 +285,66 @@ def get_unit_context(unit_id):
                 unit_text += f"\n--- ARCHIVO: {u_name}/{f['name']} ---\n{f['content_text']}\n"
         return unit_text
     except: return ""
+
+# --- CHAT HISTORY PERSISTENCE (MULTI-CHAT) ---
+
+def create_chat_session(user_id, name="Nuevo Chat"):
+    supabase = init_supabase()
+    try:
+        data = {"user_id": user_id, "name": name}
+        res = supabase.table("chat_sessions").insert(data).execute()
+        return res.data[0] if res.data else None
+    except Exception as e:
+        print(f"Error creating chat session: {e}")
+        return None
+
+def get_chat_sessions(user_id):
+    supabase = init_supabase()
+    try:
+        # Order by newest first? Or creation date? Usually newest first is better for UI.
+        res = supabase.table("chat_sessions").select("*").eq("user_id", user_id).order("created_at", desc=True).execute()
+        return res.data
+    except Exception as e:
+        print(f"Error fetching chat sessions: {e}")
+        return []
+
+def rename_chat_session(session_id, new_name):
+    supabase = init_supabase()
+    try:
+        supabase.table("chat_sessions").update({"name": new_name}).eq("id", session_id).execute()
+        return True
+    except Exception as e:
+        print(f"Error renaming chat session: {e}")
+        return False
+
+def delete_chat_session(session_id):
+    supabase = init_supabase()
+    try:
+        supabase.table("chat_sessions").delete().eq("id", session_id).execute()
+        return True
+    except Exception as e:
+        print(f"Error deleting chat session: {e}")
+        return False
+
+def get_chat_messages(session_id):
+    supabase = init_supabase()
+    try:
+        res = supabase.table("chat_messages").select("*").eq("session_id", session_id).order("created_at", desc=False).execute()
+        return res.data
+    except Exception as e:
+        print(f"Error fetching chat messages: {e}")
+        return []
+
+def save_chat_message(session_id, role, content):
+    supabase = init_supabase()
+    try:
+        data = {
+            "session_id": session_id,
+            "role": role,
+            "content": content
+        }
+        supabase.table("chat_messages").insert(data).execute()
+        return True
+    except Exception as e:
+        print(f"Error saving chat message: {e}")
+        return False

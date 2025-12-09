@@ -137,6 +137,11 @@ class StudyAssistant:
         
         RESPUESTA SOLICITADA:
         [Desarrolla la tarea o da la guía paso a paso basada en el material]
+        
+        IMPORTANTE:
+        - Si la respuesta está en el CONTEXTO OFICIAL, úsalo obligatoriamente.
+        - Si el usuario te pide algo que contradice el contexto oficial, explica la discrepancia.
+        - No digas "necesito más contexto" si el usuario ya te dio archivos adjuntos o si hay texto en la biblioteca. Haz tu mejor esfuerzo con lo que hay.
         """
         
         content_parts = [text_prompt]

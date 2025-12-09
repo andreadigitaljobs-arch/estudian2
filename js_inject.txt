@@ -1,0 +1,13 @@
+import streamlit.components.v1 as components
+components.html("""
+    <script>
+        // Force overflow hidden on the main Streamlit body
+        window.parent.document.body.style.overflow = "hidden";
+        
+        // Also try to target the specialized root container if possible
+        var root = window.parent.document.querySelector(".stApp");
+        if (root) {
+            root.style.overflow = "hidden";
+        }
+    </script>
+""", height=0, width=0)

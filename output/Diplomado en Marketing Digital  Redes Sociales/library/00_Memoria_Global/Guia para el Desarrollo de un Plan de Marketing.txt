@@ -1,0 +1,744 @@
+# P
+# N
+# T
+# ✔Diplomados Online.com
+# f
+# You
+# Tube
+# my
+# H
+# cmd
+# Diplomado en Marketing Digital
+# & Redes Sociales
+# Guía para el desarrollo de un Plan de
+# Marketing Digital
+
+# in
+# f
+# Guía para el desarrollo de un Plan de Marketing Digital
+# t
+# 8+
+# ÍNDICE
+# 1. Introducción
+
+# 1.1 - ¿Por qué necesitas un plan de marketing digital?
+# 1.2.- ¿Qué es una estrategia de marketing digital?
+# 1.3.- ¿Qué debe ir en nuestro plan de marketing?
+# 1.4.- ¿Qué proceso va a seguir tu plan?
+# 2. Análisis de situación
+
+# 2.1. El Ecosistema Digital
+# 2.2. Mercado
+# 2.3. Situación de mercado
+# 2.4. Competidores
+# 2.5. Intermediarios, influencers y colaboradores potenciales
+# 2.6. Macroentorno
+# 2.7. Tus capacidades
+# 2.8. Análisis DAFO
+# 3.- Objetivos
+
+# 3.1. Visión
+# 3.2. Metas
+# 3.3. Objetivos
+# 4.- Estrategia
+
+# 4.1. Segmentación y targeting
+# 4.2. Estrategia de posicionamiento
+# 4.3. Estrategia de propuesta y marketing mix digital
+# 4.4. Estrategia de contenido
+# 4.5. Estrategia de comunicación digital
+# 5.- Tácticas
+# 6.- Acciones y Control
+# 7.- Conclusiones
+# ✔DiplomadosOnline.com
+
+# in
+# f
+# t
+# 8+
+# 1
+# 1. Introducción
+# 1.1.- ¿POR QUÉ NECESITAS UN PLAN DE MARKETING DIGITAL?
+
+# Crear un plan de marketing online independiente de tu plan de marketing offline no tiene
+# demasiado sentido, ya que no es así cómo tus clientes perciben el negocio. Sin embargo, si tenemos
+# en cuenta que todavía las empresas están en plena transición hacia el entorno digital, crear un plan de
+# marketing online independiente será necesario para conseguir un esquema más claro que sirva hasta
+# que el marketing digital o los procesos digitales del negocio se perciban como parte íntegra del mismo.
+# En la siguiente lista puedes ver 8 razones por las cuales necesitas una plan y una estrategia
+# digital. Continuamente podemos ver estos problemas en empresas en las cuales no tienen un plan de
+# marketing digital o no tienen definidos los responsables de cada acción.
+# Problemas frecuentes que surgen cuando las empresas no tienen una plan digital definido:
+
+# 1.- No tienes una dirección marcada: Si no tienes objetivos estratégicos definidos para lo que
+# quieres conseguir en el entorno online en aspectos tan importantes como ganar nuevos clientes o
+# profundizar las relaciones con los actuales, no conocerás los recursos que necesitas para poder
+# lograrlos.
+# Tampoco sabrás cómo conocer si estás yendo por el buen camino para conseguirlos.
+# 2.- No conoces la demanda online de tus productos/ servicios: Puedes sobreestimar la demanda
+# de tus productos/ servicios en el entorno online si no los has analizado.
+# Tampoco conocerás las características del entorno en el que vas a competir, ya que va a
+# diferir en muchos aspectos del entorno offline (perfil y comportamiento del consumidor,
+# competidores, propuestas de valor y las oportunidades de invertir en comunicación variarán)
+# 3.- Tus competidores aumentarán su cuota de mercado: Si no destinas los recursos suficientes a
+# tu estrategia de marketing digital tus competidores irán ganando cuota de mercado en el entorno online.
+# 4.- No cuentas con una sólida propuesta de valor: Una propuesta de valor online bien definida
+# diferenciará a tu marca y a tus productos/servicios de tus competidores, animando a tus clientes
+# actuales y a los nuevos a interactuar con tu marca.
+# 5.- No conoces a tus clientes lo suficiente: Existen herramientas digitales que permiten medir me-
+# jor que nunca las acciones de marketing que llevamos a cabo. Además de Google Analytics, necesitarás
+# más herramientas para conocer el sentimiento de los consumidores respecto a tu marca, para después
+# identificar los puntos débiles de ésta y corregirlas.
+# 6.- Tus acciones de marketing no estarán integradas. El medio digital cuando mejor funciona es
+# cuando está adecuadamente integrado con otros medios tradicionales.
+# 7.- Planificar qué personas serán las encargadas de gestionar. Es importante conocer qué tipo de
+# perfiles necesitas para gestionar cada parte del plan. En el caso de estar tú solo este punto no te hará
+# falta y además gozarás de más flexibilidad.
+# Diplomados Online.com
+
+# in
+# f
+# t
+# 8+
+# 2
+# 8.- Estás malgastando el tiempo y el dinero: Si no tienes un plan, no estarás optimizando el tiempo
+# y los recursos monetarios invertidos.
+# ¿Para qué necesito un plan de marketing?
+
+# Un plan de marketing digital es totalmente necesario si quieres que los esfuerzos que haces en marketing
+# online resulten efectivo
+# 1.2- ¿QUÉ ES UN ESTRATEGIA DE MARKETING DIGITAL?
+
+# Una plan de marketing digital es una estrategia para tu marca llevada a cabo en el canal online que
+# requiere determinar un público objetivo específico y una propuesta de valor en base a las preferencias
+# del consumidor.
+# Objetivos
+# Corporativos
+# Objetivos de
+# Mercadeo
+# Objetivos del
+# Plan Digital
+# Una adecuada integración entre canales será muy importante para su éxito.
+# Así es como creemos que se debe abordar un plan digital, teniendo en cuenta de que se trata de una
+# estrategia enfocada a conseguir resultados en un determinado canal, en este caso el online.
+# Esto significa que sería conveniente:
+
+# Conocer y entender el canal online: Tu estrategia debe ser elaborada teniendo en cuenta el
+# comportamiento y las preferencias de tus consumidores online. Será importante conocer qué webs
+# intermediarias influyen en sus compras y cómo los consumidores cambian entre canales.
+# Identificar y priorizar audiencias: Al igual que en el marketing tradicional, dirigirse a la audiencia
+# adecuada es la clave.
+# Además, el medio digital permite el microtargeting o lo que es lo mismo, una segmentación avanzada a
+# nivel individual.
+# Animar el uso de los canales: Comunica los beneficios que supone utilizar el canal digital para
+# llevar a tus consumidores offline a este canal y así destacar tu marca en este entorno.
+# Crea propuestas de valor en el entorno online y enfatiza las diferencias entre los diferentes
+# canales.
+# -Apoya la integración entre canales: Integra todos los canals que formen parte del mapa de la
+# experiencia del cliente.
+# Diplomados Online.com
+
+# in
+# f
+# t
+# 8+
+# 3
+# ¿Qué es el mapa de experiencia del cliente?
+
+# Se trata de un diagrama que muestra los pasos extremo a extremo que sigue tu cliente al relacionarse
+# con tu empresa (ya sea a través de un servicio, producto o de lo que sea).
+# Estudia cómo utilizan tus competidores el canal: Entender a quién se están dirigiendo y cuál es su
+# propuesta de valor servirá para poder diferenciarte.
+# 1.3.- ¿QUÉ DEBE IR EN NUESTRO PLAN DE MARKETING?
+
+# Como puedes comprobar un plan de marketing digital tiene muchas similitudes con un plan de
+# marketing tradicional pero enfocado en gestionar aspectos específicos de las estrategias digitales. Para
+# concluir esta introducción, planteamos esta lista con las preguntas sobre el plan de marketing digital que
+# lograrás responder al terminar la guia.
+# 1.- ¿Cómo vamos a utilizar los canales digitales para hacer crecer el negocio?
+# 2.- ¿Cómo vamos a asegurarnos de que nuestro plan de marketing digital esta alineado con los objetivos
+# del negocio?
+# 3.- ¿Cómo vamos a usar los canales digitales para añadir valor a nuestra marca?
+# 4.- ¿A qué audiencia nos dirigimos? ¿Cuáles son las audiencias prioritarias?
+# 5.- ¿Cuál es nuestra propuesta de valor para cada una de esas audiencias?
+# 6.- ¿Cómo vamos a integrar los canales?
+# 7.-¿Cómo vamos a lograr nuestros objetivos a través de intermediarios, colaboradores y medios de
+# publicación?
+# 8.- ¿Cómo vamos a incrementar nuestras ventas a través de estrategias durante el ciclo de vida del
+# consumidor?
+# 10.¿Cómo conseguiremos alcanzar a nuestra audiencia?
+# 11.¿Cómo vamos a animar a nuestra audiencia a participar y convertir?
+# 12. ¿Cómo vamos a fidelizar en un medio/largo plazo a nuestra audiencia?
+# 13.¿Cómo vamos a gestionar los recursos necesarios para nuestro plan?
+# ✔DiplomadosOnline.com
+
+# in
+# f
+# t
+# 8+
+# 4
+# 1.4.- ¿QUÉ PROCESO VA A SEGUIR TU PLAN?
+
+# Vamos a utilizar el esquema basado en SOSTAC y RACE para estructurar la plantilla, ya que es
+# un tipo de esquema claro y fácil para poder gestionar el plan. Este sistema de planificación ha sido
+# desarrollado por Paul Smith y Dave Chaffey específicamente para planes de marketing en el entorno
+# digital.
+# Nuestra plantilla integra los siguientes 5 pasos para crear el plan de marketing:
+
+# 1.- Análisis de la situación. ¿Dónde estamos ahora?
+
+# En este primer paso crearemos un análisis DAFO específico para el entorno online una vez
+# revisados aspectos clave del micro entorno como los consumidores, los competidores o los
+# intermediarios que forman el mercado online.
+# 2.- Fijación de objetivos. ¿Hacia dónde nos dirigimos? Describiremos una visión para el canal
+# digital y fijaremos objetivos específicos relevantes como pueden ser: el incremento en ventas o el ahorro
+# de costos.
+# 3.- Fijación de estrategia. ¿Cómo vamos a llegar allí? En el tercer paso definiremos cómo
+# conseguir los objetivos fijados en el paso dos.
+# 4.- Descripción de las tácticas que utilizaremos a través de las herramientas de comunicación:
+# Detallaremos cómo definir las tácticas que nos servirán para alcanzar objetivos.
+# 5.- Acciones y control: En el apartado de acciones y control definiremos los planes de acción, y los
+# procesos de gestión y sistemas que necesitará el plan. Respecto al control, describiremos cómo utilizar
+# herramientas de análisis para evaluar el cumplimiento de los objetivos.
+# RECOMENDACIÓN: Enfoca el plan de marketing digital a tus consumidores
+
+# En todas las estrategias digitales es importante construir un plan centrado en el consumidor
+# en vez de enfocado en tus productos o tácticas. Además, es más importante desde que el marketing
+# digital supone obtener ventajas en las nuevas plataformas digitales en base a cómo los consumidores
+# interactúan en ellos.
+# Con este esquema lograremos un plan que:
+
+# -Está creado en base a lo que está pasando en el mercado online de tu empresa.
+# -Está centrado en las necesidades del consumidor.
+# -Tiene en cuenta a figuras influyentes, posibles colaboradores y competidores de la empresa.
+# -Tiene claros objetivos para alcanzar la visión que tienes a medio plazo y largo plazo.
+# -Ofrece una clara dirección para conseguir los objetivos.
+# -Cuenta con un método de análisis que permite revisar la estrategia y controlar el éxito de cada
+# acción.
+# Diplomados Online.com
+
+# in
+# f
+# t
+# 8+
+# 5
+# RECOMENDACIÓN: Trata de crear un plan digital breve pero con los puntos clave para tu negocio
+
+# Creemos que este modelo es uno de los mejores para crear planes de marketing, pero corres el riesgo de
+# hacerlo demasiado extenso. Trata de enfocarte en los puntos más importantes para que el plan sea lo
+# más factible y claro posible.
+# 2.- ANÁLISIS DE SITUACIÓN
+# 2.1. El ecosistema Digital
+
+# Para desarrollar una plan digital efectivo será necesario que entendamos que el mercado online
+# es más complejo y más competitivo de lo que ha sido nunca ningún otro mercado. Es por ello que resulta
+# imprescindible que conozcamos el ecosistema digital en el que nos vamos a encontrar y los diferentes
+# tipos de medios, webs y otras plataformas digitales en las que los usuarios online interactúan.
+# Teniendo conocimiento sobre los 3 medios principales que existen en el ecosistema digital podrás
+# adaptar tu presupuesto acada uno de ellos.
+# En este diagrama se puede ver cómo se sobreponen los 4 tipos de medios. Es importante que las
+# campañas y los recursos estén integrados entre sí para obtener los máximos resultados gracias a la
+# sinergia.
+# PAGADO
+# PROPIO
+# GANADO
+# SOCIAL
+# Al comenzar con tu plan digital debes de conocer muy bien en qué medio principal pasa más
+# tiempo tu audiencia.
+# Paid Media (Publicidad tradicional)
+
+# En estos medios siempre existe inversión para atraer visitas o llegar a usuarios a través de buscadores,
+# redes display o de afiliados. La marca tiene que pagar para hacer uso de estos canales.
+# Earned Media (Medios ganados)
+
+# Tradicionalmente los 'medios ganados' ha sido el nombre que se le ha dado a la publicidad generada a
+# partir de invertir en relaciones públicas para incrementar el conocimiento de marca.
+# Ahora los 'medios ganados' también incluyen el ‘boca-oreja' que puede ser generado a través de
+# marketing viral y social media marketing, y a su vez incluye las conversaciones en redes sociales, blogs
+# y otras comunidades.
+# Los medios ganados son en definitiva las diversas formas de conversación que surgen entre
+# consumidores y marcas tanto en el entorno online como offline.
+# Diplomados Online.com
+
+# in
+# f
+# t 8+
+# Owned Media (Medios propios)
+# 6
+# Estos son medios que pertenecen a la marca. En el entorno online los medios propios hacen referencia a
+# las propias webs de las empresas, blogs, aplicaciones móviles o sus canals sociales en Facebook, Linke-
+# din o Twitter.
+# Convierte a tu marca en editora de contenidos
+
+# Cada vez se ve más cómo las marcas utilizan sus propios medios para convertirse en editores de conte-
+# nido. Es importante ofrecer contenido relevante para el consumidor a través de medios propios con el fin
+# de llegar a ser una autoridad en el sector, atrayendo a su vez tráfico de usuarios.
+# 2.2. Mercado
+
+# El mercado online en el que tienes que competir está formado por las necesidades de los
+# consumidores y de cómo estos servicios les son ofrecidos a través de competidores, intermediarios y
+# personas o webs influyentes.
+# En el entorno online cambia la manera en al que competimos y los comportamientos y
+# necesidades de los consumidores tampoco son las mismas que en el entono offline. Teniendo en cuenta
+# que el mercado digital no lo conocemos, también es importante crear un esquema parar entender los
+# comportamientos más importantes de tus competidores y otros agentes influyentes.
+# 2.2.1. Análisis de los clientes.
+
+# En cualquier plan de marketing lo primero que hay que hacer es analizar a tu cliente, estudiar
+# cuáles son sus características, comportamientos, necesidades y deseos.
+# Ten en cuenta que los consumidores online tienen distintas características demográficas,
+# necesidades y comportamientos que tus clientes offline. Por lo que además de segmentarlos como se
+# ha venido haciendo hasta ahora, puedes utilizar algunas opciones más de microtargeting que te permitirán
+# identificar de manera más exacta, a tu público objetivo (segmentación basada en el valor que aporta el
+# cliente, su ciclo de vida o comportamiento).
+# En esta sección vas a analizar los tres aspectos más importantes sobre tus clientes online: ¿Quié-
+# nes son? ¿Por qué compran? ¿Cómo lo compran?
+# Utilizar las siguientes variables:
+
+# Si tu mercado es B2B (Business to business, modalidad de comercio electrónico orientado al negocio
+# entre empresas a través de internet):
+# Sector
+# Tipo de empresa/Estructura (Centralizada/Descentralizada)
+# Tamaño de la empresa
+# Tipo de trabajo, posición
+# Localización geográfica
+# Beneficios
+# Usuario intensivo/Usuario débil
+# Usuario fiel/ Usuario infiel
+# Proveedores
+# Diplomados Online.com
+
+# in
+# f
+# t
+# 8+
+# B2B (dirigiéndote a otros
+# negocios por internet)
+# Variables
+# Segmento I
+# Sector
+# Tipo de empresa/Estructura
+# (Centralizada/Descentralizada)
+# Tamaño de la empresa
+# Tipo de trabajo, posición
+# - Localización geográfica
+# Beneficios
+# Usuario intensivo/Usuario débil
+# Usuario fiel/ Usuario infiel
+# - Proveedores
+# 7
+# Si tu mercado es B2C (Business to client, la estrategia que desarrollan las empresas comerciales
+# para llegar directamente al cliente o al consumidor final).
+# - Variables demográficas
+
+# Variables psicográficas (Estilo de vida, actitudes, personalidad, etc).
+# Estas variables son importantes a la hora de segmentar en sectores como la moda.
+# Variables de comportamiento (¿Cómo, cuándo, por qué compran?)
+# Variables
+# Segmento I
+# B2C (dirigiéndote a
+# consumidores finales)
+# Variables demográficas
+# Variables psicográficas (Estilo de
+# vida, actitudes, personalidad,
+# etc).
+# Variables de comportamiento
+# (¿Cómo, cuándo, por qué
+# compran?)
+# También puedes segmentar teniendo en cuenta nuevas opciones:
+# Segmentación por necesidades
+# ¿Por qué compran? ¿Cuáles son sus necesidades reales?
+# Diplomados Online.com
+
+# in
+# f
+# t 8+
+# Necesidades
+# ¿Qué necesidades son
+# satisfechas gracias a los
+# productos/servicios de tu
+# empresa?
+# Por ejemplo, necesitan expresar
+# su identidad a través de la moda
+# Qué quleren
+# ¿Cómo manifiestan esas
+# necesidades? ¿Qué piden los
+# clientes?
+# Por ejemplo, quieren comprar las
+# últimas tendencias en moda
+# 8
+# Identifica las necesidades de tus consumidores y lo que buscan para cubrirlas. Después decide cuáles
+# vas a satisfacer.
+# Segmentación por beneficios
+
+# La segmentación por beneficios es el proceso de agrupar consumidores en segmentos de mercado de
+# acuerdo con los beneficios que buscan en el producto.
+# ¿Los diferentes segmentos de clientes obtienen diferentes beneficios de tus productos/servicios?
+
+# Escribe los diferentes beneficios que tus consumidores esperan conseguir de tus productos/servicios.
+# ¿Por qué te compran?
+# Por ejemplo, una compañía de cosméticos puede segmentar en base a beneficios: Reparar la piel,
+# eliminar arrugas, reducir el acné, etc.
+# Los consumidores muchas veces quieren un mismo producto por distintas razones y priorizan sus
+# necesidades de manera diferente.
+# Escucha a tus clientes y descubre qué necesidades tienen y qué les gustaría comprar.
+# Segmentación por fidelidad
+
+# Identifica a tus clientes más fieles para tener más posibilidades de llegar a ellos y describe qué les
+# diferencia de aquellos que no lo son.
+# Seguramente obtengas más beneficios al tener un cliente fiel y recurrente a uno nuevo que no vuelva a
+# comprar.
+# Estas son algunas de las posibilidades de segmentación que puedes utilizar.
+# Segmentación por criterios de búsqueda
+
+# El marketing en buscadores es muy importante ya que atrae público objetivo a la web y genera ventas,
+# por lo que asegúrate de que has realizado un buen análisis de las palabras clave que utiliza tu público en
+# buscadores.
+# Otras opciones de segmentación: Según ciclo de vida, según sus respuestas a tus comunicaciones,
+# según canal de información online de preferencia, etc.
+# Diplomados Online.com
+
+# in
+# f
+# t
+# 8+
+# 9
+# RECOMENDACIÓN
+
+# Lo más importante es que elijas una segmentación que sea lo más coherente posible con tu
+# negocio.
+# ¿Quién es tu cliente ideal?
+# Seguro que tienes algunos clientes que son mejores que otros.
+# Los clientes ideales no regatean sobre el precio, no se quejan constantemente y siempre pagan a
+# tiempo, siendo un placer hacer negocios con ellos. Otros están siempre quejándose, no pagan a tiempo
+# y hacer negocios con ellos suele resultar más difícil e incluso más costoso monetariamente. ¿Es a este
+# tipo de cliente complicado al que te quieres dirigir o puedes encontrar más clientes 'ideales' a quienes
+# vender?
+# El primer paso para poder llegar a este cliente es definiéndole lo mejor posible. Piensa en quién sería tu
+# cliente ideal y describe al máximo posible sus características.
+# Cuando analices tu ventaja competitiva revisa si ésta encaja con las necesidades de tu 'cliente ideal'.
+# Describe cómo sería tu 'cliente ideal'.
+# RESUMEN
+# Para acabar responde con la mayor profundidad posible estas 3 preguntas. Si no has vendido
+# nunca en la red, fíjate en tus competidores online y en sus clientes. Debes conocer a tu cliente incluso
+# mejor de lo que se conocen ellos mismos.
+# ¿Quiénes son?
+# ¿Por qué compran?
+# ¿Cómo lo compran?
+# Diplomados Online.com
+
+# in
+# f
+# t
+# 8+
+# 10
+# 2.3. SITUACIÓN DEL MERCADO
+
+# Enfócate en necesidades y tendencias factibles que existen en el mercado. ¿Las estás
+# satisfaciendo? ¿Cuáles son? ¿Qué es lo que está en auge en el mercado? ¿Hay datos y evidencias?.
+# 2.4. COMPETIDORES
+# Vamos a crear un análisis comparativo de tu empresa frente a la competencia y sus diferentes
+# escenarios.
+# El análisis comparativo es un punto muy importante que forma parte del plan de marketing digital.
+# Consiste en realizar un análisis estructurado de los servicios, capacidades y desempeño online que una
+# empresa lleva a cabo en áreas tan importantes como la adquisición de clientes, conversión, retención y
+# crecimiento.
+# Gracias a este estudio identificarás todos los puntos clave que afectan el desempeño comercial de
+# la empresa.
+# Seguiremos el siguiente esquema:
+
+# Planificar. Comparar cómo una empresa gestiona el marketing digital como estrategia. Aquí incluiremos
+# sus estrategias de targeting, comunicación y propuesta.
+# Alcanzar. La efectividad de la competencia (o líderes del mercado) a la hora de alcanzar e influenciar a
+# sus audiencias en el entorno online.
+# Actuar. Cómo fomentan la interacción con su audiencia en su propia web o en otras plataformas online.
+# Convertir. Efectividad a la hora de conseguir leads o ventas a partir de la primera interacción del
+# consumidor.
+# Engage: Analizar la efectividad de las estrategias para conseguir ventas recurrentes.
+# Es importante que a la hora de hacer el análisis no trates de profundizar demasiado en cada
+# apartado. Céntrate en los puntos que más te interesan.
+# En el análisis comparativo deberás tener en cuenta tanto criterios cualitativos como comparativos.
+
+# CRITERIOS CUANTITATIVOS
+
+# Si no vendes directamente en la red, no necesitarás comparar muchos de los criterios que mostramos
+# en la tabla. Volvemos a repetir que este análisis sirve para hacerte una idea de tu actual desempeño
+# online realizando una comparación con tus competidores y casos de éxito de otras industrias, por lo que
+# elige los criterios que sean útiles para ti y de los que puedas obtener información. No es conveniente que
+# dediques demasiado tiempo a este análisis si va a hacer que tu plan se prolongue mucho.
+# Diplomados Online.com
+
+# in
+# f
+# t
+# 8+
+# 11
+# CRITERIOS CUALITATIVOS
+# También necesitarás evaluar los criterios cualitativos que reflejan cómo una marca se comunica
+# e interactúa con su audiencia, es decir, analizar la experiencia que ofrece al consumidor.
+# Trata de estimar estos criterios lo mejor posible y de responder a las preguntas de 'qué están
+# haciendo', 'quién lo está haciendo', 'dónde' y 'cómo'.
+# Por lo tanto, haz un pequeño resumen para cada criterio que consideres importante analizar.
+# SELECCIÓN DE LAS EMPRESAS QUE COMPARAREMOS
+
+# El siguiente paso consiste en seleccionar las empresas con las que te quieres comparar. Tus opciones
+# son:
+# Competidores directos (online): Son los que venden productos y servicios similares al mismo
+# público objetivo.
+# Competidores indirectos (online): Son los satisfacen las mismas necesidades de forma diferente
+# con productos/ servicios sustitutos.
+# Compañías con las mejores prácticas online: Pregunta e investiga quiénes son las empresas que
+# llevan a cabo las mejores prácticas de marketing online, tanto de tu sector como en otros. Analiza cómo
+# consiguen costos bajos, un nivel de satisfacción alto por parte de los clientes, etc. (Este análisis resulta
+# interesante para entender todas las posibilidades que ofrece el marketing online.)
+# Es posible que de muchos de aspectos claves que quieres comparar no tengas datos reales de tu
+# competencia o líderes del mercado, por lo que realiza el análisis con los recursos que dispongas.
+# RECOMENDACIÓN
+# Si todavía no realizas marketing digital de tu negocio, analiza a tus competidores y a los casos de
+# éxito para poder establecer objetivos reales en el siguiente apartado.
+# En la siguiente página puedes ver una tabla resumen con algunos de los criterios que puedes tener
+# en cuenta para realizar tu análisis comparativo. Escoge aquellos criterios que sean relevantes para tu
+# negocio y que además te permitan actuar, y añade aquellas que creas que son importantes.
+# RECOMENDACIÓN: No trates de analizar todo
+
+# Lo más importante es lograr hacer un análisis comparativo de los puntos claves que son
+# importantes para tu negocio, ya que analizarlo todo requiere mucho tiempo e incluso dinero.
+# Nosotros vamos a resumir las claves más importantes para que selecciones los criterios que más
+# te convengan.
+# Diplomados Online.com
+
+# in
+# f
+# t
+# 8+
+# 12
+# Alcance
+# Cuantitativo: KPI's
+# de alcance
+# Cualitativo:
+# Evaluación de
+# alcance
+# Cuantitativo: KPI's
+# de actividad
+# Cuantitativo:
+# Evaluación de
+# actividad
+# Cuantitativo: KPI's
+# de conversión
+# Cuantitativo:
+# Evalucación de
+# conversión
+# Cuantitativo: KPI's
+# de fidelización
+# Cuantitativo:
+# Evaluación de
+# fidelización
+# Criterio
+# Competidor Competidor ICompetidor II Tu empresa
+# Número de visitas (o ranking global de la página)
+# Ratio de conversación en social media
+# Visibilidad en buscadores
+# Marketing de Contenido
+# Influencia
+# Colaboraciones estratégicas
+# Ratio de engagement de la web
+# Ratio de 'compartir en social media'
+# Targeting
+# Mensajes principales de la marca
+# Estrategias de engagement
+# Facilidad de búsqueda
+# Ratios de conversión
+# Diferenciación
+# Integración multicanal
+# Interacción con la comunidad
+# Calidad del servicio
+# Comunidad
+# Personalización
+# Promoción
+# ANÁLISIS COMPARATIVO DE ALCANCE
+# Indicadores de desempeño de alcance (KPI's de alcance):
+
+# 1.- NÚMERO DE VISITAS:
+# Es importante conocer cuántas visitas recibe la competencia. Si no puedes conseguir esos datos, seguro
+# que puedes acceder a los datos de las empresas con mejores prácticas. Compárate con ellos.
+# Métricas: Visitas, Visitas únicas, nuevas visitas vs. visitas
+# recurrentes.
+# Herramientas: Similar Web
+# 2.- RATIO DE CONVERSACIÓN EN SOCIAL MEDIA:
+# Tienes que medir el número de conversaciones que se han generado sobre tu marca y comparar con el
+# número de conversaciones que se han generado sobre tu competidor.
+# Métricas: Número de menciones en social media. ¿Cuántas veces es mencionada tu competencia en un
+# día/semana/mes?
+# Herramientas: Conversocial, Social Mention, How Sociable, Grader, Tweet Archivist, Topsy
+# Diplomados Online.com
+
+# in
+# f
+# t
+# 8+
+# 13
+# Métricas: Ranking global, Ranking en el pais que estes interesado
+# Herramientas: Similar web, Alexa, Mi Pagerank
+# Evaluación cualitativa del alcance:
+# 1.- MARKETING DE CONTENIDO: Haz un pequeño resumen definiendo qué tipo de contenido
+# tienen en su web y otras plataformas que sirve para atraer a su audiencia.
+# 2.- INFLUENCIA: Evalúa el sentimiento de las menciones que hacen a tus competidores para
+# conocer el valor real del alcance.
+# 3.- COLABORACIONES ESTRATÉGICAS: ¿Realizan colaboraciones con otras marcas, medios u
+# otros intermediarios con los que aumentan su presencia online?
+# ANÁLISIS DE ACTIVIDAD
+
+# Indicadores de desempeño de actividad (KPI's de actividad):
+# 1.- RATIO DE ENGAGEMENT EN LA WEB: Analiza las interacciones generadas por el usuario en la
+# web como el porcentaje de rebote, número de páginas vistas o tiempo en la página
+# Métricas: Porcentaje de rebote, número de páginas vistas, tiempo en la página.
+# Herramienta: Doubleclick ad planner, Similar Web
+# 2.- RATIO DEL SHARE EN SOCIAL MEDIA: Número de veces que se ha compartido una página en
+# redes sociales.
+# Métricas: Número de veces que se ha compartido la página en
+# Facebook, Twitter, por email, etc.
+# Herramientas: Social Mention
+# Evaluación cualitativa de actividad:
+
+# 1.- TARGETING: Haz una descripción del contenido que tiene la competencia en su web para
+# atraer a diferentes tipos audiencias.
+# 2.- MENSAJE CLAVE DE LA MARCA: Evalúa cómo diferencia los mensajes principales de la
+# marca de su propuesta online y de los mensajes que le otorgan credibilidad y confianza.
+# (Por ejemplo, los testimonios de clientes)
+# 3.- ESTRATEGIAS DE ENGAGEMENT: ¿Qué tipo de contenido ofrecen para generar leads?
+
+# Por ejemplo: Newsletters diarios, ofertas específicas, etc.
+# 4.- FACILIDAD DE BÚSQUEDA: ¿Es fácil para los usuarios encontrar lo que buscan en la web?
+# Haz un breve análisis de usabilidad.
+# Diplomados Online.com
+
+# in
+# f
+# t
+# 8+
+# 14
+# ANÁLISIS DE CONVERSIÓN:
+
+# Indicadores de desempeño de conversión (KPI´s de conversión):
+# 1.- RATIOS DE CONVERSIÓN: Ventas/Visitas
+# Métricas: Número de leads semanales, número de ventas generadas, etc.
+# Evaluación cualitativa de conversión:
+
+# 1.- DIFERENCIACIÓN: ¿Su producto/servicio se diferencia de alguna manera de los competidores?
+# 2.- INTEGRACIÓN MULTICANAL: ¿Integra correctamente otros canales en su web?
+# (Canales offline, presencia social, blog, etc)
+# ANÁLISIS COMPARATIVO DE FIDELIZACIÓN:
+# Indicadores de desempeño de fidelización (KPI´s de fidelización):
+
+# 1.- NÚMERO DE INTERACCIONES EN SU COMUNIDAD: Cuántas interacciones mantiene a lo largo
+# de un periodo con su audiencia.
+# Herramientas: Facebook, TweetCounter, etc.
+# 2.5. INTERMEDIARIOS, INFLUENCERS Y COLABORADORES POTENCIALES
+
+# Revisa el uso que hace tu público objetivo de las diferentes webs
+# y
+# plataformas que pueden influenciar en su decisión de compra, como pueden ser
+# motores de búsqueda, sitios de noticias especialistas, agregadores, redes sociales y bloggers.
+# 2.6. MACRO ENTORNO
+
+# Estas son las influencias estratégicas de la empresa en un panorama general. Recomendamos no
+# entrar en mucha profundidad en este punto, simplemente examina la influencia de estos macro factores
+# en el entorno digital.
+# De este análisis podrás obtener conclusiones importantes sobre las oportunidades del Mercado.
+# Social - ¿cómo han cambiado las actitudes del consumidor? ¿Cómo es su actitud actual hacia
+# la compra online?
+# · Legal - Revisa que tus actividades de marketing online cumplen con las leyes de privacidad
+# digital actual.
+# · Medio ambiente - ¿Es tu enfoque ético y sostenible?
+# Político - ¿Puedes aprovechar planes de financiación o subvenciones públicas?
+# · Tecnología – Examina lo último en tecnología.
+# Diplomados Online.com
+
+# in
+# f
+# t
+# 8+
+# 15
+# 2.7. TUS CAPACIDADES
+
+# Una vez que ya has mirado hacia fuera puedes buscar dentro de tus propias capacidades que
+# servirán para completar las fortalezas y debilidades de tu análisis DAFO digital.
+# Trata de responder las siguientes preguntas:
+
+# ¿Por qué ganas clientes? ¿Por qué pierdes clientes? ¿Tienes alguna ventaja competitiva importante?
+# ¿En qué casos no funciona tu negocio?
+# ¿Sueles recibir feedback de aquellos clientes que has perdido?
+# Marketing Mix
+# Fortalezas
+# Debilidades
+# Producto (diseño, nivel de
+# calidad, costes de producción
+# bajos, diferenciación en el
+# packaging, branding)
+# Precio (precio más bajo que la
+# media, ratio calidad/precio, de
+# ataque o de defensa, etc)
+# Localización (penetración de la
+# distribución, buenas
+# localizaciones, etc)
+# Promoción (¿somos buenos a
+# la hora de promocionar
+# nuestros productos/servicios?
+# ¿Tenemos una marca fuerte o
+# débil? ¿Hemos integrado la
+# promoción al resto del
+# marketing mix?
+# Servicio (¿Ofrecemos un buen
+# servicio de atención al cliente?
+# ¿Contamos con servicio
+# preventa, durante la venta y
+# post venta?
+# Personas (¿Contamos con las
+# habilidades necesarias en
+# preventa y postventa? ¿Estudia
+# nuestro personal a los
+# consumidores? ¿tenemos alta
+# rotación de empleados?)
+# Procesos (¿Son eficientes los
+# sistemas con los que
+# contamos?
+# Evidencias físicas: (Imagen
+# exterior)
+# Diplomados Online.com
+
+# in
+# f
+# t
+# 8+
+# 17
+# 2.8. Análisis DAFO digital
+# Un análisis digital DAFO resume las conclusiones que has obtenido sobre tu posición en el mercado
+# online y permite visualizarlo como estrategia.
+# Esta es una parte esencial de tu plan de marketing digital, ya que sirve para crear un plan de acción que
+# no esté basado en tus intereses o intuiciones, sino que enfocado a lo que necesitas hacer teniendo en
+# cuenta las oportunidades que se presentan en el entorno online.
+# También tiene en cuenta las capacidades que tienes frente a tus competidores.
+# ¿Qué es un análisis DAFO?
+# Se trata de una matriz de 2x2 que resumen las debilidades y fortalezas internas y las oportunidades y
+# amenazas externas.
+# Asegúrate de que tu análisis DAFO digital tenga las siguientes características.
+# 1.- Se basa en el análisis DAFO existente del propio negocio
+# 2.- Está creado específicamente para el entorno digital
+# 3.- El análisis revisa estos 5 puntos clave
+# Alcance: Llegar al público objetivo y conseguir conocimiento de marca a través de tu web u otras
+# plataformas online para animar las visitas.
+# Actividad: Fomentar la interacción y participación para conseguir leads.
+# Engage: Construir relaciones a largo plazo con los consumidores.
+# Marca: Posicionamiento y percepción sobre la marca. Marketing Mix.
+# Multicanal: Cómo se integra el canal digital en los canales tradicionales.
+# En este caso nosotros vamos a poner de ejemplo una matriz DAFO que incluye opciones estraté-
+# gicas para llevar a cabo.
+# Este ejemplo, no solo resume en análisis externo y interno de una empresa, sino que muestra otros 4
+# recuadros para completar con las estrategias que te ayudarán a tener éxito en el mercado.
+# Con que identifiques las debilidades, fortalezas, amenazas y oportunidades es suficiente.
+# Mostramos esta tabla para que entiendas que los objetivos y estrategias deben surgir del análisis del
+# microentorno y macroentorno de la compañía.
+# Diplomados Online.com
+
+# in
+#

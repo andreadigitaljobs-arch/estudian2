@@ -1,0 +1,57 @@
+# Guía de Estudio Estratégica
+
+## 1. Mapa de la Unidad
+
+*   **I. Segmentación de Mercado y Personas de Cliente**
+    *   A. Importancia de las Personas
+        *   1.  Humanizar los segmentos de mercado
+        *   2.  Empatizar con los clientes
+        *   3.  Hablar el mismo idioma que los clientes
+    *   B. ¿Qué es una Persona de Cliente?
+        *   1.  Personaje ficticio pero realista
+        *   2.  Representa un segmento clave de clientes
+        *   3.  Perfil dinámico y enriquecido con datos
+    *   C. Componentes de una Persona
+        *   1.  **¿Quiénes son?** (Datos demográficos, nombre ficticio)
+        *   2.  **¿Cuáles son sus objetivos y motivaciones?** (Relacionados con la oferta)
+        *   3.  **¿Cuáles son sus puntos débiles?** (Problemas que la oferta resuelve)
+    *   D. Enriquecimiento de Datos
+        *   1.  **Análisis del sitio web:** Comportamiento en línea (páginas, contenido, búsqueda)
+        *   2.  **Datos de primera mano (CRM/E-commerce):** Historial de compras, frecuencia, valor del pedido
+        *   3.  **Datos psicográficos:** Intereses, valores, estilo de vida (Encuestas, Redes sociales, IA)
+        *   4.  **Datos cualitativos:** Citas de clientes (Entrevistas, Encuestas, Soporte)
+    *   E. Ejemplo: Amy Activa (Empresa de fitness online)
+        *   1.  Edad, ocupación, ubicación
+        *   2.  Comportamiento: Videos de ejercicios en Instagram
+        *   3.  Compras: Colchoneta de yoga
+        *   4.  Necesidades: Desestresarse sin ir al gimnasio
+    *   F. Gestión de Personas
+        *   1.  Crear varias personas que representen diferentes segmentos.
+        *   2.  Documentos compartidos, herramientas colaborativas (Miro), software especializado, CRM.
+        *   3.  Usar las personas para validar las decisiones y asegurar que resuenen con los clientes.
+
+## 2. Conceptos de Examen
+
+*   **Persona de Cliente:** Definición, propósito (humanizar segmentos), diferencia entre personas estáticas y dinámicas enriquecidas con datos. *Importante:* Entender cómo una persona te ayuda a tomar decisiones de marketing más efectivas.
+*   **Tipos de datos para enriquecer una persona:**
+    *   *Análisis del sitio web:*  Por qué es importante rastrear el comportamiento online.
+    *   *Datos CRM/E-commerce:*  Cómo el historial de compras informa la persona.
+    *   *Datos psicográficos:*  Por qué los valores y estilo de vida son relevantes.
+    *   *Datos cualitativos:*  Importancia de la "voz del cliente".
+*   **Aplicación práctica:**  Ser capaz de identificar los diferentes tipos de datos en un escenario hipotético y cómo se usarían para construir una persona. *Importante:* Saber conectar los datos con los objetivos y puntos débiles del cliente.
+*   **Herramientas de gestión de Personas:**  Conocer las diferentes herramientas (desde documentos compartidos hasta software CRM) y sus propósitos. *Importante:* Entender que el objetivo es la accesibilidad y colaboración del equipo.
+
+## 3. Resumen "Si solo tienes 5 minutos"
+
+*   **Las Personas son representaciones ficticias pero realistas de tus clientes objetivo.**
+*   **El objetivo es humanizar los datos y empatizar con tus clientes.**
+*   **Para crear una Persona necesitas:**
+    *   Quiénes son (datos demográficos)
+    *   Cuáles son sus objetivos
+    *   Cuáles son sus puntos débiles
+*   **Enriquece tus Personas con:**
+    *   Datos del sitio web (comportamiento online)
+    *   Datos de CRM (historial de compras)
+    *   Datos psicográficos (valores y estilo de vida)
+    *   Datos cualitativos (voz del cliente)
+*   **Usa las Personas para validar decisiones y asegurar que tu producto/servicio resuene con tus clientes.**

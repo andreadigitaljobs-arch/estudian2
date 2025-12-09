@@ -1,6 +1,5 @@
 streamlit
 google-generativeai
-Pillow
-watchdog
 supabase
 extra-streamlit-components
+Pillow

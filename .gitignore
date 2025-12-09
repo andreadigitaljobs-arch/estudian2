@@ -1,35 +1,9 @@
-# Security
-api_key.txt
-.env
-
-# Temporary and Generated Files
+.streamlit/secrets.toml
 __pycache__/
 *.pyc
-temp_*
-*.wav
-# Ignore other images
-*.png
-*.jpg
-*.jpeg
-
-# Enable specific assets (Must come AFTER *.png)
-!illustration_*.png
-!assets/*.png
-
-# Application Output (Content is local to user)
-output/
-
-# Backups
-backups/
-Mis_Respaldos/
-*_backup_*.py
-CODIGO_COMPLETO_APP.txt
-
-# System
-.DS_Store
-Thumbs.db
-
-# Virtual Environment
 venv/
-env/
-.venv/
+.env
+api_key.txt
+*.wav
+*.mp4
+temp_*

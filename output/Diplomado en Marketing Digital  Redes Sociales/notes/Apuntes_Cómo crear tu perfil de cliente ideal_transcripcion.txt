@@ -1,0 +1,58 @@
+# Apuntes de la Unidad: Creación de Personas de Cliente
+
+## Descripción Breve
+Esta unidad trata sobre cómo crear representaciones realistas de tus clientes ideales (personas) para entenderlos mejor y así poder ofrecerles productos/servicios que realmente necesiten. Estas personas ya no son estáticas, sino que evolucionan con la información que recoges sobre tus clientes.
+
+## Contenido Principal
+
+### ¿Qué es una Persona de Cliente?
+*   Una persona de cliente es un personaje **ficticio** pero **realista** que representa a un grupo de clientes con características similares.
+*   **Ejemplo:** En lugar de decir "nuestro cliente es un joven adulto", podrías decir "Nuestro cliente es Juan, un estudiante universitario de 20 años interesado en tecnología y videojuegos".
+
+### ¿Por qué son importantes las Personas?
+*   Ayudan a **empatizar** con tus clientes. En lugar de verlos como números, los ves como personas con necesidades y deseos específicos.
+*   Te permiten **"hablar su idioma"**. Al entender sus motivaciones y frustraciones, puedes comunicar tu oferta de manera más efectiva.
+*   **Ejemplo:** Si sabes que Juan está preocupado por el precio, puedes destacar el valor y las ofertas de tus productos.
+
+### Cómo Construir una Persona de Cliente (Paso a Paso)
+1.  **Preguntas Fundamentales:**
+    *   **¿Quiénes son?** (Datos demográficos):
+        *   Dale a tu persona un nombre, edad, ubicación, profesión, etc.
+        *   **Ejemplo:** "María, 35 años, vive en Madrid, es profesora de primaria."
+    *   **¿Cuáles son sus objetivos y motivaciones?**
+        *   ¿Qué quieren lograr? ¿Qué les impulsa a comprar tu producto/servicio?
+        *   **Ejemplo:** "María quiere encontrar recursos educativos innovadores para sus alumnos."
+    *   **¿Cuáles son sus puntos débiles (Pain Points)?**
+        *   ¿Qué problemas o frustraciones tienen que tu producto/servicio puede solucionar?
+        *   **Ejemplo:** "María tiene poco tiempo para buscar recursos y quiere que sean fáciles de usar."
+2.  **Enriquece con Datos Reales:**
+    *   **Analítica Web:**
+        *   ¿Qué páginas visitan más en tu sitio web? ¿Qué buscan?
+        *   **Ejemplo:** Si muchos clientes visitan la sección de "ofertas especiales", eso te da una pista.
+    *   **Datos de tu CRM/eCommerce:**
+        *   ¿Qué han comprado antes? ¿Con qué frecuencia? ¿Cuánto gastan?
+        *   **Ejemplo:** Si ves que María ha comprado varios materiales de ciencias, puedes ofrecerle más productos similares.
+    *   **Datos Psicográficos:**
+        *   Intereses, valores, estilo de vida.
+        *   **Ejemplo:** "María valora la creatividad y la sostenibilidad en la educación."
+    *   **Datos Cualitativos:**
+        *   Citas directas de encuestas, entrevistas o tickets de soporte.
+        *   **Ejemplo:** "Un cliente dijo: 'Me encanta lo fácil que es usar esta plataforma, me ahorra mucho tiempo'."
+
+### Ejemplo de Persona de Cliente: "Amy Activa"
+*   **¿Quién es?** Amy, 28 años, coordinadora de marketing en la ciudad.
+*   **Comportamiento:** Ve videos cortos de ejercicios en Instagram durante el almuerzo. Compró una colchoneta de yoga.
+*   **Motivación:** Desestresarse después del trabajo sin ir al gimnasio.
+
+### Herramientas para Crear y Gestionar Personas
+*   Documentos compartidos (Google Docs)
+*   Pizarras colaborativas (Miro)
+*   Software especializado en personas
+*   Tu propio CRM
+
+## Glosario Rápido
+
+*   **Persona:** Representación semi-ficticia de tu cliente ideal, basada en investigación y datos.
+*   **CRM:** (Customer Relationship Management) Software para gestionar interacciones con clientes.
+*   **Datos Demográficos:** Información básica sobre tus clientes (edad, género, ubicación).
+*   **Datos Psicográficos:** Información sobre los valores, intereses y estilo de vida de tus clientes.
