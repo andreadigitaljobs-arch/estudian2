@@ -58,6 +58,8 @@ if not st.session_state['user'] and not st.session_state.get('force_logout'):
                  st.session_state['supabase_session'] = res.session
                  # CRITICAL FIX: Update cookie with NEW refresh token to keep chain alive
                  cookie_manager.set("supabase_refresh_token", res.session.refresh_token, expires_at=datetime.datetime.now() + datetime.timedelta(days=30))
+                 st.success("⚡ Sesión restaurada. Actualizando...")
+                 time.sleep(2) # Allow cookie to set
                  st.rerun()
                  
     except Exception as e:
@@ -385,7 +387,9 @@ if not st.session_state['user']:
                              try:
                                  sess = st.session_state['supabase_session']
                                  cookie_manager.set("supabase_refresh_token", sess.refresh_token, expires_at=datetime.datetime.now() + datetime.timedelta(days=30))
-                             except: pass
+                                 time.sleep(2) # Wait for cookie to write
+                             except Exception as e: 
+                                 print(f"Cookie set error: {e}")
                         st.rerun()
                     else:
                         st.error("Credenciales incorrectas.")
