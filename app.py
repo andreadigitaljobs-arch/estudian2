@@ -1931,7 +1931,7 @@ with tab5:
                 st.rerun()
         
         # MODE TOGGLE
-        arg_mode = st.toggle("🧠 Activar Modo Argumentador (Abogado del Diablo)", key="arg_mode_toggle", help="Activa un análisis profundo con 4 dimensiones: Respuesta, Fuentes, Paso a Paso y Contra-argumento.")
+        arg_mode = st.toggle("💬 Activar Modo Argumentador", key="arg_mode_toggle", help="Activa un análisis profundo con 4 dimensiones: Respuesta, Fuentes, Paso a Paso y Contra-argumento.")
         
         # 1. Select Context
         st.markdown("**1. ¿Qué conocimientos uso?** (Selección por Unidad)")
