@@ -1009,7 +1009,7 @@ st.markdown(CSS_STYLE, unsafe_allow_html=True)
 with st.sidebar:
     # --- 1. LOGO & USER ---
     # Left Aligned ("RAS con el resto")
-    st.image("assets/logo_sidebar.png", width=180)
+    st.image("assets/logo_sidebar.jpg", width=180)
     st.markdown('<div style="height: 20px;"></div>', unsafe_allow_html=True) # Spacer
     
     if st.session_state.get('user'):
