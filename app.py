@@ -2102,7 +2102,7 @@ with tab6:
     current_sess = st.session_state.get('current_chat_session')
     
     if not current_sess:
-        st.warning("👈 Por favor, **inicie un nuevo chat** o selecciona uno existente en la barra lateral para comenzar.")
+        st.warning("👈 Por favor, **inicia un nuevo chat** o selecciona uno existente en la barra lateral para comenzar.")
         st.image("https://media.giphy.com/media/l0HlHFRbmaZtBRhXG/giphy.gif", width=300) # Optional fun placeholder
     else:
         # Load History from DB (Sync)
