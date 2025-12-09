@@ -1908,7 +1908,7 @@ with tab4:
 with tab5:
     tab5_html = (
         '<div class="card-text">'
-        '<h2 style="margin-top:0;">5. Ayudante de Tareas & Biblioteca</h2>'
+        '<h2 style="margin-top:0;">5. Ayudante de Tareas</h2>'
         '<p style="color: #64748b; font-size: 1.1rem;">Tu "Segundo Cerebro": Guarda conocimientos y úsalos para resolver tareas.</p>'
         '</div>'
     )
