@@ -1780,49 +1780,70 @@ with tab4:
                     with cols_past[idx]:
                         st.image(p_img, width=50)
 
+            # Text Input Option
+            input_text_quiz = st.text_area("✍️ O escribe tu pregunta aquí directamente:", height=100, placeholder="Ej: ¿Cuál es la capital de Francia? a) París b) Roma...", key=f"q_txt_{st.session_state['quiz_key']}")
+
             img_files = st.file_uploader("O sube archivos manualmente:", type=['png', 'jpg', 'jpeg'], accept_multiple_files=True, key=f"up4_{st.session_state['quiz_key']}")
         
         # COMBINE INPUTS
-        total_images_len = len(img_files) + len(st.session_state['pasted_images']) if img_files else len(st.session_state['pasted_images'])
+        has_text = bool(input_text_quiz.strip())
+        total_items = (len(img_files) if img_files else 0) + len(st.session_state['pasted_images']) + (1 if has_text else 0)
 
-        if total_images_len > 0 and st.button("Resolver Preguntas", key="btn4"):
+        if total_items > 0 and st.button("Resolver Preguntas", key="btn4"):
             progress_bar = st.progress(0)
             status = st.empty()
             results = [] 
             
-            # 1. Process Files
-            all_imgs_to_process = []
+            # 1. Process Queue
+            items_to_process = []
             
-            # Adapt UploadedFiles to be processable
+            # Add Text Item if exists
+            if has_text:
+                items_to_process.append({"type": "text", "obj": input_text_quiz, "name": "Pregunta de Texto"})
+
+            # Add Uploaded Files
             if img_files:
                 for f in img_files:
-                    all_imgs_to_process.append({"type": "upload", "obj": f, "name": f.name})
+                    items_to_process.append({"type": "upload", "obj": f, "name": f.name})
             
-            # Adapt Pasted Images
+            # Add Pasted Images
             for i, p_img in enumerate(st.session_state['pasted_images']):
-                 all_imgs_to_process.append({"type": "paste", "obj": p_img, "name": f"Captura_Pegada_{i+1}.png"})
+                 items_to_process.append({"type": "paste", "obj": p_img, "name": f"Captura_Pegada_{i+1}.png"})
 
-            for i, item in enumerate(all_imgs_to_process):
+            for i, item in enumerate(items_to_process):
                 # Calculate percentages
-                current_percent = int((i / len(all_imgs_to_process)) * 100)
-                status.markdown(f"**Analizando foto {i+1} de {len(all_imgs_to_process)}... ({current_percent}%)**")
-                progress_bar.progress(i / len(all_imgs_to_process))
-                
-                temp_img_path = f"temp_quiz_{i}.png"
-                
-                # Save Temp
-                # Save Temp (force PNG for quality)
-                if item["type"] == "upload":
-                    with open(temp_img_path, "wb") as f: f.write(item["obj"].getbuffer())
-                else:
-                    item["obj"].save(temp_img_path, format="PNG")
+                current_percent = int((i / len(items_to_process)) * 100)
+                status.markdown(f"**Analizando item {i+1} de {len(items_to_process)}... ({current_percent}%)**")
+                progress_bar.progress(i / len(items_to_process))
                 
                 try:
-                    # Load image for display before deleting temp
-                    disp_img = Image.open(temp_img_path).copy()
+                    full_answer = ""
+                    disp_img = None
                     
-                    full_answer = assistant.solve_quiz(temp_img_path, global_context=gl_ctx)
+                    if item["type"] == "text":
+                         # Text Only
+                         full_answer = assistant.solve_quiz(question_text=item["obj"], global_context=gl_ctx)
+                         disp_img = None
                     
+                    else:
+                        # Image Processing
+                        temp_img_path = f"temp_quiz_{i}.png"
+                        if item["type"] == "upload":
+                            with open(temp_img_path, "wb") as f: f.write(item["obj"].getbuffer())
+                        else:
+                            item["obj"].save(temp_img_path, format="PNG")
+                        
+                        # Load for display
+                        disp_img = Image.open(temp_img_path).copy()
+                        
+                        # Solve with Image
+                        full_answer = assistant.solve_quiz(image_path=temp_img_path, global_context=gl_ctx)
+                        
+                        # Cleanup Temp
+                        if os.path.exists(temp_img_path):
+                             try: os.remove(temp_img_path)
+                             except: pass
+
                     # Robust Regex Parsing for Short Answer
                     import re
                     short_answer = "Respuesta no detectada (Ver detalle)"
@@ -1831,19 +1852,9 @@ with tab4:
                          short_answer = match.group(1).strip()
                     
                     results.append({"name": item["name"], "full": full_answer, "short": short_answer, "img_obj": disp_img})
+                
                 except Exception as e:
-                    results.append({"name": item["name"], "full": str(e), "short": "Error", "img_obj": None})
-                finally:
-                    # Windows file lock fix: Try to remove, if fails wait and try again
-                    if os.path.exists(temp_img_path):
-                        import time
-                        for _ in range(3):
-                            try:
-                                os.remove(temp_img_path)
-                                break
-                            except PermissionError:
-                                time.sleep(0.5)
-                        # If still failing, ignore it (will be cleaned up later or overwritten)
+                    results.append({"name": item["name"], "full": f"Error: {e}", "short": "Error", "img_obj": None})
                 
             progress_bar.progress(1.0)
             status.success("¡Análisis Terminado! (100%)")

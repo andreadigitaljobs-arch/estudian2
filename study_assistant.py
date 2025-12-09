@@ -82,12 +82,11 @@ class StudyAssistant:
         response = self.model.generate_content(prompt)
         return response.text
 
-    def solve_quiz(self, image_path, global_context=""):
-        """Solves a quiz question from an image."""
-        img = Image.open(image_path)
+    def solve_quiz(self, image_path=None, question_text=None, global_context=""):
+        """Solves a quiz question from an image or text."""
         
         prompt = f"""
-        Analiza esta imagen de una pregunta de examen.
+        Analiza esta pregunta de examen.
         
         CONTEXTO OFICIAL (DEFINICIONES):
         {global_context}
@@ -99,12 +98,24 @@ class StudyAssistant:
         4. Explica brevemente POR QUÉ es la correcta.
         
         Salida:
-        **Pregunta:** [Texto detectado]
+        **Pregunta:** [Texto detectado/ingresado]
         **Respuesta Correcta:** [Opción]
         **Explicación:** [Razonamiento]
         """
         
-        response = self.model.generate_content([prompt, img])
+        content_parts = [prompt]
+        
+        if question_text:
+            content_parts.append(f"\nTEXTO DE LA PREGUNTA:\n{question_text}")
+            
+        if image_path:
+            img = Image.open(image_path)
+            content_parts.append(img)
+            
+        if len(content_parts) == 1: # Only prompt
+            return "Error: Por favor proporciona una imagen o escribe el texto de la pregunta."
+
+        response = self.model.generate_content(content_parts)
         return response.text
 
     def solve_homework(self, task_prompt, context_texts, task_attachment=None):
