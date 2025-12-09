@@ -48,15 +48,38 @@ def render_library(assistant):
     current_unit_id = st.session_state['lib_current_unit_id']
 
     # --- NAVIGATION UI ---
-    col_nav = st.columns([0.2, 0.8])
+    col_nav = st.columns([0.15, 0.15, 0.7])
     
     with col_nav[0]:
-        # Simple, robust Home Button (Restored)
-        if st.button("🏠 Inicio", key="home_btn_restored", help="Volver al Inicio de la Biblioteca"):
+        # Home Button
+        if st.button("🏠 Inicio", key="home_btn", help="Volver al Inicio"):
              st.session_state["lib_current_unit_id"] = None
              st.session_state["lib_current_unit_name"] = None
              st.session_state["lib_breadcrumbs"] = []
              st.rerun()
+
+    with col_nav[1]:
+        # Back Button (Only if not at root)
+        if current_unit_id:
+            if st.button("⬅️ Atrás", key="back_btn", help="Subir un nivel"):
+                # Logic: Pop current, go to previous
+                if st.session_state['lib_breadcrumbs']:
+                    st.session_state['lib_breadcrumbs'].pop() # Remove current
+                    
+                    if st.session_state['lib_breadcrumbs']:
+                        # Go to parent
+                        prev = st.session_state['lib_breadcrumbs'][-1]
+                        st.session_state['lib_current_unit_id'] = prev['id']
+                        st.session_state['lib_current_unit_name'] = prev['name']
+                    else:
+                        # Back to Home
+                        st.session_state['lib_current_unit_id'] = None
+                        st.session_state['lib_current_unit_name'] = None
+                else:
+                    # Fallback
+                    st.session_state['lib_current_unit_id'] = None
+                
+                st.rerun()
 
     # --- FOLDER VIEW ---
     subfolders = get_units(current_course_id, parent_id=current_unit_id)
