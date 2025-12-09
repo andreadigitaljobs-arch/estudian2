@@ -1031,10 +1031,10 @@ with st.sidebar:
     if 'current_chat_session' not in st.session_state:
         st.session_state['current_chat_session'] = None
 
-    with st.expander("📚 Historial de Clases", expanded=True):
+    with st.expander("📚 Espacios de trabajo", expanded=True):
         # Create New
-        if st.button("➕ Nueva clase", use_container_width=True):
-            new_sess = create_chat_session(st.session_state['user'].id, "Nueva clase")
+        if st.button("➕ Nuevo chat", use_container_width=True):
+            new_sess = create_chat_session(st.session_state['user'].id, "Nuevo chat")
             if new_sess:
                 st.session_state['current_chat_session'] = new_sess
                 st.session_state['tutor_chat_history'] = [] # Reset for new chat
