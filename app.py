@@ -14,14 +14,9 @@ from database import delete_course, rename_course # Force import availability
 
 
 # --- PAGE CONFIG MUST BE FIRST ---
-try:
-    favicon = Image.open("assets/favicon.jpg")
-except:
-    favicon = "🎓" # Fallback
-
 st.set_page_config(
     page_title="E-Education",
-    page_icon=favicon,
+    page_icon="assets/favicon.jpg",
     layout="wide",
     initial_sidebar_state="expanded"
 )
