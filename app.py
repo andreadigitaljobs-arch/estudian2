@@ -13,6 +13,19 @@ from library_ui import render_library # --- LIBRARY UI ---
 from database import delete_course, rename_course # Force import availability
 
 
+# --- GENERATE VALID ICO (FIX) ---
+try:
+    import os
+    from PIL import Image
+    # Always regenerate to ensure validity
+    if os.path.exists("assets/favicon.jpg"):
+        img = Image.open("assets/favicon.jpg")
+        img.save("assets/windows_icon.ico", format='ICO', sizes=[(256, 256)])
+        print("VALID ICO GENERATED: assets/windows_icon.ico")
+except Exception as e:
+    print(f"ICO GEN ERROR: {e}")
+# --------------------------------
+
 # --- PAGE CONFIG MUST BE FIRST ---
 st.set_page_config(
     page_title="E-Education",
@@ -1004,7 +1017,7 @@ st.markdown(CSS_STYLE, unsafe_allow_html=True)
 with st.sidebar:
     # --- 1. LOGO & USER ---
     # Left Aligned ("RAS con el resto")
-    st.image("assets/logo_sidebar.jpg", width=180)
+    st.image("assets/logo_sidebar.png", width=180)
     st.markdown('<div style="height: 20px;"></div>', unsafe_allow_html=True) # Spacer
     
     if st.session_state.get('user'):
