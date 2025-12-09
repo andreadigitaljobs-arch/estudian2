@@ -1737,7 +1737,7 @@ with tab4:
         tab4_html = (
             '<div class="card-text">'
             '<h2 style="margin-top:0;">4. Zona Quiz</h2>'
-            '<p style="color: #64748b; font-size: 1.1rem;">Modo Ráfaga: Sube múltiples preguntas y obtén las respuestas.</p>'
+            '<p style="color: #64748b; font-size: 1.1rem;">Sube tus preguntas y obtén orientación inmediata</p>'
             '</div>'
         )
         st.markdown(tab4_html, unsafe_allow_html=True)
