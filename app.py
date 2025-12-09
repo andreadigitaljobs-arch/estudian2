@@ -541,7 +541,9 @@ if api_key:
     try:
         transcriber = Transcriber(api_key)
         assistant = StudyAssistant(api_key)
-    except: pass
+    except Exception as e:
+        st.error(f"Error al iniciar IA: {e}")
+
 
 # --- SPOTLIGHT RESULT DISPLAY ---
 if 'spotlight_query' in st.session_state and st.session_state['spotlight_query']:
@@ -2157,6 +2159,11 @@ with tab6:
                     st.markdown(prompt)
                     
                 # 2. Prepare Context (Global + Upload)
+                # GUARD: Check assistant
+                if not assistant:
+                    st.error("⚠️ Error: El asistente no se ha iniciado correctamente. revisa tu API Key.")
+                    st.stop()
+
                 gl_ctx, _ = get_global_context()
                 
                 chat_files = []
