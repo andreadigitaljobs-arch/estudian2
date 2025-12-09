@@ -1115,14 +1115,9 @@ with st.sidebar:
     
     if has_system_key:
         st.markdown('<div class="system-key-box">✅ Clave del Sistema Activa</div>', unsafe_allow_html=True)
-        # DEBUG: Show loaded key details safely
-        k = st.secrets.get("GEMINI_API_KEY", "")
-        if k:
-            st.caption(f"Debug: Key loaded ({len(k)} chars). Start: {k[:4]}...")
-        else:
-             st.error("Debug: Key NOT found in secrets.")
     else:
         st.warning("⚠️ Sin Clave del Sistema")
+
         
     st.write("") # Spacer
     user_key_input = st.text_input("Tu Clave API (Opcional)", type="password", help="Sobrescribe la clave del sistema.")
