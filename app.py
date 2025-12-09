@@ -56,6 +56,8 @@ if not st.session_state['user'] and not st.session_state.get('force_logout'):
              if res.session:
                  st.session_state['user'] = res.user
                  st.session_state['supabase_session'] = res.session
+                 # CRITICAL FIX: Update cookie with NEW refresh token to keep chain alive
+                 cookie_manager.set("supabase_refresh_token", res.session.refresh_token, expires_at=datetime.datetime.now() + datetime.timedelta(days=30))
                  st.rerun()
                  
     except Exception as e:
