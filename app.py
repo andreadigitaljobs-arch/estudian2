@@ -1104,25 +1104,10 @@ with st.sidebar:
     
     st.divider()
 
-    # --- 3. CONFIGURACIÓN PERSONAL ---
-    st.markdown("#### ⚙️ Configuración Personal")
-    
-    # Check system key
-    has_system_key = False
-    try:
-        if "GEMINI_API_KEY" in st.secrets: has_system_key = True
-    except: pass
-    
-    if has_system_key:
-        st.markdown('<div class="system-key-box">✅ Clave del Sistema Activa</div>', unsafe_allow_html=True)
-    else:
-        st.warning("⚠️ Sin Clave del Sistema")
+    # --- 3. CONFIGURACIÓN PERSONAL (HIDDEN via User Request) ---
+    # System uses st.secrets["GEMINI_API_KEY"] automatically via load_api_key()
+    # st.markdown("#### ⚙️ Configuración Personal") ... [REMOVED]
 
-        
-    st.write("") # Spacer
-    user_key_input = st.text_input("Tu Clave API (Opcional)", type="password", help="Sobrescribe la clave del sistema.")
-    if user_key_input:
-        st.session_state['custom_api_key'] = user_key_input
 
     st.divider()
     
