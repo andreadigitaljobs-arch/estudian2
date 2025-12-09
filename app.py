@@ -1038,6 +1038,7 @@ with st.sidebar:
             if new_sess:
                 st.session_state['current_chat_session'] = new_sess
                 st.session_state['tutor_chat_history'] = [] # Reset for new chat
+                st.session_state['force_chat_tab'] = True # Force switch
                 st.rerun()
 
         # List Sessions
@@ -1056,6 +1057,7 @@ with st.sidebar:
             if st.button(label, key=f"sess_{sess['id']}", use_container_width=True):
                 st.session_state['current_chat_session'] = sess
                 st.session_state['tutor_chat_history'] = [] # Force reload
+                st.session_state['force_chat_tab'] = True # Force switch
                 st.rerun()
 
         # Management for Active Session
@@ -1336,6 +1338,25 @@ tab1, tab2, tab3, tab4, tab_lib, tab5, tab6 = st.tabs([
     "👩‍🏫 Ayudante de Tareas",
     "📚 Tutoría 1 a 1"
 ])
+
+# --- AUTO-SWITCH TAB LOGIC ---
+if st.session_state.get('force_chat_tab'):
+    # Inject JS to click the tab
+    st.components.v1.html("""
+    <script>
+        try {
+            const tabs = window.parent.document.querySelectorAll('button[data-testid="stTab"]');
+            for (const tab of tabs) {
+                if (tab.innerText.includes("Tutoría 1 a 1")) {
+                    tab.click();
+                    break;
+                }
+            }
+        } catch(e) { console.log(e); }
+    </script>
+    """, height=0)
+    # Reset flag so it doesn't keep clicking
+    st.session_state['force_chat_tab'] = False
 
 # --- Helper for ECharts Visualization ---
 
