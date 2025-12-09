@@ -1330,7 +1330,7 @@ tab1, tab2, tab3, tab4, tab_lib, tab5, tab6 = st.tabs([
     "📹 Transcriptor", 
     "📝 Apuntes Simples", 
     "🗺️ Guía de Estudio", 
-    "🧠 Ayudante Quiz",
+    "🧠 Zona Quiz",
     "📂 Biblioteca",
     "👩‍🏫 Ayudante de Tareas",
     "📚 Tutoría 1 a 1"
@@ -1736,7 +1736,7 @@ with tab4:
     with col_text:
         tab4_html = (
             '<div class="card-text">'
-            '<h2 style="margin-top:0;">4. Ayudante de Pruebas</h2>'
+            '<h2 style="margin-top:0;">4. Zona Quiz</h2>'
             '<p style="color: #64748b; font-size: 1.1rem;">Modo Ráfaga: Sube múltiples preguntas y obtén las respuestas.</p>'
             '</div>'
         )
