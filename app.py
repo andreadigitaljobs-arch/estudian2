@@ -1105,6 +1105,7 @@ with st.sidebar:
     # --- 3. CONFIGURACIÓN PERSONAL (HIDDEN via User Request) ---
     # System uses st.secrets["GEMINI_API_KEY"] automatically via load_api_key()
 
+    st.divider()
     
     # --- 4. ESPACIO DE TRABAJO ---
     st.markdown("#### 📂 Espacio de Trabajo")
