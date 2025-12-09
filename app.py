@@ -592,7 +592,7 @@ if 'spotlight_query' in st.session_state and st.session_state['spotlight_query']
                     if "Rápido" in mode:
                         st.info(final_res, icon="⚡")
                     else:
-                        st.success(final_res, icon="🕵️")
+                        st.success(final_res, icon="🕵🏻")
                         
                 except Exception as e:
                     st.error(f"Error en Spotlight: {e}")
@@ -1106,7 +1106,7 @@ with st.sidebar:
     search_query = st.text_input("Busqueda", placeholder="Ej: 'Concepto de Lead'...", label_visibility="collapsed")
     
     # Radio with custom icons workaround via emoji
-    search_mode = st.radio("Modo:", ["⚡ Concepto Rápido", "🕵️ Análisis Profundo"], horizontal=False, label_visibility="collapsed")
+    search_mode = st.radio("Modo:", ["⚡ Concepto Rápido", "🕵🏻 Análisis Profundo"], horizontal=False, label_visibility="collapsed")
     
     # Search Button (Purple Pill via CSS)
     if st.button("Buscar 🔍", key="btn_spotlight", use_container_width=True):
@@ -1332,7 +1332,7 @@ tab1, tab2, tab3, tab4, tab_lib, tab5, tab6 = st.tabs([
     "🗺️ Guía de Estudio", 
     "🧠 Zona Quiz",
     "📂 Biblioteca",
-    "👩‍🏫 Ayudante de Tareas",
+    "👩🏻‍🏫 Ayudante de Tareas",
     "📚 Tutoría 1 a 1"
 ])
 
@@ -1781,7 +1781,7 @@ with tab4:
                         st.image(p_img, width=50)
 
             # Text Input Option
-            input_text_quiz = st.text_area("✍️ O escribe tu pregunta aquí directamente:", height=100, placeholder="Ej: ¿Cuál es la capital de Francia? a) París b) Roma...", key=f"q_txt_{st.session_state['quiz_key']}")
+            input_text_quiz = st.text_area("✍🏻 O escribe tu pregunta aquí directamente:", height=100, placeholder="Ej: ¿Cuál es la capital de Francia? a) París b) Roma...", key=f"q_txt_{st.session_state['quiz_key']}")
 
             img_files = st.file_uploader("O sube archivos manualmente:", type=['png', 'jpg', 'jpeg'], accept_multiple_files=True, key=f"up4_{st.session_state['quiz_key']}")
         
