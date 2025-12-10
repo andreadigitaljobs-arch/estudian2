@@ -1092,10 +1092,10 @@ with st.sidebar:
             
             new_name = st.text_input("Renombrar:", value=st.session_state['current_chat_session']['name'], key="rename_chat_input")
             if new_name != st.session_state['current_chat_session']['name']:
-                if st.button("Guardar nombre"):
-                    rename_chat_session(st.session_state['current_chat_session']['id'], new_name)
-                    st.session_state['current_chat_session']['name'] = new_name # Valid local update
-                    st.rerun()
+                # Save immediately on change (Enter)
+                rename_chat_session(st.session_state['current_chat_session']['id'], new_name)
+                st.session_state['current_chat_session']['name'] = new_name # Valid local update
+                st.rerun()
             
             if st.button("🗑️ Borrar chat", key="del_chat_btn"):
                 delete_chat_session(st.session_state['current_chat_session']['id'])
@@ -1223,20 +1223,19 @@ with st.sidebar:
         # RENAME
         with st.expander("✏️ Renombrar"):
             rename_input = st.text_input("Nuevo nombre:", value=st.session_state['current_course'], key="rename_input_sb")
-            if st.button("Guardar Nombre"):
-                if rename_input and rename_input != st.session_state['current_course']:
-                    # Simple sanitize
-                    safe_rename = "".join([c for c in rename_input if c.isalnum() or c in (' ', '-', '_')]).strip()
-                    
-                    # DB Update
-                    from database import rename_course
-                    c_id = st.session_state.get('current_course_id')
-                    if c_id and rename_course(c_id, safe_rename):
-                        st.session_state['current_course'] = safe_rename
-                        st.success("Renombrado!")
-                        st.rerun()
-                    else:
-                        st.error("Error al renombrar.")
+            if rename_input and rename_input != st.session_state['current_course']:
+                # Simple sanitize
+                safe_rename = "".join([c for c in rename_input if c.isalnum() or c in (' ', '-', '_')]).strip()
+                
+                # DB Update
+                from database import rename_course
+                c_id = st.session_state.get('current_course_id')
+                if c_id and rename_course(c_id, safe_rename):
+                    st.session_state['current_course'] = safe_rename
+                    st.success("Renombrado!")
+                    st.rerun()
+                else:
+                    st.error("Error al renombrar.")
 
         # DELETE
         
