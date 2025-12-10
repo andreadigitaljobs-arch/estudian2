@@ -1452,12 +1452,13 @@ with tab1:
                     
                     from database import get_units, create_unit, upload_file_to_db, get_files
                     
-                    # Get/Create "Transcripts" Unit
+                    # Get/Create "Transcriptor" Unit (Spanish, Permanent)
                     units = get_units(c_id)
-                    t_unit = next((u for u in units if u['name'] == "Transcripts"), None)
+                    t_unit_name = "Transcriptor"
+                    t_unit = next((u for u in units if u['name'] == t_unit_name), None)
                     if not t_unit:
-                         status_text.write("Creando carpeta 'Transcripts'...")
-                         t_unit = create_unit(c_id, "Transcripts")
+                         status_text.write(f"Creando carpeta '{t_unit_name}'...")
+                         t_unit = create_unit(c_id, t_unit_name)
                     
                     if t_unit:
                         t_unit_id = t_unit['id']
@@ -1479,7 +1480,7 @@ with tab1:
                                     trans_text = f.read()
                                     
                                 upload_file_to_db(t_unit_id, os.path.basename(txt_path), trans_text, "transcript")
-                                st.success(f"✅ {file.name} guardado en Nube (Carpeta Transcripts)")
+                                st.success(f"✅ {file.name} guardado en Nube (Carpeta {t_unit_name})")
                                 st.session_state['transcript_history'].append({"name": file.name, "text": trans_text})
                                 
                                 if os.path.exists(txt_path): os.remove(txt_path)
@@ -1551,7 +1552,7 @@ with tab2:
                 st.success(f"✅ **Memoria Global Activa:** {gl_count} archivos base detectados.")
             
              if not transcript_files:
-                st.info("No hay transcripciones. Sube videos en la Pestaña 1 (se creará carpeta 'Transcripts').")
+                st.info("No hay transcripciones. Sube videos en la Pestaña 1 (se creará carpeta 'Transcriptor').")
              else:
                 options = [f['name'] for f in transcript_files]
                 file_map = {f['name']: f['id'] for f in transcript_files}
@@ -1567,12 +1568,13 @@ with tab2:
                         # Now returns a JSON dict
                         notes_data = assistant.generate_notes(text, global_context=gl_ctx)
                         
-                        # Save to "Notes" Unit in DB
-                        n_unit = next((u for u in units if u['name'] == "Notes"), None)
+                        # Save to "Apuntes Simples" Unit in DB
+                        target_folder = "Apuntes Simples"
+                        n_unit = next((u for u in units if u['name'] == target_folder), None)
                         if not n_unit:
                              # Create Notes unit if not exists
                              from database import create_unit
-                             n_unit = create_unit(c_id, "Notes")
+                             n_unit = create_unit(c_id, target_folder)
                         
                         if n_unit:
                              # Convert JSON structure to Clean Markdown
@@ -1587,7 +1589,7 @@ with tab2:
                              fname = f"Apuntes_{base_name}.md"
                              
                              upload_file_to_db(n_unit['id'], fname, md_content, "note")
-                             st.success(f"Apuntes guardados en 'Notes'/{fname}")
+                             st.success(f"Apuntes guardados en '{target_folder}'/{fname}")
                         
                         st.session_state['notes_result'] = notes_data
                         st.success("¡Apuntes generados en 3 capas!")
@@ -1668,9 +1670,9 @@ with tab3:
         else:
             from database import get_units, get_files, get_file_content, upload_file_to_db, create_unit
             
-            # Fetch Transcripts
+            # Fetch Transcripts (Support New and Old Folder Names)
             units = get_units(c_id)
-            t_unit = next((u for u in units if u['name'] == "Transcripts"), None)
+            t_unit = next((u for u in units if u['name'] in ["Transcriptor", "Transcripts"]), None)
             
             transcript_files = []
             if t_unit:
@@ -1697,16 +1699,17 @@ with tab3:
                     with st.spinner("Diseñando estrategia de estudio..."):
                         guide = assistant.generate_study_guide(text, global_context=gl_ctx)
                         
-                        # Save to "Guides" Unit in DB
-                        g_unit = next((u for u in units if u['name'] == "Guides"), None)
+                        # Save to "Guía de Estudio" Unit in DB
+                        target_guide_folder = "Guía de Estudio"
+                        g_unit = next((u for u in units if u['name'] == target_guide_folder), None)
                         if not g_unit:
-                             g_unit = create_unit(c_id, "Guides")
+                             g_unit = create_unit(c_id, target_guide_folder)
                         
                         if g_unit:
                              base_name = selected_guide_file.replace("_transcripcion.txt", "")
                              fname = f"Guia_{base_name}.md"
                              upload_file_to_db(g_unit['id'], fname, guide, "guide")
-                             st.success(f"Guía guardada en 'Guides'/{fname}")
+                             st.success(f"Guía guardada en '{target_guide_folder}'/{fname}")
 
                         st.success("¡Guía lista!")
                         st.session_state['guide_result'] = guide # Save to session
