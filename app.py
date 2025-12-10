@@ -1432,6 +1432,27 @@ with tab_home:
                      st.rerun()
 
     st.markdown(f"Estás estudiando: **{current_c_name}**")
+    
+    # --- DAILY QUOTE ---
+    import random
+    from datetime import datetime
+    today_str = datetime.utcnow().strftime("%Y-%m-%d")
+    random.seed(today_str) # Seed with date for consistency
+    quotes = [
+        "“La educación es el arma más poderosa que puedes usar para cambiar el mundo.” – Nelson Mandela",
+        "“Cree en ti mismo y en lo que eres.” – Christian D. Larson",
+        "“El éxito es la suma de pequeños esfuerzos repetidos día tras día.” – Robert Collier",
+        "“No cuentes los días, haz que los días cuenten.” – Muhammad Ali",
+        "“Lo único imposible es aquello que no intentas.”",
+        "“La disciplina es el puente entre metas y logros.” – Jim Rohn",
+        "“Aprender es como remar contra corriente: en cuanto se deja, se retrocede.” – Edward Benjamin Britten",
+        "“Tu actitud, no tu aptitud, determinará tu altitud.” – Zig Ziglar",
+        "“Si puedes soñarlo, puedes hacerlo.” – Walt Disney",
+        "“El futuro pertenece a aquellos que creen en la belleza de sus sueños.” – Eleanor Roosevelt"
+    ]
+    daily_quote = random.choice(quotes)
+    st.info(f"💡 **Frase del Día:** {daily_quote}")
+    
     st.write("")
     
     if current_c_id:
