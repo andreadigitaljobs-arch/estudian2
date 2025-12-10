@@ -1124,6 +1124,10 @@ with st.sidebar:
     # System uses st.secrets["GEMINI_API_KEY"] automatically via load_api_key()
 
     st.divider()
+
+    # --- COST WARNING / INFO ---
+    with st.expander("ℹ️ Información de Servicios"):
+        st.caption("Advertencia: Si tu aplicación se vuelve muy popular y miles de personas la usan al mismo tiempo, podrías superar el límite gratuito. En ese caso, Google cobra por 'tokens' (cantidad de texto procesado), pero tendrías que haber configurado una tarjeta de crédito en Google Cloud explícitamente para que eso pase. Si no has puesto tarjeta, simplemente la IA dejará de responder temporalmente si excedes el límite diario.")
     
     # --- 4. ESPACIO DE TRABAJO ---
     st.markdown("#### 📂 Espacio de Trabajo")
