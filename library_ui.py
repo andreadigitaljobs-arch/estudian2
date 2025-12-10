@@ -195,7 +195,9 @@ def render_library(assistant):
                     # Compact Chat Button
                     if st.button("💬", key=f"chat_{f['id']}", help="Chatear con este archivo"):
                         st.session_state['chat_context_file'] = f
-                        st.toast(f"📎 '{f['name']}' cargado. ¡Ve a la pestaña Ayudante!", icon="🤖")
+                        # CONSULTANT: TRIGGER AUTO-REDIRECT
+                        st.session_state['force_chat_tab'] = True
+                        st.rerun()
 
                 with c4:
                     # Spacer to align with "Ver contenido"

@@ -1352,7 +1352,7 @@ if st.session_state.get('force_chat_tab'):
         try {
             const tabs = window.parent.document.querySelectorAll('button[data-testid="stTab"]');
             for (const tab of tabs) {
-                if (tab.innerText.includes("Tutoría 1 a 1")) {
+                if (tab.innerText.includes("Ayudante de Tareas")) {
                     tab.click();
                     break;
                 }
