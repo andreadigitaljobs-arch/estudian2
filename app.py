@@ -1444,6 +1444,28 @@ with tab_lib:
     else:
          st.info("⚠️ Configura tu API Key en la barra lateral para activar la Biblioteca IA.")
 
+# --- BATCH SYSTEM FOLDER CHECK (Prevention of "Popping" folders) ---
+if st.session_state.get('current_course_id'):
+    c_id_check = st.session_state['current_course_id']
+    from database import get_units, create_unit
+    
+    # Check what exists BEFORE rendering tabs
+    existing_units = get_units(c_id_check)
+    existing_names = [u['name'] for u in existing_units]
+    
+    required_folders = ["Transcriptor", "Apuntes Simples", "Guía de Estudio"]
+    created_any_batch = False
+    
+    for req in required_folders:
+        if req not in existing_names:
+            create_unit(c_id_check, req)
+            created_any_batch = True
+    
+    # If we created anything new, RERUN ONCE to refresh all subsequent 'get_units' calls
+    if created_any_batch:
+        st.session_state['force_rerun_batch'] = True # Optional flag if needed
+        st.rerun()
+
 # --- TAB 1: Transcriptor ---
 with tab1:
     # LAYOUT: Image Left (1) | Text Right (1.4)
@@ -1492,12 +1514,12 @@ with tab1:
                     
                     from database import get_units, create_unit, upload_file_to_db, get_files
                     
-                    # Get/Create "Transcriptor" Unit (Spanish, Permanent)
+                    # Get "Transcriptor" Unit (Should exist from batch check)
                     units = get_units(c_id)
                     t_unit_name = "Transcriptor"
                     t_unit = next((u for u in units if u['name'] == t_unit_name), None)
+                    # Fallback just in case, but silent
                     if not t_unit:
-                         status_text.write(f"Creando carpeta '{t_unit_name}'...")
                          t_unit = create_unit(c_id, t_unit_name)
                     
                     if t_unit:
@@ -1612,7 +1634,7 @@ with tab2:
                         target_folder = "Apuntes Simples"
                         n_unit = next((u for u in units if u['name'] == target_folder), None)
                         if not n_unit:
-                             # Create Notes unit if not exists
+                             # Silent Fallback
                              from database import create_unit
                              n_unit = create_unit(c_id, target_folder)
                         
