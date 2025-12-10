@@ -320,6 +320,46 @@ def get_unit_context(unit_id):
         return unit_text
     except: return ""
 
+def get_dashboard_stats(course_id, user_id):
+    """
+    Aggregates stats for the dashboard:
+    - Total Files in Course
+    - Total Chats for User
+    - File Type Distribution
+    """
+    supabase = init_supabase()
+    stats = {
+        "files": 0,
+        "chats": 0,
+        "file_types": {"Documentos": 0, "Libros": 0} # Simplified categories
+    }
+    
+    try:
+        # 1. Get Unit IDs for this course
+        units = supabase.table("units").select("id").eq("course_id", course_id).execute().data
+        if units:
+            unit_ids = [u['id'] for u in units]
+            
+            # 2. Get Files count & types
+            # Not fetching content_text to save bandwidth
+            files = supabase.table("library_files").select("type").in_("unit_id", unit_ids).execute().data
+            stats['files'] = len(files)
+            
+            for f in files:
+                if f['type'] == 'text':
+                    stats['file_types']['Documentos'] += 1
+                else:
+                    stats['file_types']['Libros'] += 1
+                    
+        # 3. Get Chats count
+        res_chats = supabase.table("chat_sessions").select("id", count="exact").eq("user_id", user_id).execute()
+        stats['chats'] = res_chats.count if res_chats.count is not None else len(res_chats.data)
+        
+        return stats
+    except Exception as e:
+        print(f"Stats Error: {e}")
+        return stats
+
 # --- CHAT HISTORY PERSISTENCE (MULTI-CHAT) ---
 
 def create_chat_session(user_id, name="Nuevo Chat"):

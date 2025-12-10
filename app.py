@@ -1183,7 +1183,7 @@ with st.sidebar:
     st.caption("Diplomado Actual:")
     
     # DB Ops
-    from database import get_user_courses, create_course
+    from database import get_user_courses, create_course, get_dashboard_stats
     
     # GUARD: Ensure user is logged in before accessing ID
     if not st.session_state.get('user'):
