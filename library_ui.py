@@ -48,7 +48,8 @@ def render_library(assistant):
     current_unit_id = st.session_state['lib_current_unit_id']
 
     # --- NAVIGATION UI ---
-    col_nav = st.columns([0.15, 0.15, 0.7])
+    # FIX: Group "Inicio" and "Atrás" tightly on the left ([0.12, 0.12, 0.76])
+    col_nav = st.columns([0.12, 0.12, 0.76])
     
     with col_nav[0]:
         # Home Button
@@ -193,11 +194,6 @@ def render_library(assistant):
                     # Spacer removed (bottom alignment handles it)
                     
                     # CONSULTANT: SMART POPOVER (Choice Menu)
-                    
-                    
-                    # CONSULTANT: SMART POPOVER (Choice Menu)
-                    # GLOBAL RESET HACK v2: Label Rotation.
-                    # 'st.popover' generally doesn't support 'key' (caused TypeError).
                     # Solution: Toggle an invisible space in the label to force re-render as "new" widget.
                     if 'popover_reset_token' not in st.session_state:
                         st.session_state['popover_reset_token'] = 0
