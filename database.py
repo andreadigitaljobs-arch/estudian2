@@ -183,6 +183,40 @@ def rename_unit(unit_id, new_name):
         return True
     except: return False
 
+def search_library(course_id, search_term):
+    """
+    Search for files across an entire course (all units).
+    Returns list of files enriched with 'unit_name'.
+    """
+    supabase = init_supabase()
+    try:
+        # 1. Get all units for this course to filter scope
+        units = supabase.table("units").select("id, name").eq("course_id", course_id).execute().data
+        if not units: return []
+        
+        unit_ids = [u['id'] for u in units]
+        unit_map = {u['id']: u['name'] for u in units}
+        
+        # 2. Search files
+        # ilike is case-insensitive pattern matching
+        term_pattern = f"%{search_term}%"
+        res = supabase.table("library_files") \
+            .select("*") \
+            .in_("unit_id", unit_ids) \
+            .ilike("name", term_pattern) \
+            .execute()
+            
+        files = res.data if res.data else []
+        
+        # 3. Enrich with Unit Name
+        for f in files:
+            f['unit_name'] = unit_map.get(f['unit_id'], "Carpeta Desconocida")
+            
+        return files
+    except Exception as e:
+        print(f"Search Error: {e}")
+        return []
+
 # --- FILES (ARCHIVOS) ---
 def get_files(unit_id):
     supabase = init_supabase()

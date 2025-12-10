@@ -4,7 +4,7 @@ import time
 import os
 import base64
 import pandas as pd
-from database import get_units, create_unit, upload_file_to_db, get_files, delete_file, rename_file, rename_unit, delete_unit, create_chat_session, save_chat_message
+from database import get_units, create_unit, upload_file_to_db, get_files, delete_file, rename_file, rename_unit, delete_unit, create_chat_session, save_chat_message, search_library
 
 def render_library(assistant):
     """
@@ -45,6 +45,85 @@ def render_library(assistant):
     if 'lib_current_unit_name' not in st.session_state: st.session_state['lib_current_unit_name'] = None
     if 'lib_breadcrumbs' not in st.session_state: st.session_state['lib_breadcrumbs'] = []
 
+    if 'lib_breadcrumbs' not in st.session_state: st.session_state['lib_breadcrumbs'] = []
+
+    # --- SEARCH BAR ---
+    search_query = st.text_input("🔍 Buscar archivo en todo el diplomado...", placeholder="Escribe el nombre del archivo...")
+
+    # Define helper callback if needed (using global one)
+
+    if search_query:
+        # --- SEARCH RESULTS VIEW ---
+        st.markdown(f"#### 🔎 Resultados para: *'{search_query}'*")
+        results = search_library(current_course_id, search_query)
+        
+        if not results:
+            st.info("No se encontraron archivos.")
+        else:
+             for f in results:
+                # REUSED CARD UI for consistency
+                c1, c2, c3, c4 = st.columns([0.1, 0.7, 0.1, 0.1], vertical_alignment="bottom")
+                
+                with c1:
+                    icon = "📄" if f['type'] == "text" else "📕"
+                    st.write(f"## {icon}")
+                
+                with c2:
+                    st.markdown(f"**{f['name']}**")
+                    # Context Label (Folder)
+                    st.caption(f"📂 En: {f.get('unit_name', 'Módulo')}")
+                    
+                    with st.expander("Ver contenido"):
+                        safe_content = f.get('content') or f.get('content_text') or ""
+                        st.markdown(safe_content, unsafe_allow_html=True)
+
+                with c3:
+                    # DYNAMIC KEY POPOVER (Same logic as main view)
+                    if 'popover_reset_token' not in st.session_state: st.session_state['popover_reset_token'] = 0
+                    token = st.session_state['popover_reset_token']
+                    pop_id = f"search_pop_{f['id']}_{token}" # Distinct key prefix
+                    
+                    try:
+                        popover_container = st.popover("⚡", help="Acciones Rápidas", key=pop_id)
+                    except TypeError:
+                         suffix = "." if (token % 2 != 0) else ""
+                         popover_container = st.popover(f"⚡{suffix}", help=f"Acciones {suffix}")
+
+                    with popover_container:
+                        st.markdown(f"<div style='margin-bottom: 10px; font-weight: bold;'>{f['name']}</div>", unsafe_allow_html=True)
+                        
+                        if st.button("🤖 Resolver Tarea", key=f"s_btn_task_{f['id']}_{token}", use_container_width=True):
+                            st.session_state['chat_context_file'] = f
+                            st.session_state['redirect_target_name'] = "Ayudante de Tareas"
+                            st.session_state['force_chat_tab'] = True
+                            st.rerun()
+                            
+                        if st.button("👨🏻‍🏫 Hablar con Profe", key=f"s_btn_tutor_{f['id']}_{token}", use_container_width=True):
+                            st.session_state['chat_context_file'] = f
+                            if 'user' in st.session_state:
+                                uid = st.session_state['user'].id
+                                sess_name = f"Análisis: {f['name']}"
+                                new_sess = create_chat_session(uid, sess_name)
+                                st.session_state['current_chat_session'] = new_sess
+                                st.session_state['tutor_chat_history'] = [] 
+                                prompt_msg = f"He abierto el archivo **{f['name']}**. ¿Me puedes dar un resumen o interpretación de su contenido?"
+                                st.session_state['tutor_chat_history'].append({"role": "user", "content": prompt_msg})
+                            st.session_state['redirect_target_name'] = "Tutoria 1 a 1"
+                            st.session_state['force_chat_tab'] = True
+                            st.rerun()
+
+                with c4:
+                    st.markdown("<div style='height: 8px'></div>", unsafe_allow_html=True)
+                    if st.button("🗑️", key=f"s_del_{f['id']}", help="Eliminar archivo"):
+                        if delete_file(f['id']):
+                            st.toast(f"Archivo eliminado: {f['name']}")
+                            time.sleep(0.5)
+                            st.rerun()
+         
+        # Return here to prevent rendering normal view below
+        return
+
+    # Normal View continues...
     current_unit_id = st.session_state['lib_current_unit_id']
 
     # --- NAVIGATION UI ---
