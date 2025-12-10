@@ -1396,14 +1396,30 @@ tab_home, tab1, tab2, tab3, tab4, tab_lib, tab5, tab6 = st.tabs([
     "📚 Tutoría 1 a 1"
 ])
 
+import pandas as pd # FIX: Missing import for charts
+
 # --- DASHBOARD TAB (HOME) ---
 with tab_home:
     # Load Stats
     current_c_id = st.session_state.get('current_course_id')
     current_c_name = st.session_state.get('current_course', 'General')
-    user_email = st.session_state['user'].email.split('@')[0]
     
-    st.markdown(f"## ¡Hola, {user_email.capitalize()}! 👋")
+    # --- NICKNAME LOGIC ---
+    if 'user_nickname' not in st.session_state:
+        # Default to email prefix
+        st.session_state['user_nickname'] = st.session_state['user'].email.split('@')[0].capitalize()
+        
+    # Header with Edit Button
+    h_col1, h_col2 = st.columns([0.8, 0.2], vertical_alignment="center")
+    with h_col1:
+        st.markdown(f"## ¡Hola, {st.session_state['user_nickname']}! 👋")
+    with h_col2:
+        with st.popover("✏️", help="Editar tu apodo"):
+            new_nick = st.text_input("¿Cómo quieres que te llame?", value=st.session_state['user_nickname'])
+            if new_nick != st.session_state['user_nickname']:
+                 st.session_state['user_nickname'] = new_nick
+                 st.rerun()
+
     st.markdown(f"Estás estudiando: **{current_c_name}**")
     st.write("")
     
