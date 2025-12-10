@@ -176,8 +176,8 @@ def render_library(assistant):
             st.caption("Carpeta vacía.")
         else:
             for f in files:
-                # COMPACT LAYOUT: Small columns for buttons
-                c1, c2, c3, c4 = st.columns([0.1, 0.7, 0.1, 0.1])
+                # COMPACT LAYOUT: Small columns for buttons - Bottom Alignment for "Flush" look
+                c1, c2, c3, c4 = st.columns([0.1, 0.7, 0.1, 0.1], vertical_alignment="bottom")
                 
                 with c1:
                     icon = "📄" if f['type'] == "text" else "📕"
@@ -190,8 +190,9 @@ def render_library(assistant):
                         st.markdown(safe_content, unsafe_allow_html=True)
 
                 with c3:
-                    # Spacer to align with "Ver contenido" (below title) - Precision adjustment
-                    st.markdown("<div style='height: 8px'></div>", unsafe_allow_html=True)
+                    # Spacer removed (bottom alignment handles it)
+                    
+                    # CONSULTANT: SMART POPOVER (Choice Menu)
                     
                     # CONSULTANT: SMART POPOVER (Choice Menu)
                     with st.popover("⚡", help="Acciones Rápidas"):
