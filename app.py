@@ -1941,8 +1941,7 @@ with tab5:
     with col_task:
         c_title, c_trash = st.columns([0.85, 0.15])
         with c_title:
-            st.markdown("### 🧠 Ayudante Inteligente")
-            st.caption("Resuelve tareas usando SOLO la información de tu biblioteca.")
+
             st.markdown("### 🧠 Ayudante Inteligente")
             st.caption("Resuelve tareas usando SOLO la información de tu biblioteca.")
             
