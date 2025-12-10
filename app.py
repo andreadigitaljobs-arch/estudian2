@@ -1183,7 +1183,7 @@ with st.sidebar:
     st.caption("Diplomado Actual:")
     
     # DB Ops
-    from database import get_user_courses, create_course, get_dashboard_stats
+    from database import get_user_courses, create_course, get_dashboard_stats, update_user_nickname
     
     # GUARD: Ensure user is logged in before accessing ID
     if not st.session_state.get('user'):
@@ -1405,9 +1405,16 @@ with tab_home:
     current_c_name = st.session_state.get('current_course', 'General')
     
     # --- NICKNAME LOGIC ---
+    # 1. Try to load from User Metadata (Persistent)
+    current_user = st.session_state['user']
+    meta_nick = current_user.user_metadata.get('nickname') if current_user.user_metadata else None
+    
     if 'user_nickname' not in st.session_state:
-        # Default to email prefix
-        st.session_state['user_nickname'] = st.session_state['user'].email.split('@')[0].capitalize()
+        # Priority: Metadata > Email
+        if meta_nick:
+            st.session_state['user_nickname'] = meta_nick
+        else:
+            st.session_state['user_nickname'] = current_user.email.split('@')[0].capitalize()
         
     # Header with Edit Button
     h_col1, h_col2 = st.columns([0.8, 0.2], vertical_alignment="center")
@@ -1417,8 +1424,12 @@ with tab_home:
         with st.popover("✏️", help="Editar tu apodo"):
             new_nick = st.text_input("¿Cómo quieres que te llame?", value=st.session_state['user_nickname'])
             if new_nick != st.session_state['user_nickname']:
-                 st.session_state['user_nickname'] = new_nick
-                 st.rerun()
+                 # SAVE TO DB
+                 updated_user = update_user_nickname(new_nick)
+                 if updated_user:
+                     st.session_state['user'] = updated_user # Update session user to keep metadata fresh
+                     st.session_state['user_nickname'] = new_nick
+                     st.rerun()
 
     st.markdown(f"Estás estudiando: **{current_c_name}**")
     st.write("")
