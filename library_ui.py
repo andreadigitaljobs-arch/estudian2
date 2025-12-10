@@ -173,6 +173,7 @@ def render_library(assistant):
     # Global callback to close popovers
     def close_all_popovers():
         st.session_state['popover_reset_token'] += 1
+        st.toast("Menú cerrado", icon="✅")
 
     if current_unit_id:
         st.markdown(f"##### 📄 Archivos en '{st.session_state.get('lib_current_unit_name')}'")
@@ -199,16 +200,18 @@ def render_library(assistant):
                     # Spacer removed (bottom alignment handles it)
                     
                     # CONSULTANT: SMART POPOVER (Choice Menu)
-                    # GLOBAL RESET HACK v3: Visible Space Toggle + Callback
-                    # Using a normal space ensures Streamlit definitely sees a label change.
+                    # GLOBAL RESET HACK v4: Drastic Identity Shift
                     if 'popover_reset_token' not in st.session_state:
                         st.session_state['popover_reset_token'] = 0
                         
-                    # Toggle suffix: "" or " " (Standard Space)
-                    lbl_suffix = " " if (st.session_state['popover_reset_token'] % 2 != 0) else ""
-                    pop_label = f"⚡{lbl_suffix}"
+                    token = st.session_state['popover_reset_token']
+                    # Toggle properties based on token to force "New Widget" detection
+                    # We change BOTH label and help to ensure hash mismatch
+                    suffix_char = "." if (token % 2 != 0) else ""
+                    pop_label = f"⚡{suffix_char}" 
+                    pop_help = f"Acciones Rápidas {suffix_char}"
 
-                    with st.popover(pop_label, help="Acciones Rápidas"):
+                    with st.popover(pop_label, help=pop_help):
                         # Layout: Title + Close Button
                         p_col1, p_col2 = st.columns([0.8, 0.2])
                         with p_col1:
@@ -216,9 +219,8 @@ def render_library(assistant):
                             st.markdown(f"<div style='margin-top: 10px; font-weight: bold;'>{f['name']}</div>", unsafe_allow_html=True)
                         with p_col2:
                             # 'X' button to close popover
-                            if st.button("✖", key=f"close_pop_{f['id']}", help="Cerrar menú"):
-                                st.session_state['popover_reset_token'] += 1
-                                st.rerun()
+                            # FIX Use global callback
+                            st.button("✖", key=f"close_pop_{f['id']}", help="Cerrar menú", on_click=close_all_popovers)
                         
                         st.divider() # Neat separator
                         
