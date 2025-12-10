@@ -198,10 +198,11 @@ def render_library(assistant):
                         # Layout: Title + Close Button (Centered Alignment)
                         p_col1, p_col2 = st.columns([0.85, 0.15], vertical_alignment="center")
                         with p_col1:
-                            st.markdown(f"**{f['name']}**")
+                            # FIX 11018: Force height match with button (~45px) for perfect centering
+                            st.markdown(f"<div style='height: 45px; display: flex; align-items: center;'><b>{f['name']}</b></div>", unsafe_allow_html=True)
                         with p_col2:
-                            # 'X' button to close popover (by triggering rerun)
-                            if st.button("❌", key=f"close_pop_{f['id']}", help="Cerrar menú"):
+                            # 'X' button to close popover
+                            if st.button("✖", key=f"close_pop_{f['id']}", help="Cerrar menú"):
                                 st.rerun()
                         
                         st.divider() # Neat separator
