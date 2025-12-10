@@ -1701,7 +1701,7 @@ with tab3:
                         
                         if g_unit:
                              base_name = selected_guide_file.replace("_transcripcion.txt", "")
-                             fname = f"Guia_{base_name}.txt"
+                             fname = f"Guia_{base_name}.md"
                              upload_file_to_db(g_unit['id'], fname, guide, "guide")
                              st.success(f"Guía guardada en 'Guides'/{fname}")
 
