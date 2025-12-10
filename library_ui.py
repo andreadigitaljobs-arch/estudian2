@@ -223,16 +223,8 @@ def render_library(assistant):
                         popover_container = st.popover(f"⚡{suffix}", help=f"Acciones {suffix}")
 
                     with popover_container:
-                        # Layout: Title + Close Button
-                        p_col1, p_col2 = st.columns([0.8, 0.2])
-                        with p_col1:
-                            st.markdown(f"<div style='margin-top: 10px; font-weight: bold;'>{f['name']}</div>", unsafe_allow_html=True)
-                        with p_col2:
-                            # 'X' button to close popover
-                            # Trigger global token increment
-                            st.button("✖", key=f"close_{f['id']}_{token}", help="Cerrar menú", on_click=close_all_popovers)
-                        
-                        st.divider()
+                        # Layout: Title only (Clean UI)
+                        st.markdown(f"<div style='margin-bottom: 10px; font-weight: bold;'>{f['name']}</div>", unsafe_allow_html=True)
                         
                         # Actions
                         if st.button("🤖 Resolver Tarea", key=f"btn_task_{f['id']}_{token}", use_container_width=True):
