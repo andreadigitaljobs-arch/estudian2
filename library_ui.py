@@ -196,17 +196,18 @@ def render_library(assistant):
                     
                     
                     # CONSULTANT: SMART POPOVER (Choice Menu)
-                    # GLOBAL RESET HACK: Use a global token to force-close any open popover
+                    # GLOBAL RESET HACK v2: Label Rotation.
+                    # 'st.popover' generally doesn't support 'key' (caused TypeError).
+                    # Solution: Toggle an invisible space in the label to force re-render as "new" widget.
                     if 'popover_reset_token' not in st.session_state:
                         st.session_state['popover_reset_token'] = 0
                         
-                    # Unique key based on ID + Global Token
-                    # When token changes, Streamlit sees a "New" widget and renders it closed.
-                    pop_key = f"pop_{f['id']}_{st.session_state['popover_reset_token']}"
+                    # Toggle suffix: "" or " "
+                    lbl_suffix = " " if (st.session_state['popover_reset_token'] % 2 != 0) else ""
+                    pop_label = f"⚡{lbl_suffix}"
 
-                    with st.popover("⚡", help="Acciones Rápidas", key=pop_key):
+                    with st.popover(pop_label, help="Acciones Rápidas"):
                         # Layout: Title + Close Button
-                        # Reverting to simple columns, masking vertical_alignment issues with CSS
                         p_col1, p_col2 = st.columns([0.8, 0.2])
                         with p_col1:
                             # Nudge text down to align with button center using CSS
