@@ -393,6 +393,21 @@ def get_chat_sessions(user_id):
         print(f"Error fetching chat sessions: {e}")
         return []
 
+def get_recent_chats(user_id, limit=3):
+    """Fetch recent chats for dashboard."""
+    supabase = init_supabase()
+    try:
+        res = supabase.table("chat_sessions") \
+            .select("*") \
+            .eq("user_id", user_id) \
+            .order("created_at", desc=True) \
+            .limit(limit) \
+            .execute()
+        return res.data
+    except Exception as e:
+        print(f"Error fetching recent chats: {e}")
+        return []
+
 def rename_chat_session(session_id, new_name):
     supabase = init_supabase()
     try:

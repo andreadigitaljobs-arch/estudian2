@@ -1183,7 +1183,7 @@ with st.sidebar:
     st.caption("Diplomado Actual:")
     
     # DB Ops
-    from database import get_user_courses, create_course, get_dashboard_stats, update_user_nickname
+    from database import get_user_courses, create_course, get_dashboard_stats, update_user_nickname, get_recent_chats
     
     # GUARD: Ensure user is logged in before accessing ID
     if not st.session_state.get('user'):
@@ -1468,6 +1468,28 @@ with tab_home:
                 st.session_state['force_chat_tab'] = True
                 st.session_state['lib_auto_open_upload'] = True
                 st.rerun()
+        
+        st.divider()
+        
+        # --- RECENT HISTORY ---
+        st.markdown("##### 🕰️ Continuar donde lo dejaste")
+        recent_chats = get_recent_chats(st.session_state['user'].id, limit=3)
+        
+        if recent_chats:
+            r_cols = st.columns(3)
+            for i, chat in enumerate(recent_chats):
+                with r_cols[i % 3]:
+                    # Format Date
+                    # created_at format usually "2023-10-10T..."
+                    date_str = chat['created_at'].split('T')[0]
+                    if st.button(f"📝 {chat['name']}\n\n📅 {date_str}", key=f"rec_{chat['id']}", use_container_width=True):
+                        st.session_state['current_chat_session'] = chat
+                        st.session_state['tutor_chat_history'] = [] 
+                        st.session_state['redirect_target_name'] = "Tutoria 1 a 1"
+                        st.session_state['force_chat_tab'] = True
+                        st.rerun()
+        else:
+            st.info("Aún no tienes chats recientes. ¡Empieza uno nuevo!")
 
     else:
         st.info("Selecciona o crea un Diplomado en la barra lateral para ver tus estadísticas.")
