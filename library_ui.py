@@ -99,54 +99,68 @@ def render_library(assistant):
         with st.expander("⚙️ Gestión de Carpetas (Renombrar/Borrar)"):
             c_rename, c_delete = st.columns(2, gap="large")
             
+            # CONSULTANT FIX: PROTECT SYSTEM FOLDERS
+            # We filter out these folders so they cannot be Renamed or Deleted, 
+            # preserving the app's internal logic.
+            SYSTEM_FOLDERS = ["Transcriptor", "Apuntes Simples", "Guía de Estudio", "Transcripts", "Notes", "Guides"]
+            
+            # Filter options
+            editable_units = {name: uid for name, uid in unit_options.items() if name not in SYSTEM_FOLDERS}
+            
             with c_rename:
                 st.markdown("###### ✏️ Renombrar Carpeta")
-                unit_options = {u['name']: u['id'] for u in subfolders}
                 
-                sel_rename = st.selectbox("Selecciona carpeta:", ["-- Seleccionar --"] + list(unit_options.keys()), key="ren_unit_sel")
-                
-                if sel_rename != "-- Seleccionar --":
-                    new_name = st.text_input("Nuevo nombre:", key="ren_new_name")
-                    if st.button("Renombrar Carpeta", use_container_width=True):
-                        if new_name:
-                             target_id = unit_options[sel_rename]
-                             if rename_unit(target_id, new_name):
-                                 st.success(f"Renombrado a '{new_name}'")
-                                 time.sleep(1)
-                                 st.rerun()
-                             else:
-                                 st.error("Error al renombrar.")
-                        else:
-                             st.warning("Escribe un nuevo nombre.")
+                if not editable_units:
+                    st.caption("No hay carpetas personalizadas para renombrar.")
+                else:
+                    sel_rename = st.selectbox("Selecciona carpeta:", ["-- Seleccionar --"] + list(editable_units.keys()), key="ren_unit_sel")
+                    
+                    if sel_rename != "-- Seleccionar --":
+                        new_name = st.text_input("Nuevo nombre:", key="ren_new_name")
+                        if st.button("Renombrar Carpeta", use_container_width=True):
+                            if new_name:
+                                 target_id = editable_units[sel_rename]
+                                 if rename_unit(target_id, new_name):
+                                     st.success(f"Renombrado a '{new_name}'")
+                                     time.sleep(1)
+                                     st.rerun()
+                                 else:
+                                     st.error("Error al renombrar.")
+                            else:
+                                 st.warning("Escribe un nuevo nombre.")
 
             with c_delete:
                 st.markdown("###### 🗑️ Borrar Carpeta(s)")
-                # Bulk Selection
-                sel_del_list = st.multiselect("Selecciona carpetas para borrar:", list(unit_options.keys()), key="del_unit_mul")
                 
-                if sel_del_list:
-                    count = len(sel_del_list)
-                    st.warning(f"⚠️ ¿Seguro que quieres borrar {count} carpeta(s) y TODO su contenido?")
-                    if st.button(f"Sí, Borrar {count} Carpetas", type="primary", use_container_width=True):
-                        success_count = 0
-                        fail_count = 0
-                        
-                        progress_bar = st.progress(0)
-                        for i, name in enumerate(sel_del_list):
-                             target_id = unit_options[name]
-                             if delete_unit(target_id):
-                                 success_count += 1
-                             else:
-                                 fail_count += 1
-                             progress_bar.progress((i + 1) / count)
-                        
-                        if fail_count == 0:
-                             st.success(f"✅ {success_count} carpetas eliminadas correctamente.")
-                        else:
-                             st.warning(f"⚠️ {success_count} eliminadas, {fail_count} fallaron.")
-                             
-                        time.sleep(1)
-                        st.rerun()
+                if not editable_units:
+                     st.caption("No hay carpetas personalizadas para borrar.")
+                else:
+                    # Bulk Selection
+                    sel_del_list = st.multiselect("Selecciona carpetas para borrar:", list(editable_units.keys()), key="del_unit_mul")
+                    
+                    if sel_del_list:
+                        count = len(sel_del_list)
+                        st.warning(f"⚠️ ¿Seguro que quieres borrar {count} carpeta(s) y TODO su contenido?")
+                        if st.button(f"Sí, Borrar {count} Carpetas", type="primary", use_container_width=True):
+                            success_count = 0
+                            fail_count = 0
+                            
+                            progress_bar = st.progress(0)
+                            for i, name in enumerate(sel_del_list):
+                                 target_id = editable_units[name]
+                                 if delete_unit(target_id):
+                                     success_count += 1
+                                 else:
+                                     fail_count += 1
+                                 progress_bar.progress((i + 1) / count)
+                            
+                            if fail_count == 0:
+                                 st.success(f"✅ {success_count} carpetas eliminadas correctamente.")
+                            else:
+                                 st.warning(f"⚠️ {success_count} eliminadas, {fail_count} fallaron.")
+                                 
+                            time.sleep(1)
+                            st.rerun()
         st.write("") # Spacer instead of divider
     elif not current_unit_id:
         st.info("No hay carpetas. Crea una nueva ➕")
