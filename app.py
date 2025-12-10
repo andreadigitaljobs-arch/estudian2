@@ -1106,18 +1106,28 @@ with st.sidebar:
         # --- BULK DELETE (GESTIÓN MASIVA) ---
         st.write("")
         with st.expander("🗑️ Gestión Masiva", expanded=False):
-            # 1. Multi-Select
-            # Filter out None if any
-            valid_sessions = [s for s in sessions if s and 'name' in s]
-            session_names = [s['name'] for s in valid_sessions]
-            # Map name -> ID (careful with duplicates, use ID as value usually, but Streamlit multiselect returns labels)
-            # Better: format_func.
+            # 1. Multi-Select with Invisible Uniqueness Hack
+            # User wants clean names, but Streamlit merges duplicates.
+            # Solution: Append zero-width spaces to duplicates.
             
+            valid_sessions = [s for s in sessions if s and 'name' in s]
+            
+            # Pre-calc unique labels
+            name_counts = {}
+            processed_sessions = []
+            for s in valid_sessions:
+                original_name = s['name']
+                count = name_counts.get(original_name, 0)
+                # Append invisible characters equal to the count count
+                invisible_suffix = "\u200b" * count
+                s['unique_label'] = f"{original_name}{invisible_suffix}"
+                processed_sessions.append(s)
+                name_counts[original_name] = count + 1
+
             sel_sessions = st.multiselect(
                 "Seleccionar chats:", 
-                options=valid_sessions,
-                # FIX: Add short ID to guarantee uniqueness (Date is not enough for same-day chats)
-                format_func=lambda x: f"{x['name']} ({x.get('created_at', '...')[:10]}) #{str(x['id'])[-4:]}",
+                options=processed_sessions,
+                format_func=lambda x: x['unique_label'],
                 key="bulk_chat_select",
                 placeholder="Elige para borrar..."
             )
