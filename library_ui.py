@@ -226,7 +226,14 @@ def render_library(assistant):
         note_title = st.text_input("Título de la nota (ej: Resumen.txt):", placeholder="Mi_Nota.txt", key="new_note_title")
         note_content = st.text_area("Contenido:", height=200, placeholder="Escribe o pega tu texto aquí...", key="new_note_content")
         
-        if st.button("💾 Guardar Nota", type="primary"):
+        c_save, c_clear = st.columns([0.2, 0.8])
+        
+        # Clear Button Logic
+        if c_clear.button("🗑️ Borrar todo"):
+            st.session_state['new_note_content'] = ""
+            st.rerun()
+
+        if c_save.button("💾 Guardar Nota", type="primary", use_container_width=True):
             if not target_unit_id:
                   # Check if user entered a new folder name
                  if new_folder_name:
