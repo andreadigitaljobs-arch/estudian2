@@ -1064,8 +1064,8 @@ with st.sidebar:
         # Determine active ID for highlighting
         active_id = st.session_state['current_chat_session']['id'] if st.session_state['current_chat_session'] else None
 
-        # LIMIT TO TOP 5
-        visible_sessions = sessions[:5]
+        # LIMIT TO TOP 1 (Minimalist)
+        visible_sessions = sessions[:1]
         
         for sess in visible_sessions:
             # Highlight active session button style could be done via key or custom CSS, 
@@ -1086,7 +1086,7 @@ with st.sidebar:
                 st.rerun()
 
         # VIEW ALL BUTTON
-        if len(sessions) > 5:
+        if len(sessions) > 1:
             st.write("")
             if st.button("📂 Ver todo el historial...", help="Ir al panel de gestión completo"):
                 st.session_state['redirect_target_name'] = "Inicio"
