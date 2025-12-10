@@ -99,12 +99,14 @@ def render_library(assistant):
         with st.expander("⚙️ Gestión de Carpetas (Renombrar/Borrar)"):
             c_rename, c_delete = st.columns(2, gap="large")
             
-            # CONSULTANT FIX: PROTECT SYSTEM FOLDERS
-            # We filter out these folders so they cannot be Renamed or Deleted, 
-            # preserving the app's internal logic.
+            # 1. DEFINE OPTIONS FIRST
+            unit_options = {u['name']: u['id'] for u in subfolders}
+            
+            # 2. CONSULTANT FIX: PROTECT SYSTEM FOLDERS
+            # We filter out these folders so they cannot be Renamed or Deleted.
             SYSTEM_FOLDERS = ["Transcriptor", "Apuntes Simples", "Guía de Estudio", "Transcripts", "Notes", "Guides"]
             
-            # Filter options
+            # 3. FILTER
             editable_units = {name: uid for name, uid in unit_options.items() if name not in SYSTEM_FOLDERS}
             
             with c_rename:
