@@ -1497,18 +1497,24 @@ with tab_home:
 # --- AUTO-SWITCH TAB LOGIC ---
 if st.session_state.get('force_chat_tab'):
     # Inject JS to click the tab
+    # timestamp ensures the component sends a new message to frontend even if target is same
+    import time
+    ts = time.time()
     st.components.v1.html(f"""
     <script>
-        try {{
-            const tabs = window.parent.document.querySelectorAll('button[data-testid="stTab"]');
-            const targetName = "{st.session_state.get('redirect_target_name', 'Ayudante de Tareas')}"; 
-            for (const tab of tabs) {{
-                if (tab.innerText.includes(targetName)) {{
-                    tab.click();
-                    break;
+        setTimeout(() => {{
+            try {{
+                const tabs = window.parent.document.querySelectorAll('button[data-testid="stTab"]');
+                const targetName = "{st.session_state.get('redirect_target_name', 'Ayudante de Tareas')}"; 
+                for (const tab of tabs) {{
+                    if (tab.innerText.includes(targetName)) {{
+                        tab.click();
+                        break;
+                    }}
                 }}
-            }}
-        }} catch(e) {{ console.log(e); }}
+            }} catch(e) {{ console.log(e); }}
+        }}, 100);
+        // {ts}
     </script>
     """, height=0)
     # Reset flag so it doesn't keep clicking
