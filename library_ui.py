@@ -230,22 +230,15 @@ def render_library(assistant):
                                 st.rerun()
                                 
                             if st.button("👨🏻‍🏫 Hablar con Profe", key=f"btn_tutor_{f['id']}", use_container_width=True):
-                                # 1. Set Context
                                 st.session_state['chat_context_file'] = f
-                                
-                                # 2. Auto-Create Session
                                 if 'user' in st.session_state:
                                     uid = st.session_state['user'].id
                                     sess_name = f"Análisis: {f['name']}"
                                     new_sess = create_chat_session(uid, sess_name)
                                     st.session_state['current_chat_session'] = new_sess
-                                    # Clear local history to avoid synch issues
                                     st.session_state['tutor_chat_history'] = [] 
-                                    
-                                    # 3. Pre-load User Prompt
                                     prompt_msg = f"He abierto el archivo **{f['name']}**. ¿Me puedes dar un resumen o interpretación de su contenido?"
                                     st.session_state['tutor_chat_history'].append({"role": "user", "content": prompt_msg})
-                                
                                 st.session_state['redirect_target_name'] = "Tutoria 1 a 1"
                                 st.session_state['force_chat_tab'] = True
                                 st.rerun()
