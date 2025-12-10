@@ -196,25 +196,16 @@ def render_library(assistant):
                     
                     
                     # CONSULTANT: SMART POPOVER (Choice Menu)
-                    # KEY ROTATION HACK: To force close, we change the widget key.
-                    pop_key_name = f"pop_key_{f['id']}"
-                    if pop_key_name not in st.session_state:
-                        st.session_state[pop_key_name] = 0
-                    
-                    current_pop_key = f"pop_{f['id']}_{st.session_state[pop_key_name]}"
-
-                    with st.popover("⚡", help="Acciones Rápidas", key=current_pop_key):
-                        # Layout: Title + Close Button (Centered Alignment)
-                        # Increased col2 slightly to ensure button fits comfortably
-                        p_col1, p_col2 = st.columns([0.8, 0.2], vertical_alignment="center")
+                    with st.popover("⚡", help="Acciones Rápidas"):
+                        # Layout: Title + Close Button
+                        # Reverting to simple columns, masking vertical_alignment issues with CSS
+                        p_col1, p_col2 = st.columns([0.8, 0.2])
                         with p_col1:
-                            # Use native write for best alignment with native button
-                            st.write(f"**{f['name']}**")
+                            # Nudge text down to align with button center using CSS
+                            st.markdown(f"<div style='margin-top: 10px; font-weight: bold;'>{f['name']}</div>", unsafe_allow_html=True)
                         with p_col2:
                             # 'X' button to close popover
-                            # Logic: Increment key -> Rerun -> New Widget (Closed by default)
                             if st.button("✖", key=f"close_pop_{f['id']}", help="Cerrar menú"):
-                                st.session_state[pop_key_name] += 1
                                 st.rerun()
                         
                         st.divider() # Neat separator
