@@ -172,6 +172,9 @@ def render_library(assistant):
     # --- FILE VIEW ---
     # Global callback to close popovers
     def close_all_popovers():
+        if 'popover_reset_token' not in st.session_state:
+            st.session_state['popover_reset_token'] = 0
+            
         st.session_state['popover_reset_token'] += 1
         st.session_state['popover_needs_reset'] = True # Trigger flicker
         st.toast("Menú cerrado", icon="✅")
