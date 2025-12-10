@@ -120,20 +120,33 @@ def render_library(assistant):
                              st.warning("Escribe un nuevo nombre.")
 
             with c_delete:
-                st.markdown("###### 🗑️ Borrar Carpeta")
-                # Reuse unit_options or create new if needed (same scope)
-                sel_del = st.selectbox("Selecciona para borrar:", ["-- Seleccionar --"] + list(unit_options.keys()), key="del_unit_sel")
+                st.markdown("###### 🗑️ Borrar Carpeta(s)")
+                # Bulk Selection
+                sel_del_list = st.multiselect("Selecciona carpetas para borrar:", list(unit_options.keys()), key="del_unit_mul")
                 
-                if sel_del != "-- Seleccionar --":
-                    st.warning(f"⚠️ ¿Seguro que quieres borrar '{sel_del}' y todo su contenido?")
-                    if st.button("Sí, Borrar Definitivamente", type="primary", use_container_width=True):
-                        target_id = unit_options[sel_del]
-                        if delete_unit(target_id):
-                            st.success(f"Carpeta '{sel_del}' eliminada.")
-                            time.sleep(1)
-                            st.rerun()
+                if sel_del_list:
+                    count = len(sel_del_list)
+                    st.warning(f"⚠️ ¿Seguro que quieres borrar {count} carpeta(s) y TODO su contenido?")
+                    if st.button(f"Sí, Borrar {count} Carpetas", type="primary", use_container_width=True):
+                        success_count = 0
+                        fail_count = 0
+                        
+                        progress_bar = st.progress(0)
+                        for i, name in enumerate(sel_del_list):
+                             target_id = unit_options[name]
+                             if delete_unit(target_id):
+                                 success_count += 1
+                             else:
+                                 fail_count += 1
+                             progress_bar.progress((i + 1) / count)
+                        
+                        if fail_count == 0:
+                             st.success(f"✅ {success_count} carpetas eliminadas correctamente.")
                         else:
-                            st.error("Error al borrar.")
+                             st.warning(f"⚠️ {success_count} eliminadas, {fail_count} fallaron.")
+                             
+                        time.sleep(1)
+                        st.rerun()
         st.write("") # Spacer instead of divider
     elif not current_unit_id:
         st.info("No hay carpetas. Crea una nueva ➕")
