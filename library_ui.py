@@ -176,46 +176,28 @@ def render_library(assistant):
             st.caption("Carpeta vacía.")
         else:
             for f in files:
-                c1, c2, c3 = st.columns([0.1, 0.7, 0.2])
+                c1, c2, c3, c4 = st.columns([0.1, 0.5, 0.2, 0.2])
+                
                 with c1:
                     icon = "📄" if f['type'] == "text" else "📕"
                     st.write(f"## {icon}")
+                
                 with c2:
                     st.markdown(f"**{f['name']}**")
                     with st.expander("Ver contenido"):
                         safe_content = f.get('content') or f.get('content_text') or ""
-                        
-                        # Toggle Edit Mode
-                        edit_mode = st.toggle("✏️ Editar Texto", key=f"tgl_{f['id']}")
-                        
-                        if edit_mode:
-                            new_content = st.text_area("Editar:", safe_content, height=300, key=f"v_{f['id']}")
-                            if new_content != safe_content:
-                                if st.button("💾 Guardar Cambios", key=f"save_{f['id']}"):
-                                    # We reuse upload logic or specific update? 
-                                    # Since upload_file_to_db updates if exists (usually), or we need a specific 'update_file_content'
-                                    # For simplicity, let's use upload_file_to_db with same ID? No, upload creates new ID usually.
-                                    # Ideally we need an update function. For now, since we don't have 'update_file' explicitly imported,
-                                    # we might need to rely on the user knowing this is just a quick edit OR add an update function.
-                                    # BUT wait, the user just wants the VIEW to be nice. Editing is secondary.
-                                    # Let's keep it simple: If they edit, we assume they want to "Rename/Save".
-                                    # Actually, let's just show the MD view by default. Implementing full Save logic inline might be risky without `update_file`.
-                                    # Let's check imports. `upload_file_to_db` creates new file.
-                                    # Okay, I will just provide the View for now. Editing raw text was the old way.
-                                    # If they *really* want to save, they can copy-paste to new file.
-                                    # OR I can just skip the save button logic for now and just show the text area for "Copying raw text".
-                                    pass
-                        else:
-                            st.markdown(safe_content, unsafe_allow_html=True)
+                        st.markdown(safe_content, unsafe_allow_html=True)
+
                 with c3:
-                    if st.button("🗑️", key=f"del_f_{f['id']}"):
+                    # CONSULTANT: CHAT WITH FILE FEATURE
+                    if st.button("💬 Chat", key=f"chat_{f['id']}", help="Chatear con este archivo", use_container_width=True):
+                        st.session_state['chat_context_file'] = f
+                        st.toast(f"📎 '{f['name']}' cargado. ¡Ve a la pestaña Ayudante!", icon="🤖")
+
+                with c4:
+                    if st.button("🗑️", key=f"del_f_{f['id']}", use_container_width=True):
                         delete_file(f['id'])
                         st.rerun()
-                    if st.button("✏️", key=f"ren_f_{f['id']}"):
-                        new_n = st.text_input("Nuevo nombre:", value=f['name'], key=f"in_ren_{f['id']}")
-                        if new_n != f['name']:
-                            rename_file(f['id'], new_n)
-                            st.rerun()
 
     st.write("") # Spacer
     

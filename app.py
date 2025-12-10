@@ -2170,6 +2170,15 @@ with tab6:
         with col_info:
             st.info(f"📝 **Clase Actual:** {current_sess['name']}")
             st.caption("El profesor recuerda todo lo hablado en esta clase.")
+            
+            # CONSULTANT: SHOW LINKED LIBRARY FILE
+            if st.session_state.get('chat_context_file'):
+                l_file = st.session_state['chat_context_file']
+                st.success(f"📎 **VINCULADO:**\n{l_file['name']}")
+                if st.button("❌ Desvincular", key="unlink_file", help="Quitar este archivo del chat"):
+                    st.session_state['chat_context_file'] = None
+                    st.rerun()
+            
             st.divider()
             st.markdown("### 📎 Adjunto rápido")
             tutor_file = st.file_uploader("Subir archivo al chat", type=['pdf', 'txt', 'png', 'jpg'], key="tutor_up")
@@ -2222,6 +2231,14 @@ with tab6:
                         st.toast(f"📎 Archivo {tutor_file.name} enviado.")
                     except Exception as e:
                         st.error(f"Error leyendo archivo: {e}")
+
+                # CONSULTANT: INJECT LIBRARY FILE CONTEXT
+                if st.session_state.get('chat_context_file'):
+                     l_file = st.session_state['chat_context_file']
+                     # Normalize content access (content or content_text based on DB fetch)
+                     c_txt = l_file.get('content') or l_file.get('content_text') or ""
+                     chat_files.append({"name": l_file['name'], "content": c_txt})
+                     # No toast here to avoid spamming on every message, the UI card is enough.
 
                 # 3. Generate Response
                 with st.chat_message("assistant"):
