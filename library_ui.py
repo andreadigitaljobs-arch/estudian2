@@ -253,42 +253,57 @@ def render_library(assistant):
 
     with tab4:
         st.markdown("###### 📝 Editor de Texto Simple")
-        note_title = st.text_input("Título de la nota (ej: Resumen.txt):", placeholder="Mi_Nota.txt", key="new_note_title")
-        note_content = st.text_area("Contenido:", height=200, placeholder="Escribe o pega tu texto aquí...", key="new_note_content")
         
-        c_save, c_clear = st.columns([0.2, 0.8])
-        
-        # Clear Button Logic
-        if c_clear.button("🗑️ Borrar todo"):
-            st.session_state['new_note_content'] = ""
-            st.rerun()
-
-        if c_save.button("💾 Guardar Nota", type="primary", use_container_width=True):
-            if not target_unit_id:
-                  # Check if user entered a new folder name
-                 if new_folder_name:
-                     res = create_unit(current_course_id, new_folder_name, parent_id=None)
-                     if res: target_unit_id = res['id']
-                 else:
-                     st.error("Selecciona una carpeta destino o crea una nueva.")
-                     st.stop()
+        # Folder Selection for Saving
+        all_units = get_units(current_course_id, fetch_all=True)
+        if not all_units:
+            st.warning("Primero crea una carpeta en la pestaña 'Crear Carpeta'.")
+        else:
+            unit_opts = {u['name']: u['id'] for u in all_units}
+            # Default to current if set
+            def_idx = 0
+            if current_unit_id and current_unit_id in unit_opts.values():
+                 def_name = next(k for k,v in unit_opts.items() if v == current_unit_id)
+                 if def_name in list(unit_opts.keys()):
+                     def_idx = list(unit_opts.keys()).index(def_name)
             
-            if not note_title:
-                st.error("Escribe un título para la nota.")
-            elif not note_content:
-                st.error("La nota está vacía.")
-            else:
-                # Append .txt if missing
-                final_name = note_title
-                if "." not in final_name: final_name += ".txt"
-                
-                try:
-                    upload_file_to_db(target_unit_id, final_name, note_content, "text")
-                    st.success(f"✅ Nota '{final_name}' guardada correctamente.")
-                    time.sleep(1)
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"Error guardando nota: {e}")
+            sel_target_name = st.selectbox("Guardar en:", list(unit_opts.keys()), index=def_idx, key="save_note_target")
+            target_save_id = unit_opts[sel_target_name]
+
+            note_title = st.text_input("Título de la nota (ej: Resumen.txt):", placeholder="Mi_Nota.txt", key="new_note_title")
+            note_content = st.text_area("Contenido:", height=200, placeholder="Escribe o pega tu texto aquí...", key="new_note_content")
+            
+            c_save, c_clear = st.columns([0.2, 0.8])
+            
+            # Clear Button Logic
+            if c_clear.button("🗑️ Borrar todo"):
+                st.session_state['new_note_content'] = ""
+                st.rerun()
+
+            if c_save.button("💾 Guardar Nota", type="primary", use_container_width=True):
+                if not note_title:
+                    st.error("Escribe un título para la nota.")
+                elif not note_content:
+                    st.error("La nota está vacía.")
+                else:
+                    # Append .txt if missing
+                    final_name = note_title
+                    if "." not in final_name: final_name += ".txt"
+                    
+                    try:
+                        upload_file_to_db(target_save_id, final_name, note_content, "text")
+                        st.success(f"✅ Nota '{final_name}' guardada en '{sel_target_name}'.")
+                        time.sleep(1)
+                        # Optional: Don't rerun whole app if you want to stay here, but refreshing shows file in list if visible
+                        # User requested NOT to be redirected. So simple check.
+                        # We are in Tab4. Rerun keeps us in Tab4 if st.session_state of tabs is managed, but st.tabs usually resets.
+                        # Wait, st.tabs usually resets to first tab on rerun unless we track active tab index?
+                        # Streamlit doesn't natively track active tab index easily without component.
+                        # But rewriting the UI might stay looking similar. 
+                        # Let's try basic rerun first as it refreshes data.
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Error guardando nota: {e}")
 
     with tab3:
         st.markdown("###### 🧠 Importador Inteligente de Historiales")
