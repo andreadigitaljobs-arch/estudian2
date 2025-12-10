@@ -342,7 +342,23 @@ def render_library(assistant):
     # Auto-expand if triggered from Dashboard
     open_upload = st.session_state.get('lib_auto_open_upload', False)
     # Reset immediately so it doesn't stick
-    if open_upload: st.session_state['lib_auto_open_upload'] = False
+    if open_upload: 
+        st.session_state['lib_auto_open_upload'] = False
+        # JS Hack to click the "Subir Archivos" tab
+        st.components.v1.html("""
+            <script>
+                setTimeout(() => {
+                    const tabs = window.parent.document.querySelectorAll('button[data-testid="stTab"]');
+                    for (const tab of tabs) {
+                        if (tab.innerText.includes("Subir Archivos")) {
+                            tab.click();
+                            tab.scrollIntoView({behavior: "smooth", block: "center"});
+                            break;
+                        }
+                    }
+                }, 1000); // Delay to allow render
+            </script>
+        """, height=0)
     
     with st.expander("➕ Añadir Contenido / Subir Archivos", expanded=open_upload):
         target_unit_id = current_unit_id
