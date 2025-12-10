@@ -195,8 +195,8 @@ def render_library(assistant):
                     
                     # CONSULTANT: SMART POPOVER (Choice Menu)
                     with st.popover("⚡", help="Acciones Rápidas"):
-                        # Layout: Title + Close Button
-                        p_col1, p_col2 = st.columns([0.85, 0.15])
+                        # Layout: Title + Close Button (Centered Alignment)
+                        p_col1, p_col2 = st.columns([0.85, 0.15], vertical_alignment="center")
                         with p_col1:
                             st.markdown(f"**{f['name']}**")
                         with p_col2:
