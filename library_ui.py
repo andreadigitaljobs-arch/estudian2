@@ -190,8 +190,8 @@ def render_library(assistant):
                         st.markdown(safe_content, unsafe_allow_html=True)
 
                 with c3:
-                    # Spacer to align with "Ver contenido" (below title)
-                    st.markdown("<br><br>", unsafe_allow_html=True)
+                    # Spacer to align with "Ver contenido" (below title) - Adjusted back to single br
+                    st.markdown("<br>", unsafe_allow_html=True)
                     # Compact Chat Button
                     if st.button("💬", key=f"chat_{f['id']}", help="Chatear con este archivo"):
                         st.session_state['chat_context_file'] = f
@@ -201,7 +201,7 @@ def render_library(assistant):
 
                 with c4:
                     # Spacer to align with "Ver contenido"
-                    st.markdown("<br><br>", unsafe_allow_html=True)
+                    st.markdown("<br>", unsafe_allow_html=True)
                     # Compact Delete Button
                     if st.button("🗑️", key=f"del_f_{f['id']}", help="Borrar archivo permanentemente"):
                         delete_file(f['id'])
