@@ -194,8 +194,16 @@ def render_library(assistant):
                     
                     # CONSULTANT: SMART POPOVER (Choice Menu)
                     
+                    
                     # CONSULTANT: SMART POPOVER (Choice Menu)
-                    with st.popover("⚡", help="Acciones Rápidas"):
+                    # KEY ROTATION HACK: To force close, we change the widget key.
+                    pop_key_name = f"pop_key_{f['id']}"
+                    if pop_key_name not in st.session_state:
+                        st.session_state[pop_key_name] = 0
+                    
+                    current_pop_key = f"pop_{f['id']}_{st.session_state[pop_key_name]}"
+
+                    with st.popover("⚡", help="Acciones Rápidas", key=current_pop_key):
                         # Layout: Title + Close Button (Centered Alignment)
                         # Increased col2 slightly to ensure button fits comfortably
                         p_col1, p_col2 = st.columns([0.8, 0.2], vertical_alignment="center")
@@ -204,7 +212,9 @@ def render_library(assistant):
                             st.write(f"**{f['name']}**")
                         with p_col2:
                             # 'X' button to close popover
+                            # Logic: Increment key -> Rerun -> New Widget (Closed by default)
                             if st.button("✖", key=f"close_pop_{f['id']}", help="Cerrar menú"):
+                                st.session_state[pop_key_name] += 1
                                 st.rerun()
                         
                         st.divider() # Neat separator
