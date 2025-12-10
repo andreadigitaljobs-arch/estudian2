@@ -2197,20 +2197,8 @@ with tab6:
             if db_msgs and db_msgs[-1]['role'] == 'user':
                 last_user_msg = db_msgs[-1]['content']
                 # Prepare Context
-                from database import get_global_unit
-                # We need global context helper? Or just call assistant directly?
-                # Let's re-use the simpler call structure if possible, 
-                # but we need 'get_global_context' or pass empty.
-                # 'assistant.chat_tutor' handles global context internally if not passed? 
-                # Checking signature: def chat_tutor(self, message, chat_history, context_files, global_context):
-                # We need to construct arguments.
-                
-                # Fetch Global Context Manually for consistency
-                # (Assuming the user has some global context if they haveunits)
-                # But for safety we will pass empty list for context_files (handled by session state link in UI?)
-                # Actually, chat_tutor doesn't see 'st.session_state['chat_context_file']' unless we pass it.
-                # Ref: library_ui sets 'chat_context_file'. 
-                # If we want the AI to read it, we must pass it here.
+                # FIX 10823: Removed invalid import 'get_global_unit'
+                # We will just use empty global context for the auto-summary for now
                 
                 c_files = []
                 if st.session_state.get('chat_context_file'):
@@ -2226,7 +2214,7 @@ with tab6:
                         
                         history_payload = db_msgs[:-1] 
                         
-                        # Global Context Placeholder (Optimized: Can be empty string if handled by class)
+                        # FIX: Empty Global Context to prevent crash
                         gl_ctx_str = "" 
                         
                         response_text = assistant.chat_tutor(
