@@ -2191,6 +2191,67 @@ with tab6:
         # Convert DB format to Chat format if needed (DB: role, content. Chat: role, content. Match!)
         st.session_state['tutor_chat_history'] = db_msgs
         
+        # --- AUTO-RESPONSE LOGIC (Redirect from Library) ---
+        if st.session_state.get('trigger_ai_response'):
+            # Only trigger if the last message is from user (it should be, from library_ui)
+            if db_msgs and db_msgs[-1]['role'] == 'user':
+                last_user_msg = db_msgs[-1]['content']
+                # Prepare Context
+                from database import get_global_unit
+                # We need global context helper? Or just call assistant directly?
+                # Let's re-use the simpler call structure if possible, 
+                # but we need 'get_global_context' or pass empty.
+                # 'assistant.chat_tutor' handles global context internally if not passed? 
+                # Checking signature: def chat_tutor(self, message, chat_history, context_files, global_context):
+                # We need to construct arguments.
+                
+                # Fetch Global Context Manually for consistency
+                # (Assuming the user has some global context if they haveunits)
+                # But for safety we will pass empty list for context_files (handled by session state link in UI?)
+                # Actually, chat_tutor doesn't see 'st.session_state['chat_context_file']' unless we pass it.
+                # Ref: library_ui sets 'chat_context_file'. 
+                # If we want the AI to read it, we must pass it here.
+                
+                c_files = []
+                if st.session_state.get('chat_context_file'):
+                     c_files = [st.session_state['chat_context_file']]
+
+                try:
+                    with st.spinner("🤖 El profesor está leyendo tu archivo..."):
+                        # We pass 'db_msgs[:-1]' as history (excluding the new prompt)
+                        # Or chat_tutor expects full history? Usually it appends new msg.
+                        # Standard pattern: AI takes new msg + history.
+                        # But 'db_msgs' ALREADY has the new msg (saved in library_ui).
+                        # So we should pass 'db_msgs[:-1]' as history and 'last_user_msg' as message.
+                        
+                        history_payload = db_msgs[:-1] 
+                        
+                        # Global Context Placeholder (Optimized: Can be empty string if handled by class)
+                        gl_ctx_str = "" 
+                        
+                        response_text = assistant.chat_tutor(
+                            last_user_msg, 
+                            chat_history=history_payload, 
+                            context_files=c_files, 
+                            global_context=gl_ctx_str
+                        )
+                        
+                        # Save Response
+                        save_chat_message(current_sess['id'], "assistant", response_text)
+                        
+                        # Update Local State
+                        st.session_state['tutor_chat_history'].append({"role": "assistant", "content": response_text})
+                        
+                        # Clear Flag
+                        st.session_state['trigger_ai_response'] = False
+                        st.rerun()
+                        
+                except Exception as e:
+                    st.error(f"Error en auto-respuesta: {e}")
+                    st.session_state['trigger_ai_response'] = False # Prevent loop
+            else:
+                 st.session_state['trigger_ai_response'] = False
+
         col_chat, col_info = st.columns([2, 1], gap="large")
         
         with col_info:
