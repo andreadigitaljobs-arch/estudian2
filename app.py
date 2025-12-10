@@ -180,26 +180,27 @@ if not st.session_state['user']:
             overflow: hidden !important;
         }}
         
-        /* 3. LOGIN CARD CONTAINER (Reference Replica) */
+        /* 3. LOGIN CARD CONTAINER (Theme Aware) */
         .login-card {{
-            background-color: #FFFFFF;
-            color: #1F2937 !important; /* FORCE DARK TEXT for Dark Mode Users */
-            padding: 50px 40px; /* Spacious structure like reference */
-            border-radius: 40px; /* Large rounded corners from reference */
-            box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+            background-color: var(--secondary-background-color);
+            color: var(--text-color);
+            padding: 50px 40px; 
+            border-radius: 40px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
             text-align: center;
-            margin-bottom: 0px !important; /* No bottom margin */
+            margin-bottom: 0px !important; 
             height: auto;
+            border: 1px solid rgba(0,0,0,0.05); /* Subtle border for better definition */
         }}
 
-        /* 4. PILL INPUTS (Reference Style) */
+        /* 4. PILL INPUTS (Theme Aware) */
         .stTextInput > div > div > input {{
             border-radius: 50px !important;
-            border: 1px solid #E2E8F0; /* Subtle border */
-            padding: 0px 25px; /* Vertical centering is handled by height usually, but padding helps */
-            background-color: #FFFFFF;
-            color: #1F2937 !important; /* FORCE DARK TEXT */
-            height: 55px; /* Taller inputs like reference */
+            border: 1px solid var(--secondary-background-color); 
+            padding: 0px 25px; 
+            background-color: var(--background-color);
+            color: var(--text-color);
+            height: 55px; 
             font-size: 1rem;
             transition: all 0.2s;
         }}
@@ -1021,6 +1022,8 @@ with st.sidebar:
     st.image("assets/logo_sidebar.png", width=180)
     st.markdown('<div style="height: 20px;"></div>', unsafe_allow_html=True) # Spacer
     
+    st.markdown("---")
+    st.caption("v.2025.12.10-ThemeAware")
     if st.session_state.get('user'):
         # User Info (Side-by-Side with Flexbox for tight control)
         st.markdown(f"""
