@@ -196,7 +196,15 @@ def render_library(assistant):
                     
                     
                     # CONSULTANT: SMART POPOVER (Choice Menu)
-                    with st.popover("⚡", help="Acciones Rápidas"):
+                    # GLOBAL RESET HACK: Use a global token to force-close any open popover
+                    if 'popover_reset_token' not in st.session_state:
+                        st.session_state['popover_reset_token'] = 0
+                        
+                    # Unique key based on ID + Global Token
+                    # When token changes, Streamlit sees a "New" widget and renders it closed.
+                    pop_key = f"pop_{f['id']}_{st.session_state['popover_reset_token']}"
+
+                    with st.popover("⚡", help="Acciones Rápidas", key=pop_key):
                         # Layout: Title + Close Button
                         # Reverting to simple columns, masking vertical_alignment issues with CSS
                         p_col1, p_col2 = st.columns([0.8, 0.2])
@@ -206,6 +214,7 @@ def render_library(assistant):
                         with p_col2:
                             # 'X' button to close popover
                             if st.button("✖", key=f"close_pop_{f['id']}", help="Cerrar menú"):
+                                st.session_state['popover_reset_token'] += 1
                                 st.rerun()
                         
                         st.divider() # Neat separator
