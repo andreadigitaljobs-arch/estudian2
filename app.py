@@ -1103,6 +1103,45 @@ with st.sidebar:
                 st.session_state['tutor_chat_history'] = []
                 st.rerun()
 
+        # --- BULK DELETE (GESTIÓN MASIVA) ---
+        st.write("")
+        with st.expander("🗑️ Gestión Masiva", expanded=False):
+            # 1. Multi-Select
+            # Filter out None if any
+            valid_sessions = [s for s in sessions if s and 'name' in s]
+            session_names = [s['name'] for s in valid_sessions]
+            # Map name -> ID (careful with duplicates, use ID as value usually, but Streamlit multiselect returns labels)
+            # Better: format_func.
+            
+            sel_sessions = st.multiselect(
+                "Seleccionar chats:", 
+                options=valid_sessions,
+                format_func=lambda x: x['name'],
+                key="bulk_chat_select",
+                placeholder="Elige para borrar..."
+            )
+            
+            if sel_sessions:
+                if st.button(f"Eliminar {len(sel_sessions)} chats", type="primary", use_container_width=True):
+                    success_count = 0
+                    deleted_ids = []
+                    for s in sel_sessions:
+                        if delete_chat_session(s['id']):
+                            success_count += 1
+                            deleted_ids.append(s['id'])
+                    
+                    if success_count > 0:
+                        st.success(f"¡{success_count} chats borrados!")
+                        
+                        # Reset current if deleted
+                        curr = st.session_state.get('current_chat_session')
+                        if curr and curr['id'] in deleted_ids:
+                             st.session_state['current_chat_session'] = None
+                             st.session_state['tutor_chat_history'] = []
+                        
+                        time.sleep(0.5)
+                        st.rerun()
+
     st.divider()
 
     # --- 2. SPOTLIGHT ACADÉMICO ---
