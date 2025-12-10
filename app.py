@@ -2197,11 +2197,22 @@ with tab6:
                 last_user_msg = db_msgs[-1]['content']
                 # Prepare Context
                 # FIX 10823: Removed invalid import 'get_global_unit'
-                # We will just use empty global context for the auto-summary for now
+                # FIX 10846: Hydrate 'content' key if missing (Metadata only from Library)
                 
                 c_files = []
                 if st.session_state.get('chat_context_file'):
-                     c_files = [st.session_state['chat_context_file']]
+                     raw_f = st.session_state['chat_context_file']
+                     # Hydrate content if missing
+                     if 'content' not in raw_f or not raw_f['content']:
+                         from database import get_file_content
+                         try:
+                             c_txt = get_file_content(raw_f['id'])
+                             raw_f['content'] = c_txt
+                         except Exception as fetch_err:
+                             print(f"Error fetching content: {fetch_err}")
+                             raw_f['content'] = "" # Fallback
+                     
+                     c_files = [raw_f]
 
                 try:
                     with st.spinner("🤖 El profesor está leyendo tu archivo..."):
