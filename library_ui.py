@@ -48,7 +48,7 @@ def render_library(assistant):
     if 'lib_breadcrumbs' not in st.session_state: st.session_state['lib_breadcrumbs'] = []
 
     # --- SEARCH BAR ---
-    search_query = st.text_input("🔍 Buscar archivo en todo el diplomado...", placeholder="Escribe el nombre del archivo...")
+    search_query = st.text_input("Busca tu archivo específico aquí", placeholder="Escribe el nombre del archivo...")
 
     # Define helper callback if needed (using global one)
 
