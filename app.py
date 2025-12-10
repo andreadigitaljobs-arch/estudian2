@@ -1485,7 +1485,7 @@ with tab_home:
                     if st.button(f"📝 {chat['name']}\n\n📅 {date_str}", key=f"rec_{chat['id']}", use_container_width=True):
                         st.session_state['current_chat_session'] = chat
                         st.session_state['tutor_chat_history'] = [] 
-                        st.session_state['redirect_target_name'] = "Tutoria 1 a 1"
+                        st.session_state['redirect_target_name'] = "Tutoría 1 a 1"
                         st.session_state['force_chat_tab'] = True
                         st.rerun()
         else:
