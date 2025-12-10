@@ -1447,12 +1447,16 @@ with tab_home:
             st.markdown("##### 🚀 Acciones Rápidas")
             st.write("")
             if st.button("📂 Ir a Biblioteca", use_container_width=True):
-                st.session_state['force_chat_tab'] = False 
-                st.info("👆 Haz clic en la pestaña 'Biblioteca' arriba.")
+                st.session_state['redirect_target_name'] = "Biblioteca"
+                st.session_state['force_chat_tab'] = True 
+                st.rerun()
             
             st.write("")
             if st.button("➕ Subir Archivo Nuevo", use_container_width=True):
-                st.info("👆 Ve a la biblioteca para subir contenido.")
+                st.session_state['redirect_target_name'] = "Biblioteca"
+                st.session_state['force_chat_tab'] = True
+                st.session_state['lib_auto_open_upload'] = True
+                st.rerun()
 
     else:
         st.info("Selecciona o crea un Diplomado en la barra lateral para ver tus estadísticas.")

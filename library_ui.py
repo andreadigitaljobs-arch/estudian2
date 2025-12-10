@@ -336,11 +336,16 @@ def render_library(assistant):
                             
             # END OF LOOP
 
+            # END OF LOOP
     
     # --- ACTION AREA (Upload/Create) ---
-    st.markdown("### ➕ Añadir Contenido")
+    # Auto-expand if triggered from Dashboard
+    open_upload = st.session_state.get('lib_auto_open_upload', False)
+    # Reset immediately so it doesn't stick
+    if open_upload: st.session_state['lib_auto_open_upload'] = False
     
-    target_unit_id = current_unit_id
+    with st.expander("➕ Añadir Contenido / Subir Archivos", expanded=open_upload):
+        target_unit_id = current_unit_id
     
     # If root, allow valid selection
     if not current_unit_id:
