@@ -389,8 +389,8 @@ if not st.session_state['user']:
         st.markdown(f'<div style="text-align: center; margin-bottom: 30px; margin-top: 0px;"><div style="display: flex; align-items: center; justify-content: center; margin-bottom: -20px;">{logo_html}</div><div class="messimo-title" style="margin-top: -30px;">¡Vamos a estudiar!</div></div>', unsafe_allow_html=True)
 
         # FORM INPUTS
-        email = st.text_input("Email", key="login_email", placeholder="Correo electrónico", label_visibility="collapsed")
-        password = st.text_input("Password", type="password", key="login_pass", placeholder="Contraseña", label_visibility="collapsed")
+        email = st.text_input("Correo electrónico", key="login_email", placeholder="tu@email.com")
+        password = st.text_input("Contraseña", type="password", key="login_pass", placeholder="••••••••")
         
         if st.button("Iniciar sesión", type="primary", key="btn_login", use_container_width=True):
                 if email and password:
@@ -1021,9 +1021,7 @@ with st.sidebar:
     # Left Aligned ("RAS con el resto")
     st.image("assets/logo_sidebar.png", width=180)
     st.markdown('<div style="height: 20px;"></div>', unsafe_allow_html=True) # Spacer
-    
-    st.markdown("---")
-    st.caption("v.2025.12.10-ThemeAware")
+
     if st.session_state.get('user'):
         # User Info (Side-by-Side with Flexbox for tight control)
         st.markdown(f"""
