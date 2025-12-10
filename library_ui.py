@@ -192,12 +192,22 @@ def render_library(assistant):
                 with c3:
                     # Spacer to align with "Ver contenido" (below title) - Adjusted back to single br
                     st.markdown("<br>", unsafe_allow_html=True)
-                    # Compact Chat Button
-                    if st.button("💬", key=f"chat_{f['id']}", help="Chatear con este archivo"):
-                        st.session_state['chat_context_file'] = f
-                        # CONSULTANT: TRIGGER AUTO-REDIRECT
-                        st.session_state['force_chat_tab'] = True
-                        st.rerun()
+                    
+                    # CONSULTANT: SMART POPOVER (Choice Menu)
+                    with st.popover("⚡", help="Acciones Rápidas"):
+                        st.markdown(f"**{f['name']}**")
+                        
+                        if st.button("🤖 Resolver Tarea", key=f"btn_task_{f['id']}", use_container_width=True):
+                            st.session_state['chat_context_file'] = f
+                            st.session_state['redirect_target_name'] = "Ayudante de Tareas"
+                            st.session_state['force_chat_tab'] = True
+                            st.rerun()
+                            
+                        if st.button("👨‍🏫 Hablar con Profe", key=f"btn_tutor_{f['id']}", use_container_width=True):
+                            st.session_state['chat_context_file'] = f
+                            st.session_state['redirect_target_name'] = "Tutoría 1 a 1"
+                            st.session_state['force_chat_tab'] = True
+                            st.rerun()
 
                 with c4:
                     # Spacer to align with "Ver contenido"

@@ -1351,8 +1351,9 @@ if st.session_state.get('force_chat_tab'):
     <script>
         try {
             const tabs = window.parent.document.querySelectorAll('button[data-testid="stTab"]');
+            const targetName = "{st.session_state.get('redirect_target_name', 'Ayudante de Tareas')}"; 
             for (const tab of tabs) {
-                if (tab.innerText.includes("Ayudante de Tareas")) {
+                if (tab.innerText.includes(targetName)) {
                     tab.click();
                     break;
                 }
@@ -1942,6 +1943,17 @@ with tab5:
         with c_title:
             st.markdown("### 🧠 Ayudante Inteligente")
             st.caption("Resuelve tareas usando SOLO la información de tu biblioteca.")
+            st.markdown("### 🧠 Ayudante Inteligente")
+            st.caption("Resuelve tareas usando SOLO la información de tu biblioteca.")
+            
+            # CONSULTANT: SHOW LINKED LIBRARY FILE (Tab 5)
+            if st.session_state.get('chat_context_file'):
+                l_file = st.session_state['chat_context_file']
+                st.success(f"📎 **VINCULADO:** {l_file['name']}")
+                if st.button("❌ Desvincular", key="unlink_file_tab5", help="Quitar este archivo"):
+                    st.session_state['chat_context_file'] = None
+                    st.rerun()
+
         with c_trash:
             if st.button("🗑️", key="clear_hw_btn", help="Borrar tarea y empezar de cero"):
                 st.session_state['homework_result'] = None
@@ -2017,7 +2029,21 @@ with tab5:
                         "mime_type": task_file.type,
                         "data": task_file.getvalue()
                     }
-                
+                if task_file:
+                     attachment_data = {
+                         "mime_type": task_file.type,
+                         "data": task_file.getvalue()
+                     }
+                # CONSULTANT: PREFER LINKED FILE IF NO UPLOAD
+                elif st.session_state.get('chat_context_file'):
+                     l_file = st.session_state['chat_context_file']
+                     # We treat it as text context or attachment? 
+                     # solve_homework takes 'task_attachment' (dict with data/mime) OR we append to text.
+                     # Since it's from Library, we likely have text content.
+                     # Let's append to gathered_texts for robustness.
+                     c_txt = l_file.get('content') or l_file.get('content_text') or ""
+                     gathered_texts.append(f"--- [ARCHIVO VINCULADO: {l_file['name']}] ---\n{c_txt}\n")
+                     st.toast(f"📎 Usando archivo vinculado: {l_file['name']}")
                 with st.spinner("Analizando caso... (Modo Experto)" if arg_mode else "Consultando biblioteca..."):
                     try:
                         if arg_mode:
