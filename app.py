@@ -1064,7 +1064,10 @@ with st.sidebar:
         # Determine active ID for highlighting
         active_id = st.session_state['current_chat_session']['id'] if st.session_state['current_chat_session'] else None
 
-        for sess in sessions:
+        # LIMIT TO TOP 5
+        visible_sessions = sessions[:5]
+        
+        for sess in visible_sessions:
             # Highlight active session button style could be done via key or custom CSS, 
             # for now standard buttons.
             # Truncate name to prevent fat buttons
@@ -1080,6 +1083,15 @@ with st.sidebar:
                 st.session_state['current_chat_session'] = sess
                 st.session_state['tutor_chat_history'] = [] # Force reload
                 st.session_state['force_chat_tab'] = True # Force switch
+                st.rerun()
+
+        # VIEW ALL BUTTON
+        if len(sessions) > 5:
+            st.write("")
+            if st.button("📂 Ver todo el historial...", help="Ir al panel de gestión completo"):
+                st.session_state['redirect_target_name'] = "Inicio"
+                st.session_state['force_chat_tab'] = True
+                st.session_state['dashboard_mode'] = 'history' # Activate History View in Dashboard
                 st.rerun()
 
         # Management for Active Session
@@ -1455,7 +1467,43 @@ with tab_home:
     
     st.write("")
     
-    if current_c_id:
+    st.write("")
+    
+    # --- DASHBOARD MODE CONTROLLER ---
+    dash_mode = st.session_state.get('dashboard_mode', 'standard')
+    
+    if dash_mode == 'history':
+        # --- FULL HISTORY VIEW ---
+        c_h1, c_h2 = st.columns([0.8, 0.2])
+        c_h1.markdown("### 📚 Historial Completo")
+        if c_h2.button("🔙 Volver"):
+            st.session_state['dashboard_mode'] = 'standard'
+            st.rerun()
+            
+        # Search
+        q_hist = st.text_input("🔍 Buscar en historial...", placeholder="Nombre del chat...")
+        
+        # Get All Chats
+        all_chats = get_chat_sessions(st.session_state['user'].id)
+        if q_hist:
+            all_chats = [c for c in all_chats if q_hist.lower() in c['name'].lower()]
+            
+        if all_chats:
+            h_cols = st.columns(3)
+            for i, chat in enumerate(all_chats):
+                with h_cols[i % 3]:
+                    date_str = chat['created_at'].split('T')[0]
+                    if st.button(f"📝 {chat['name']}\n\n📅 {date_str}", key=f"hist_all_{chat['id']}", use_container_width=True):
+                        st.session_state['current_chat_session'] = chat
+                        st.session_state['tutor_chat_history'] = [] 
+                        st.session_state['redirect_target_name'] = "Tutoría 1 a 1"
+                        st.session_state['force_chat_tab'] = True
+                        st.rerun()
+        else:
+            st.warning("No se encontraron chats.")
+            
+    elif current_c_id:
+        # --- STANDARD DASHBOARD VIEW ---
         stats = get_dashboard_stats(current_c_id, st.session_state['user'].id)
         
         # Calculate Real Streak
