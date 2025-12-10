@@ -1572,7 +1572,6 @@ with tab2:
                              n_unit = create_unit(c_id, "Notes")
                         
                         if n_unit:
-                        if n_unit:
                              # Convert JSON structure to Clean Markdown
                              md_content = f"# 📝 Apuntes: {selected_file.replace('_transcripcion.txt', '')}\n\n"
                              md_content += f"## 🟢 Nivel 1: Resumen Ultracorto\n{notes_data.get('ultracorto', '')}\n\n"
