@@ -173,17 +173,21 @@ def render_library(assistant):
     # Global callback to close popovers
     def close_all_popovers():
         st.session_state['popover_reset_token'] += 1
+        st.session_state['popover_needs_reset'] = True # Trigger flicker
         st.toast("Menú cerrado", icon="✅")
 
     if current_unit_id:
         st.markdown(f"##### 📄 Archivos en '{st.session_state.get('lib_current_unit_name')}'")
         files = get_files(current_unit_id)
         
+        # Check reset flag
+        should_reset = st.session_state.get('popover_needs_reset', False)
+
         if not files:
             st.caption("Carpeta vacía.")
         else:
             for f in files:
-                # COMPACT LAYOUT: Small columns for buttons - Bottom Alignment for "Flush" look
+                # COMPACT LAYOUT
                 c1, c2, c3, c4 = st.columns([0.1, 0.7, 0.1, 0.1], vertical_alignment="bottom")
                 
                 with c1:
@@ -197,30 +201,66 @@ def render_library(assistant):
                         st.markdown(safe_content, unsafe_allow_html=True)
 
                 with c3:
-                    # Spacer removed (bottom alignment handles it)
-                    
                     # CONSULTANT: SMART POPOVER (Choice Menu)
-                    # GLOBAL RESET HACK v4: Drastic Identity Shift
-                    if 'popover_reset_token' not in st.session_state:
-                        st.session_state['popover_reset_token'] = 0
-                        
-                    token = st.session_state['popover_reset_token']
-                    # Toggle properties based on token to force "New Widget" detection
-                    # We change BOTH label and help to ensure hash mismatch
-                    suffix_char = "." if (token % 2 != 0) else ""
-                    pop_label = f"⚡{suffix_char}" 
-                    pop_help = f"Acciones Rápidas {suffix_char}"
+                    # NUCLEAR RESET: If resetting, render a dummy button -> Forces Popover unmount
+                    if should_reset:
+                        st.button("⚡", key=f"dummy_reset_{f['id']}", disabled=True, help="Refrescando...")
+                    else:
+                        # Normal Popover Render using rotating identity
+                        token = st.session_state.get('popover_reset_token', 0)
+                        suffix_char = "." if (token % 2 != 0) else ""
+                        pop_label = f"⚡{suffix_char}" 
+                        pop_help = f"Acciones Rápidas {suffix_char}"
 
-                    with st.popover(pop_label, help=pop_help):
-                        # Layout: Title + Close Button
-                        p_col1, p_col2 = st.columns([0.8, 0.2])
-                        with p_col1:
-                            # Nudge text down to align with button center using CSS
-                            st.markdown(f"<div style='margin-top: 10px; font-weight: bold;'>{f['name']}</div>", unsafe_allow_html=True)
-                        with p_col2:
-                            # 'X' button to close popover
-                            # FIX Use global callback
-                            st.button("✖", key=f"close_pop_{f['id']}", help="Cerrar menú", on_click=close_all_popovers)
+                        with st.popover(pop_label, help=pop_help):
+                            # Layout: Title + Close Button
+                            p_col1, p_col2 = st.columns([0.8, 0.2])
+                            with p_col1:
+                                st.markdown(f"<div style='margin-top: 10px; font-weight: bold;'>{f['name']}</div>", unsafe_allow_html=True)
+                            with p_col2:
+                                # 'X' button to close popover
+                                st.button("✖", key=f"close_pop_{f['id']}", help="Cerrar menú", on_click=close_all_popovers)
+                            
+                            st.divider() # Neat separator
+                            
+                            if st.button("🤖 Resolver Tarea", key=f"btn_task_{f['id']}", use_container_width=True):
+                                st.session_state['chat_context_file'] = f
+                                st.session_state['redirect_target_name'] = "Ayudante de Tareas"
+                                st.session_state['force_chat_tab'] = True
+                                st.rerun()
+                                
+                            if st.button("👨🏻‍🏫 Hablar con Profe", key=f"btn_tutor_{f['id']}", use_container_width=True):
+                                # 1. Set Context
+                                st.session_state['chat_context_file'] = f
+                                
+                                # 2. Auto-Create Session
+                                if 'user' in st.session_state:
+                                    uid = st.session_state['user'].id
+                                    sess_name = f"Análisis: {f['name']}"
+                                    new_sess = create_chat_session(uid, sess_name)
+                                    st.session_state['current_chat_session'] = new_sess
+                                    # Clear local history to avoid synch issues
+                                    st.session_state['tutor_chat_history'] = [] 
+                                    
+                                    # 3. Pre-load User Prompt
+                                    prompt_msg = f"He abierto el archivo **{f['name']}**. ¿Me puedes dar un resumen o interpretación de su contenido?"
+                                    st.session_state['tutor_chat_history'].append({"role": "user", "content": prompt_msg})
+                                
+                                st.session_state['redirect_target_name'] = "Tutoria 1 a 1"
+                                st.session_state['force_chat_tab'] = True
+                                st.rerun()
+
+                with c4:
+                    if st.button("🗑️", key=f"del_{f['id']}", help="Eliminar archivo"):
+                        if delete_file(f['id']):
+                            st.toast(f"Archivo eliminado: {f['name']}")
+                            time.sleep(0.5)
+                            st.rerun()
+                            
+            # END OF LOOP - HANDLE RESET
+            if should_reset:
+                st.session_state['popover_needs_reset'] = False
+                st.rerun()
                         
                         st.divider() # Neat separator
                         
