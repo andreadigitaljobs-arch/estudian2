@@ -1116,7 +1116,8 @@ with st.sidebar:
             sel_sessions = st.multiselect(
                 "Seleccionar chats:", 
                 options=valid_sessions,
-                format_func=lambda x: x['name'],
+                # FIX: Add date/ID to label to prevent frontend deduplication of identical names
+                format_func=lambda x: f"{x['name']} ({x.get('created_at', '...')[:10]})",
                 key="bulk_chat_select",
                 placeholder="Elige para borrar..."
             )
