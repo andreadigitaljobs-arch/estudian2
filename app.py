@@ -1572,12 +1572,19 @@ with tab2:
                              n_unit = create_unit(c_id, "Notes")
                         
                         if n_unit:
-                             import json
-                             json_content = json.dumps(notes_data, ensure_ascii=False, indent=2)
-                             base_name = selected_file.replace("_transcripcion.txt", "")
-                             fname = f"Apuntes_{base_name}.json"
+                        if n_unit:
+                             # Convert JSON structure to Clean Markdown
+                             md_content = f"# 📝 Apuntes: {selected_file.replace('_transcripcion.txt', '')}\n\n"
+                             md_content += f"## 🟢 Nivel 1: Resumen Ultracorto\n{notes_data.get('ultracorto', '')}\n\n"
+                             md_content += "---\n\n"
+                             md_content += f"## 🟡 Nivel 2: Conceptos Intermedios\n{notes_data.get('intermedio', '')}\n\n"
+                             md_content += "---\n\n"
+                             md_content += f"## 🔴 Nivel 3: Profundidad Detallada\n{notes_data.get('profundo', '')}"
                              
-                             upload_file_to_db(n_unit['id'], fname, json_content, "note")
+                             base_name = selected_file.replace("_transcripcion.txt", "")
+                             fname = f"Apuntes_{base_name}.md"
+                             
+                             upload_file_to_db(n_unit['id'], fname, md_content, "note")
                              st.success(f"Apuntes guardados en 'Notes'/{fname}")
                         
                         st.session_state['notes_result'] = notes_data
