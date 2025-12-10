@@ -1088,7 +1088,7 @@ with st.sidebar:
         # VIEW ALL BUTTON
         if len(sessions) > 1:
             st.write("")
-            if st.button("📂 Ver todo el historial...", help="Ir al panel de gestión completo"):
+            if st.button("📂 Ver todo el historial...", help="Ir al panel de gestión completo", use_container_width=True):
                 st.session_state['redirect_target_name'] = "Inicio"
                 st.session_state['force_chat_tab'] = True
                 st.session_state['dashboard_mode'] = 'history' # Activate History View in Dashboard
