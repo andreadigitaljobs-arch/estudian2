@@ -176,7 +176,8 @@ def render_library(assistant):
             st.caption("Carpeta vacía.")
         else:
             for f in files:
-                c1, c2, c3, c4 = st.columns([0.1, 0.5, 0.2, 0.2])
+                # COMPACT LAYOUT: Small columns for buttons
+                c1, c2, c3, c4 = st.columns([0.1, 0.7, 0.1, 0.1])
                 
                 with c1:
                     icon = "📄" if f['type'] == "text" else "📕"
@@ -189,13 +190,14 @@ def render_library(assistant):
                         st.markdown(safe_content, unsafe_allow_html=True)
 
                 with c3:
-                    # CONSULTANT: CHAT WITH FILE FEATURE
-                    if st.button("💬 Chat", key=f"chat_{f['id']}", help="Chatear con este archivo", use_container_width=True):
+                    # Compact Chat Button
+                    if st.button("💬", key=f"chat_{f['id']}", help="Chatear con este archivo"):
                         st.session_state['chat_context_file'] = f
                         st.toast(f"📎 '{f['name']}' cargado. ¡Ve a la pestaña Ayudante!", icon="🤖")
 
                 with c4:
-                    if st.button("🗑️", key=f"del_f_{f['id']}", use_container_width=True):
+                    # Compact Delete Button
+                    if st.button("🗑️", key=f"del_f_{f['id']}", help="Borrar archivo permanentemente"):
                         delete_file(f['id'])
                         st.rerun()
 
