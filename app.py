@@ -1412,7 +1412,7 @@ with tab_home:
     # Header with Edit Button
     h_col1, h_col2 = st.columns([0.8, 0.2], vertical_alignment="center")
     with h_col1:
-        st.markdown(f"## ¡Hola, {st.session_state['user_nickname']}! 👋")
+        st.markdown(f"## ¡Hola, {st.session_state['user_nickname']}! 👋🏻")
     with h_col2:
         with st.popover("✏️", help="Editar tu apodo"):
             new_nick = st.text_input("¿Cómo quieres que te llame?", value=st.session_state['user_nickname'])
