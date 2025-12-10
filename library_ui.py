@@ -177,7 +177,7 @@ def render_library(assistant):
     else:
         new_folder_name = None
     
-    tab1, tab2, tab3, tab4 = st.tabs(["📂 Subir Archivos", "✨ Crear Carpeta", "📥 Importar chat masivo", "✍🏻 Escribir contenido"])
+    tab2, tab1, tab4, tab3 = st.tabs(["✨ Crear Carpeta", "📂 Subir Archivos", "✍🏻 Escribir contenido", "📥 Importar chat masivo"])
     
     with tab1:
         upl_files = st.file_uploader("Archivos (PDF, TXT, Imágenes):", accept_multiple_files=True)
