@@ -1048,7 +1048,7 @@ with st.sidebar:
     if 'current_chat_session' not in st.session_state:
         st.session_state['current_chat_session'] = None
 
-    with st.expander("📚 Espacios de trabajo", expanded=True):
+    with st.expander("🗂️ Historial de Chats", expanded=True):
         # Create New
         if st.button("➕ Nuevo chat", use_container_width=True):
             new_sess = create_chat_session(st.session_state['user'].id, "Nuevo chat")
