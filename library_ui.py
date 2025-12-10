@@ -196,10 +196,11 @@ def render_library(assistant):
                     # CONSULTANT: SMART POPOVER (Choice Menu)
                     with st.popover("⚡", help="Acciones Rápidas"):
                         # Layout: Title + Close Button (Centered Alignment)
-                        p_col1, p_col2 = st.columns([0.85, 0.15], vertical_alignment="center")
+                        # Increased col2 slightly to ensure button fits comfortably
+                        p_col1, p_col2 = st.columns([0.8, 0.2], vertical_alignment="center")
                         with p_col1:
-                            # FIX 11018: Force height match with button (~45px) for perfect centering
-                            st.markdown(f"<div style='height: 45px; display: flex; align-items: center;'><b>{f['name']}</b></div>", unsafe_allow_html=True)
+                            # Use native write for best alignment with native button
+                            st.write(f"**{f['name']}**")
                         with p_col2:
                             # 'X' button to close popover
                             if st.button("✖", key=f"close_pop_{f['id']}", help="Cerrar menú"):
