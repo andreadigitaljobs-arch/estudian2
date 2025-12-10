@@ -195,7 +195,16 @@ def render_library(assistant):
                     
                     # CONSULTANT: SMART POPOVER (Choice Menu)
                     with st.popover("⚡", help="Acciones Rápidas"):
-                        st.markdown(f"**{f['name']}**")
+                        # Layout: Title + Close Button
+                        p_col1, p_col2 = st.columns([0.85, 0.15])
+                        with p_col1:
+                            st.markdown(f"**{f['name']}**")
+                        with p_col2:
+                            # 'X' button to close popover (by triggering rerun)
+                            if st.button("❌", key=f"close_pop_{f['id']}", help="Cerrar menú"):
+                                st.rerun()
+                        
+                        st.divider() # Neat separator
                         
                         if st.button("🤖 Resolver Tarea", key=f"btn_task_{f['id']}", use_container_width=True):
                             st.session_state['chat_context_file'] = f
