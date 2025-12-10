@@ -1027,7 +1027,9 @@ with st.sidebar:
         st.markdown(f"""
         <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
             <div style="font-size: 24px;">👤</div>
-            <div style="font-size: 14px; color: #31333F; word-break: break-all;">{st.session_state['user'].email}</div>
+            <div style="font-size: 14px; color: #31333F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{st.session_state['user'].email}">
+                {st.session_state['user'].email}
+            </div>
         </div>
         """, unsafe_allow_html=True)
         if st.button("Cerrar sesión", key="logout_btn", use_container_width=True):
