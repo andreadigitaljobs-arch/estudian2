@@ -1347,18 +1347,18 @@ tab1, tab2, tab3, tab4, tab_lib, tab5, tab6 = st.tabs([
 # --- AUTO-SWITCH TAB LOGIC ---
 if st.session_state.get('force_chat_tab'):
     # Inject JS to click the tab
-    st.components.v1.html("""
+    st.components.v1.html(f"""
     <script>
-        try {
+        try {{
             const tabs = window.parent.document.querySelectorAll('button[data-testid="stTab"]');
             const targetName = "{st.session_state.get('redirect_target_name', 'Ayudante de Tareas')}"; 
-            for (const tab of tabs) {
-                if (tab.innerText.includes(targetName)) {
+            for (const tab of tabs) {{
+                if (tab.innerText.includes(targetName)) {{
                     tab.click();
                     break;
-                }
-            }
-        } catch(e) { console.log(e); }
+                }}
+            }}
+        }} catch(e) {{ console.log(e); }}
     </script>
     """, height=0)
     # Reset flag so it doesn't keep clicking
