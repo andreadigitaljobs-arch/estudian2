@@ -4,7 +4,7 @@ import time
 import os
 import base64
 import pandas as pd
-from database import get_units, create_unit, upload_file_to_db, get_files, delete_file, rename_file, rename_unit, delete_unit, create_chat_session, save_chat_message, search_library
+from database import get_units, create_unit, upload_file_to_db, get_files, delete_file, rename_file, rename_unit, delete_unit, create_chat_session, save_chat_message, search_library, update_user_footprint
 
 def render_library(assistant):
     """
@@ -173,6 +173,16 @@ def render_library(assistant):
                     st.session_state['lib_current_unit_id'] = unit['id']
                     st.session_state['lib_current_unit_name'] = unit['name']
                     st.session_state['lib_breadcrumbs'].append({'id': unit['id'], 'name': unit['name']})
+                    
+                    # TRACK FOOTPRINT
+                    if 'user' in st.session_state:
+                        update_user_footprint(st.session_state['user'].id, {
+                           "type": "unit",
+                           "title": unit['name'],
+                           "target_id": unit['id'],
+                           "subtitle": "Explorando carpeta"
+                        })
+                        
                     st.rerun()
                     
         # Management Section (Rename & Delete)

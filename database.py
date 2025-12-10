@@ -83,6 +83,21 @@ def update_user_nickname(new_nickname):
         print(f"Error updating profile: {e}")
         return None
 
+def update_user_footprint(user_id, footprint_data):
+    """
+    Updates the 'smart_footprint' in user metadata.
+    footprint_data: dict with keys {'type', 'title', 'target_id', 'subtitle', 'timestamp'}
+    types: 'chat', 'unit', 'file_interaction'
+    """
+    supabase = init_supabase()
+    from datetime import datetime
+    try:
+        footprint_data['timestamp'] = datetime.utcnow().isoformat()
+        attrs = {"data": {"smart_footprint": footprint_data}}
+        supabase.auth.update_user(attrs)
+    except Exception as e:
+        print(f"Error updating footprint: {e}")
+
 # --- COURSES (DIPLOMADOS) ---
 def get_user_courses(user_id):
     supabase = init_supabase()

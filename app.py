@@ -1083,6 +1083,15 @@ with st.sidebar:
                 st.session_state['current_chat_session'] = sess
                 st.session_state['tutor_chat_history'] = [] # Force reload
                 st.session_state['force_chat_tab'] = True # Force switch
+                
+                # TRACK FOOTPRINT
+                update_user_footprint(st.session_state['user'].id, {
+                    "type": "chat",
+                    "title": sess['name'],
+                    "target_id": sess['id'],
+                    "subtitle": "Continuar conversación"
+                })
+                
                 st.rerun()
 
         # VIEW ALL BUTTON
@@ -1195,7 +1204,7 @@ with st.sidebar:
     st.caption("Diplomado Actual:")
     
     # DB Ops
-    from database import get_user_courses, create_course, get_dashboard_stats, update_user_nickname, get_recent_chats, check_and_update_streak
+    from database import get_user_courses, create_course, get_dashboard_stats, update_user_nickname, get_recent_chats, check_and_update_streak, update_user_footprint
     
     # GUARD: Ensure user is logged in before accessing ID
     if not st.session_state.get('user'):
@@ -1548,25 +1557,78 @@ with tab_home:
         
         st.divider()
         
-        # --- RECENT HISTORY ---
-        st.markdown("##### 🕰️ Continuar donde lo dejaste")
-        recent_chats = get_recent_chats(st.session_state['user'].id, limit=3)
+        st.divider()
         
-        if recent_chats:
-            r_cols = st.columns(3)
-            for i, chat in enumerate(recent_chats):
-                with r_cols[i % 3]:
-                    # Format Date
-                    # created_at format usually "2023-10-10T..."
-                    date_str = chat['created_at'].split('T')[0]
-                    if st.button(f"📝 {chat['name']}\n\n📅 {date_str}", key=f"rec_{chat['id']}", use_container_width=True):
+        # --- SMART CONTINUITY CARD ---
+        st.markdown("##### 🕰️ Continuar donde lo dejaste")
+        
+        # Load Footprint
+        curr_user = st.session_state['user']
+        footprint = curr_user.user_metadata.get('smart_footprint') if curr_user.user_metadata else None
+        
+        # Helper to render the card
+        def render_smart_card(icon, title, subtitle, btn_label, on_click_fn):
+             # Styled Container
+             with st.container(border=True):
+                 c_icon, c_info, c_btn = st.columns([0.15, 0.65, 0.2])
+                 with c_icon:
+                     st.markdown(f"<div style='font-size: 30px; text-align: center;'>{icon}</div>", unsafe_allow_html=True)
+                 with c_info:
+                     st.markdown(f"**{title}**")
+                     st.caption(subtitle)
+                 with c_btn:
+                     st.write("") # Spacer
+                     if st.button(btn_label, use_container_width=True, type="primary"):
+                         on_click_fn()
+                         st.rerun()
+
+        if footprint:
+             ftype = footprint.get('type')
+             ftitle = footprint.get('title', 'Actividad Reciente')
+             fsub = footprint.get('subtitle', 'Retomar actividad')
+             ftarget = footprint.get('target_id')
+             
+             if ftype == 'chat':
+                 def go_chat():
+                     # Re-fetch session data (mock object minimal)
+                     # ideally fetch full object, but for now ID and Name is enough for current_chat_session logic 
+                     # if app relies on full object properties, we might need a fetch.
+                     # Assuming app just needs id/name.
+                     st.session_state['current_chat_session'] = {'id': ftarget, 'name': ftitle}
+                     st.session_state['tutor_chat_history'] = []
+                     st.session_state['redirect_target_name'] = "Tutoría 1 a 1"
+                     st.session_state['force_chat_tab'] = True
+                 
+                 render_smart_card("💬", f"Chat: {ftitle}", "Estabas conversando con tu asistente", "Retomar Chat", go_chat)
+                 
+             elif ftype == 'unit':
+                 def go_unit():
+                     st.session_state['redirect_target_name'] = "Biblioteca"
+                     st.session_state['force_chat_tab'] = True
+                     st.session_state['lib_current_unit_id'] = ftarget
+                     st.session_state['lib_current_unit_name'] = ftitle
+                     # Breadcrumbs might be tricky to reconstruct perfectly without query, 
+                     # but we can set simple path
+                     st.session_state['lib_breadcrumbs'] = [{'id': ftarget, 'name': ftitle}]
+                     
+                 render_smart_card("📂", f"Carpeta: {ftitle}", "Estabas explorando archivos aquí", "Ir a Carpeta", go_unit)
+                 
+             else:
+                 # Fallback for unknown types
+                 st.info(f"Última actividad: {ftitle}")
+                 
+        else:
+             # Fallback to Recents if no footprint (First run)
+             st.info("Explora la app para generar tu tarjeta de viaje. 🚀")
+             recent_chats = get_recent_chats(st.session_state['user'].id, limit=3) # Keep fallback just in case
+             if recent_chats:
+                chat = recent_chats[0]
+                if st.button(f"📝 Último chat: {chat['name']}", key="fallback_rec"):
                         st.session_state['current_chat_session'] = chat
                         st.session_state['tutor_chat_history'] = [] 
                         st.session_state['redirect_target_name'] = "Tutoría 1 a 1"
                         st.session_state['force_chat_tab'] = True
                         st.rerun()
-        else:
-            st.info("Aún no tienes chats recientes. ¡Empieza uno nuevo!")
 
     else:
         st.info("Selecciona o crea un Diplomado en la barra lateral para ver tus estadísticas.")
