@@ -408,6 +408,57 @@ def get_recent_chats(user_id, limit=3):
         print(f"Error fetching recent chats: {e}")
         return []
 
+    except Exception as e:
+        print(f"Error fetching recent chats: {e}")
+        return []
+
+def check_and_update_streak(user):
+    """
+    Checks and updates the user's login streak based on last_visit date.
+    Returns the current streak count.
+    """
+    from datetime import datetime, timedelta
+    supabase = init_supabase()
+    
+    try:
+        today_str = datetime.utcnow().strftime("%Y-%m-%d")
+        meta = user.user_metadata or {}
+        
+        last_date_str = meta.get("streak_date")
+        current_streak = meta.get("streak_count", 0)
+        
+        # If no history, init
+        if not last_date_str:
+            new_streak = 1
+            supabase.auth.update_user({"data": {"streak_date": today_str, "streak_count": new_streak}})
+            return new_streak
+            
+        # If already visited today, return current
+        if last_date_str == today_str:
+            return current_streak if current_streak > 0 else 1
+            
+        # Check if yesterday
+        last_date = datetime.strptime(last_date_str, "%Y-%m-%d")
+        # Calculate difference properly
+        # Note: UTC dates are clean to compare
+        today_date = datetime.strptime(today_str, "%Y-%m-%d")
+        delta = (today_date - last_date).days
+        
+        if delta == 1:
+            # Streak continues!
+            new_streak = current_streak + 1
+        else:
+            # Broken streak (delta > 1) or time travel? Reset to 1 (today is a new day)
+            new_streak = 1
+            
+        # Push update
+        supabase.auth.update_user({"data": {"streak_date": today_str, "streak_count": new_streak}})
+        return new_streak
+        
+    except Exception as e:
+        print(f"Streak Error: {e}")
+        return 1
+
 def rename_chat_session(session_id, new_name):
     supabase = init_supabase()
     try:

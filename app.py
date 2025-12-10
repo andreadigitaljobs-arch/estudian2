@@ -1183,7 +1183,7 @@ with st.sidebar:
     st.caption("Diplomado Actual:")
     
     # DB Ops
-    from database import get_user_courses, create_course, get_dashboard_stats, update_user_nickname, get_recent_chats
+    from database import get_user_courses, create_course, get_dashboard_stats, update_user_nickname, get_recent_chats, check_and_update_streak
     
     # GUARD: Ensure user is logged in before accessing ID
     if not st.session_state.get('user'):
@@ -1437,11 +1437,19 @@ with tab_home:
     if current_c_id:
         stats = get_dashboard_stats(current_c_id, st.session_state['user'].id)
         
+        # Calculate Real Streak
+        streak = check_and_update_streak(st.session_state['user'])
+        
+        # Gamification Messages
+        streak_msg = "¡Sigue así!"
+        if streak >= 3: streak_msg = "🔥 ¡Estás en llamas!"
+        if streak >= 7: streak_msg = "👑 ¡Leyenda!"
+        
         # Metrics Row
         m1, m2, m3 = st.columns(3)
         m1.metric("📚 Archivos", stats['files'], delta="Recursos totales")
         m2.metric("💬 Sesiones", stats['chats'], delta="Conversaciones")
-        m3.metric("🔥 Racha", "3 Días", delta="¡Sigue así!") # Placeholder for gamification
+        m3.metric("🔥 Racha", f"{streak} Día{'s' if streak != 1 else ''}", delta=streak_msg)
         
         st.divider()
         
