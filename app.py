@@ -1065,9 +1065,14 @@ with st.sidebar:
         for sess in sessions:
             # Highlight active session button style could be done via key or custom CSS, 
             # for now standard buttons.
-            label = f"📝 {sess['name']}"
+            # Truncate name to prevent fat buttons
+            display_name = sess['name']
+            if len(display_name) > 28:
+                display_name = display_name[:25] + "..."
+                
+            label = f"📝 {display_name}"
             if active_id == sess['id']:
-                label = f"🟢 {sess['name']}"
+                label = f"🟢 {display_name}"
             
             if st.button(label, key=f"sess_{sess['id']}", use_container_width=True):
                 st.session_state['current_chat_session'] = sess
