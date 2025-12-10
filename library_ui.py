@@ -95,15 +95,45 @@ def render_library(assistant):
                     st.session_state['lib_breadcrumbs'].append({'id': unit['id'], 'name': unit['name']})
                     st.rerun()
                     
-        # Bulk Delete Info
-        with st.expander("🗑️ Gestión Masiva"):
-            unit_options = {u['name']: u['id'] for u in subfolders}
-            selected_names = st.multiselect("Eliminar Carpetas:", list(unit_options.keys()), key=f"bd_{current_unit_id}")
-            if selected_names:
-                if st.button("Confirmar Eliminación", type="primary"):
-                    for name in selected_names:
-                        delete_unit(unit_options[name])
-                    st.rerun()
+        # Management Section (Rename & Delete)
+        with st.expander("⚙️ Gestión de Carpetas (Renombrar/Borrar)"):
+            c_rename, c_delete = st.columns(2, gap="large")
+            
+            with c_rename:
+                st.markdown("###### ✏️ Renombrar Carpeta")
+                unit_options = {u['name']: u['id'] for u in subfolders}
+                
+                sel_rename = st.selectbox("Selecciona carpeta:", ["-- Seleccionar --"] + list(unit_options.keys()), key="ren_unit_sel")
+                
+                if sel_rename != "-- Seleccionar --":
+                    new_name = st.text_input("Nuevo nombre:", key="ren_new_name")
+                    if st.button("Renombrar Carpeta", use_container_width=True):
+                        if new_name:
+                             target_id = unit_options[sel_rename]
+                             if rename_unit(target_id, new_name):
+                                 st.success(f"Renombrado a '{new_name}'")
+                                 time.sleep(1)
+                                 st.rerun()
+                             else:
+                                 st.error("Error al renombrar.")
+                        else:
+                             st.warning("Escribe un nuevo nombre.")
+
+            with c_delete:
+                st.markdown("###### 🗑️ Borrar Carpeta")
+                # Reuse unit_options or create new if needed (same scope)
+                sel_del = st.selectbox("Selecciona para borrar:", ["-- Seleccionar --"] + list(unit_options.keys()), key="del_unit_sel")
+                
+                if sel_del != "-- Seleccionar --":
+                    st.warning(f"⚠️ ¿Seguro que quieres borrar '{sel_del}' y todo su contenido?")
+                    if st.button("Sí, Borrar Definitivamente", type="primary", use_container_width=True):
+                        target_id = unit_options[sel_del]
+                        if delete_unit(target_id):
+                            st.success(f"Carpeta '{sel_del}' eliminada.")
+                            time.sleep(1)
+                            st.rerun()
+                        else:
+                            st.error("Error al borrar.")
         st.write("") # Spacer instead of divider
     elif not current_unit_id:
         st.info("No hay carpetas. Crea una nueva ➕")
