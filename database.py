@@ -72,6 +72,17 @@ def sign_up(email, password):
         st.error(f"Error de Registro: {e}")
         return None
 
+def update_user_nickname(new_nickname):
+    """Updates user metadata to persist nickname."""
+    supabase = init_supabase()
+    try:
+        attrs = {"data": {"nickname": new_nickname}}
+        res = supabase.auth.update_user(attrs)
+        return res.user
+    except Exception as e:
+        print(f"Error updating profile: {e}")
+        return None
+
 # --- COURSES (DIPLOMADOS) ---
 def get_user_courses(user_id):
     supabase = init_supabase()
