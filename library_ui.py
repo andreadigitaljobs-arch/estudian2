@@ -254,50 +254,6 @@ def render_library(assistant):
             if should_reset:
                 st.session_state['popover_needs_reset'] = False
                 st.rerun()
-                        
-                        st.divider() # Neat separator
-                        
-                        if st.button("🤖 Resolver Tarea", key=f"btn_task_{f['id']}", use_container_width=True):
-                            st.session_state['chat_context_file'] = f
-                            st.session_state['redirect_target_name'] = "Ayudante de Tareas"
-                            st.session_state['force_chat_tab'] = True
-                            st.rerun()
-                            
-                        if st.button("👨🏻‍🏫 Hablar con Profe", key=f"btn_tutor_{f['id']}", use_container_width=True):
-                            # 1. Set Context
-                            st.session_state['chat_context_file'] = f
-                            
-                            # 2. Auto-Create Session
-                            if 'user' in st.session_state:
-                                uid = st.session_state['user'].id
-                                sess_name = f"Análisis: {f['name']}"
-                                new_sess = create_chat_session(uid, sess_name)
-                                st.session_state['current_chat_session'] = new_sess
-                                # Clear local history to avoid synch issues
-                                st.session_state['tutor_chat_history'] = [] 
-                                
-                                # 3. Pre-load User Prompt
-                                prompt_msg = f"He abierto el archivo **{f['name']}**. ¿Me puedes dar un resumen o interpretación de su contenido?"
-                                save_chat_message(new_sess['id'], "user", prompt_msg)
-                                st.session_state['tutor_chat_history'].append({"role": "user", "content": prompt_msg})
-                                
-                                # 4. Set Flags for Auto-Reply
-                                st.session_state['trigger_ai_response'] = True
-                            
-                            # 5. Redirect
-                            st.session_state['redirect_target_name'] = "Tutoría 1 a 1"
-                            st.session_state['force_chat_tab'] = True
-                            st.rerun()
-
-                with c4:
-                    # Spacer to align with "Ver contenido"
-                    st.markdown("<div style='height: 8px'></div>", unsafe_allow_html=True)
-                    # Compact Delete Button
-                    if st.button("🗑️", key=f"del_f_{f['id']}", help="Borrar archivo permanentemente"):
-                        delete_file(f['id'])
-                        st.rerun()
-
-    st.write("") # Spacer
     
     # --- ACTION AREA (Upload/Create) ---
     st.markdown("### ➕ Añadir Contenido")
