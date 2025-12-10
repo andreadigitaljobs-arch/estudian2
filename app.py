@@ -564,7 +564,7 @@ if 'spotlight_query' in st.session_state and st.session_state['spotlight_query']
     mode = st.session_state.get('spotlight_mode', "⚡ Concepto Rápido")
     
     # Visual Container
-    st.markdown(f"#### 🔍 Resultados de Spotlight: *{query}*")
+    st.markdown(f"#### 🔍 Resultados de Búsqueda rápida: *{query}*")
     
     with st.spinner(f"Investigando en tu bibliografía ({mode})..."):
         if not assistant:
