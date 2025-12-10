@@ -48,44 +48,39 @@ def render_library(assistant):
     current_unit_id = st.session_state['lib_current_unit_id']
 
     # --- NAVIGATION UI ---
-    # FIX: Nested columns for tight grouping of buttons
-    col_nav_1, col_nav_2 = st.columns([0.25, 0.75]) # Main container
+    # FIX: Tighter columns [0.1, 0.1, 0.8] to keep buttons grouped "pegaditos"
+    col_nav = st.columns([0.1, 0.1, 0.8])
     
-    with col_nav_1:
-         # Inner columns for tight spacing
-         # Adjust ratios based on button width needs
-         nav_c1, nav_c2 = st.columns(2)
-         
-         with nav_c1:
-             # Home Button
-             if st.button("🏠 Inicio", key="home_btn", help="Volver al Inicio"):
-                  st.session_state["lib_current_unit_id"] = None
-                  st.session_state["lib_current_unit_name"] = None
-                  st.session_state["lib_breadcrumbs"] = []
-                  st.rerun()
-         
-         with nav_c2:
-             # Back Button (Only if not at root)
-             if current_unit_id:
-                 if st.button("⬅️ Atrás", key="back_btn", help="Subir un nivel"):
-                     # Logic: Pop current, go to previous
-                     if st.session_state['lib_breadcrumbs']:
-                         st.session_state['lib_breadcrumbs'].pop() # Remove current
-                         
-                         if st.session_state['lib_breadcrumbs']:
-                             # Go to parent
-                             prev = st.session_state['lib_breadcrumbs'][-1]
-                             st.session_state['lib_current_unit_id'] = prev['id']
-                             st.session_state['lib_current_unit_name'] = prev['name']
-                         else:
-                             # Back to Home
-                             st.session_state['lib_current_unit_id'] = None
-                             st.session_state['lib_current_unit_name'] = None
-                     else:
-                         # Fallback
-                         st.session_state['lib_current_unit_id'] = None
-                     
-                     st.rerun()
+    with col_nav[0]:
+        # Home Button
+        if st.button("🏠 Inicio", key="home_btn", help="Volver al Inicio"):
+             st.session_state["lib_current_unit_id"] = None
+             st.session_state["lib_current_unit_name"] = None
+             st.session_state["lib_breadcrumbs"] = []
+             st.rerun()
+
+    with col_nav[1]:
+        # Back Button (Only if not at root)
+        if current_unit_id:
+            if st.button("⬅️ Atrás", key="back_btn", help="Subir un nivel"):
+                # Logic: Pop current, go to previous
+                if st.session_state['lib_breadcrumbs']:
+                    st.session_state['lib_breadcrumbs'].pop() # Remove current
+                    
+                    if st.session_state['lib_breadcrumbs']:
+                        # Go to parent
+                        prev = st.session_state['lib_breadcrumbs'][-1]
+                        st.session_state['lib_current_unit_id'] = prev['id']
+                        st.session_state['lib_current_unit_name'] = prev['name']
+                    else:
+                        # Back to Home
+                        st.session_state['lib_current_unit_id'] = None
+                        st.session_state['lib_current_unit_name'] = None
+                else:
+                    # Fallback
+                    st.session_state['lib_current_unit_id'] = None
+                
+                st.rerun()
 
     # --- FOLDER VIEW ---
     subfolders = get_units(current_course_id, parent_id=current_unit_id)
@@ -175,6 +170,10 @@ def render_library(assistant):
         st.info("No hay carpetas. Crea una nueva ➕")
 
     # --- FILE VIEW ---
+    # Global callback to close popovers
+    def close_all_popovers():
+        st.session_state['popover_reset_token'] += 1
+
     if current_unit_id:
         st.markdown(f"##### 📄 Archivos en '{st.session_state.get('lib_current_unit_name')}'")
         files = get_files(current_unit_id)
