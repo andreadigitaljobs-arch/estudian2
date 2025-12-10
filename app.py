@@ -2059,8 +2059,8 @@ with tab5:
 
             # --- BRIDGE TO TUTOR ---
             st.divider()
-            if st.button("🗣️ Debatir esta respuesta con el profesor (Ir a tutoría)", key="btn_bridge_tutor", help="Envía esta tarea y respuesta al chat de Tutoría para discutirla."):
-                # Format the context for the tutor
+            if st.button("🗣️ Debatir esta respuesta con el profesor (Ir a tutoría)", key="btn_bridge_tutor", help="Crea un nuevo chat, envía esta tarea y te redirige para discutirla."):
+                # 1. Prepare Content
                 full_text_response = ""
                 if isinstance(res, dict):
                     full_text_response = f"**Respuesta:**\n{res.get('direct_response','')}\n\n**Contra-argumento:**\n{res.get('counter_argument','')}"
@@ -2073,35 +2073,52 @@ with tab5:
                     f"**MI BORRADOR (Generado por Asistente):**\n{full_text_response}\n\n"
                     f"Quiero que analicemos esto. Qué opinas? Podemos mejorarlo?"
                 )
+
+                # 2. Database Integration
+                from database import create_chat_session, save_chat_message
+                import datetime
                 
-                # Check if history exists
-                if 'tutor_chat_history' not in st.session_state:
-                    st.session_state['tutor_chat_history'] = []
+                # Create New Session
+                # Name it based on task or timestamp
+                sess_name = f"Debate Tarea: {task_prompt[:20]}..." if task_prompt else "Debate Tarea"
+                new_sess = create_chat_session(st.session_state['user'].id, sess_name)
                 
-                # Append Bridge Message as USER
-                st.session_state['tutor_chat_history'].append({"role": "user", "content": bridge_msg})
-                
-                # AUTO-REPLY LOGIC: Trigger response immediately so it's ready when user switches tabs
-                # Prepare Context (Global)
-                gl_ctx_bridge, _ = get_global_context()
-                
-                with st.spinner("El profesor está analizando tu respuesta..."):
-                    try:
-                        # We use the same chat_tutor method
-                        response_bridge = assistant.chat_tutor(
-                            bridge_msg, 
-                            chat_history=st.session_state['tutor_chat_history'], 
-                            context_files=[], # No new files attached in this bridge action logic yet
-                            global_context=gl_ctx_bridge
-                        )
-                        # Append Assistant Response
-                        st.session_state['tutor_chat_history'].append({"role": "assistant", "content": response_bridge})
-                        
-                        st.success("✅ ¡Información enviada y el Profesor YA TE RESPONDIÓ!")
-                        st.info("👈 Ve ahora a la pestaña '📚 Tutoría 1 a 1' para ver su corrección.")
-                        
-                    except Exception as e:
-                        st.error(f"Error generando respuesta automática del tutor: {e}")
+                if new_sess:
+                    # Set as Active
+                    st.session_state['current_chat_session'] = new_sess
+                    st.session_state['tutor_chat_history'] = [] # Reset local
+                    
+                    # 3. Save User Message
+                    save_chat_message(new_sess['id'], "user", bridge_msg)
+                    st.session_state['tutor_chat_history'].append({"role": "user", "content": bridge_msg})
+                    
+                    # 4. Generate Response (with Spinner)
+                    # Prepare Context (Global)
+                    gl_ctx_bridge, _ = get_global_context()
+                    
+                    with st.spinner("El profesor está leyendo tu tarea y creando el chat..."):
+                        try:
+                            response_bridge = assistant.chat_tutor(
+                                bridge_msg, 
+                                chat_history=st.session_state['tutor_chat_history'], 
+                                context_files=[], 
+                                global_context=gl_ctx_bridge
+                            )
+                            
+                            # 5. Save Assistant Response
+                            save_chat_message(new_sess['id'], "assistant", response_bridge)
+                            st.session_state['tutor_chat_history'].append({"role": "assistant", "content": response_bridge})
+                            
+                            st.success("✅ Chat creado. Redirigiendo...")
+                            
+                            # 6. FORCE REDIRECT
+                            st.session_state['force_chat_tab'] = True
+                            st.rerun()
+                            
+                        except Exception as e:
+                            st.error(f"Error generando respuesta: {e}")
+                else:
+                    st.error("No se pudo crear la sesión de chat.")
 
 # --- TAB 6: Tutoría 1 a 1 (Docente Artificial) ---
 if 'tutor_chat_history' not in st.session_state: st.session_state['tutor_chat_history'] = []
