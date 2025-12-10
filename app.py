@@ -1383,7 +1383,10 @@ with st.sidebar:
     """, height=0)
 
     # --- TABS DEFINITION ---
-tab1, tab2, tab3, tab4, tab_lib, tab5, tab6 = st.tabs([
+# --- TABS DEFINITION ---
+# NEW: "Inicio" is the Dashboard Tab
+tab_home, tab1, tab2, tab3, tab4, tab_lib, tab5, tab6 = st.tabs([
+    "🏠 Inicio",
     "📹 Transcriptor", 
     "📝 Apuntes Simples", 
     "🗺️ Guía de Estudio", 
@@ -1392,6 +1395,51 @@ tab1, tab2, tab3, tab4, tab_lib, tab5, tab6 = st.tabs([
     "👩🏻‍🏫 Ayudante de Tareas",
     "📚 Tutoría 1 a 1"
 ])
+
+# --- DASHBOARD TAB (HOME) ---
+with tab_home:
+    # Load Stats
+    current_c_id = st.session_state.get('current_course_id')
+    current_c_name = st.session_state.get('current_course', 'General')
+    user_email = st.session_state['user'].email.split('@')[0]
+    
+    st.markdown(f"## ¡Hola, {user_email.capitalize()}! 👋")
+    st.markdown(f"Estás estudiando: **{current_c_name}**")
+    st.write("")
+    
+    if current_c_id:
+        stats = get_dashboard_stats(current_c_id, st.session_state['user'].id)
+        
+        # Metrics Row
+        m1, m2, m3 = st.columns(3)
+        m1.metric("📚 Archivos", stats['files'], delta="Recursos totales")
+        m2.metric("💬 Sesiones", stats['chats'], delta="Conversaciones")
+        m3.metric("🔥 Racha", "3 Días", delta="¡Sigue así!") # Placeholder for gamification
+        
+        st.divider()
+        
+        # Visuals Row
+        d1, d2 = st.columns([0.6, 0.4])
+        
+        with d1:
+            st.markdown("##### 📊 Tu Biblioteca")
+            # Simple Bar Chart of File Types
+            chart_data = pd.DataFrame.from_dict(stats['file_types'], orient='index', columns=['Cantidad'])
+            st.bar_chart(chart_data)
+            
+        with d2:
+            st.markdown("##### 🚀 Acciones Rápidas")
+            st.write("")
+            if st.button("📂 Ir a Biblioteca", use_container_width=True):
+                st.session_state['force_chat_tab'] = False 
+                st.info("👆 Haz clic en la pestaña 'Biblioteca' arriba.")
+            
+            st.write("")
+            if st.button("➕ Subir Archivo Nuevo", use_container_width=True):
+                st.info("👆 Ve a la biblioteca para subir contenido.")
+
+    else:
+        st.info("Selecciona o crea un Diplomado en la barra lateral para ver tus estadísticas.")
 
 # --- AUTO-SWITCH TAB LOGIC ---
 if st.session_state.get('force_chat_tab'):
