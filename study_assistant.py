@@ -1,6 +1,7 @@
 
 import os
 import google.generativeai as genai
+from google.api_core.exceptions import ResourceExhausted, ServiceUnavailable
 from PIL import Image
 
 class StudyAssistant:
@@ -13,6 +14,10 @@ class StudyAssistant:
         """Generates progressive notes (3 levels) in JSON format."""
         import json
         
+        # --- MOCK ERROR TRIGGER (For User Testing) ---
+        if "SIMULAR_ERROR" in transcript_text:
+            raise ResourceExhausted("Simulated Quota Error for Testing")
+            
         prompt = f"""
         Actúa como un profesor experto. Tu objetivo es crear apuntes en 3 niveles de profundidad (Progresivos) basados en la transcripción.
         
@@ -41,6 +46,21 @@ class StudyAssistant:
             # Clean response to ensure valid JSON parsing
             clean_text = response.text.replace("```json", "").replace("```", "").strip()
             return json.loads(clean_text)
+            
+        except ResourceExhausted:
+            return {
+                "ultracorto": "⚠️ **Límite de IA Excedido**",
+                "intermedio": "**¿Por qué veo esto?**\nHas alcanzado el límite gratuito diario de Google Gemini (Quota Exceeded).",
+                "profundo": """### 🛑 Límite de Tokens Alcanzado
+Google ofrece una capa gratuita generosa, pero limitada.
+
+**Soluciones:**
+1.  🕒 **Esperar:** El cupo se reinicia diariamente. Intenta mañana.
+2.  💳 **Upgrade:** Configura una tarjeta en Google Cloud Console para permitir "Pay-as-you-go" si necesitas uso intensivo profesional.
+
+*Este mensaje es automático del sistema de protección de costos.*"""
+            }
+            
         except Exception as e:
             # Fallback for error handling
             return {
