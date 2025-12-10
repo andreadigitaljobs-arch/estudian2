@@ -48,39 +48,44 @@ def render_library(assistant):
     current_unit_id = st.session_state['lib_current_unit_id']
 
     # --- NAVIGATION UI ---
-    # FIX: Group "Inicio" and "Atrás" tightly on the left ([0.12, 0.12, 0.76])
-    col_nav = st.columns([0.12, 0.12, 0.76])
+    # FIX: Nested columns for tight grouping of buttons
+    col_nav_1, col_nav_2 = st.columns([0.25, 0.75]) # Main container
     
-    with col_nav[0]:
-        # Home Button
-        if st.button("🏠 Inicio", key="home_btn", help="Volver al Inicio"):
-             st.session_state["lib_current_unit_id"] = None
-             st.session_state["lib_current_unit_name"] = None
-             st.session_state["lib_breadcrumbs"] = []
-             st.rerun()
-
-    with col_nav[1]:
-        # Back Button (Only if not at root)
-        if current_unit_id:
-            if st.button("⬅️ Atrás", key="back_btn", help="Subir un nivel"):
-                # Logic: Pop current, go to previous
-                if st.session_state['lib_breadcrumbs']:
-                    st.session_state['lib_breadcrumbs'].pop() # Remove current
-                    
-                    if st.session_state['lib_breadcrumbs']:
-                        # Go to parent
-                        prev = st.session_state['lib_breadcrumbs'][-1]
-                        st.session_state['lib_current_unit_id'] = prev['id']
-                        st.session_state['lib_current_unit_name'] = prev['name']
-                    else:
-                        # Back to Home
-                        st.session_state['lib_current_unit_id'] = None
-                        st.session_state['lib_current_unit_name'] = None
-                else:
-                    # Fallback
-                    st.session_state['lib_current_unit_id'] = None
-                
-                st.rerun()
+    with col_nav_1:
+         # Inner columns for tight spacing
+         # Adjust ratios based on button width needs
+         nav_c1, nav_c2 = st.columns(2)
+         
+         with nav_c1:
+             # Home Button
+             if st.button("🏠 Inicio", key="home_btn", help="Volver al Inicio"):
+                  st.session_state["lib_current_unit_id"] = None
+                  st.session_state["lib_current_unit_name"] = None
+                  st.session_state["lib_breadcrumbs"] = []
+                  st.rerun()
+         
+         with nav_c2:
+             # Back Button (Only if not at root)
+             if current_unit_id:
+                 if st.button("⬅️ Atrás", key="back_btn", help="Subir un nivel"):
+                     # Logic: Pop current, go to previous
+                     if st.session_state['lib_breadcrumbs']:
+                         st.session_state['lib_breadcrumbs'].pop() # Remove current
+                         
+                         if st.session_state['lib_breadcrumbs']:
+                             # Go to parent
+                             prev = st.session_state['lib_breadcrumbs'][-1]
+                             st.session_state['lib_current_unit_id'] = prev['id']
+                             st.session_state['lib_current_unit_name'] = prev['name']
+                         else:
+                             # Back to Home
+                             st.session_state['lib_current_unit_id'] = None
+                             st.session_state['lib_current_unit_name'] = None
+                     else:
+                         # Fallback
+                         st.session_state['lib_current_unit_id'] = None
+                     
+                     st.rerun()
 
     # --- FOLDER VIEW ---
     subfolders = get_units(current_course_id, parent_id=current_unit_id)
@@ -139,6 +144,7 @@ def render_library(assistant):
                      st.caption("No hay carpetas personalizadas para borrar.")
                 else:
                     # Bulk Selection
+                    pass
                     sel_del_list = st.multiselect("Selecciona carpetas para borrar:", list(editable_units.keys()), key="del_unit_mul")
                     
                     if sel_del_list:
@@ -194,11 +200,12 @@ def render_library(assistant):
                     # Spacer removed (bottom alignment handles it)
                     
                     # CONSULTANT: SMART POPOVER (Choice Menu)
-                    # Solution: Toggle an invisible space in the label to force re-render as "new" widget.
+                    # GLOBAL RESET HACK v3: Visible Space Toggle + Callback
+                    # Using a normal space ensures Streamlit definitely sees a label change.
                     if 'popover_reset_token' not in st.session_state:
                         st.session_state['popover_reset_token'] = 0
                         
-                    # Toggle suffix: "" or " "
+                    # Toggle suffix: "" or " " (Standard Space)
                     lbl_suffix = " " if (st.session_state['popover_reset_token'] % 2 != 0) else ""
                     pop_label = f"⚡{lbl_suffix}"
 
