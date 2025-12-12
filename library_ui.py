@@ -243,8 +243,11 @@ def render_library(assistant):
                     
                     if sel_del_list:
                         count = len(sel_del_list)
-                        st.warning(f"⚠️ ¿Seguro que quieres borrar {count} carpeta(s) y TODO su contenido?")
-                        if st.button(f"Sí, Borrar {count} Carpetas", type="primary", use_container_width=True):
+                        st.warning(f"⚠️ ¿Seguro que quieres borrar {count} carpeta(s)?")
+                        # Debug
+                        # st.write(f"DEBUG: Selected: {sel_del_list}")
+                        
+                        if st.button(f"Sí, Borrar {count} Carpetas", key="btn_confirm_del", type="primary", use_container_width=True):
                             success_count = 0
                             fail_count = 0
                             

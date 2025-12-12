@@ -200,7 +200,9 @@ def delete_unit(unit_id):
     try:
         supabase.table("units").delete().eq("id", unit_id).execute()
         return True
-    except: return False
+    except Exception as e: 
+        print(f"Error deleting unit: {e}")
+        return False
 
 def rename_unit(unit_id, new_name):
     supabase = init_supabase()
