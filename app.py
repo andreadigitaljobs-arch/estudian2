@@ -1874,6 +1874,15 @@ with tab1:
             
             for i, item in enumerate(st.session_state['transcript_history']):
                 with st.expander(f"📄 {item['name']}", expanded=True):
+                     # Header with Copy
+                     c_txt, c_cp = st.columns([0.85, 0.15])
+                     with c_txt:
+                         st.caption("Texto Transcrito:")
+                     with c_cp:
+                         if st.button("📄 Copiar", key=f"cp_tr_{i}", help="Copiar transcripción"):
+                             copy_to_clipboard(item['text'])
+                             st.toast("Copiado!", icon='📋')
+                     
                      st.markdown(item['text'])
 
 

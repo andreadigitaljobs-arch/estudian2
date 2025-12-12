@@ -290,6 +290,19 @@ def render_library(assistant):
                     st.markdown(f"**{f['name']}**")
                     with st.expander("Ver contenido"):
                         safe_content = f.get('content') or f.get('content_text') or ""
+                        
+                        # COPY BUTTON
+                        c_copy_btn, c_copy_msg = st.columns([0.3, 0.7])
+                        with c_copy_btn:
+                            if st.button("📄 Copiar Texto", key=f"cp_lib_{f['id']}"):
+                                # Define helper locally to avoid props
+                                import subprocess
+                                try:
+                                    subprocess.run(['clip'], input=safe_content.encode('utf-16le'), check=True)
+                                    st.toast("Copiado al portapapeles", icon='📋')
+                                except Exception as e:
+                                    st.error(f"Error copiando: {e}")
+                                    
                         st.markdown(safe_content, unsafe_allow_html=True)
 
                 with c3:
