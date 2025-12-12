@@ -211,7 +211,8 @@ if not st.session_state['user']:
         }}
 
         /* 5. PRIMARY BUTTON (Reference Shape) */
-        div[data-testid="stButton"] > button[kind="primary"] {{
+        div[data-testid="stButton"] > button[kind="primary"],
+        div[data-testid="stFormSubmitButton"] > button[kind="primary"] {
             width: 100%;
             background-color: #4625b8 !important; /* Brand Purple */
             color: white !important;
@@ -223,12 +224,13 @@ if not st.session_state['user']:
             margin-top: 10px;
             box-shadow: none !important; /* Clean shape, no shadow */
             transition: transform 0.2s;
-        }}
-        div[data-testid="stButton"] > button[kind="primary"]:hover {{
+        }
+        div[data-testid="stButton"] > button[kind="primary"]:hover,
+        div[data-testid="stFormSubmitButton"] > button[kind="primary"]:hover {
             background-color: #2900A5 !important;
             transform: translateY(-2px);
             box-shadow: none !important;
-        }}
+        }
         
         /* 6. SECONDARY/LINK BUTTONS */
         div[data-testid="stButton"] > button[kind="secondary"] {{
@@ -1762,7 +1764,7 @@ with tab1:
     with col_text:
         # Styled Title & Subtitle via HTML
         st.markdown('''
-            <h2 class="transcriptor-title">1. Transcriptor A/V</h2>
+            <h2 class="transcriptor-title">1. Transcriptor de Audio y Video</h2>
             <p class="transcriptor-subtitle">
                 Sube videos o audios para procesarlos y clasificarlos automáticamente.<br>
                 <span style="font-size: 0.9rem; color: #888; font-weight: 500;">Soporta: MP4, MOV, MP3, WAV, M4A</span>
