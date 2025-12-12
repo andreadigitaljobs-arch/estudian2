@@ -1892,7 +1892,6 @@ with tab1:
                      with c_txt:
                          st.caption("Texto Transcrito:")
                      with c_cp:
-                     with c_cp:
                          # JS COPY COMPONENT
                          import json
                          import streamlit.components.v1 as components
