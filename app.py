@@ -1711,7 +1711,7 @@ if st.session_state.get('current_course_id'):
     existing_units = get_units(c_id_check)
     existing_names = [u['name'] for u in existing_units]
     
-    required_folders = ["Transcriptor", "Apuntes Simples", "Guía de Estudio"]
+    required_folders = ["Transcriptor - Videos", "Transcriptor - Audios", "Apuntes Simples", "Guía de Estudio"]
     created_any_batch = False
     
     for req in required_folders:
@@ -1749,15 +1749,15 @@ with tab1:
     with col_text:
         # Styled Title & Subtitle via HTML
         st.markdown('''
-            <h2 class="transcriptor-title">1. Transcriptor de Videos</h2>
+            <h2 class="transcriptor-title">1. Transcriptor A/V</h2>
             <p class="transcriptor-subtitle">
-                Sube los videos de tu unidad para procesarlos automáticamente.<br>
-                <span style="font-size: 0.9rem; color: #888; font-weight: 500;">Arrastra tus archivos aquí</span>
+                Sube videos o audios para procesarlos y clasificarlos automáticamente.<br>
+                <span style="font-size: 0.9rem; color: #888; font-weight: 500;">Soporta: MP4, MOV, MP3, WAV, M4A</span>
             </p>
         ''', unsafe_allow_html=True)
         
         # File Uploader
-        uploaded_files = st.file_uploader("Upload", type=['mp4', 'mov', 'avi', 'mkv'], accept_multiple_files=True, key="up1", label_visibility="collapsed")
+        uploaded_files = st.file_uploader("Upload", type=['mp4', 'mov', 'avi', 'mkv', 'mp3', 'wav', 'm4a', 'flac', 'ogg'], accept_multiple_files=True, key="up1", label_visibility="collapsed")
         
         if uploaded_files:
             st.write("")
@@ -1772,19 +1772,24 @@ with tab1:
                     
                     from database import get_units, create_unit, upload_file_to_db, get_files
                     
-                    # Get "Transcriptor" Unit (Should exist from batch check)
-                    units = get_units(c_id)
-                    t_unit_name = "Transcriptor"
-                    t_unit = next((u for u in units if u['name'] == t_unit_name), None)
-                    # Fallback just in case, but silent
-                    if not t_unit:
-                         t_unit = create_unit(c_id, t_unit_name)
-                    
-                    if t_unit:
-                        t_unit_id = t_unit['id']
+                    # SMART CLASSIFICATION & PROCESSING
+                    for i, file in enumerate(uploaded_files):
+                        file_ext = file.name.split('.')[-1].lower()
+                        is_audio = file_ext in ['mp3', 'wav', 'm4a', 'flac', 'ogg']
                         
-                        for i, file in enumerate(uploaded_files):
-                            status_text.markdown(f"**Iniciando {file.name}... (0%)**")
+                        # Determine Target Folder (Unit)
+                        target_unit_name = "Transcriptor - Audios" if is_audio else "Transcriptor - Videos"
+                        
+                        # Get or Create Target Unit
+                        units = get_units(c_id)
+                        t_unit = next((u for u in units if u['name'] == target_unit_name), None)
+                        if not t_unit:
+                             t_unit = create_unit(c_id, target_unit_name)
+                        
+                        if t_unit:
+                            t_unit_id = t_unit['id']
+                            
+                            status_text.markdown(f"**Procesando {file.name}... (0%)**")
                             temp_path = file.name
                             with open(temp_path, "wb") as f: f.write(file.getbuffer())
                             
@@ -1800,21 +1805,22 @@ with tab1:
                                     trans_text = f.read()
                                     
                                 upload_file_to_db(t_unit_id, os.path.basename(txt_path), trans_text, "transcript")
-                                st.success(f"✅ {file.name} guardado en Nube (Carpeta {t_unit_name})")
+                                st.success(f"✅ Guardado en: 📂 {target_unit_name}")
                                 st.session_state['transcript_history'].append({"name": file.name, "text": trans_text})
                                 
                                 if os.path.exists(txt_path): os.remove(txt_path)
                                 
                             except Exception as e:
-                                st.error(f"Error: {e}")
+                                st.error(f"Error procesando {file.name}: {e}")
                             finally:
                                 if os.path.exists(temp_path): os.remove(temp_path)
                             
                             progress_bar.progress(1.0)
                         
-                        status_text.success("¡Todo listo! (100%)")
-                    else:
-                        st.error("No se pudo crear carpeta de transcripts.")
+                        else:
+                            st.error(f"Error al crear carpeta destino: {target_unit_name}")
+
+                    status_text.success("¡Procesamiento completo!")
 
         # History
         if st.session_state['transcript_history']:
