@@ -211,8 +211,7 @@ if not st.session_state['user']:
         }}
 
         /* 5. PRIMARY BUTTON (Reference Shape) */
-        div[data-testid="stButton"] > button[kind="primary"],
-        div[data-testid="stFormSubmitButton"] > button[kind="primary"] {
+        div[data-testid="stButton"] > button[kind="primary"] {{
             width: 100%;
             background-color: #4625b8 !important; /* Brand Purple */
             color: white !important;
@@ -224,13 +223,12 @@ if not st.session_state['user']:
             margin-top: 10px;
             box-shadow: none !important; /* Clean shape, no shadow */
             transition: transform 0.2s;
-        }
-        div[data-testid="stButton"] > button[kind="primary"]:hover,
-        div[data-testid="stFormSubmitButton"] > button[kind="primary"]:hover {
+        }}
+        div[data-testid="stButton"] > button[kind="primary"]:hover {{
             background-color: #2900A5 !important;
             transform: translateY(-2px);
             box-shadow: none !important;
-        }
+        }}
         
         /* 6. SECONDARY/LINK BUTTONS */
         div[data-testid="stButton"] > button[kind="secondary"] {{
