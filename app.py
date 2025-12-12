@@ -1757,7 +1757,8 @@ with tab1:
         ''', unsafe_allow_html=True)
         
         # File Uploader
-        uploaded_files = st.file_uploader("Upload", type=['mp4', 'mov', 'avi', 'mkv', 'mp3', 'wav', 'm4a', 'flac', 'ogg'], accept_multiple_files=True, key="up1", label_visibility="collapsed")
+        # Added .waptt (WhatsApp), .opus, .aac, .wma
+        uploaded_files = st.file_uploader("Upload", type=['mp4', 'mov', 'avi', 'mkv', 'mp3', 'wav', 'm4a', 'flac', 'ogg', 'opus', 'waptt', 'aac', 'wma'], accept_multiple_files=True, key="up1", label_visibility="collapsed")
         
         if uploaded_files:
             st.write("")
@@ -1775,7 +1776,7 @@ with tab1:
                     # SMART CLASSIFICATION & PROCESSING
                     for i, file in enumerate(uploaded_files):
                         file_ext = file.name.split('.')[-1].lower()
-                        is_audio = file_ext in ['mp3', 'wav', 'm4a', 'flac', 'ogg']
+                        is_audio = file_ext in ['mp3', 'wav', 'm4a', 'flac', 'ogg', 'opus', 'waptt', 'aac', 'wma']
                         
                         # Determine Target Folder (Unit)
                         target_unit_name = "Transcriptor - Audios" if is_audio else "Transcriptor - Videos"
