@@ -413,6 +413,7 @@ if not st.session_state['user']:
                                  # Set Keep Logged In
                                  cookie_manager.set("supabase_refresh_token", sess.refresh_token, expires_at=exp_date)
                                  print(f"Cookie set for user: {user.email}")
+                                 time.sleep(2) # CRITICAL: Wait for frontend to set cookie
                              except Exception as e:
                                  print(f"Cookie set error: {e}")
                                  
