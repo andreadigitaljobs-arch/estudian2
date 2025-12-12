@@ -247,7 +247,7 @@ if not st.session_state['user']:
             font-family: 'Manrope', sans-serif;
             font-weight: 700; /* Bolder */
             font-size: 3.5rem; /* Login Title Size Increased */
-            color: #7fb74e;
+            color: #9BD668; /* Lighter Green */
             margin-bottom: 10px;
             letter-spacing: -1px;
         }}
