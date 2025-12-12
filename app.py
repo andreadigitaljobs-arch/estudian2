@@ -1756,9 +1756,12 @@ with tab1:
             </p>
         ''', unsafe_allow_html=True)
         
+        # Dynamic Key for Uploader Reset
+        if 'transcriptor_key' not in st.session_state: st.session_state['transcriptor_key'] = "up1"
+        
         # File Uploader
         # Added .waptt (WhatsApp), .opus, .aac, .wma
-        uploaded_files = st.file_uploader("Upload", type=['mp4', 'mov', 'avi', 'mkv', 'mp3', 'wav', 'm4a', 'flac', 'ogg', 'opus', 'waptt', 'aac', 'wma'], accept_multiple_files=True, key="up1", label_visibility="collapsed")
+        uploaded_files = st.file_uploader("Upload", type=['mp4', 'mov', 'avi', 'mkv', 'mp3', 'wav', 'm4a', 'flac', 'ogg', 'opus', 'waptt', 'aac', 'wma'], accept_multiple_files=True, key=st.session_state['transcriptor_key'], label_visibility="collapsed")
         
         if uploaded_files:
             st.write("")
@@ -1825,10 +1828,22 @@ with tab1:
 
         # History
         if st.session_state['transcript_history']:
+            
+            # Recents Header
+            st.divider()
+            c_hist_1, c_hist_2 = st.columns([0.7, 0.3], vertical_alignment="center")
+            c_hist_1.markdown("### 📝 Resultados Recientes")
+            
+            # CLEAR BUTTON
+            if c_hist_2.button("🧹 Nueva Transcripción", help="Borra la pantalla y los archivos subidos (no borra de la biblioteca)", use_container_width=True):
+                st.session_state['transcript_history'] = []
+                import uuid
+                st.session_state['transcriptor_key'] = str(uuid.uuid4()) # Force Uploader Reset
+                st.rerun()
+            
             for i, item in enumerate(st.session_state['transcript_history']):
-                st.divider()
-                st.markdown(f"### 📄 Transcripción: {item['name']}")
-                st.markdown(item['text'])
+                with st.expander(f"📄 {item['name']}", expanded=True):
+                     st.markdown(item['text'])
 
 
 # --- TAB 2: Apuntes Simples ---
