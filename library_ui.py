@@ -131,8 +131,8 @@ def render_library(assistant):
     col_nav = st.columns([0.1, 0.1, 0.8])
     
     with col_nav[0]:
-        # Home Button
-        if st.button("🏠 Inicio", key="home_btn", help="Volver al Inicio"):
+        # Home Button (Renamed to avoid confusion with App Dashboard)
+        if st.button("📂 Raíz", key="home_btn", help="Volver a la carpeta principal"):
              st.session_state["lib_current_unit_id"] = None
              st.session_state["lib_current_unit_name"] = None
              st.session_state["lib_breadcrumbs"] = []
