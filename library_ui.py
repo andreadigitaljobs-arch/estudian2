@@ -291,18 +291,58 @@ def render_library(assistant):
                     with st.expander("Ver contenido"):
                         safe_content = f.get('content') or f.get('content_text') or ""
                         
-                        # COPY BUTTON
-                        c_copy_btn, c_copy_msg = st.columns([0.3, 0.7])
-                        with c_copy_btn:
-                            if st.button("📄 Copiar Texto", key=f"cp_lib_{f['id']}"):
-                                # Define helper locally to avoid props
-                                import subprocess
-                                try:
-                                    subprocess.run(['clip'], input=safe_content.encode('utf-16le'), check=True)
-                                    st.toast("Copiado al portapapeles", icon='📋')
-                                except Exception as e:
-                                    st.error(f"Error copiando: {e}")
-                                    
+                        # COPY BUTTON (JS-BASED)
+                        import streamlit.components.v1 as components
+                        import json
+                        
+                        safe_json = json.dumps(safe_content)
+                        # JS Component
+                        # We use an iframe, so we need to ensure clipboard access is allowed.
+                        # Usually standard button click works.
+                        html_code = f"""
+                        <html>
+                        <body style="margin:0; padding:0; background: transparent;">
+                            <script>
+                            function copyContent() {{
+                                const txt = {safe_json};
+                                navigator.clipboard.writeText(txt).then(function() {{
+                                    const btn = document.getElementById('copy_btn');
+                                    btn.innerText = '✅ Copiado!';
+                                    btn.style.color = 'green';
+                                    btn.style.borderColor = 'green';
+                                    setTimeout(() => {{ 
+                                        btn.innerText = '📄 Copiar Texto'; 
+                                        btn.style.color = '#555';
+                                        btn.style.borderColor = '#ccc';
+                                    }}, 2000);
+                                }}, function(err) {{
+                                    console.error('Async: Could not copy text: ', err);
+                                }});
+                            }}
+                            </script>
+                            <button id="copy_btn" onclick="copyContent()" style="
+                                cursor: pointer;
+                                background-color: #ffffff;
+                                border: 1px solid #cccccc;
+                                border-radius: 5px;
+                                padding: 5px 12px;
+                                font-family: 'Segoe UI', sans-serif;
+                                font-size: 14px;
+                                color: #555;
+                                display: flex;
+                                align-items: center;
+                                gap: 5px;
+                                width: 100%;
+                                justify-content: center;
+                            ">
+                                📄 Copiar Texto
+                            </button>
+                        </body>
+                        </html>
+                        """
+                        # Render with height enough for the button
+                        components.html(html_code, height=40)
+                        
                         st.markdown(safe_content, unsafe_allow_html=True)
 
                 with c3:

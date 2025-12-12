@@ -1892,9 +1892,32 @@ with tab1:
                      with c_txt:
                          st.caption("Texto Transcrito:")
                      with c_cp:
-                         if st.button("📄 Copiar", key=f"cp_tr_{i}", help="Copiar transcripción"):
-                             copy_to_clipboard(item['text'])
-                             st.toast("Copiado!", icon='📋')
+                     with c_cp:
+                         # JS COPY COMPONENT
+                         import json
+                         import streamlit.components.v1 as components
+                         safe_txt = json.dumps(item['text'])
+                         html_cp = f"""
+                        <html>
+                        <body style="margin:0; padding:0; background: transparent;">
+                            <script>
+                            function copyT() {{
+                                navigator.clipboard.writeText({safe_txt}).then(function() {{
+                                    const b = document.getElementById('btn');
+                                    b.innerText = '✅';
+                                    setTimeout(() => {{ b.innerText = '📄'; }}, 2000);
+                                }});
+                            }}
+                            </script>
+                            <button id="btn" onclick="copyT()" style="
+                                cursor: pointer; background: transparent; border: none; font-size: 20px;
+                            " title="Copiar al portapapeles">
+                                📄
+                            </button>
+                        </body>
+                        </html>
+                        """
+                         components.html(html_cp, height=40)
                      
                      st.markdown(item['text'])
 
