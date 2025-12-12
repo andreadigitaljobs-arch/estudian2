@@ -1725,16 +1725,17 @@ if st.session_state.get('current_course_id'):
     existing_units = get_units(c_id_check)
     existing_names = [u['name'] for u in existing_units]
     
-    # CONSULTANT FIX: REMOVED Transcriptor folders from auto-creation
-    # This prevents "Zombie Folders" that reappear after user deletes them.
-    # They will be created on-demand during upload instead.
-    required_folders = ["Apuntes Simples", "Guía de Estudio"]
+    
+    # CONSULTANT FIX: ONLY CREATE DEFAULTS IF COURSE IS EMPTY
+    # If the user has deleted specific folders, we should NOT recreate them ("Zombie Folders").
+    # But if the course is BRAND NEW (no units), we initialize the structure.
+    required_folders = ["Transcriptor - Videos", "Transcriptor - Audios", "Apuntes Simples", "Guía de Estudio"]
     created_any_batch = False
     
-    for req in required_folders:
-        if req not in existing_names:
-            create_unit(c_id_check, req)
-            created_any_batch = True
+    if not existing_units: # Only runs if 0 folders exist
+        for req in required_folders:
+             create_unit(c_id_check, req)
+             created_any_batch = True
     
     # If we created anything new, RERUN ONCE to refresh all subsequent 'get_units' calls
     if created_any_batch:
