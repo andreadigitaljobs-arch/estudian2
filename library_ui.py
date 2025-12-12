@@ -189,13 +189,23 @@ def render_library(assistant):
         with st.expander("⚙️ Gestión de Carpetas (Renombrar/Borrar)"):
             c_rename, c_delete = st.columns(2, gap="large")
             
-            # 1. DEFINE OPTIONS FIRST
-            unit_options = {u['name']: u['id'] for u in subfolders}
             
-            # 2. CONSULTANT FIX: REMOVE SYSTEM FOLDER PROTECTION (User Request)
-            # User wants to manage ALL folders to clean up duplicates.
-            # SYSTEM_FOLDERS = ["Transcriptor", "Apuntes Simples", "Guía de Estudio", "Transcripts", "Notes", "Guides"]
+            # 1. DEFINE OPTIONS AND HANDLE DUPLICATES
+            # Detect duplicates to ensure all folders are listed with unique keys
+            name_counts = {}
+            for u in subfolders:
+                name_counts[u['name']] = name_counts.get(u['name'], 0) + 1
             
+            unit_options = {}
+            for u in subfolders:
+                name = u['name']
+                if name_counts[name] > 1:
+                    # Append short ID to make unique
+                    label = f"{name} ({u['id'][:4]})"
+                else:
+                    label = name
+                unit_options[label] = u['id']
+
             # 3. USE ALL UNITS (No Filter)
             editable_units = unit_options 
             
