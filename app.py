@@ -243,11 +243,11 @@ if not st.session_state['user']:
         }}
 
         /* 7. TYPOGRAPHY */
-        .messimo-title {{
+        .messimo-title {
             font-family: 'Manrope', sans-serif;
-            font-weight: 700; /* Bolder */
-            font-size: 3.5rem; /* Login Title Size Increased */
-            color: #9BD668; /* Lighter Green */
+            font-weight: 600; 
+            font-size: 2.5rem; /* Large Title */
+            color: #7fb74e;
             margin-bottom: 10px;
             letter-spacing: -1px;
         }}
