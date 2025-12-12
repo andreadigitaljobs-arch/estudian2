@@ -192,18 +192,18 @@ def render_library(assistant):
             # 1. DEFINE OPTIONS FIRST
             unit_options = {u['name']: u['id'] for u in subfolders}
             
-            # 2. CONSULTANT FIX: PROTECT SYSTEM FOLDERS
-            # We filter out these folders so they cannot be Renamed or Deleted.
-            SYSTEM_FOLDERS = ["Transcriptor", "Apuntes Simples", "Guía de Estudio", "Transcripts", "Notes", "Guides"]
+            # 2. CONSULTANT FIX: REMOVE SYSTEM FOLDER PROTECTION (User Request)
+            # User wants to manage ALL folders to clean up duplicates.
+            # SYSTEM_FOLDERS = ["Transcriptor", "Apuntes Simples", "Guía de Estudio", "Transcripts", "Notes", "Guides"]
             
-            # 3. FILTER
-            editable_units = {name: uid for name, uid in unit_options.items() if name not in SYSTEM_FOLDERS}
+            # 3. USE ALL UNITS (No Filter)
+            editable_units = unit_options 
             
             with c_rename:
                 st.markdown("###### ✏️ Renombrar Carpeta")
                 
                 if not editable_units:
-                    st.caption("No hay carpetas personalizadas para renombrar.")
+                    st.caption("No hay carpetas para renombrar.")
                 else:
                     sel_rename = st.selectbox("Selecciona carpeta:", ["-- Seleccionar --"] + list(editable_units.keys()), key="ren_unit_sel")
                     
