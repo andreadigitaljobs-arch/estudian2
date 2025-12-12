@@ -1725,7 +1725,10 @@ if st.session_state.get('current_course_id'):
     existing_units = get_units(c_id_check)
     existing_names = [u['name'] for u in existing_units]
     
-    required_folders = ["Transcriptor - Videos", "Transcriptor - Audios", "Apuntes Simples", "Guía de Estudio"]
+    # CONSULTANT FIX: REMOVED Transcriptor folders from auto-creation
+    # This prevents "Zombie Folders" that reappear after user deletes them.
+    # They will be created on-demand during upload instead.
+    required_folders = ["Apuntes Simples", "Guía de Estudio"]
     created_any_batch = False
     
     for req in required_folders:
