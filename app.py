@@ -388,26 +388,39 @@ if not st.session_state['user']:
         # Title: "Vamos a estudiar" - Title lifted closer to logo, inputs compensated
         st.markdown(f'<div style="text-align: center; margin-bottom: 30px; margin-top: 0px;"><div style="display: flex; align-items: center; justify-content: center; margin-bottom: -20px;">{logo_html}</div><div class="messimo-title" style="margin-top: -30px;">¡Vamos a estudiar!</div></div>', unsafe_allow_html=True)
 
-        # FORM INPUTS
-        email = st.text_input("Correo electrónico", key="login_email", placeholder="tu@email.com")
-        password = st.text_input("Contraseña", type="password", key="login_pass", placeholder="••••••••")
-        
-        if st.button("Iniciar sesión", type="primary", key="btn_login", use_container_width=True):
+        # FORM INPUTS (Wrapped in st.form to prevent jitter/refresh while typing)
+        with st.form("login_form", clear_on_submit=False, border=False):
+            # Hack to remove default form padding if needed, but border=False helps.
+            email = st.text_input("Correo electrónico", key="login_email", placeholder="tu@email.com")
+            password = st.text_input("Contraseña", type="password", key="login_pass", placeholder="••••••••")
+            
+            # Submit Button (Primary)
+            submitted = st.form_submit_button("Iniciar sesión", type="primary", use_container_width=True)
+            
+            if submitted:
                 if email and password:
                     from database import sign_in
                     user = sign_in(email, password)
                     if user:
                         st.session_state['user'] = user
+                        
+                        # Try to set cookie
                         if 'supabase_session' in st.session_state:
                              try:
                                  sess = st.session_state['supabase_session']
-                                 cookie_manager.set("supabase_refresh_token", sess.refresh_token, expires_at=datetime.datetime.now() + datetime.timedelta(days=30))
-                                 time.sleep(2) # Wait for cookie to write
-                             except Exception as e: 
+                                 # Calculate expiry (e.g. 7 days)
+                                 exp_date = datetime.datetime.now() + datetime.timedelta(days=7)
+                                 # Set Keep Logged In
+                                 cookie_manager.set("supabase_refresh_token", sess.refresh_token, expires_at=exp_date)
+                                 print(f"Cookie set for user: {user.email}")
+                             except Exception as e:
                                  print(f"Cookie set error: {e}")
+                                 
                         st.rerun()
                     else:
                         st.error("Credenciales incorrectas.")
+                else:
+                    st.warning("Por favor ingresa correo y contraseña.")
 
 
         
@@ -1875,7 +1888,7 @@ with tab1:
             for i, item in enumerate(st.session_state['transcript_history']):
                 with st.expander(f"📄 {item['name']}", expanded=True):
                      # Header with Copy
-                     c_txt, c_cp = st.columns([0.85, 0.15])
+                     c_txt, c_cp = st.columns([0.7, 0.3])
                      with c_txt:
                          st.caption("Texto Transcrito:")
                      with c_cp:
