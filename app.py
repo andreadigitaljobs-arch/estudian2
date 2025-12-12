@@ -243,7 +243,7 @@ if not st.session_state['user']:
         }}
 
         /* 7. TYPOGRAPHY */
-        .messimo-title {
+        .messimo-title {{
             font-family: 'Manrope', sans-serif;
             font-weight: 600; 
             font-size: 2.5rem; /* Large Title */
