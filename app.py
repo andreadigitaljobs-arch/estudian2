@@ -391,8 +391,8 @@ if not st.session_state['user']:
         # FORM INPUTS (Wrapped in st.form to prevent jitter/refresh while typing)
         with st.form("login_form", clear_on_submit=False, border=False):
             # Hack to remove default form padding if needed, but border=False helps.
-            email = st.text_input("Correo electrónico", key="login_email", placeholder="tu@email.com")
-            password = st.text_input("Contraseña", type="password", key="login_pass", placeholder="••••••••")
+            email = st.text_input("Correo electrónico", key="login_email", placeholder="Correo electrónico", label_visibility="collapsed")
+            password = st.text_input("Contraseña", type="password", key="login_pass", placeholder="Contraseña", label_visibility="collapsed")
             
             # Submit Button (Primary)
             submitted = st.form_submit_button("Iniciar sesión", type="primary", use_container_width=True)
