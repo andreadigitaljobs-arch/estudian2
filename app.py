@@ -3061,7 +3061,7 @@ with tab6:
                     # Bot: Avatar Left of Bubble
                     chat_html += f'<div style="{row_style}">{avatar_html}<div style="{bubble_style}">{msg_html}</div></div>'
                     
-            chat_html += '</div>'
+            chat_html += '<div id="tutor_chat_end_anchor" style="height: 1px;"></div></div>'
             st.markdown(chat_html, unsafe_allow_html=True)
             
             # SCROLL BUTTON (INJECTED INTO PARENT)
@@ -3100,12 +3100,16 @@ with tab6:
             btn.onmouseout = () => { btn.style.transform = "scale(1)"; };
             
             btn.onclick = () => {
-                const selectors = ['section[data-testid="stAppViewContainer"]', '.main', 'section.main'];
-                for (const sel of selectors) {
-                    const el = window.parent.document.querySelector(sel);
-                    if (el) {
-                        el.scrollTop = el.scrollHeight; // Direct snap
-                    }
+                const anchor = window.parent.document.getElementById("tutor_chat_end_anchor");
+                if (anchor) {
+                    anchor.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                } else {
+                     // Fallback Aggressive Scroll
+                     const selectors = ['section[data-testid="stAppViewContainer"]', '.main', 'section.main'];
+                     for (const sel of selectors) {
+                        const el = window.parent.document.querySelector(sel);
+                        if (el) el.scrollTop = el.scrollHeight;
+                     }
                 }
             };
             
