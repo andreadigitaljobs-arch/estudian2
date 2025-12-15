@@ -118,8 +118,8 @@ Google ofrece una capa gratuita generosa, pero limitada.
         response = self.model.generate_content(prompt)
         return response.text
 
-    def solve_quiz(self, image_path=None, question_text=None, global_context=""):
-        """Solves a quiz question from an image or text."""
+    def solve_quiz(self, images=None, question_text=None, global_context=""):
+        """Solves a quiz question from images (list) or text."""
         
         prompt = f"""
         Analiza esta pregunta de examen con el rigor de un CATEDRÁTICO UNIVERSITARIO.
@@ -151,14 +151,17 @@ Google ofrece una capa gratuita generosa, pero limitada.
         if question_text:
             content_parts.append(f"\nTEXTO DE LA PREGUNTA:\n{question_text}")
             
-        if image_path:
-            img = Image.open(image_path)
-            content_parts.append(img)
+        if images:
+            for img in images:
+                content_parts.append(img)
             
         if len(content_parts) == 1: # Only prompt
             return "Error: Por favor proporciona una imagen o escribe el texto de la pregunta."
 
-        response = self.model.generate_content(content_parts)
+        # Safety catch for None images
+        valid_parts = [p for p in content_parts if p is not None]
+        
+        response = self.model.generate_content(valid_parts)
         return response.text
 
     def solve_homework(self, task_prompt, context_texts, task_attachment=None):

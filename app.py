@@ -2337,13 +2337,18 @@ with tab4:
                 except Exception as e:
                     st.error(f"Error cargando botón: {e}")
 
-                # 2. Show Thumbnails
+                # 2. Show Thumbnails (With Delete Option)
                 if st.session_state['pasted_images']:
                     st.caption(f"📸 {len(st.session_state['pasted_images'])} capturas pegadas:")
                     cols_past = st.columns(max(1, len(st.session_state['pasted_images'])))
                     for idx, p_img in enumerate(st.session_state['pasted_images']):
                         if idx < len(cols_past):
-                            with cols_past[idx]: st.image(p_img, width=50)
+                            with cols_past[idx]: 
+                                st.image(p_img, width=50)
+                                # CONSULTANT FIX: Individual Delete
+                                if st.button("🗑️", key=f"del_img_{st.session_state['quiz_key']}_{idx}", help="Eliminar esta imagen"):
+                                    st.session_state['pasted_images'].pop(idx)
+                                    st.rerun()
 
                 # 3. Inputs
                 st.text_area("✍🏻 O escribe tu pregunta aquí directamente:", height=100, placeholder="Ej: ¿Cuál es la capital de Francia? a) París b) Roma...", key=f"q_txt_{st.session_state['quiz_key']}")
@@ -2359,9 +2364,13 @@ with tab4:
                 has_text = bool(txt_val.strip())
                 total_items = (len(files_val) if files_val else 0) + len(st.session_state['pasted_images']) + (1 if has_text else 0)
 
+                # Context Toggle
+                use_context = st.checkbox("🔗 Vincular imágenes con el texto (Contexto)", value=False, key=f"chk_ctx_{q_key}", help="Si activas esto, el texto y las imágenes se enviarán JUNTOS para responder. Si no, se analizan por separado.")
+
                 if total_items > 0:
                     if st.button("Resolver Preguntas", key="btn4_frag", type="primary"):
                         st.session_state['trigger_quiz_solve'] = True
+                        st.session_state['quiz_use_context'] = use_context # Pass preference
                         st.rerun()
 
             # Call Fragment
@@ -2382,20 +2391,45 @@ with tab4:
                 results = [] 
             
                 # 1. Process Queue
-                items_to_process = []
-            
-                # Add Text Item if exists
-                if has_text:
-                    items_to_process.append({"type": "text", "obj": input_text_quiz, "name": "Pregunta de Texto"})
-
-                # Add Uploaded Files
+                # 1. Process Queue
+                use_ctx_mode = st.session_state.get('quiz_use_context', False)
+                
+                # Collect ALL Images
+                all_pil_images = []
+                
+                # From Upload
                 if img_files:
                     for f in img_files:
-                        items_to_process.append({"type": "upload", "obj": f, "name": f.name})
-            
-                # Add Pasted Images
-                for i, p_img in enumerate(st.session_state['pasted_images']):
-                     items_to_process.append({"type": "paste", "obj": p_img, "name": f"Captura_Pegada_{i+1}.png"})
+                        try:
+                            pil_i = Image.open(f)
+                            if pil_i.mode == 'RGBA': pil_i = pil_i.convert('RGB')
+                            all_pil_images.append(pil_i)
+                        except: pass
+                        
+                # From Paste
+                all_pil_images.extend(st.session_state['pasted_images'])
+                
+                items_to_process = []
+                
+                if use_ctx_mode:
+                    # LINKED MODE: One Request
+                    if not all_pil_images and not has_text:
+                        st.warning("Nada que analizar.")
+                    else:
+                        items_to_process.append({
+                            "type": "linked", 
+                            "text": input_text_quiz, 
+                            "images": all_pil_images, 
+                            "name": "Análisis Contextual Integrado"
+                        })
+                else:
+                    # SEPARATE MODE (Legacy)
+                    if has_text:
+                        items_to_process.append({"type": "text", "obj": input_text_quiz, "name": "Pregunta de Texto"})
+                    
+                    # Add Images separately
+                    for i, img_obj in enumerate(all_pil_images):
+                         items_to_process.append({"type": "image_obj", "obj": img_obj, "name": f"Imagen {i+1}"})
 
                 for i, item in enumerate(items_to_process):
                     # Calculate percentages
@@ -2410,28 +2444,18 @@ with tab4:
                         if item["type"] == "text":
                              # Text Only
                              full_answer = assistant.solve_quiz(question_text=item["obj"], global_context=gl_ctx)
-                             disp_img = None
-                    
-                        else:
-                            # Image Processing
-                            # FIX CONCURRENCY: Use UUID
-                            u_id = uuid.uuid4().hex
-                            temp_img_path = f"temp_quiz_{u_id}_{i}.png"
-                            if item["type"] == "upload":
-                                with open(temp_img_path, "wb") as f: f.write(item["obj"].getbuffer())
-                            else:
-                                item["obj"].save(temp_img_path, format="PNG")
-                        
-                            # Load for display
-                            disp_img = Image.open(temp_img_path).copy()
-                        
-                            # Solve with Image
-                            full_answer = assistant.solve_quiz(image_path=temp_img_path, global_context=gl_ctx)
-                        
-                            # Cleanup Temp
-                            if os.path.exists(temp_img_path):
-                                 try: os.remove(temp_img_path)
-                                 except: pass
+                             
+                        elif item["type"] == "linked":
+                             # Linked Mode
+                             # Pass list of images
+                             full_answer = assistant.solve_quiz(images=item["images"], question_text=item["text"], global_context=gl_ctx)
+                             # Display first image as thumbnail?
+                             disp_img = item["images"][0] if item["images"] else None
+                             
+                        elif item["type"] == "image_obj":
+                            # Image Only
+                            disp_img = item["obj"]
+                            full_answer = assistant.solve_quiz(images=[disp_img], global_context=gl_ctx)
 
                         # Robust Regex Parsing for Short Answer
                         import re
@@ -2443,6 +2467,7 @@ with tab4:
                         results.append({"name": item["name"], "full": full_answer, "short": short_answer, "img_obj": disp_img})
                 
                     except Exception as e:
+                        print(e)
                         results.append({"name": item["name"], "full": f"Error: {e}", "short": "Error", "img_obj": None})
                 
                 progress_bar.progress(1.0)
