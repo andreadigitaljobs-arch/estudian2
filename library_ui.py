@@ -137,7 +137,8 @@ def render_library(assistant):
              st.session_state["lib_current_unit_id"] = None
              st.session_state["lib_current_unit_name"] = None
              st.session_state["lib_breadcrumbs"] = []
-             # st.rerun() # OPTIMIZATION: Fragment auto-reruns
+             # PATCH: Update local var so it renders Home immediately without rerun
+             current_unit_id = None
 
     with col_nav[1]:
         # Back Button (Only if not at root)
@@ -159,8 +160,10 @@ def render_library(assistant):
                 else:
                     # Fallback
                     st.session_state['lib_current_unit_id'] = None
+                    current_unit_id = None
                 
-                # st.rerun() # OPTIMIZATION: Fragment auto-reruns
+                # Update local var for immediate render (Fast Back)
+                current_unit_id = st.session_state['lib_current_unit_id']
 
     # --- FOLDER VIEW ---
     subfolders = get_units(current_course_id, parent_id=current_unit_id)
@@ -183,7 +186,7 @@ def render_library(assistant):
                            "subtitle": "Explorando carpeta"
                         })
                         
-                    # st.rerun() # OPTIMIZATION: Fragment auto-reruns
+                    st.rerun() # REQUIRED: To clear parent folders from view
                     
         # Management Section (Rename & Delete)
         with st.expander("⚙️ Gestión de Carpetas (Renombrar/Borrar)"):
