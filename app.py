@@ -2207,27 +2207,10 @@ with tab4:
                  st.rerun()
                  
         with col_up:
-            # Clipboard Paste Button
-            if st.button("📋 Pegar Imagen (Portapapeles)", key="paste_btn", help="Haz Ctrl+V en tu PC, luego click aquí para cargar la imagen."):
-                try:
-                    img = ImageGrab.grabclipboard()
-                    if isinstance(img, Image.Image):
-                        # Convert to RGB to avoid alpha issues
-                        if img.mode == 'RGBA': img = img.convert('RGB')
-                        st.session_state['pasted_images'].append(img)
-                        st.toast("Imagen pegada con éxito!", icon='📸')
-                    else:
-                        st.warning("No hay imagen en el portapapeles. (Haz PrtScrn o Copiar Imagen primero)")
-                except Exception as e:
-                    st.error(f"Error pegando: {e}")
-
-            # Show Pasted Thumbnails
-            if st.session_state['pasted_images']:
-                st.caption(f"📸 {len(st.session_state['pasted_images'])} capturas pegadas:")
-                cols_past = st.columns(len(st.session_state['pasted_images']))
-                for idx, p_img in enumerate(st.session_state['pasted_images']):
-                    with cols_past[idx]:
-                        st.image(p_img, width=50)
+            # CONSULTANT FIx: Removed broken 'Clipboard Button' (Server-side ImageGrab fails on Cloud/Linux).
+            # Replaced with native Browser Paste instruction.
+            
+            st.info("💡 **Tip:** Puedes pegar capturas de pantalla (Ctrl+V) directamente en el recuadro de subida de abajo.")
 
             # Text Input Option
             input_text_quiz = st.text_area("✍🏻 O escribe tu pregunta aquí directamente:", height=100, placeholder="Ej: ¿Cuál es la capital de Francia? a) París b) Roma...", key=f"q_txt_{st.session_state['quiz_key']}")
