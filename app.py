@@ -3082,24 +3082,17 @@ with tab6:
                             st.success(f"✅")
         
         # --- HIDDEN PASTE RECEIVER ---
-        # A file uploader that exists solely to receive pasted images via JS
-        # We process it immediately.
         with st.container():
-             # We give it a unique label to find it, but hide it via CSS/JS logic if possible or just rely on layout
-             # We can't easily scope CSS to just this widget without a key selector which Streamlit obscures.
-             # We'll use a specific key and handle visibility in JS.
-             paste_bin = st.file_uploader("Paste Receiver", type=['png','jpg','jpeg'], key="paste_bin", label_visibility='collapsed')
+             # Unique Label for reliable JS targeting
+             paste_bin = st.file_uploader("Paste_Receiver_Hidden_Bin", type=['png','jpg','jpeg','pdf'], key="paste_bin", label_visibility='hidden')
         
         if paste_bin:
              if not any(f['name'] == paste_bin.name for f in st.session_state['active_context_files']):
-                 # It's an image
                  st.session_state['active_context_files'].append({
-                     "name": f"Pasted_Image_{paste_bin.name}",
-                     "content": f"[Imagen Pegada: {paste_bin.name}]" 
-                     # Note: Real image content processing would require saving the blob? 
-                     # For now we enable the upload interaction.
+                     "name": f"Pasted_{paste_bin.name}",
+                     "content": f"[Archivo Pegado: {paste_bin.name}]" 
                  })
-                 st.toast("📸 Imagen pegada agregada al contexto!")
+                 st.toast("📸 Archivo pegado!")
 
         st.components.v1.html("""
         <script>
@@ -3124,70 +3117,75 @@ with tab6:
                          capsule.insertBefore(targetPopover, capsule.firstChild);
                          textArea.style.paddingLeft = '0px';
                          
-                         // 2. FOCUS FIX: Clicking the capsule focuses the text area
+                         // 2. FOCUS FIX: Click on bubble -> Focus Textarea
                          capsule.onclick = (e) => {
-                             // Corrected: prevent interfering with the button itself
                              if (!targetPopover.contains(e.target)) {
                                  textArea.focus();
+                                 textArea.click(); // Redundant ensure
                              }
                          };
                      }
                  }
             }
             
-            // 3. PASTE HANDLER & HIDE RECEIVER
-            // Find our hidden uploader by its role or location? 
-            // It's tricky. Simplest hack: The last file uploader is the "Paste Bin" if we order it so.
-            // Popover uploader is arguably 'last' in DOM if portal? 
-            // Or 'first' if rendered earlier?
-            // Layout is: Popover (rendered), PasteBin (rendered), ChatInput (rendered).
-            // So PasteBin is likely the LAST one in the main flow before ChatInput?
-            // Let's assume generic paste interception.
+            // 3. PASTE HANDLER & HIDE RECEIVER (ROBUST VERSION)
+            // We search for the Uploader Wrapper that contains our specific LABEL text.
+            // This ensures we do NOT hide the Popover uploader.
             
-            const uploaders = window.parent.document.querySelectorAll('input[type="file"]');
-            // We want the one that correlates to "paste_bin". 
-            // We can just try to use the *first* available one that ISN'T in the popover if possible.
-            // For now, let's target the one that is NOT inside the popover button div.
-            
+            const allUploaders = Array.from(window.parent.document.querySelectorAll('[data-testid="stFileUploader"]'));
+            let pasteUploaderWrapper = null;
             let pasteInput = null;
-            uploaders.forEach(u => {
-                 if (!u.closest('div[data-testid="stPopover"]')) {
-                     pasteInput = u;
-                 }
-            });
-            
-            if (pasteInput) {
-                // Hide its wrapper (The Dropzone)
-                // The input is hidden inside a Dropzone div.
-                const dropzone = pasteInput.closest('[data-testid="stFileUploader"]');
-                if (dropzone) {
-                    dropzone.style.display = 'none';
-                }
 
-                // Add Paste Listener to Window (Global Paste)
-                // We assume if user pastes Image, they want it in chat.
+            allUploaders.forEach(wrapper => {
+                if (wrapper.innerText.includes("Paste_Receiver_Hidden_Bin")) {
+                    pasteUploaderWrapper = wrapper;
+                    pasteInput = wrapper.querySelector('input[type="file"]');
+                }
+            });
+
+            if (pasteUploaderWrapper && pasteInput) {
+                // Hide it!
+                pasteUploaderWrapper.style.display = 'none';
+
+                // Global Paste Listener
                 window.parent.document.onpaste = (event) => {
+                    // Only handle if text area is NOT focused (or even if it is, for images?)
+                    // Streamlit text area handles text. We care about IMAGES/FILES.
+                    
                     const items = (event.clipboardData || event.originalEvent.clipboardData).items;
+                    let hasFile = false;
+                    
                     for (index in items) {
                         const item = items[index];
-                        if (item.kind === 'file' && item.type.startsWith('image/')) {
+                        if (item.kind === 'file') {
+                            hasFile = true;
                             const blob = item.getAsFile();
-                            const files = [blob];
                             
-                            // Assign to Input (React Hack)
-                            // We need to trigger React's internal value tracker
+                            // Assign to Input
                             const dataTransfer = new DataTransfer();
                             dataTransfer.items.add(blob);
                             pasteInput.files = dataTransfer.files;
-                            
-                            // React specific trigger (Streamlit uses basic events usually but might need granular dispatch)
                             pasteInput.dispatchEvent(new Event('change', { bubbles: true }));
-                            
-                            // Ideally, this triggers the upload.
-                            // We might need to manually fire focus/blur too.
                         }
                     }
+                    
+                    // If we handled a file, we might want to prevent default text paste if it was mixed?
+                    // Typically Ctrl+V with image doesn't have text.
                 };
+            }
+            
+            // SCROLL BUTTON LOGIC INTEGRATED
+            const scrollBtn = window.parent.document.getElementById("tutor_scroll_btn");
+            if (scrollBtn) {
+                 scrollBtn.onclick = () => {
+                    const anchor = window.parent.document.getElementById("tutor_chat_end_anchor");
+                    if (anchor) anchor.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                    
+                    if (chatInput) {
+                        const ta = chatInput.querySelector('textarea');
+                        if (ta) setTimeout(() => ta.focus(), 50);
+                    }
+                 };
             }
 
         });
