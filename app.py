@@ -3089,29 +3089,27 @@ with tab6:
             
             if (chatInput && popovers.length > 0) {
                  const targetPopover = popovers[popovers.length - 1]; 
+                 const textArea = chatInput.querySelector('textarea');
                  
-                 if (!chatInput.contains(targetPopover)) {
-                     // FLEXBOX INTEGRATION
-                     // We insert the button as a Sibling of the Text Area.
-                     // This pushes the text area to the right naturally, preserving clickability.
+                 // We inject INSIDE the text area's parent container (The visual capsule)
+                 if (textArea && textArea.parentElement) {
+                     const capsule = textArea.parentElement;
                      
-                     targetPopover.style.position = 'relative';
-                     targetPopover.style.left = 'auto';
-                     targetPopover.style.bottom = 'auto';
-                     targetPopover.style.top = 'auto';
-                     targetPopover.style.zIndex = '1';
-                     targetPopover.style.marginRight = '8px';
-                     targetPopover.style.marginLeft = '5px';
-                     targetPopover.style.display = 'flex';
-                     targetPopover.style.alignItems = 'center';
-                     
-                     // Insert as FIRST child (Left side)
-                     chatInput.insertBefore(targetPopover, chatInput.firstChild);
-                     
-                     // Clear any forced padding from previous attempts
-                     const textArea = chatInput.querySelector('textarea');
-                     if (textArea) {
-                         textArea.style.paddingLeft = '0px'; 
+                     if (!capsule.contains(targetPopover)) {
+                         // Styling to blend in
+                         targetPopover.style.position = 'relative';
+                         targetPopover.style.top = '0';
+                         targetPopover.style.left = '0';
+                         targetPopover.style.margin = '0 5px 0 5px';
+                         targetPopover.style.display = 'flex';
+                         targetPopover.style.alignItems = 'center';
+                         targetPopover.style.zIndex = '10';
+                         
+                         // Insert as first child of the capsule (Left of text area)
+                         capsule.insertBefore(targetPopover, capsule.firstChild);
+                         
+                         // Reset padding
+                         textArea.style.paddingLeft = '0px';
                      }
                  }
             }
