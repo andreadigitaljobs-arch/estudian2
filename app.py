@@ -2992,13 +2992,7 @@ with tab6:
                 except:
                     msg_html = raw_content
 
-                chat_html += f"""
-                <div class="chat-row {row_class}">
-                    <div class="chat-bubble {bubble_class}">
-                        {msg_html}
-                    </div>
-                </div>
-                """
+                chat_html += f'<div class="chat-row {row_class}"><div class="chat-bubble {bubble_class}">{msg_html}</div></div>'
             chat_html += '</div>'
             st.markdown(chat_html, unsafe_allow_html=True)
             
