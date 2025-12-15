@@ -52,9 +52,16 @@ def render_library(assistant):
                  for f in all_c_files:
                       old_n = f['name']
                       new_n = old_n.replace("_", " ")
-                      while "  " in new_n: new_n = new_n.replace("  ", " ")
                       
-                      if new_n != old_n:
+                      # Strip extensions physically
+                      for ext in ['.txt', '.md', '.pdf', '.TXT', '.MD', '.PDF']:
+                          if new_n.endswith(ext):
+                              new_n = new_n[:-len(ext)]
+                              
+                      while "  " in new_n: new_n = new_n.replace("  ", " ")
+                      new_n = new_n.strip()
+                      
+                      if new_n != old_n and new_n: # Ensure name isn't empty
                           status.write(f"Renombrando: {old_n} -> {new_n}")
                           rename_file(f['id'], new_n)
                           count_ren += 1
@@ -328,9 +335,9 @@ def render_library(assistant):
                 
                 with c2:
                     # RENAME LOGIC
-                    # consultant fix: hide extension in display
+                    # consultant fix: hide extension in display (Case Insensitive)
                     name_root, name_ext = os.path.splitext(f['name'])
-                    display_name = name_root if name_ext in ['.txt', '.md', '.pdf'] else f['name']
+                    display_name = name_root if name_ext.lower() in ['.txt', '.md', '.pdf'] else f['name']
                     
                     ren_key = f"ren_file_{f['id']}"
                     if st.session_state.get(ren_key):
