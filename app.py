@@ -3082,18 +3082,35 @@ with tab6:
                             st.success(f"✅")
         
         # --- HIDDEN PASTE RECEIVER ---
+        if 'paste_key' not in st.session_state: st.session_state['paste_key'] = 0
+        
         with st.container():
-             # Label MUST be visible for JS to find and hide it by text content. 
-             # We hide the whole wrapper via JS immediately.
-             paste_bin = st.file_uploader("Paste_Receiver_Hidden_Bin", type=['png','jpg','jpeg','pdf'], key="paste_bin", label_visibility='visible')
+             # Use Dynamic Key to allow clearing
+             paste_bin = st.file_uploader("Paste_Receiver_Hidden_Bin", type=['png','jpg','jpeg','pdf'], key=f"paste_bin_{st.session_state['paste_key']}", label_visibility='visible')
         
         if paste_bin:
-             if not any(f['name'] == paste_bin.name for f in st.session_state['active_context_files']):
+             # Check for duplicates (Original Name OR Pasted Name)
+             # file_data['name'] is what we stored. paste_bin.name is the new file.
+             # We stored it as f"Pasted_{paste_bin.name}"
+             is_duplicate = any(f['name'] == paste_bin.name or f['name'] == f"Pasted_{paste_bin.name}" for f in st.session_state['active_context_files'])
+             
+             if not is_duplicate:
                  st.session_state['active_context_files'].append({
                      "name": f"Pasted_{paste_bin.name}",
                      "content": f"[Archivo Pegado: {paste_bin.name}]" 
                  })
                  st.toast("📸 Archivo pegado!")
+                 
+                 # RESET UPLOADER
+                 st.session_state['paste_key'] += 1
+                 st.rerun()
+             else:
+                 # It is a duplicate in the INPUT, but maybe already handled.
+                 # If we don't reset, it stays there. 
+                 # We should probably reset anyway if it's stale?
+                 # But if user pasted same file intentionally?
+                 # Let's just reset to be clean.
+                 pass
 
         st.components.v1.html("""
         <script>
