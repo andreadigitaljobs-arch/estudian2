@@ -4,7 +4,7 @@ import time
 import os
 import base64
 import pandas as pd
-from database import get_units, create_unit, upload_file_to_db, get_files, delete_file, rename_file, rename_unit, delete_unit, create_chat_session, save_chat_message, search_library, update_user_footprint
+from database import get_units, create_unit, upload_file_to_db, get_files, delete_file, rename_file, rename_unit, delete_unit, create_chat_session, save_chat_message, search_library, update_user_footprint, get_course_files
 
 @st.fragment
 def render_library(assistant):
@@ -40,6 +40,30 @@ def render_library(assistant):
     if not current_course_id:
         st.info("👈 Selecciona un Diplomado en la barra lateral para ver su Biblioteca.")
         return
+
+    # --- MAINTENANCE TOOLS ---
+    with st.expander("🔧 Mantenimiento de Archivos"):
+        c_m1, c_m2 = st.columns([0.8, 0.2])
+        c_m1.caption("Usa esto si tienes archivos antiguos con nombres raros (ej: Apuntes_Tema_1.txt)")
+        if c_m2.button("✨ Limpiar Nombres", help="Reemplaza guiones bajos por espacios en TODOS los archivos del curso"):
+             all_c_files = get_course_files(current_course_id)
+             count_ren = 0
+             with st.status("Analizando biblioteca...") as status:
+                 for f in all_c_files:
+                      old_n = f['name']
+                      new_n = old_n.replace("_", " ")
+                      while "  " in new_n: new_n = new_n.replace("  ", " ")
+                      
+                      if new_n != old_n:
+                          status.write(f"Renombrando: {old_n} -> {new_n}")
+                          rename_file(f['id'], new_n)
+                          count_ren += 1
+                 status.update(label=f"¡Terminado! {count_ren} archivos corregidos.", state="complete")
+                 if count_ren > 0:
+                     time.sleep(1.5)
+                     st.rerun()
+             if count_ren == 0:
+                 st.toast("Todo limpio. No se encontraron archivos para corregir.")
 
     # --- STATE MANAGEMENT ---
     if 'lib_current_unit_id' not in st.session_state: st.session_state['lib_current_unit_id'] = None
