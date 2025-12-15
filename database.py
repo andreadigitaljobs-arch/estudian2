@@ -192,7 +192,8 @@ def create_unit(course_id, name, parent_id=None):
         res = supabase.table("units").insert(data).execute()
         return res.data[0] if res.data else None
     except Exception as e:
-        st.error(f"Error creating unit: {e}")
+        # CONSULTANT FIX: Suppress noisy RLS errors on the UI for auto-creation
+        print(f"Error creating unit (Background): {e}") 
         return None
 
 def delete_unit(unit_id):
