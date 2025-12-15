@@ -1036,7 +1036,18 @@ st.markdown(CSS_STYLE, unsafe_allow_html=True)
 with st.sidebar:
     # --- 1. LOGO & USER ---
     # Left Aligned ("RAS con el resto")
-    st.image("assets/logo_sidebar.png", width=180)
+    @st.cache_data
+    def load_logo_cached():
+        if os.path.exists("assets/logo_sidebar.png"):
+            return Image.open("assets/logo_sidebar.png")
+        return None
+
+    logo_img = load_logo_cached()
+    if logo_img:
+        st.image(logo_img, width=180)
+    else:
+        st.markdown("### 🎓 E-Education")
+    
     st.markdown('<div style="height: 20px;"></div>', unsafe_allow_html=True) # Spacer
 
     if st.session_state.get('user'):
