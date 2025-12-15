@@ -521,8 +521,7 @@ def render_library(assistant):
     
         with tab1:
             upl_files = st.file_uploader(
-                "Archivos (PDF, TXT, Word, Imágenes):", 
-                type=['pdf', 'txt', 'docx', 'md', 'json', 'jpg', 'png', 'jpeg'],
+                "Archivos (Todos los formatos):",
                 accept_multiple_files=True
             )
             if st.button("Subir Archivos", type="primary"):
