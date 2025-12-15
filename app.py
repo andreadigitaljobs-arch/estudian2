@@ -149,24 +149,26 @@ if not st.session_state['user']:
     hero_b64 = get_b64_image("assets/messimo_hero_new.png") # Updated to user provided PNG
 
     # --- CUSTOM CSS FOR FULL BACKGROUND MESSIMO STYLE ---
-    st.markdown(f'''
+    
+    # 1. STATIC STYLES (WhatsApp Chat & Layout) - No f-string risk
+    st.markdown("""
         <style>
         /* WHATSAPP CHAT STYLES */
-        .chat-container {{
+        .chat-container {
             display: flex;
             flex-direction: column;
             gap: 10px;
             padding-bottom: 50px;
-        }}
-        .chat-row {{
+        }
+        .chat-row {
             display: flex;
             width: 100%;
             margin-bottom: 5px;
-        }}
-        .row-reverse {{
+        }
+        .row-reverse {
             flex-direction: row-reverse;
-        }}
-        .chat-bubble {{
+        }
+        .chat-bubble {
             padding: 10px 14px;
             border-radius: 10px;
             max-width: 75%;
@@ -176,37 +178,78 @@ if not st.session_state['user']:
             position: relative;
             box-shadow: 0 1px 1px rgba(0,0,0,0.1);
             font-family: inherit;
-        }}
-        .chat-bubble p {{
+        }
+        .chat-bubble p {
             margin: 0;
-        }}
-        .user-bubble {{
+        }
+        .user-bubble {
             background-color: #d9fdd3; /* WhatsApp Light Green */
             color: #111;
             border-top-right-radius: 0;
-        }}
-        .assistant-bubble {{
+        }
+        .assistant-bubble {
             background-color: #ffffff;
             color: #111;
             border-top-left-radius: 0;
             border: 1px solid #eee;
-        }}
+        }
         /* Code blocks in bubbles */
-        .chat-bubble pre {{
+        .chat-bubble pre {
             background: #f0f0f0;
             padding: 5px;
             border-radius: 5px;
             overflow-x: auto;
-        }}
+        }
+        
+        /* HIDE SCROLLBAR */
+        ::-webkit-scrollbar {
+            width: 0px;
+            background: transparent;
+        }
+        
+        /* RESTORE SCROLL ON CONTAINERS */
+        section[data-testid="stAppViewContainer"] {
+            overflow-y: auto !important;
+        }
+        
+        /* LOGIN CARD & ALIGNMENT */
+        .main .block-container {
+            padding-top: 0rem !important; 
+            transform: translateY(-50px) !important;
+            padding-bottom: 0vh !important;
+            max_width: 1200px !important;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            min-height: 10vh;
+        }
+        .login-card {
+            background-color: var(--secondary-background-color);
+            color: var(--text-color);
+            padding: 50px 40px; 
+            border-radius: 40px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+            margin-bottom: 0px !important; 
+            height: auto;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+        .stTextInput > div > div > input {
+            border-radius: 20px;
+        }
+        </style>
+    """, unsafe_allow_html=True)
 
-        /* 1. RESET & FULL BACKGROUND */
+    # 2. DYNAMIC STYLES (Hero Background) - Using f-string for variable
+    st.markdown(f'''
+        <style>
         .stApp {{
             background-image: url("data:image/png;base64,{hero_b64}");
-            background-size: countain; /* User wants no whitespace, so cover is best */
+            background-size: cover; /* Changed to cover for better fit */
             background-position: center;
             background-repeat: no-repeat;
-            /* overflow: auto;  RESTORED SCROLL */
         }}
+
         
         /* HIDE SCROLLBAR (Optional, keeping getting rid of ugly bars but allowing scroll) */
         ::-webkit-scrollbar {{
