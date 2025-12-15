@@ -1790,8 +1790,8 @@ with tab1:
         uploaded_files = st.file_uploader("Upload", type=['mp4', 'mov', 'avi', 'mkv', 'mp3', 'wav', 'm4a', 'flac', 'ogg', 'opus', 'waptt', 'aac', 'wma'], accept_multiple_files=True, key=st.session_state['transcriptor_key'], label_visibility="collapsed")
         
         if uploaded_files:
-            st.write("")
-            if st.button("Iniciar transcripción", key="btn1", use_container_width=True):
+            st.info(f"📂 {len(uploaded_files)} archivo(s) cargado(s). Listo para procesar.")
+            if st.button("▶️ Iniciar Transcripción", type="primary", key="btn_start_transcription", use_container_width=True):
                 # Validation
                 c_id = st.session_state.get('current_course_id')
                 if not c_id:
