@@ -2830,6 +2830,10 @@ with tab6:
     )
     st.markdown(tutor_html, unsafe_allow_html=True)
     
+    # --- SESSION STATE FOR ACTIVE FILES ---
+    if 'active_context_files' not in st.session_state:
+        st.session_state['active_context_files'] = []
+
     # --- FETCH MESSAGES FROM DB IF SESSION ACTIVE ---
     from database import get_chat_messages, save_chat_message
     
@@ -2899,8 +2903,21 @@ with tab6:
                     st.rerun()
             
             st.divider()
-            st.markdown("### 📎 Adjunto rápido")
-            tutor_file = st.file_uploader("Subir archivo al chat", type=['pdf', 'txt', 'png', 'jpg'], key="tutor_up")
+            st.markdown("### 📎 Contexto Activo")
+            
+            # 1. SHOW ACTIVE FILES
+            if st.session_state['active_context_files']:
+                for idx, f in enumerate(st.session_state['active_context_files']):
+                    c1, c2 = st.columns([0.8, 0.2])
+                    c1.markdown(f"📄 `{f['name']}`")
+                    if c2.button("✖️", key=f"del_ctx_{idx}", help="Quitar archivo"):
+                        st.session_state['active_context_files'].pop(idx)
+                        st.rerun()
+            else:
+                st.caption("No hay archivos en memoria.")
+
+            st.markdown("### ☁️ Subir Nuevo")
+            tutor_file = st.file_uploader("Agregar a contexto", type=['pdf', 'txt', 'png', 'jpg'], key="tutor_up")
             
             if st.button("🗑️ Limpiar pantalla", key="clear_chat"):
                  # This only clears screen, to delete history use delete session
@@ -2910,7 +2927,7 @@ with tab6:
                  pass
 
         with col_chat:
-            # Display Chat History
+            # Display Chat History 
             for msg in st.session_state['tutor_chat_history']:
                 with st.chat_message(msg['role']):
                     st.markdown(msg['content'])
@@ -2926,16 +2943,10 @@ with tab6:
                      # Context Prep
                      gl_ctx, _ = get_global_context()
                      
-                     # File Context
-                     # We need to reconstruct 'chat_files' from state or upload? 
-                     # Only if upload was just handled? No, 'tutor_file' is cleared on rerun.
-                     # But 'chat_context_file' persists.
-                     # AND we might have 'current_uploaded_file' if we want to handle file uploads properly.
-                     # For now, let's just handle 'chat_context_file' (Linked File).
-                     # Real-time upload (tutor_file) is harder with Rerun pattern unless we save it to session state.
-                     # Assuming 'chat_context_file' is primary context.
+                     # File Context - USE PERSISTENT LIST
+                     gen_files = st.session_state.get('active_context_files', [])
                      
-                     gen_files = []
+                     # Add Linked Library File if exists (Ephemeral)
                      if st.session_state.get('chat_context_file'):
                          l_f = st.session_state['chat_context_file']
                          c_t = l_f.get('content') or l_f.get('content_text') or ""
@@ -2943,7 +2954,9 @@ with tab6:
                          if not c_t and 'id' in l_f:
                              from database import get_file_content
                              c_t = get_file_content(l_f['id'])
-                         gen_files.append({"name": l_f['name'], "content": c_t})
+                         # Check duplicate
+                         if not any(f['name'] == l_f['name'] for f in gen_files):
+                             gen_files.append({"name": l_f['name'], "content": c_t})
                      
                      with st.chat_message("assistant"):
                         with st.spinner("El profesor está pensando..."):
@@ -2965,19 +2978,35 @@ with tab6:
                  
                  st.session_state['trigger_ai_response'] = False # Safety
 
-            # User Input
-            if prompt := st.chat_input(f"Pregunta sobre {current_sess['name']}..."):
-                # 1. Add User Message
-                # Save to DB FIRST
-                save_chat_message(current_sess['id'], "user", prompt)
+    # --- INPUT MOVED OUTSIDE OF COLUMNS (STICKY FOOTER FIX) ---
+    if prompt := st.chat_input(f"Pregunta sobre {current_sess['name']}..."):
+        # 1. Handle New Uploads logic
+        if tutor_file:
+            try:
+                content = ""
+                if tutor_file.type == "application/pdf":
+                    content = assistant.extract_text_from_pdf(tutor_file.getvalue(), tutor_file.type)
+                else:
+                    try:
+                       content = tutor_file.getvalue().decode("utf-8", errors='ignore')
+                    except:
+                       content = "Archivo binario no procesado."
                 
-                # Update UI State
-                st.session_state['tutor_chat_history'].append({"role": "user", "content": prompt})
-                with st.chat_message("user"):
-                    st.markdown(prompt)
-                    
-                # 2. Trigger Response
-                st.session_state['trigger_ai_response'] = True
-                st.rerun()
+                # Deduplicate by name
+                if not any(f['name'] == tutor_file.name for f in st.session_state['active_context_files']):
+                    st.session_state['active_context_files'].append({"name": tutor_file.name, "content": content})
+                    st.toast(f"📎 Archivo {tutor_file.name} guardado en memoria.")
+            except Exception as e:
+                st.error(f"Error leyendo archivo: {e}")
+        
+        # 2. Add User Message
+        save_chat_message(current_sess['id'], "user", prompt)
+        
+        # Update UI State
+        st.session_state['tutor_chat_history'].append({"role": "user", "content": prompt})
+        
+        # 3. Trigger Response
+        st.session_state['trigger_ai_response'] = True
+        st.rerun()
 
 # Force Reload Triggered
