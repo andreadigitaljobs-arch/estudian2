@@ -8,11 +8,21 @@ import datetime
 
 # Fix [Errno 24] Too many open files: Use st.cache_resource
 # TTL 1h. If it fails, it raises Exception and DOES NOT CACHE.
-@st.cache_resource(ttl=3600)
+# CACHING REMOVED to ensure Auth state is always fresh per-request/per-user
 def init_supabase():
     url = st.secrets["SUPABASE_URL"]
     key = st.secrets["SUPABASE_KEY"]
-    return create_client(url, key)
+    client = create_client(url, key)
+    
+    # Auto-Hydrate from Session if available
+    if 'supabase_session' in st.session_state and st.session_state['supabase_session']:
+        try:
+            sess = st.session_state['supabase_session']
+            client.auth.set_session(sess.access_token, sess.refresh_token)
+            client.postgrest.auth(sess.access_token)
+        except: pass
+        
+    return client
 
 
 # Auth Hydration Helper (Separate from Init)
