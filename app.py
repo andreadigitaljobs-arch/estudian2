@@ -2059,17 +2059,13 @@ with tab2:
              st.info("Selecciona Espacio de Trabajo.")
         else:
              # Fetch Transcripts from DB
-             from database import get_units, get_files, get_file_content, upload_file_to_db
+             from database import get_units, get_files, get_file_content, upload_file_to_db, get_course_files
              
              units = get_units(c_id)
-             # CONSULTANT FIX: Fetch from NEW folders (Audios/Videos) + Legacy "Transcripts"
-             target_folders = ["Transcriptor - Audios", "Transcriptor - Videos", "Transcripts"]
              
-             transcript_files = []
-             for t_name in target_folders:
-                 u_found = next((u for u in units if u['name'] == t_name), None)
-                 if u_found:
-                     transcript_files.extend(get_files(u_found['id']))
+             # GLOBAL SEARCH: Fetch "type=transcript" from ANY folder in this course
+             # This finds files even if user has moved/renamed them or put them in custom folders
+             transcript_files = get_course_files(c_id, type_filter="transcript")
              
              # Check Global Memory
              gl_ctx, gl_count = get_global_context()

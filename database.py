@@ -536,3 +536,27 @@ def save_chat_message(session_id, role, content):
     except Exception as e:
         print(f"Error saving chat message: {e}")
         return False
+
+def get_course_files(course_id, type_filter=None):
+    """
+    Fetches all files in a course, optionally filtered by type.
+    """
+    supabase = init_supabase()
+    try:
+        # 1. Get all unit IDs
+        units = supabase.table("units").select("id").eq("course_id", course_id).execute().data
+        if not units: return []
+        
+        unit_ids = [u['id'] for u in units]
+        
+        # 2. Query files in these units
+        query = supabase.table("library_files").select("id, name, type, unit_id").in_("unit_id", unit_ids)
+        
+        if type_filter:
+            query = query.eq("type", type_filter)
+            
+        res = query.order("created_at", desc=True).execute()
+        return res.data
+    except Exception as e:
+        print(f"Error fetching course files: {e}")
+        return []
