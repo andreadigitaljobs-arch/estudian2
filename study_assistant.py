@@ -438,7 +438,7 @@ Google ofrece una capa gratuita generosa, pero limitada.
         5. **USO DE FUENTES**:
            - Si usas la biblioteca, cita: "Según el archivo [Nombre]...".
            - Si no hay info, usa tu criterio experto mundial.
-        """
+        
         HISTORIAL DE CONVERSACIÓN:
         """
         

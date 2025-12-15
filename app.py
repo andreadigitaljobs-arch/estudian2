@@ -3007,8 +3007,8 @@ with tab6:
             else:
                 st.caption("No hay archivos en memoria.")
 
-            st.markdown("### ☁️ Subir Nuevo")
-            tutor_file = st.file_uploader("Agregar a contexto", type=['pdf', 'txt', 'png', 'jpg'], key="tutor_up")
+            # st.markdown("### ☁️ Subir Nuevo") # Removed for Floating Button
+            # tutor_file = st.file_uploader("Agregar a contexto", type=['pdf', 'txt', 'png', 'jpg'], key="tutor_up")
             
             if st.button("🗑️ Limpiar pantalla", key="clear_chat"):
                  # This only clears screen, to delete history use delete session
@@ -3016,6 +3016,73 @@ with tab6:
                  # For now, just reset local state, but DB remains? 
                  # User asked for "create different chats".
                  pass
+
+        
+        # --- FLOATING UPLOAD BUTTON (ChatGPT Style) ---
+        st.markdown("""
+        <style>
+        div[data-testid="stPopover"] {
+            position: fixed !important;
+            bottom: 70px !important;
+            left: 20px !important; 
+            z-index: 99999 !important;
+        }
+        div[data-testid="stPopover"] button {
+            background-color: #f0f2f6;
+            border: 1px solid #ccc;
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        div[data-testid="stPopover"] button:hover {
+            border-color: #ff4b4b;
+            color: #ff4b4b;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+        
+        with st.popover("➕", help="Adjuntar archivos al contexto"):
+            st.markdown("### 📎 Adjuntar Archivos")
+            st.caption("Los archivos se agregarán al contexto de la IA.")
+            
+            new_uploads = st.file_uploader("Sube PDFs, TXT o Imágenes", type=['pdf', 'txt', 'md', 'py', 'png', 'jpg'], accept_multiple_files=True, key="float_up_widget")
+            
+            if new_uploads:
+                for up_file in new_uploads:
+                    if not any(f['name'] == up_file.name for f in st.session_state['active_context_files']):
+                        with st.spinner(f"Procesando {up_file.name}..."):
+                            content_text = ""
+                            if up_file.type == "application/pdf":
+                                try:
+                                    import PyPDF2
+                                    pdf_reader = PyPDF2.PdfReader(up_file)
+                                    for page in pdf_reader.pages:
+                                        content_text += page.extract_text() + "\n"
+                                except:
+                                     # Fallback to Assistant OCR if imports fail or result empty
+                                     try:
+                                         content_text = assistant.extract_text_from_pdf(up_file.getvalue())
+                                     except:
+                                         content_text = "[Error leyendo PDF]"
+                            else:
+                                try:
+                                    content_text = up_file.read().decode("utf-8")
+                                except:
+                                    content_text = f"[Archivo Binario/Imagen: {up_file.name}]"
+                            
+                            st.session_state['active_context_files'].append({
+                                "name": up_file.name,
+                                "content": content_text
+                            })
+                            st.success(f"✅ {up_file.name} agregado.")
+                
+                if st.button("Limpiar subida"):
+                    st.rerun()
 
         with col_chat:
             # Display Chat History (WhatsApp Style)
