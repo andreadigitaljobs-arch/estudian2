@@ -1970,11 +1970,14 @@ with tab2:
              from database import get_units, get_files, get_file_content, upload_file_to_db
              
              units = get_units(c_id)
-             t_unit = next((u for u in units if u['name'] == "Transcripts"), None)
+             # CONSULTANT FIX: Fetch from NEW folders (Audios/Videos) + Legacy "Transcripts"
+             target_folders = ["Transcriptor - Audios", "Transcriptor - Videos", "Transcripts"]
              
              transcript_files = []
-             if t_unit:
-                 transcript_files = get_files(t_unit['id'])
+             for t_name in target_folders:
+                 u_found = next((u for u in units if u['name'] == t_name), None)
+                 if u_found:
+                     transcript_files.extend(get_files(u_found['id']))
              
              # Check Global Memory
              gl_ctx, gl_count = get_global_context()
@@ -2102,11 +2105,13 @@ with tab3:
             
             # Fetch Transcripts (Support New and Old Folder Names)
             units = get_units(c_id)
-            t_unit = next((u for u in units if u['name'] in ["Transcriptor", "Transcripts"]), None)
+            target_folders = ["Transcriptor - Audios", "Transcriptor - Videos", "Transcripts"]
             
             transcript_files = []
-            if t_unit:
-                transcript_files = get_files(t_unit['id'])
+            for t_name in target_folders:
+                 u_found = next((u for u in units if u['name'] == t_name), None)
+                 if u_found:
+                     transcript_files.extend(get_files(u_found['id']))
             
             # Check Global Memory
             gl_ctx, gl_count = get_global_context()
