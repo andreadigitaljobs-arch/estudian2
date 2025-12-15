@@ -2881,7 +2881,7 @@ with tab6:
         # Convert DB format to Chat format if needed (DB: role, content. Chat: role, content. Match!)
         st.session_state['tutor_chat_history'] = db_msgs
         
-                st.session_state['trigger_ai_response'] = False
+
 
 
         col_chat, col_info = st.columns([2, 1], gap="large")
