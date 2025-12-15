@@ -3282,13 +3282,23 @@ with tab6:
                 if (anchor) {
                     anchor.scrollIntoView({ behavior: 'smooth', block: 'end' });
                 } else {
-                     // Fallback Aggressive Scroll
                      const selectors = ['section[data-testid="stAppViewContainer"]', '.main', 'section.main'];
                      for (const sel of selectors) {
                         const el = window.parent.document.querySelector(sel);
                         if (el) el.scrollTop = el.scrollHeight;
                      }
                 }
+                
+                // FOCUS INPUT
+                try {
+                    const chatInput = window.parent.document.querySelector('[data-testid="stChatInput"]');
+                    if (chatInput) {
+                        const textArea = chatInput.querySelector('textarea');
+                        if (textArea) {
+                            setTimeout(() => { textArea.focus(); }, 100); // Small delay to ensure scroll finishes or UI stabilizes
+                        }
+                    }
+                } catch(e) { console.error("Focus failed", e); }
             };
             
             window.parent.document.body.appendChild(btn);
