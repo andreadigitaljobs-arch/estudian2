@@ -30,12 +30,13 @@ class StudyAssistant:
         2. "intermedio": 10-12 bullets con los conceptos clave explicados brevemente.
         3. "profundo": Un resumen detallado (aprox 1 página) con ejemplos, estructura clara, y conectando conceptos con el Contexto Global si aplica.
         
-        FORMATO DE SALIDA (JSON ÚNICAMENTE):
+        FORMATO DE SALIDA (JSON ÚNICAMENTE - NO PYTHON):
         {{
-            "ultracorto": "Markdown string...",
-            "intermedio": "Markdown string...",
-            "profundo": "Markdown string..."
+            "ultracorto": "Texto breve con \\n para saltos...",
+            "intermedio": "Texto medio...",
+            "profundo": "Texto largo..."
         }}
+        (IMPORTANTE: Usa comillas dobles para las claves y valores. Escapa las comillas internas con \\". NO uses triple comilla \"\"\")
 
         TRANSCRIPCIÓN:
         {transcript_text} 
@@ -43,9 +44,24 @@ class StudyAssistant:
         
         try:
             response = self.model.generate_content(prompt)
-            # Clean response to ensure valid JSON parsing
-            clean_text = response.text.replace("```json", "").replace("```", "").strip()
-            return json.loads(clean_text)
+            text = response.text
+            
+            # 1. Cleaning
+            clean_text = text.replace("```json", "").replace("```", "").strip()
+            
+            # 2. Extract JSON block if surrounded by text
+            import re
+            match = re.search(r'\{.*\}', clean_text, re.DOTALL)
+            if match:
+                clean_text = match.group(0)
+            
+            # 3. Parsing Strategy
+            try:
+                return json.loads(clean_text)
+            except:
+                # Fallback: Try parsing as Python Dictionary (handles triple quotes)
+                import ast
+                return ast.literal_eval(clean_text)
             
         except ResourceExhausted:
             return {
