@@ -1359,8 +1359,10 @@ with st.sidebar:
         const tabList = doc.querySelector('div[role="tablist"]');
         
         if (tabList && !doc.getElementById('tab-scroll-left')) {
-            // Style the tabList for scroll
-            tabList.style.overflowX = 'auto';
+            // Style the tabList for scroll - FORCE OVERRIDE GLOBAL CSS
+            tabList.style.setProperty('overflow-x', 'auto', 'important');
+            tabList.style.setProperty('overflow-y', 'hidden', 'important');
+            tabList.style.setProperty('white-space', 'nowrap', 'important');
             tabList.style.scrollBehavior = 'smooth';
             tabList.style.scrollbarWidth = 'none'; // Hide scrollbar
             
@@ -1368,13 +1370,19 @@ with st.sidebar:
             const btnLeft = doc.createElement('button');
             btnLeft.id = 'tab-scroll-left';
             btnLeft.innerHTML = '◀';
-            btnLeft.onclick = () => tabList.scrollBy({left: -200, behavior: 'smooth'});
+            btnLeft.onclick = (e) => {
+                e.preventDefault();
+                tabList.scrollBy({left: -200, behavior: 'smooth'});
+            };
             
             // Create Right Button
             const btnRight = doc.createElement('button');
             btnRight.id = 'tab-scroll-right';
             btnRight.innerHTML = '▶';
-            btnRight.onclick = () => tabList.scrollBy({left: 200, behavior: 'smooth'});
+            btnRight.onclick = (e) => {
+                 e.preventDefault();
+                 tabList.scrollBy({left: 200, behavior: 'smooth'});
+            };
             
             // Shared Styles
             const btnStyle = `
