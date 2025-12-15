@@ -3146,15 +3146,22 @@ with tab6:
                      const textArea = chatInput.querySelector('textarea');
                      if (textArea && textArea.parentElement) {
                          const capsule = textArea.parentElement;
-                         if (!capsule.contains(targetPopover)) {
-                             targetPopover.style.position = 'relative';
-                             targetPopover.style.margin = '0 8px 0 0'; // More spacing
-                             targetPopover.style.display = 'flex';
-                             targetPopover.style.alignItems = 'center';
-                             targetPopover.style.zIndex = '10';
-                             // Insert at start of CAPSULE (Generic wrapper)
-                             capsule.insertBefore(targetPopover, capsule.firstChild);
-                             textArea.style.paddingLeft = '0px';
+                     // 1. INJECT BUTTON
+                     if (!capsule.contains(targetPopover)) {
+                         targetPopover.style.position = 'relative';
+                         targetPopover.style.margin = '0 5px 0 5px';
+                         targetPopover.style.display = 'flex';
+                         targetPopover.style.alignItems = 'center';
+                         targetPopover.style.zIndex = '10';
+                         capsule.insertBefore(targetPopover, capsule.firstChild);
+                         
+                         // FORCE ALIGNMENT
+                         textArea.style.paddingLeft = '5px';
+                         textArea.style.textAlign = 'left';
+                         capsule.style.justifyContent = 'flex-start';
+                         capsule.style.alignItems = 'center';
+                         
+                         // 2. FOCUS FIX: Robust Listener
                          }
                      }
                  }
