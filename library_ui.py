@@ -303,7 +303,23 @@ def render_library(assistant):
                     st.write(f"## {icon}")
                 
                 with c2:
-                    st.markdown(f"**{f['name']}**")
+                    # RENAME LOGIC
+                    ren_key = f"ren_file_{f['id']}"
+                    if st.session_state.get(ren_key):
+                        with st.container(border=True):
+                            new_name = st.text_input("Nuevo nombre", value=f['name'], key=f"in_{ren_key}", label_visibility="collapsed")
+                            col_s, col_c = st.columns([1, 1])
+                            if col_s.button("💾", key=f"sav_{ren_key}", help="Guardar", use_container_width=True):
+                                if rename_file(f['id'], new_name):
+                                    st.toast("Renombrado!")
+                                    del st.session_state[ren_key]
+                                    st.rerun()
+                            if col_c.button("❌", key=f"can_{ren_key}", help="Cancelar", use_container_width=True):
+                                del st.session_state[ren_key]
+                                st.rerun()
+                    else:
+                        st.markdown(f"**{f['name']}**")
+                    
                     with st.expander("Ver contenido"):
                         safe_content = f.get('content') or f.get('content_text') or ""
                         
@@ -385,6 +401,10 @@ def render_library(assistant):
                         st.markdown(f"<div style='margin-bottom: 10px; font-weight: bold;'>{f['name']}</div>", unsafe_allow_html=True)
                         
                         # Actions
+                        if st.button("✏️ Renombrar", key=f"btn_ren_{f['id']}_{token}", use_container_width=True):
+                            st.session_state[f"ren_file_{f['id']}"] = True
+                            st.rerun()
+
                         if st.button("🤖 Resolver Tarea", key=f"btn_task_{f['id']}_{token}", use_container_width=True):
                             st.session_state['chat_context_file'] = f
                             st.session_state['redirect_target_name'] = "Ayudante de Tareas"
