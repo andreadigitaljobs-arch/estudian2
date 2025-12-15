@@ -3156,10 +3156,12 @@ with tab6:
                          capsule.insertBefore(targetPopover, capsule.firstChild);
                          
                          // FORCE ALIGNMENT
-                         textArea.style.paddingLeft = '5px';
-                         textArea.style.textAlign = 'left';
-                         capsule.style.justifyContent = 'flex-start';
-                         capsule.style.alignItems = 'center';
+                         textArea.style.setProperty('padding-left', '10px', 'important');
+                         textArea.style.setProperty('text-align', 'left', 'important');
+                         textArea.style.setProperty('margin-left', '0px', 'important');
+                         
+                         capsule.style.setProperty('justify-content', 'flex-start', 'important');
+                         capsule.style.setProperty('align-items', 'center', 'important');
                          
                          // 2. FOCUS FIX: Robust Listener
                          }
