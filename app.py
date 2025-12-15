@@ -2972,9 +2972,11 @@ with tab6:
         # Load History from DB (Sync)
         # We re-fetch to ensure we have the latest state relative to DB
         # Optimization: Could check if len mismatch, but fetching is safer for consistency.
-        db_msgs = get_chat_messages(current_sess['id'])
-        # Convert DB format to Chat format if needed (DB: role, content. Chat: role, content. Match!)
-        st.session_state['tutor_chat_history'] = db_msgs
+        # Optimization: Only fetch if we switched session or history not loaded
+        if 'tutor_chat_history' not in st.session_state or st.session_state.get('loaded_sess_id') != current_sess['id']:
+            db_msgs = get_chat_messages(current_sess['id'])
+            st.session_state['tutor_chat_history'] = db_msgs
+            st.session_state['loaded_sess_id'] = current_sess['id']
         
 
 
