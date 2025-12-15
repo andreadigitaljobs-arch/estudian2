@@ -151,6 +151,54 @@ if not st.session_state['user']:
     # --- CUSTOM CSS FOR FULL BACKGROUND MESSIMO STYLE ---
     st.markdown(f'''
         <style>
+        /* WHATSAPP CHAT STYLES */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding-bottom: 50px;
+        }
+        .chat-row {
+            display: flex;
+            width: 100%;
+            margin-bottom: 5px;
+        }
+        .row-reverse {
+            flex-direction: row-reverse;
+        }
+        .chat-bubble {
+            padding: 10px 14px;
+            border-radius: 10px;
+            max-width: 75%;
+            word-wrap: break-word;
+            font-size: 16px;
+            line-height: 1.5;
+            position: relative;
+            box-shadow: 0 1px 1px rgba(0,0,0,0.1);
+            font-family: inherit;
+        }
+        .chat-bubble p {
+            margin: 0;
+        }
+        .user-bubble {
+            background-color: #d9fdd3; /* WhatsApp Light Green */
+            color: #111;
+            border-top-right-radius: 0;
+        }
+        .assistant-bubble {
+            background-color: #ffffff;
+            color: #111;
+            border-top-left-radius: 0;
+            border: 1px solid #eee;
+        }
+        /* Code blocks in bubbles */
+        .chat-bubble pre {
+            background: #f0f0f0;
+            padding: 5px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+
         /* 1. RESET & FULL BACKGROUND */
         .stApp {{
             background-image: url("data:image/png;base64,{hero_b64}");
@@ -2927,11 +2975,71 @@ with tab6:
                  pass
 
         with col_chat:
-            # Display Chat History 
+            # Display Chat History (WhatsApp Style)
+            import markdown
+            chat_html = '<div class="chat-container">'
             for msg in st.session_state['tutor_chat_history']:
-                with st.chat_message(msg['role']):
-                    st.markdown(msg['content'])
+                is_user = msg['role'] == 'user'
+                row_class = "row-reverse" if is_user else ""
+                bubble_class = "user-bubble" if is_user else "assistant-bubble"
+                
+                # Convert Markdown to HTML
+                # Handling None content safety
+                raw_content = msg.get('content', '') or ''
+                # Convert
+                try:
+                    msg_html = markdown.markdown(raw_content, extensions=['fenced_code', 'tables'])
+                except:
+                    msg_html = raw_content
+
+                chat_html += f"""
+                <div class="chat-row {row_class}">
+                    <div class="chat-bubble {bubble_class}">
+                        {msg_html}
+                    </div>
+                </div>
+                """
+            chat_html += '</div>'
+            st.markdown(chat_html, unsafe_allow_html=True)
             
+            # SCROLL BUTTON
+            st.components.v1.html("""
+            <style>
+            .scroll-btn {
+                position: fixed;
+                bottom: 110px;
+                right: 30px;
+                z-index: 9999;
+                width: 45px;
+                height: 45px;
+                border-radius: 50%;
+                background: #fff;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+                border: 1px solid #ddd;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 24px;
+                transition: transform 0.2s;
+            }
+            .scroll-btn:hover {
+                transform: scale(1.1);
+                background: #f8f8f8;
+            }
+            </style>
+            <button class="scroll-btn" onclick="scrollBottom()">⬇️</button>
+            <script>
+            function scrollBottom() {
+                // Target the Main Streamlit Container
+                const container = window.parent.document.querySelector('section[data-testid="stAppViewContainer"]');
+                if (container) {
+                    container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+                }
+            }
+            </script>
+            """, height=0)
+
             # --- AI GENERATION BLOCK (Context-Aware) ---
             if st.session_state.get('trigger_ai_response'):
                  # Logic to generate response
