@@ -3149,11 +3149,14 @@ with tab6:
             });
 
             if (pasteUploaderWrapper) {
-                // Aggressively Hide
-                pasteUploaderWrapper.style.setProperty('display', 'none', 'important');
+                // Prevent Infinite Loop: Only hide if not already hidden
+                if (pasteUploaderWrapper.style.display !== 'none') {
+                    pasteUploaderWrapper.style.setProperty('display', 'none', 'important');
+                }
                 
                 if (pasteInput) {
                     // Global Paste Listener
+                    // We assign this safely
                     window.parent.document.onpaste = (event) => {
                         const items = (event.clipboardData || event.originalEvent.clipboardData).items;
                         for (index in items) {
