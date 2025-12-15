@@ -2632,7 +2632,13 @@ with tab6:
                  st.session_state['tutor_chat_history'].append({"role": "user", "content": init_prompt})
                  
                  # 4. Update Footprint (Sidebar Access)
-                 update_user_footprint(st.session_state['user'].id, 'chat', short_title, new_session['id'], "Nueva consulta")
+                 footprint = {
+                     "type": "chat",
+                     "title": short_title,
+                     "target_id": new_session['id'],
+                     "subtitle": "Nueva consulta"
+                 }
+                 update_user_footprint(st.session_state['user'].id, footprint)
                  
                  # 5. Trigger AI Response
                  st.session_state['trigger_ai_response'] = True
