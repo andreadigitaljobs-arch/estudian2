@@ -6,6 +6,7 @@ import base64
 import pandas as pd
 from database import get_units, create_unit, upload_file_to_db, get_files, delete_file, rename_file, rename_unit, delete_unit, create_chat_session, save_chat_message, search_library, update_user_footprint
 
+@st.fragment
 def render_library(assistant):
     """
     Renders the dedicated "Digital Library" (Drive-style) tab.
@@ -136,7 +137,7 @@ def render_library(assistant):
              st.session_state["lib_current_unit_id"] = None
              st.session_state["lib_current_unit_name"] = None
              st.session_state["lib_breadcrumbs"] = []
-             st.rerun()
+             # st.rerun() # OPTIMIZATION: Fragment auto-reruns
 
     with col_nav[1]:
         # Back Button (Only if not at root)
@@ -159,7 +160,7 @@ def render_library(assistant):
                     # Fallback
                     st.session_state['lib_current_unit_id'] = None
                 
-                st.rerun()
+                # st.rerun() # OPTIMIZATION: Fragment auto-reruns
 
     # --- FOLDER VIEW ---
     subfolders = get_units(current_course_id, parent_id=current_unit_id)
@@ -179,11 +180,10 @@ def render_library(assistant):
                         update_user_footprint(st.session_state['user'].id, {
                            "type": "unit",
                            "title": unit['name'],
-                           "target_id": unit['id'],
                            "subtitle": "Explorando carpeta"
                         })
                         
-                    st.rerun()
+                    # st.rerun() # OPTIMIZATION: Fragment auto-reruns
                     
         # Management Section (Rename & Delete)
         with st.expander("⚙️ Gestión de Carpetas (Renombrar/Borrar)"):
