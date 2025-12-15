@@ -1848,18 +1848,40 @@ with tab1:
             
             if c_id:
                 from database import get_units, create_unit, upload_file_to_db, get_files
-                units = get_units(c_id)
+                # RECURSIVE UNITS FETCH
+                units = get_units(c_id, fetch_all=True) # Fetch ALL folders
                 if units:
-                    u_map = {u['name']: u['id'] for u in units}
-                    # Default: Try to find 'Transcriptor' folder or 'Bibliografía'
-                    def_idx = 0
-                    keys = list(u_map.keys())
-                    for i, k in enumerate(keys):
-                        if "Transcriptor" in k:
-                            def_idx = i
-                            break
+                    # Build Path Map
+                    id_to_unit = {u['id']: u for u in units}
                     
-                    sel_name = st.selectbox("📂 ¿Dónde guardar la transcripción?", keys, index=def_idx, help="Elige la carpeta de destino")
+                    def get_path(u):
+                         parts = [u['name']]
+                         curr = u
+                         # Safety limit for depth
+                         depth = 0
+                         while curr.get('parent_id') and depth < 10:
+                             pid = curr['parent_id']
+                             parent = id_to_unit.get(pid)
+                             if parent:
+                                 parts.insert(0, parent['name'])
+                                 curr = parent
+                                 depth += 1
+                             else:
+                                 break
+                         return " / ".join(parts)
+                    
+                    # Create Map: Path String -> ID
+                    u_map = {get_path(u): u['id'] for u in units}
+                    keys = sorted(list(u_map.keys()))
+                    
+                    # Default
+                    def_idx = 0
+                    for i, k in enumerate(keys):
+                         if "Transcriptor" in k:
+                             def_idx = i
+                             break
+                    
+                    sel_name = st.selectbox("📂 ¿Dónde guardar la transcripción?", keys, index=def_idx, help="Elige cualquier carpeta o subcarpeta")
                     selected_unit_id = u_map[sel_name]
                 else:
                     st.warning("⚠️ Tu diplomado no tiene carpetas. Se crearán automáticamente.")
