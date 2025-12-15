@@ -2277,75 +2277,75 @@ with tab4:
                 input_text_quiz = st.session_state.get(f"q_txt_{q_key}", "")
                 img_files = st.session_state.get(f"up4_{q_key}", [])
                 has_text = bool(input_text_quiz.strip())
-            progress_bar = st.progress(0)
-            status = st.empty()
-            results = [] 
+                progress_bar = st.progress(0)
+                status = st.empty()
+                results = [] 
             
-            # 1. Process Queue
-            items_to_process = []
+                # 1. Process Queue
+                items_to_process = []
             
-            # Add Text Item if exists
-            if has_text:
-                items_to_process.append({"type": "text", "obj": input_text_quiz, "name": "Pregunta de Texto"})
+                # Add Text Item if exists
+                if has_text:
+                    items_to_process.append({"type": "text", "obj": input_text_quiz, "name": "Pregunta de Texto"})
 
-            # Add Uploaded Files
-            if img_files:
-                for f in img_files:
-                    items_to_process.append({"type": "upload", "obj": f, "name": f.name})
+                # Add Uploaded Files
+                if img_files:
+                    for f in img_files:
+                        items_to_process.append({"type": "upload", "obj": f, "name": f.name})
             
-            # Add Pasted Images
-            for i, p_img in enumerate(st.session_state['pasted_images']):
-                 items_to_process.append({"type": "paste", "obj": p_img, "name": f"Captura_Pegada_{i+1}.png"})
+                # Add Pasted Images
+                for i, p_img in enumerate(st.session_state['pasted_images']):
+                     items_to_process.append({"type": "paste", "obj": p_img, "name": f"Captura_Pegada_{i+1}.png"})
 
-            for i, item in enumerate(items_to_process):
-                # Calculate percentages
-                current_percent = int((i / len(items_to_process)) * 100)
-                status.markdown(f"**Analizando item {i+1} de {len(items_to_process)}... ({current_percent}%)**")
-                progress_bar.progress(i / len(items_to_process))
+                for i, item in enumerate(items_to_process):
+                    # Calculate percentages
+                    current_percent = int((i / len(items_to_process)) * 100)
+                    status.markdown(f"**Analizando item {i+1} de {len(items_to_process)}... ({current_percent}%)**")
+                    progress_bar.progress(i / len(items_to_process))
                 
-                try:
-                    full_answer = ""
-                    disp_img = None
+                    try:
+                        full_answer = ""
+                        disp_img = None
                     
-                    if item["type"] == "text":
-                         # Text Only
-                         full_answer = assistant.solve_quiz(question_text=item["obj"], global_context=gl_ctx)
-                         disp_img = None
+                        if item["type"] == "text":
+                             # Text Only
+                             full_answer = assistant.solve_quiz(question_text=item["obj"], global_context=gl_ctx)
+                             disp_img = None
                     
-                    else:
-                        # Image Processing
-                        temp_img_path = f"temp_quiz_{i}.png"
-                        if item["type"] == "upload":
-                            with open(temp_img_path, "wb") as f: f.write(item["obj"].getbuffer())
                         else:
-                            item["obj"].save(temp_img_path, format="PNG")
+                            # Image Processing
+                            temp_img_path = f"temp_quiz_{i}.png"
+                            if item["type"] == "upload":
+                                with open(temp_img_path, "wb") as f: f.write(item["obj"].getbuffer())
+                            else:
+                                item["obj"].save(temp_img_path, format="PNG")
                         
-                        # Load for display
-                        disp_img = Image.open(temp_img_path).copy()
+                            # Load for display
+                            disp_img = Image.open(temp_img_path).copy()
                         
-                        # Solve with Image
-                        full_answer = assistant.solve_quiz(image_path=temp_img_path, global_context=gl_ctx)
+                            # Solve with Image
+                            full_answer = assistant.solve_quiz(image_path=temp_img_path, global_context=gl_ctx)
                         
-                        # Cleanup Temp
-                        if os.path.exists(temp_img_path):
-                             try: os.remove(temp_img_path)
-                             except: pass
+                            # Cleanup Temp
+                            if os.path.exists(temp_img_path):
+                                 try: os.remove(temp_img_path)
+                                 except: pass
 
-                    # Robust Regex Parsing for Short Answer
-                    import re
-                    short_answer = "Respuesta no detectada (Ver detalle)"
-                    match = re.search(r"\*\*Respuesta Correcta:?\*\*?\s*(.*)", full_answer, re.IGNORECASE)
-                    if match:
-                         short_answer = match.group(1).strip()
+                        # Robust Regex Parsing for Short Answer
+                        import re
+                        short_answer = "Respuesta no detectada (Ver detalle)"
+                        match = re.search(r"\*\*Respuesta Correcta:?\*\*?\s*(.*)", full_answer, re.IGNORECASE)
+                        if match:
+                             short_answer = match.group(1).strip()
                     
-                    results.append({"name": item["name"], "full": full_answer, "short": short_answer, "img_obj": disp_img})
+                        results.append({"name": item["name"], "full": full_answer, "short": short_answer, "img_obj": disp_img})
                 
-                except Exception as e:
-                    results.append({"name": item["name"], "full": f"Error: {e}", "short": "Error", "img_obj": None})
+                    except Exception as e:
+                        results.append({"name": item["name"], "full": f"Error: {e}", "short": "Error", "img_obj": None})
                 
-            progress_bar.progress(1.0)
-            status.success("¡Análisis Terminado! (100%)")
-            st.session_state['quiz_results'] = results # Save results
+                progress_bar.progress(1.0)
+                status.success("¡Análisis Terminado! (100%)")
+                st.session_state['quiz_results'] = results # Save results
 
         # --- PERSISTENT RESULTS DISPLAY ---
         if st.session_state['quiz_results']:
