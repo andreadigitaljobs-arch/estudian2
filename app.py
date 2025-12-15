@@ -3020,67 +3020,90 @@ with tab6:
         with col_chat:
             # Display Chat History (WhatsApp Style)
             import markdown
-            chat_html = '<div style="display: flex; flex-direction: column; gap: 10px; padding-bottom: 50px;">'
+            chat_html = '<div style="display: flex; flex-direction: column; gap: 15px; padding-bottom: 50px;">'
+            
+            # AVATAR ASSETS (Data URIs for reliability)
+            bot_avatar_svg = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgc3R5bGU9ImZpbGw6ICM0NzQ3NDc7Ij48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxMiAxMikgc2NhbGUoMC42KSI+PHBhdGggZD0iTTM1LjQsMTQuNWMtMi4zLTAuNS00LTEuMy01LjgtMi40Yy0xLjgtMS4xLTMuOC0yLjQtNS44LTMuNWMtMC4zLTAuMS0wLjYtMC4xLTAuOSwwYy0yLDEuMS00LDIuNC01LjgsMy41Yy0xLjgsMS4xLTMuNSwxLjktNS44LDIuNGMtMiwyLjctMy4zLDYuMi0zLjMsMTAuNWMwLDEyLjcsMTAuNCwyMywyMy4xLDIzYzEyLjcsMCwyMy4xLTEwLjMsMjMuMS0yM0MzOC43LDIwLjcsMzcuNCwxNy4yLDM1LjQsMTQuNXogTTIyLjMsMzkuOGMtMy42LDAtNi41LTIuOS02LjUtNi41YzAtMy42LDIuOS02LjUsNi41LTYuNXM2LjUsMi45LDYuNSw2LjVDMjguNywzNi44LDI1LjksMzkuOCwyMi4zLDM5Ljh6IE0zOC45LDI3LjdjLTIuMSwwLTMuOS0xLjctMy45LTMuOXcxLjctMy45LDMuOS0zLjlzMy45LDEuNywzLjksMy45QzQyLjcsMjYsNDEsMjcuNywzOC45LDI3Ljd6Ii8+PC9Zz48L3N2Zz4="
+            user_avatar_svg = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgc3R5bGU9ImZpbGw6ICM0NzQ3NDc7Ij48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxMiAxMikgc2NhbGUoMC42KSI+PHBhdGggZD0iTTMyLDJDMTUuNCwyLDIsMTUuNCwyLDMyczEzLjQsMzAsMzAsMzBzMzAtMTMuNCwzMC0zMFM0OC42LDIsMzIsMnogTTMyLDEzYzYuNiwwLDEyLDUuNCwxMiwxMmMwLDYuNi01LjQsMTItMTIsMTJzLTEyLTUuNC0xMi0xMkMyMCwxOC40LDI1LjQsMTMsMzIsMTN6IE0zMiw1M2MtOC44LDAtMTYuNi00LjMtMjEuMy0xMS4yYzAuMy02LjgsNS45LTEyLjMsMTMuNy0xMy41YzIuNCwxLjUsNC45LDIuNCw3LjYsMi40czUuMS0wLjksNy42LTIuNGM3LjgsMS4yLDEzLjMsNi43LDEzLjcsMTMuNUM0OC42LDQ4LjcsNDAuOCw1MywzMiw1M3oiLz48L2c+PC9zdmc+"
+            
             for msg in st.session_state['tutor_chat_history']:
                 is_user = msg['role'] == 'user'
                 
-                # Inline Styles for WhatsApp Look
-                row_style = "display: flex; width: 100%; margin-bottom: 5px;"
+                # Styles
+                row_style = "display: flex; width: 100%; align-items: flex-end; margin-bottom: 2px;"
                 if is_user:
-                    row_style += " flex-direction: row-reverse;"
-                
-                bubble_style = "padding: 10px 14px; border-radius: 10px; max-width: 75%; word-wrap: break-word; font-size: 16px; line-height: 1.5; position: relative; box-shadow: 0 1px 1px rgba(0,0,0,0.1); font-family: inherit;"
-                if is_user:
-                    bubble_style += " background-color: #d9fdd3; color: #111; border-top-right-radius: 0;"
+                     row_style += " justify-content: flex-end;"
                 else:
-                    bubble_style += " background-color: #ffffff; color: #111; border-top-left-radius: 0; border: 1px solid #eee;"
+                     row_style += " justify-content: flex-start;"
+                
+                bubble_style = "padding: 10px 14px; border-radius: 12px; max-width: 70%; word-wrap: break-word; font-size: 16px; line-height: 1.5; position: relative; box-shadow: 0 1px 2px rgba(0,0,0,0.1); font-family: inherit;"
+                if is_user:
+                    bubble_style += " background-color: #d9fdd3; color: #111; border-bottom-right-radius: 2px; margin-right: 8px;"
+                else:
+                    bubble_style += " background-color: #ffffff; color: #111; border-bottom-left-radius: 2px; border: 1px solid #f0f0f0; margin-left: 8px;"
 
-                # Convert Markdown to HTML
+                avatar_img = f'<img src="{user_avatar_svg if is_user else bot_avatar_svg}" style="width: 32px; height: 32px; border-radius: 50%; border: 1px solid #ddd; background: white; padding: 2px;">'
+                
+                # Convert Markdown
                 raw_content = msg.get('content', '') or ''
                 try:
                     msg_html = markdown.markdown(raw_content, extensions=['fenced_code', 'tables'])
                 except:
                     msg_html = raw_content
 
-                chat_html += f'<div style="{row_style}"><div style="{bubble_style}">{msg_html}</div></div>'
+                if is_user:
+                    # User: Bubble Left of Avatar (Avatar on far right)
+                    chat_html += f'<div style="{row_style}"><div style="{bubble_style}">{msg_html}</div>{avatar_img}</div>'
+                else:
+                    # Bot: Avatar Left of Bubble
+                    chat_html += f'<div style="{row_style}">{avatar_img}<div style="{bubble_style}">{msg_html}</div></div>'
+                    
             chat_html += '</div>'
             st.markdown(chat_html, unsafe_allow_html=True)
             
-            # SCROLL BUTTON
+            # SCROLL BUTTON (INJECTED INTO PARENT)
             st.components.v1.html("""
-            <style>
-            .scroll-btn {
+            <script>
+            // Create Floating Button
+            const btnId = "tutor_scroll_btn";
+            const existingBtn = window.parent.document.getElementById(btnId);
+            if (existingBtn) {
+                existingBtn.remove();
+            }
+
+            const btn = window.parent.document.createElement("button");
+            btn.id = btnId;
+            btn.innerHTML = "⬇️";
+            btn.style.cssText = `
                 position: fixed;
-                bottom: 110px;
-                right: 30px;
+                bottom: 150px;
+                right: 20px;
                 z-index: 999999;
                 width: 45px;
                 height: 45px;
                 border-radius: 50%;
-                background: #fff;
-                box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-                border: 1px solid #ddd;
+                background: white;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+                border: none;
                 cursor: pointer;
+                font-size: 20px;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                font-size: 24px;
                 transition: transform 0.2s;
-            }
-            .scroll-btn:hover {
-                transform: scale(1.1);
-                background: #f8f8f8;
-            }
-            </style>
-            <button class="scroll-btn" onclick="scrollBottom()">⬇️</button>
-            <script>
-            function scrollBottom() {
-                // Target the Main Streamlit Container
+            `;
+            
+            btn.onmouseover = () => { btn.style.transform = "scale(1.1)"; };
+            btn.onmouseout = () => { btn.style.transform = "scale(1)"; };
+            
+            btn.onclick = () => {
                 const container = window.parent.document.querySelector('section[data-testid="stAppViewContainer"]');
                 if (container) {
-                    container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+                     container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
                 }
-            }
+            };
+            
+            window.parent.document.body.appendChild(btn);
             </script>
             """, height=0)
 
