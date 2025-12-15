@@ -154,23 +154,21 @@ if not st.session_state['user']:
         /* 1. RESET & FULL BACKGROUND */
         .stApp {{
             background-image: url("data:image/png;base64,{hero_b64}");
-            background-size: contain; /* User wants no whitespace, so cover is best */
+            background-size: countain; /* User wants no whitespace, so cover is best */
             background-position: center;
             background-repeat: no-repeat;
-            overflow: hidden !important; /* LOCK SCROLL */
+            /* overflow: auto;  RESTORED SCROLL */
         }}
         
-            overflow: hidden !important; /* LOCK SCROLL */
-        }}
-        
-        /* HIDE SCROLLBAR */
+        /* HIDE SCROLLBAR (Optional, keeping getting rid of ugly bars but allowing scroll) */
         ::-webkit-scrollbar {{
-            display: none;
+            width: 0px;
+            background: transparent;
         }}
         
-        /* LOCK MAIN STREAMLIT CONTAINER */
+        /* LOCK MAIN STREAMLIT CONTAINER REMOVED */
         section[data-testid="stAppViewContainer"] {{
-            overflow: hidden !important;
+            overflow-y: auto !important; /* ALLOW SCROLL */
         }}
         
         /* 2. ALIGNMENT CONTAINER */
