@@ -1842,65 +1842,70 @@ with tab1:
         uploaded_files = st.file_uploader("Upload", type=['mp4', 'mov', 'avi', 'mkv', 'mp3', 'wav', 'm4a', 'flac', 'ogg', 'opus', 'waptt', 'aac', 'wma'], accept_multiple_files=True, key=st.session_state['transcriptor_key'], label_visibility="collapsed")
         
         if uploaded_files:
-            st.info(f"📂 {len(uploaded_files)} archivo(s) cargado(s). Listo para procesar.")
-            if st.button("▶️ Iniciar Transcripción", type="primary", key="btn_start_transcription", use_container_width=True):
-                # Validation
-                c_id = st.session_state.get('current_course_id')
-                if not c_id:
-                    st.error("⚠️ Selecciona un Espacio de Trabajo en la barra lateral primero.")
+            # --- FOLDER SELECTION ---
+            c_id = st.session_state.get('current_course_id')
+            selected_unit_id = None
+            
+            if c_id:
+                from database import get_units, create_unit, upload_file_to_db, get_files
+                units = get_units(c_id)
+                if units:
+                    u_map = {u['name']: u['id'] for u in units}
+                    # Default: Try to find 'Transcriptor' folder or 'Bibliografía'
+                    def_idx = 0
+                    keys = list(u_map.keys())
+                    for i, k in enumerate(keys):
+                        if "Transcriptor" in k:
+                            def_idx = i
+                            break
+                    
+                    sel_name = st.selectbox("📂 ¿Dónde guardar la transcripción?", keys, index=def_idx, help="Elige la carpeta de destino")
+                    selected_unit_id = u_map[sel_name]
+                else:
+                    st.warning("⚠️ Tu diplomado no tiene carpetas. Se crearán automáticamente.")
+            else:
+                st.warning("⚠️ Por favor selecciona un diplomado en la barra lateral.")
+
+            st.info(f"📂 {len(uploaded_files)} archivo(s) cargado(s).")
+            
+            if st.button("▶️ Iniciar Transcripción", type="primary", key="btn_start_transcription", use_container_width=True, disabled=(not selected_unit_id)):
+                if not selected_unit_id:
+                    st.error("Error: Carpeta no seleccionada.")
                 else:
                     progress_bar = st.progress(0)
                     status_text = st.empty()
                     
-                    from database import get_units, create_unit, upload_file_to_db, get_files
-                    
-                    # SMART CLASSIFICATION & PROCESSING
+                    # PROCESS LOOP
                     for i, file in enumerate(uploaded_files):
-                        file_ext = file.name.split('.')[-1].lower()
-                        is_audio = file_ext in ['mp3', 'wav', 'm4a', 'flac', 'ogg', 'opus', 'waptt', 'aac', 'wma']
+                        t_unit_id = selected_unit_id # Use manual selection
                         
-                        # Determine Target Folder (Unit)
-                        target_unit_name = "Transcriptor - Audios" if is_audio else "Transcriptor - Videos"
+                        status_text.markdown(f"**Procesando {file.name}... (0%)**")
+                        temp_path = file.name
+                        with open(temp_path, "wb") as f: f.write(file.getbuffer())
                         
-                        # Get or Create Target Unit
-                        units = get_units(c_id)
-                        t_unit = next((u for u in units if u['name'] == target_unit_name), None)
-                        if not t_unit:
-                             t_unit = create_unit(c_id, target_unit_name)
-                        
-                        if t_unit:
-                            t_unit_id = t_unit['id']
-                            
-                            status_text.markdown(f"**Procesando {file.name}... (0%)**")
-                            temp_path = file.name
-                            with open(temp_path, "wb") as f: f.write(file.getbuffer())
-                            
-                            try:
-                                def update_ui(msg, prog):
-                                    pct = int(prog * 100)
-                                    progress_bar.progress(prog)
-                                    status_text.markdown(f"**{msg} ({pct}%)**")
+                        try:
+                            def update_ui(msg, prog):
+                                pct = int(prog * 100)
+                                progress_bar.progress(prog)
+                                status_text.markdown(f"**{msg} ({pct}%)**")
 
-                                txt_path = transcriber.process_video(temp_path, progress_callback=update_ui, chunk_length_sec=600)
-                                
-                                with open(txt_path, "r", encoding="utf-8") as f: 
-                                    trans_text = f.read()
-                                    
-                                upload_file_to_db(t_unit_id, os.path.basename(txt_path), trans_text, "transcript")
-                                st.success(f"✅ Guardado en: 📂 {target_unit_name}")
-                                st.session_state['transcript_history'].append({"name": file.name, "text": trans_text})
-                                
-                                if os.path.exists(txt_path): os.remove(txt_path)
-                                
-                            except Exception as e:
-                                st.error(f"Error procesando {file.name}: {e}")
-                            finally:
-                                if os.path.exists(temp_path): os.remove(temp_path)
+                            txt_path = transcriber.process_video(temp_path, progress_callback=update_ui, chunk_length_sec=600)
                             
-                            progress_bar.progress(1.0)
+                            with open(txt_path, "r", encoding="utf-8") as f: 
+                                trans_text = f.read()
+                                
+                            upload_file_to_db(t_unit_id, os.path.basename(txt_path), trans_text, "transcript")
+                            st.success(f"✅ Guardado en carpeta: {sel_name}") # Confirm location
+                            st.session_state['transcript_history'].append({"name": file.name, "text": trans_text})
+                            
+                            if os.path.exists(txt_path): os.remove(txt_path)
+                            
+                        except Exception as e:
+                            st.error(f"Error procesando {file.name}: {e}")
+                        finally:
+                            if os.path.exists(temp_path): os.remove(temp_path)
                         
-                        else:
-                            st.error(f"Error al crear carpeta destino: {target_unit_name}")
+                        progress_bar.progress(1.0)
 
                     status_text.success("¡Procesamiento completo!")
 
