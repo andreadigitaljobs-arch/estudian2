@@ -152,21 +152,21 @@ if not st.session_state['user']:
     st.markdown(f'''
         <style>
         /* WHATSAPP CHAT STYLES */
-        .chat-container {
+        .chat-container {{
             display: flex;
             flex-direction: column;
             gap: 10px;
             padding-bottom: 50px;
-        }
-        .chat-row {
+        }}
+        .chat-row {{
             display: flex;
             width: 100%;
             margin-bottom: 5px;
-        }
-        .row-reverse {
+        }}
+        .row-reverse {{
             flex-direction: row-reverse;
-        }
-        .chat-bubble {
+        }}
+        .chat-bubble {{
             padding: 10px 14px;
             border-radius: 10px;
             max-width: 75%;
@@ -176,28 +176,28 @@ if not st.session_state['user']:
             position: relative;
             box-shadow: 0 1px 1px rgba(0,0,0,0.1);
             font-family: inherit;
-        }
-        .chat-bubble p {
+        }}
+        .chat-bubble p {{
             margin: 0;
-        }
-        .user-bubble {
+        }}
+        .user-bubble {{
             background-color: #d9fdd3; /* WhatsApp Light Green */
             color: #111;
             border-top-right-radius: 0;
-        }
-        .assistant-bubble {
+        }}
+        .assistant-bubble {{
             background-color: #ffffff;
             color: #111;
             border-top-left-radius: 0;
             border: 1px solid #eee;
-        }
+        }}
         /* Code blocks in bubbles */
-        .chat-bubble pre {
+        .chat-bubble pre {{
             background: #f0f0f0;
             padding: 5px;
             border-radius: 5px;
             overflow-x: auto;
-        }
+        }}
 
         /* 1. RESET & FULL BACKGROUND */
         .stApp {{
