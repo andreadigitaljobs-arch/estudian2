@@ -658,14 +658,23 @@ if not saved_key and 'api_key_input' not in st.session_state:
 
 # To avoid complexity, we'll initialize with empty key if needed, or handle it gracefully.
 # Better: Load key, if exists init.
+# --- INITIALIZATION UTILS (Cached) ---
+@st.cache_resource
+def get_transcriber_engine(key):
+    return Transcriber(key)
+
+@st.cache_resource
+def get_assistant_engine(key):
+    return StudyAssistant(key)
+
 api_key = saved_key
 transcriber = None
 assistant = None
 
 if api_key:
     try:
-        transcriber = Transcriber(api_key)
-        assistant = StudyAssistant(api_key)
+        transcriber = get_transcriber_engine(api_key)
+        assistant = get_assistant_engine(api_key)
     except Exception as e:
         st.error(f"Error al iniciar IA: {e}")
 
