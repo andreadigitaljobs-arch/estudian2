@@ -1944,86 +1944,86 @@ with tab1:
 
                     status_text.success("¡Procesamiento completo!")
 
-        # History
-        if st.session_state['transcript_history']:
+    # History
+    if st.session_state['transcript_history']:
+        
+        # Recents Header
+        st.divider()
+        c_hist_1, c_hist_2, c_hist_3 = st.columns([0.5, 0.25, 0.25], vertical_alignment="center")
+        c_hist_1.markdown("### 📝 Resultados Recientes")
+        
+        # CLEAR BUTTON
+        if c_hist_2.button("🧹 Limpiar Pantalla", help="Borra la pantalla y los archivos subidos (no borra de la biblioteca)", use_container_width=True):
+            st.session_state['transcript_history'] = []
+            import uuid
+            st.session_state['transcriptor_key'] = str(uuid.uuid4()) # Force Uploader Reset
+            st.rerun()
             
-            # Recents Header
-            st.divider()
-            c_hist_1, c_hist_2, c_hist_3 = st.columns([0.5, 0.25, 0.25], vertical_alignment="center")
-            c_hist_1.markdown("### 📝 Resultados Recientes")
-            
-            # CLEAR BUTTON
-            if c_hist_2.button("🧹 Limpiar Pantalla", help="Borra la pantalla y los archivos subidos (no borra de la biblioteca)", use_container_width=True):
-                st.session_state['transcript_history'] = []
-                import uuid
-                st.session_state['transcriptor_key'] = str(uuid.uuid4()) # Force Uploader Reset
-                st.rerun()
-                
-            # DISCUSS WITH TUTOR BUTTON
-            if c_hist_3.button("🗣️ Debatir con Tutor", help="Abre un chat con el profesor para analizar estas transcripciones", type="primary", use_container_width=True):
-                 # 1. Aggregate Transcripts
-                 context_blob = "Aquí están las transcripciones de los archivos que acabo de procesar:\n\n"
-                 for item in st.session_state['transcript_history']:
-                     context_blob += f"--- ARCHIVO: {item['name']} ---\n{item['text']}\n\n"
+        # DISCUSS WITH TUTOR BUTTON
+        if c_hist_3.button("🗣️ Debatir con Tutor", help="Abre un chat con el profesor para analizar estas transcripciones", type="primary", use_container_width=True):
+             # 1. Aggregate Transcripts
+             context_blob = "Aquí están las transcripciones de los archivos que acabo de procesar:\n\n"
+             for item in st.session_state['transcript_history']:
+                 context_blob += f"--- ARCHIVO: {item['name']} ---\n{item['text']}\n\n"
+             
+             context_blob += "\nAnalyzalas y dime qué podemos hacer con ellas (resumen, extraer datos, ordenar instrucciones, etc). ¿Qué sugieres?"
+             
+             # 2. Create Session
+             from database import create_chat_session, save_chat_message
+             import datetime
+             sess_name = f"Debate Transcripciones {datetime.datetime.now().strftime('%H:%M')}"
+             new_sess = create_chat_session(st.session_state['user'].id, sess_name)
+             
+             if new_sess:
+                 # 3. Save Message & Prepare Redirect
+                 st.session_state['current_chat_session'] = new_sess
+                 st.session_state['tutor_chat_history'] = [] # Reset local
                  
-                 context_blob += "\nAnalyzalas y dime qué podemos hacer con ellas (resumen, extraer datos, ordenar instrucciones, etc). ¿Qué sugieres?"
+                 save_chat_message(new_sess['id'], "user", context_blob)
+                 st.session_state['tutor_chat_history'].append({"role": "user", "content": context_blob})
                  
-                 # 2. Create Session
-                 from database import create_chat_session, save_chat_message
-                 import datetime
-                 sess_name = f"Debate Transcripciones {datetime.datetime.now().strftime('%H:%M')}"
-                 new_sess = create_chat_session(st.session_state['user'].id, sess_name)
+                 # 4. Trigger AI & Switch
+                 st.session_state['trigger_ai_response'] = True
+                 st.session_state['redirect_target_name'] = "Tutoría 1 a 1"
+                 st.session_state['force_chat_tab'] = True
+                 st.rerun()
+             else:
+                 st.error("Error al crear sesión de chat.")
+        
+        for i, item in enumerate(st.session_state['transcript_history']):
+            with st.expander(f"📄 {item['name']}", expanded=True):
+                 # Header with Copy
+                 c_txt, c_cp = st.columns([0.7, 0.3])
+                 with c_txt:
+                     st.caption("Texto Transcrito:")
+                 with c_cp:
+                     # JS COPY COMPONENT
+                     import json
+                     import streamlit.components.v1 as components
+                     safe_txt = json.dumps(item['text'])
+                     html_cp = f"""
+                    <html>
+                    <body style="margin:0; padding:0; background: transparent;">
+                        <script>
+                        function copyT() {{
+                            navigator.clipboard.writeText({safe_txt}).then(function() {{
+                                const b = document.getElementById('btn');
+                                b.innerText = '✅';
+                                setTimeout(() => {{ b.innerText = '📄'; }}, 2000);
+                            }});
+                        }}
+                        </script>
+                        <button id="btn" onclick="copyT()" style="
+                            cursor: pointer; background: transparent; border: none; font-size: 20px;
+                        " title="Copiar al portapapeles">
+                            📄
+                        </button>
+                    </body>
+                    </html>
+                    """
+                     components.html(html_cp, height=40)
                  
-                 if new_sess:
-                     # 3. Save Message & Prepare Redirect
-                     st.session_state['current_chat_session'] = new_sess
-                     st.session_state['tutor_chat_history'] = [] # Reset local
-                     
-                     save_chat_message(new_sess['id'], "user", context_blob)
-                     st.session_state['tutor_chat_history'].append({"role": "user", "content": context_blob})
-                     
-                     # 4. Trigger AI & Switch
-                     st.session_state['trigger_ai_response'] = True
-                     st.session_state['redirect_target_name'] = "Tutoría 1 a 1"
-                     st.session_state['force_chat_tab'] = True
-                     st.rerun()
-                 else:
-                     st.error("Error al crear sesión de chat.")
-            
-            for i, item in enumerate(st.session_state['transcript_history']):
-                with st.expander(f"📄 {item['name']}", expanded=True):
-                     # Header with Copy
-                     c_txt, c_cp = st.columns([0.7, 0.3])
-                     with c_txt:
-                         st.caption("Texto Transcrito:")
-                     with c_cp:
-                         # JS COPY COMPONENT
-                         import json
-                         import streamlit.components.v1 as components
-                         safe_txt = json.dumps(item['text'])
-                         html_cp = f"""
-                        <html>
-                        <body style="margin:0; padding:0; background: transparent;">
-                            <script>
-                            function copyT() {{
-                                navigator.clipboard.writeText({safe_txt}).then(function() {{
-                                    const b = document.getElementById('btn');
-                                    b.innerText = '✅';
-                                    setTimeout(() => {{ b.innerText = '📄'; }}, 2000);
-                                }});
-                            }}
-                            </script>
-                            <button id="btn" onclick="copyT()" style="
-                                cursor: pointer; background: transparent; border: none; font-size: 20px;
-                            " title="Copiar al portapapeles">
-                                📄
-                            </button>
-                        </body>
-                        </html>
-                        """
-                         components.html(html_cp, height=40)
-                     
-                     st.markdown(item['text'])
+                 st.markdown(item['text'])
 
 
 # --- TAB 2: Apuntes Simples ---
