@@ -1073,6 +1073,7 @@ with st.sidebar:
             if new_sess:
                 st.session_state['current_chat_session'] = new_sess
                 st.session_state['tutor_chat_history'] = [] # Reset for new chat
+                st.session_state['redirect_target_name'] = "Tutoría 1 a 1" # Explicit Redirect
                 st.session_state['force_chat_tab'] = True # Force switch
                 st.rerun()
 
@@ -1100,6 +1101,7 @@ with st.sidebar:
             if st.button(label, key=f"sess_{sess['id']}", use_container_width=True):
                 st.session_state['current_chat_session'] = sess
                 st.session_state['tutor_chat_history'] = [] # Force reload
+                st.session_state['redirect_target_name'] = "Tutoría 1 a 1" # Explicit Redirect
                 st.session_state['force_chat_tab'] = True # Force switch
                 
                 # TRACK FOOTPRINT
