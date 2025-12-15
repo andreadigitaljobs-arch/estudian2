@@ -508,6 +508,10 @@ def render_library(assistant):
             sel = st.selectbox("Destino:", ["✨ Nueva Carpeta..."] + list(u_map.keys()))
             if sel == "✨ Nueva Carpeta...":
                  new_folder_name = st.text_input("Nombre de Carpeta:", placeholder="Ej: Unidad 1")
+                 if st.button("Crear Carpeta", key="create_root_f_btn"):
+                     if new_folder_name:
+                          create_unit(current_course_id, new_folder_name, parent_id=None)
+                          st.rerun()
             else:
                  target_unit_id = u_map[sel]
         else:
