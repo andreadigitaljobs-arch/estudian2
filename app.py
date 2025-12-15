@@ -2211,11 +2211,10 @@ with tab4:
             # Using st.fragment to preventing full-page reload (White Flash)
             
             @st.fragment
-            def paste_ui_fragment():
+            def quiz_input_section():
+                # 1. Paste Button Logic
                 try:
                     from streamlit_paste_button import paste_image_button as pbutton
-                    
-                    # Render Button
                     paste_result = pbutton(
                         label="📋 Pegar Imagen (Portapapeles)",
                         background_color="#4B22DD",
@@ -2227,42 +2226,57 @@ with tab4:
                     if paste_result.image_data is not None:
                          img = paste_result.image_data
                          if img.mode == 'RGBA': img = img.convert('RGB')
-                         
-                         # Check Duplicates via Size (Simple Heuristic)
+                         # Check Duplicates
                          should_append = True
                          if st.session_state['pasted_images']:
                              if st.session_state['pasted_images'][-1].size == img.size:
                                   should_append = False
-                         
                          if should_append:
                              st.session_state['pasted_images'].append(img)
                              st.toast("Imagen pegada con éxito!", icon='📸')
-                
                 except Exception as e:
                     st.error(f"Error cargando botón: {e}")
 
-                # Show Pasted Thumbnails (Inside Fragment to update instantly)
+                # 2. Show Thumbnails
                 if st.session_state['pasted_images']:
                     st.caption(f"📸 {len(st.session_state['pasted_images'])} capturas pegadas:")
-                    cols_past = st.columns(max(1, len(st.session_state['pasted_images']))) # Avoid 0 columns
+                    cols_past = st.columns(max(1, len(st.session_state['pasted_images'])))
                     for idx, p_img in enumerate(st.session_state['pasted_images']):
                         if idx < len(cols_past):
-                            with cols_past[idx]:
-                                st.image(p_img, width=50)
+                            with cols_past[idx]: st.image(p_img, width=50)
+
+                # 3. Inputs
+                st.text_area("✍🏻 O escribe tu pregunta aquí directamente:", height=100, placeholder="Ej: ¿Cuál es la capital de Francia? a) París b) Roma...", key=f"q_txt_{st.session_state['quiz_key']}")
+                st.file_uploader("O sube archivos manualmente:", type=['png', 'jpg', 'jpeg'], accept_multiple_files=True, key=f"up4_{st.session_state['quiz_key']}")
+
+                # 4. Trigger
+                # Calculate if valid
+                # Access via session_state to be safe inside fragment
+                q_key = st.session_state['quiz_key']
+                txt_val = st.session_state.get(f"q_txt_{q_key}", "")
+                files_val = st.session_state.get(f"up4_{q_key}", [])
+                
+                has_text = bool(txt_val.strip())
+                total_items = (len(files_val) if files_val else 0) + len(st.session_state['pasted_images']) + (1 if has_text else 0)
+
+                if total_items > 0:
+                    if st.button("Resolver Preguntas", key="btn4_frag", type="primary"):
+                        st.session_state['trigger_quiz_solve'] = True
+                        st.rerun()
+
+            # Call Fragment
+            quiz_input_section()
             
-            # Call the fragment
-            paste_ui_fragment()
-
-            # Text Input Option
-            input_text_quiz = st.text_area("✍🏻 O escribe tu pregunta aquí directamente:", height=100, placeholder="Ej: ¿Cuál es la capital de Francia? a) París b) Roma...", key=f"q_txt_{st.session_state['quiz_key']}")
-
-            img_files = st.file_uploader("O sube archivos manualmente:", type=['png', 'jpg', 'jpeg'], accept_multiple_files=True, key=f"up4_{st.session_state['quiz_key']}")
-        
-        # COMBINE INPUTS
-        has_text = bool(input_text_quiz.strip())
-        total_items = (len(img_files) if img_files else 0) + len(st.session_state['pasted_images']) + (1 if has_text else 0)
-
-        if total_items > 0 and st.button("Resolver Preguntas", key="btn4"):
+            # --- MAIN THREAD PROCESSING ---
+            if st.session_state.get('trigger_quiz_solve', False):
+                # Reset Trigger immediately so it doesn't loop
+                st.session_state['trigger_quiz_solve'] = False
+                
+                # Fetch Data AGAIN from Session context
+                q_key = st.session_state['quiz_key']
+                input_text_quiz = st.session_state.get(f"q_txt_{q_key}", "")
+                img_files = st.session_state.get(f"up4_{q_key}", [])
+                has_text = bool(input_text_quiz.strip())
             progress_bar = st.progress(0)
             status = st.empty()
             results = [] 
