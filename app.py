@@ -2811,6 +2811,7 @@ with tab5:
                             st.success("✅ Chat creado. Redirigiendo...")
                             
                             # 6. FORCE REDIRECT
+                            st.session_state['redirect_target_name'] = "Tutoría 1 a 1"
                             st.session_state['force_chat_tab'] = True
                             st.rerun()
                             
