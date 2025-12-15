@@ -520,7 +520,7 @@ def render_library(assistant):
         tab2, tab1, tab4, tab3 = st.tabs(["✨ Crear Carpeta", "📂 Subir Archivos", "✍🏻 Escribir contenido", "📥 Importar chat masivo"])
     
         with tab1:
-            upl_files = st.file_uploader("Archivos (PDF, TXT, Imágenes):", accept_multiple_files=True)
+            upl_files = st.file_uploader("Archivos (PDF, TXT, Word, Imágenes):", accept_multiple_files=True)
             if st.button("Subir Archivos", type="primary"):
                 if not target_unit_id:
                      # Check if user entered a new folder name
@@ -544,6 +544,14 @@ def render_library(assistant):
                                      content = assistant.extract_text_from_pdf(uf.getvalue())
                                  else:
                                      content = "PDF Content Placeholder"
+                            elif uf.type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+                                 try:
+                                     import docx
+                                     # docx.Document expects a file-like object
+                                     doc = docx.Document(uf)
+                                     content = "\n".join([para.text for para in doc.paragraphs])
+                                 except Exception as e:
+                                     content = f"Error reading DOCX: {e}"
                             else:
                                 content = f"Binary content: {uf.name}"
                             
