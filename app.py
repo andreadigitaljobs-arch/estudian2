@@ -2189,17 +2189,11 @@ with tab3:
         if not c_id:
              st.info("Selecciona Espacio de Trabajo.")
         else:
-            from database import get_units, get_files, get_file_content, upload_file_to_db, create_unit
+            from database import get_units, get_files, get_file_content, upload_file_to_db, create_unit, get_course_files
             
-            # Fetch Transcripts (Support New and Old Folder Names)
+            # Fetch Transcripts (Global Search in Course)
             units = get_units(c_id)
-            target_folders = ["Transcriptor - Audios", "Transcriptor - Videos", "Transcripts"]
-            
-            transcript_files = []
-            for t_name in target_folders:
-                 u_found = next((u for u in units if u['name'] == t_name), None)
-                 if u_found:
-                     transcript_files.extend(get_files(u_found['id']))
+            transcript_files = get_course_files(c_id, type_filter="transcript")
             
             # Check Global Memory
             gl_ctx, gl_count = get_global_context()
