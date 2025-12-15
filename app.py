@@ -2515,6 +2515,8 @@ with tab4:
             st.divider()
             st.markdown("#### 🔍 Detalles por Pregunta")
             
+            for i, res in enumerate(st.session_state['quiz_results']):
+                with st.expander(f"Ver detalle de Item {i+1}"):
                     if 'img_obj' in res:
                         try:
                             st.image(res['img_obj'], width=300)
