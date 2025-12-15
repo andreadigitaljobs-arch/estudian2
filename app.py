@@ -2881,65 +2881,8 @@ with tab6:
         # Convert DB format to Chat format if needed (DB: role, content. Chat: role, content. Match!)
         st.session_state['tutor_chat_history'] = db_msgs
         
-        # --- AUTO-RESPONSE LOGIC (Redirect from Library) ---
-        if st.session_state.get('trigger_ai_response'):
-            # Only trigger if the last message is from user (it should be, from library_ui)
-            if db_msgs and db_msgs[-1]['role'] == 'user':
-                last_user_msg = db_msgs[-1]['content']
-                # Prepare Context
-                # FIX 10823: Removed invalid import 'get_global_unit'
-                # FIX 10846: Hydrate 'content' key if missing (Metadata only from Library)
-                
-                c_files = []
-                if st.session_state.get('chat_context_file'):
-                     raw_f = st.session_state['chat_context_file']
-                     # Hydrate content if missing
-                     if 'content' not in raw_f or not raw_f['content']:
-                         from database import get_file_content
-                         try:
-                             c_txt = get_file_content(raw_f['id'])
-                             raw_f['content'] = c_txt
-                         except Exception as fetch_err:
-                             print(f"Error fetching content: {fetch_err}")
-                             raw_f['content'] = "" # Fallback
-                     
-                     c_files = [raw_f]
+                st.session_state['trigger_ai_response'] = False
 
-                try:
-                    with st.spinner("🤖 El profesor está leyendo tu archivo..."):
-                        # We pass 'db_msgs[:-1]' as history (excluding the new prompt)
-                        # Or chat_tutor expects full history? Usually it appends new msg.
-                        # Standard pattern: AI takes new msg + history.
-                        # But 'db_msgs' ALREADY has the new msg (saved in library_ui).
-                        # So we should pass 'db_msgs[:-1]' as history and 'last_user_msg' as message.
-                        
-                        history_payload = db_msgs[:-1] 
-                        
-                        # FIX: Empty Global Context to prevent crash
-                        gl_ctx_str = "" 
-                        
-                        response_text = assistant.chat_tutor(
-                            last_user_msg, 
-                            chat_history=history_payload, 
-                            context_files=c_files, 
-                            global_context=gl_ctx_str
-                        )
-                        
-                        # Save Response
-                        save_chat_message(current_sess['id'], "assistant", response_text)
-                        
-                        # Update Local State
-                        st.session_state['tutor_chat_history'].append({"role": "assistant", "content": response_text})
-                        
-                        # Clear Flag
-                        st.session_state['trigger_ai_response'] = False
-                        st.rerun()
-                        
-                except Exception as e:
-                    st.error(f"Error en auto-respuesta: {e}")
-                    st.session_state['trigger_ai_response'] = False # Prevent loop
-            else:
-                 st.session_state['trigger_ai_response'] = False
 
         col_chat, col_info = st.columns([2, 1], gap="large")
         
@@ -2972,6 +2915,56 @@ with tab6:
                 with st.chat_message(msg['role']):
                     st.markdown(msg['content'])
             
+            # --- AI GENERATION BLOCK (Context-Aware) ---
+            if st.session_state.get('trigger_ai_response'):
+                 # Logic to generate response
+                 # Need to fetch the last user message
+                 hist = st.session_state['tutor_chat_history']
+                 if hist and hist[-1]['role'] == 'user':
+                     last_msg = hist[-1]['content']
+                     
+                     # Context Prep
+                     gl_ctx, _ = get_global_context()
+                     
+                     # File Context
+                     # We need to reconstruct 'chat_files' from state or upload? 
+                     # Only if upload was just handled? No, 'tutor_file' is cleared on rerun.
+                     # But 'chat_context_file' persists.
+                     # AND we might have 'current_uploaded_file' if we want to handle file uploads properly.
+                     # For now, let's just handle 'chat_context_file' (Linked File).
+                     # Real-time upload (tutor_file) is harder with Rerun pattern unless we save it to session state.
+                     # Assuming 'chat_context_file' is primary context.
+                     
+                     gen_files = []
+                     if st.session_state.get('chat_context_file'):
+                         l_f = st.session_state['chat_context_file']
+                         c_t = l_f.get('content') or l_f.get('content_text') or ""
+                         # Hydrate if needed (lazy)
+                         if not c_t and 'id' in l_f:
+                             from database import get_file_content
+                             c_t = get_file_content(l_f['id'])
+                         gen_files.append({"name": l_f['name'], "content": c_t})
+                     
+                     with st.chat_message("assistant"):
+                        with st.spinner("El profesor está pensando..."):
+                            try:
+                                full_resp = assistant.chat_tutor(
+                                    last_msg,
+                                    chat_history=hist[:-1],
+                                    context_files=gen_files,
+                                    global_context=gl_ctx
+                                )
+                                st.markdown(full_resp)
+                                
+                                # Save
+                                save_chat_message(current_sess['id'], "assistant", full_resp)
+                                st.session_state['tutor_chat_history'].append({"role": "assistant", "content": full_resp})
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"Error: {e}")
+                 
+                 st.session_state['trigger_ai_response'] = False # Safety
+
             # User Input
             if prompt := st.chat_input(f"Pregunta sobre {current_sess['name']}..."):
                 # 1. Add User Message
@@ -2983,60 +2976,8 @@ with tab6:
                 with st.chat_message("user"):
                     st.markdown(prompt)
                     
-                # 2. Prepare Context (Global + Upload)
-                # GUARD: Check assistant
-                if not assistant:
-                    st.error("⚠️ Error: El asistente no se ha iniciado correctamente. revisa tu API Key.")
-                    st.stop()
-
-                gl_ctx, _ = get_global_context()
-                
-                chat_files = []
-                if tutor_file:
-                    try:
-                        content = ""
-                        if tutor_file.type == "application/pdf":
-                            content = assistant.extract_text_from_pdf(tutor_file.getvalue(), tutor_file.type)
-                        else:
-                            try:
-                               content = tutor_file.getvalue().decode("utf-8", errors='ignore')
-                            except:
-                               content = "Archivo binario no procesado."
-                        
-                        chat_files.append({"name": tutor_file.name, "content": content})
-                        st.toast(f"📎 Archivo {tutor_file.name} enviado.")
-                    except Exception as e:
-                        st.error(f"Error leyendo archivo: {e}")
-
-                # CONSULTANT: INJECT LIBRARY FILE CONTEXT
-                if st.session_state.get('chat_context_file'):
-                     l_file = st.session_state['chat_context_file']
-                     # Normalize content access (content or content_text based on DB fetch)
-                     c_txt = l_file.get('content') or l_file.get('content_text') or ""
-                     chat_files.append({"name": l_file['name'], "content": c_txt})
-                     # No toast here to avoid spamming on every message, the UI card is enough.
-
-                # 3. Generate Response
-                with st.chat_message("assistant"):
-                    with st.spinner("El profesor está pensando..."):
-                        response = assistant.chat_tutor(
-                            prompt, 
-                            chat_history=st.session_state['tutor_chat_history'], # Pass full history including just added user msg
-                            context_files=chat_files, 
-                            global_context=gl_ctx
-                        )
-                        st.markdown(response)
-                
-                # 4. Save Response to DB
-                save_chat_message(current_sess['id'], "assistant", response) # Using 'assistant' to match Streamlit, map to 'model' in DB if needed? 
-                # DB schema has 'role'. Streamlit uses 'assistant'. Gemini uses 'model'.
-                # Let's standardize: If database.py expects 'model', I should send 'model'.
-                # But my database.py save function just inserts the string.
-                # Standard practice: UI = 'assistant', DB/Model = 'model'.
-                # I'll save as 'assistant' to keep UI simple, or map it.
-                # Let's simple save as 'assistant' for now since `chat_tutor` handles the conversion for Gemini.
-                
-                st.session_state['tutor_chat_history'].append({"role": "assistant", "content": response})
+                # 2. Trigger Response
+                st.session_state['trigger_ai_response'] = True
                 st.rerun()
 
 # Force Reload Triggered
