@@ -2106,8 +2106,8 @@ with tab2:
                              md_content += "---\n\n"
                              md_content += f"## 🔴 Nivel 3: Profundidad Detallada\n{notes_data.get('profundo', '')}"
                              
-                             base_name = selected_file.replace("_transcripcion.txt", "")
-                             fname = f"Apuntes_{base_name}.md"
+                             base_name = selected_file.replace("_transcripcion.txt", "").replace(".txt", "").strip()
+                             fname = f"Apuntes {base_name}.md"
                              
                              upload_file_to_db(n_unit['id'], fname, md_content, "note")
                              st.success(f"Apuntes guardados en '{target_folder}'/{fname}")
@@ -2223,8 +2223,8 @@ with tab3:
                              g_unit = create_unit(c_id, target_guide_folder)
                         
                         if g_unit:
-                             base_name = selected_guide_file.replace("_transcripcion.txt", "")
-                             fname = f"Guia_{base_name}.md"
+                             base_name = selected_guide_file.replace("_transcripcion.txt", "").replace(".txt", "").strip()
+                             fname = f"Guia {base_name}.md"
                              upload_file_to_db(g_unit['id'], fname, guide, "guide")
                              st.success(f"Guía guardada en '{target_guide_folder}'/{fname}")
 
