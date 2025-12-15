@@ -3017,42 +3017,43 @@ with tab6:
                  # User asked for "create different chats".
                  pass
 
+        # --- FLOATING UPLOAD BUTTON (JS Injection to Input) ---
+        # 1. Render Popover (Hidden initially to prevent flash)
+        # We use a specific container to help JS find it easily if needed, but data-testid is fine.
         
-        # --- FLOATING UPLOAD BUTTON (ChatGPT Style) ---
+        # CSS to hide it initially and style the internal button
         st.markdown("""
         <style>
+        /* Target the popover container - Initial State */
         div[data-testid="stPopover"] {
-            position: fixed !important;
-            bottom: 70px !important;
-            left: 20px !important; 
-            z-index: 99999 !important;
+            /* We don't hide it fully via display:none or JS might fail to grab dimensions, 
+               but we can use opacity or just rely on JS moving it quickly. 
+               Let's style the button itself to look like a 'Clip'. 
+            */
+            border: none !important;
         }
         div[data-testid="stPopover"] button {
-            background-color: #f0f2f6;
-            border: 1px solid #ccc;
-            border-radius: 50%;
-            width: 45px;
-            height: 45px;
+            background-color: transparent;
+            border: none;
+            color: #555;
             font-size: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            padding: 5px;
+            transition: color 0.3s;
         }
         div[data-testid="stPopover"] button:hover {
-            border-color: #ff4b4b;
-            color: #ff4b4b;
+            color: #1f77b4;
+            background-color: rgba(0,0,0,0.05);
         }
         </style>
         """, unsafe_allow_html=True)
         
-        with st.popover("➕", help="Adjuntar archivos al contexto"):
-            st.markdown("### 📎 Adjuntar Archivos")
-            st.caption("Los archivos se agregarán al contexto de la IA.")
-            
-            new_uploads = st.file_uploader("Sube PDFs, TXT o Imágenes", type=['pdf', 'txt', 'md', 'py', 'png', 'jpg'], accept_multiple_files=True, key="float_up_widget")
-            
-            if new_uploads:
+        # 2. POP_OVER CONTENT
+        # We define it here. It renders at the bottom of the flow.
+        # JS will move this element into the Chat Input container.
+        with st.popover("➕", help="Adjuntar archivos"):
+             st.markdown("### 📎 Adjuntar")
+             new_uploads = st.file_uploader("Archivos", type=['pdf', 'txt', 'md', 'py', 'png', 'jpg'], accept_multiple_files=True, key="float_up_inj")
+             if new_uploads:
                 for up_file in new_uploads:
                     if not any(f['name'] == up_file.name for f in st.session_state['active_context_files']):
                         with st.spinner(f"Procesando {up_file.name}..."):
@@ -3064,7 +3065,6 @@ with tab6:
                                     for page in pdf_reader.pages:
                                         content_text += page.extract_text() + "\n"
                                 except:
-                                     # Fallback to Assistant OCR if imports fail or result empty
                                      try:
                                          content_text = assistant.extract_text_from_pdf(up_file.getvalue())
                                      except:
@@ -3079,10 +3079,42 @@ with tab6:
                                 "name": up_file.name,
                                 "content": content_text
                             })
-                            st.success(f"✅ {up_file.name} agregado.")
-                
-                if st.button("Limpiar subida"):
-                    st.rerun()
+                            st.success(f"✅")
+        
+        # 3. JS to Move the Button
+        st.components.v1.html("""
+        <script>
+        const observer = new MutationObserver(() => {
+            const popovers = window.parent.document.querySelectorAll('div[data-testid="stPopover"]');
+            const chatInput = window.parent.document.querySelector('[data-testid="stChatInput"]');
+            
+            if (chatInput && popovers.length > 0) {
+                 // We assume the LAST popover is ours (since it was rendered last in flow)
+                 // Or we can try to identify it. 
+                 const targetPopover = popovers[popovers.length - 1]; 
+                 
+                 if (!chatInput.contains(targetPopover)) {
+                     // Move it inside Chat Input
+                     // We place it ABSOLUTE on the LEFT
+                     chatInput.style.position = 'relative';
+                     targetPopover.style.position = 'absolute';
+                     targetPopover.style.left = '5px';
+                     targetPopover.style.bottom = '10px';
+                     targetPopover.style.zIndex = '100';
+                     
+                     chatInput.appendChild(targetPopover);
+                     
+                     // Adjust Text Area Padding to not hide behind button
+                     const textArea = chatInput.querySelector('textarea');
+                     if (textArea) {
+                         textArea.style.paddingLeft = '50px';
+                     }
+                 }
+            }
+        });
+        observer.observe(window.parent.document.body, { childList: true, subtree: true });
+        </script>
+        """, height=0)
 
         with col_chat:
             # Display Chat History (WhatsApp Style)
