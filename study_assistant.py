@@ -106,21 +106,23 @@ Google ofrece una capa gratuita generosa, pero limitada.
         """Solves a quiz question from an image or text."""
         
         prompt = f"""
-        Analiza esta pregunta de examen.
+        Analiza esta pregunta de examen como un TUTOR EXPERTO.
         
-        CONTEXTO OFICIAL (DEFINICIONES):
+        CONTEXTO DE LA BIBLIOTECA (PRIORIDAD ALTA):
         {global_context}
-        (Si la pregunta se refiere a algo definido aquí, ÚSALO como verdad absoluta).
-
-        1. Identifica la pregunta y las opciones.
-        2. Indica cuál es la respuesta correcta usando primero el Contexto Oficial.
-        3. Si la respuesta NO está en el contexto, usa tu CONOCIMIENTO GENERAL de experto para deducirla.
-        4. Explica brevemente POR QUÉ es la correcta.
         
-        Salida:
-        **Pregunta:** [Texto detectado/ingresado]
+        INSTRUCCIONES CLAVE:
+        1. **BÚSQUEDA**: Busca la respuesta primero en el Contexto de la Biblioteca.
+        2. **RESPUESTA HÍBRIDA**: Si la respuesta NO está en el contexto, **UGO TUS CONOCIMIENTOS GENERALES** de inmediato.
+           - **IMPORTANTE**: NO digas "No encontré la información en el archivo".
+           - NO digas "Basado en mi conocimiento general".
+           - Simplemente responde con la verdad, sea del archivo o de tu base de datos global.
+        3. **EXPLICACIÓN**: Explica por qué es la opción correcta. Si usaste el contexto, cita la fuente sutilmente. Si es conocimiento general, explica el concepto teórico.
+
+        Salida (Directa y al grano):
+        **Pregunta:** [Texto]
         **Respuesta Correcta:** [Opción]
-        **Explicación:** [Razonamiento]
+        **Explicación:** [Razonamiento claro]
         """
         
         content_parts = [prompt]
