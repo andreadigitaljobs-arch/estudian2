@@ -3083,8 +3083,9 @@ with tab6:
         
         # --- HIDDEN PASTE RECEIVER ---
         with st.container():
-             # Unique Label for reliable JS targeting
-             paste_bin = st.file_uploader("Paste_Receiver_Hidden_Bin", type=['png','jpg','jpeg','pdf'], key="paste_bin", label_visibility='hidden')
+             # Label MUST be visible for JS to find and hide it by text content. 
+             # We hide the whole wrapper via JS immediately.
+             paste_bin = st.file_uploader("Paste_Receiver_Hidden_Bin", type=['png','jpg','jpeg','pdf'], key="paste_bin", label_visibility='visible')
         
         if paste_bin:
              if not any(f['name'] == paste_bin.name for f in st.session_state['active_context_files']):
@@ -3117,70 +3118,64 @@ with tab6:
                          capsule.insertBefore(targetPopover, capsule.firstChild);
                          textArea.style.paddingLeft = '0px';
                          
-                         // 2. FOCUS FIX: Click on bubble -> Focus Textarea
-                         capsule.onclick = (e) => {
+                         // 2. FOCUS FIX: Robust Listener
+                         capsule.style.cursor = 'text'; // Visual cue
+                         
+                         const focusHandler = (e) => {
                              if (!targetPopover.contains(e.target)) {
+                                 e.preventDefault(); // Stop default (selection/etc)
                                  textArea.focus();
-                                 textArea.click(); // Redundant ensure
+                                 setTimeout(() => textArea.focus(), 10);
                              }
                          };
+                         
+                         capsule.onclick = focusHandler;
+                         capsule.onmousedown = focusHandler; // Catch earlier interaction
                      }
                  }
             }
             
-            // 3. PASTE HANDLER & HIDE RECEIVER (ROBUST VERSION)
-            // We search for the Uploader Wrapper that contains our specific LABEL text.
-            // This ensures we do NOT hide the Popover uploader.
-            
+            // 3. PASTE HANDLER & HIDE RECEIVER
             const allUploaders = Array.from(window.parent.document.querySelectorAll('[data-testid="stFileUploader"]'));
             let pasteUploaderWrapper = null;
             let pasteInput = null;
 
             allUploaders.forEach(wrapper => {
+                // Now that label is visible, this should always work
                 if (wrapper.innerText.includes("Paste_Receiver_Hidden_Bin")) {
                     pasteUploaderWrapper = wrapper;
                     pasteInput = wrapper.querySelector('input[type="file"]');
                 }
             });
 
-            if (pasteUploaderWrapper && pasteInput) {
-                // Hide it!
-                pasteUploaderWrapper.style.display = 'none';
-
-                // Global Paste Listener
-                window.parent.document.onpaste = (event) => {
-                    // Only handle if text area is NOT focused (or even if it is, for images?)
-                    // Streamlit text area handles text. We care about IMAGES/FILES.
-                    
-                    const items = (event.clipboardData || event.originalEvent.clipboardData).items;
-                    let hasFile = false;
-                    
-                    for (index in items) {
-                        const item = items[index];
-                        if (item.kind === 'file') {
-                            hasFile = true;
-                            const blob = item.getAsFile();
-                            
-                            // Assign to Input
-                            const dataTransfer = new DataTransfer();
-                            dataTransfer.items.add(blob);
-                            pasteInput.files = dataTransfer.files;
-                            pasteInput.dispatchEvent(new Event('change', { bubbles: true }));
+            if (pasteUploaderWrapper) {
+                // Aggressively Hide
+                pasteUploaderWrapper.style.setProperty('display', 'none', 'important');
+                
+                if (pasteInput) {
+                    // Global Paste Listener
+                    window.parent.document.onpaste = (event) => {
+                        const items = (event.clipboardData || event.originalEvent.clipboardData).items;
+                        for (index in items) {
+                            const item = items[index];
+                            if (item.kind === 'file') {
+                                const blob = item.getAsFile();
+                                const dataTransfer = new DataTransfer();
+                                dataTransfer.items.add(blob);
+                                pasteInput.files = dataTransfer.files;
+                                pasteInput.dispatchEvent(new Event('change', { bubbles: true }));
+                            }
                         }
-                    }
-                    
-                    // If we handled a file, we might want to prevent default text paste if it was mixed?
-                    // Typically Ctrl+V with image doesn't have text.
-                };
+                    };
+                }
             }
             
-            // SCROLL BUTTON LOGIC INTEGRATED
+            // SCROLL BUTTON
             const scrollBtn = window.parent.document.getElementById("tutor_scroll_btn");
             if (scrollBtn) {
                  scrollBtn.onclick = () => {
                     const anchor = window.parent.document.getElementById("tutor_chat_end_anchor");
                     if (anchor) anchor.scrollIntoView({ behavior: 'smooth', block: 'end' });
-                    
                     if (chatInput) {
                         const ta = chatInput.querySelector('textarea');
                         if (ta) setTimeout(() => ta.focus(), 50);
