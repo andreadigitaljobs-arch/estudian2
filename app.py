@@ -1217,7 +1217,7 @@ with st.sidebar:
     st.caption("Diplomado Actual:")
     
     # DB Ops
-    from database import get_user_courses, create_course, get_dashboard_stats, update_user_nickname, get_recent_chats, check_and_update_streak, update_user_footprint
+    from database import get_user_courses, create_course, get_dashboard_stats, update_user_nickname, get_recent_chats, check_and_update_streak, update_user_footprint, update_last_course
     
     # GUARD: Ensure user is logged in before accessing ID
     if not st.session_state.get('user'):
@@ -1229,8 +1229,16 @@ with st.sidebar:
     course_map = {c['name']: c['id'] for c in db_courses}
     
     if not course_names: course_names = []
-    if 'current_course' not in st.session_state or st.session_state['current_course'] not in course_names:
-        st.session_state['current_course'] = course_names[0] if course_names else None
+    if not course_names: course_names = []
+    
+    # RECOVERY LOGIC (Persistence)
+    if 'current_course' not in st.session_state or (st.session_state['current_course'] not in course_names and st.session_state['current_course'] is not None):
+        # Try metadata first
+        saved_course = st.session_state['user'].user_metadata.get('last_course_name')
+        if saved_course and saved_course in course_names:
+             st.session_state['current_course'] = saved_course
+        else:
+             st.session_state['current_course'] = course_names[0] if course_names else None
 
     options = course_names + ["➕ Crear nuevo..."]
     idx = 0
@@ -1250,6 +1258,9 @@ with st.sidebar:
     else:
         st.session_state['current_course'] = selected_option
         st.session_state['current_course_id'] = course_map[selected_option]
+        
+        # PERSIST SELECTION
+        update_last_course(selected_option)
         
         # --- RESTORED ACTIONS (RENAME / DELETE) ---
         st.write("") # Micro spacer

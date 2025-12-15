@@ -83,6 +83,17 @@ def update_user_nickname(new_nickname):
         print(f"Error updating profile: {e}")
         return None
 
+def update_last_course(course_name):
+    """Persists the last active course name to user metadata."""
+    supabase = init_supabase()
+    try:
+        attrs = {"data": {"last_course_name": course_name}}
+        supabase.auth.update_user(attrs)
+        return True
+    except Exception as e:
+        print(f"Error persisting course: {e}")
+        return False
+
 def update_user_footprint(user_id, footprint_data):
     """
     Updates the 'smart_footprint' in user metadata.
