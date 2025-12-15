@@ -2515,14 +2515,48 @@ with tab4:
             st.divider()
             st.markdown("#### 🔍 Detalles por Pregunta")
             
-            for i, res in enumerate(st.session_state['quiz_results']):
-                with st.expander(f"Ver detalle de Foto {i+1}"):
                     if 'img_obj' in res:
                         try:
                             st.image(res['img_obj'], width=300)
                         except:
                             st.warning("Imagen no disponible tras recarga")
                     st.markdown(res['full'])
+
+            # --- DEBATE CHAT ---
+            st.divider()
+            st.markdown("### 💬 Debatir Resultados")
+            st.caption("¿No estás de acuerdo con una respuesta? Habla con el Profesor aquí mismo.")
+            
+            if 'quiz_chat' not in st.session_state: st.session_state['quiz_chat'] = []
+            
+            # Display History
+            for msg in st.session_state['quiz_chat']:
+                 with st.chat_message(msg["role"]): st.markdown(msg["content"])
+                 
+            # Input
+            if prompt := st.chat_input("Escribe tu duda o corrección...", key="quiz_chat_input"):
+                 # Add User Msg
+                 st.session_state['quiz_chat'].append({"role": "user", "content": prompt})
+                 with st.chat_message("user"): st.markdown(prompt)
+                 
+                 # Prepare Context (Last Quiz Results)
+                 ctx_quiz = "SIN DATOS DE QUIZ RECIENTE"
+                 if st.session_state['quiz_results']:
+                     ctx_quiz = "--- RESULTADOS DEL QUIZ --- \n"
+                     for res in st.session_state['quiz_results']:
+                         # Truncate text to avoid token explosion
+                         short_full = (res['full'][:500] + '..') if len(res['full']) > 500 else res['full']
+                         ctx_quiz += f"[Item: {res['name']}]\nAI Dice: {short_full}\n\n"
+                 
+                 # Call AI
+                 with st.chat_message("assistant"):
+                     with st.spinner("El profesor está analizando tu argumento..."):
+                          try:
+                              reply = assistant.debate_quiz(history=st.session_state['quiz_chat'][:-1], latest_input=prompt, quiz_context=ctx_quiz)
+                              st.markdown(reply)
+                              st.session_state['quiz_chat'].append({"role": "assistant", "content": reply})
+                          except Exception as e:
+                              st.error(f"Error en chat: {e}")
 
 # --- TAB 5: Ayudante de Tareas ---
 with tab5:

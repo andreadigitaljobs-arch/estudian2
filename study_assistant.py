@@ -158,10 +158,42 @@ Google ofrece una capa gratuita generosa, pero limitada.
         if len(content_parts) == 1: # Only prompt
             return "Error: Por favor proporciona una imagen o escribe el texto de la pregunta."
 
+        
         # Safety catch for None images
         valid_parts = [p for p in content_parts if p is not None]
         
         response = self.model.generate_content(valid_parts)
+        return response.text
+
+    def debate_quiz(self, history, latest_input, quiz_context=""):
+        """Interacts with user to debate quiz results."""
+        
+        # Build conversation string
+        conv_str = ""
+        for msg in history:
+            role = "Estudiante" if msg['role'] == "user" else "Profesor"
+            conv_str += f"{role}: {msg['content']}\n"
+            
+        prompt = f"""
+        Actúa como el Profesor del Diplomado. Estás debatiendo los resultados de un examen con el estudiante.
+        
+        CONTEXTO DEL QUIZ RECIENTE:
+        {quiz_context}
+        
+        HISTORIAL DE CHAT:
+        {conv_str}
+        
+        ESTUDIANTE AHORA: {latest_input}
+        
+        INSTRUCCIONES:
+        1. Sé amable pero riguroso.
+        2. Si el estudiante reclama que una respuesta es incorrecta, ANALIZA su argumento.
+        3. Si tiene razón, ADMÍTELO, discúlpate y explica por qué la confusión (quizás ambigüedad).
+        4. Si no tiene razón, explica con pedagogía por qué la respuesta original es la correcta.
+        5. Tu objetivo es que APRENDA, no ganar la discusión.
+        """
+        
+        response = self.model.generate_content(prompt)
         return response.text
 
     def solve_homework(self, task_prompt, context_texts, task_attachment=None):
