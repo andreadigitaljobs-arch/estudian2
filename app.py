@@ -3091,23 +3091,27 @@ with tab6:
                  const targetPopover = popovers[popovers.length - 1]; 
                  
                  if (!chatInput.contains(targetPopover)) {
-                     // Move it inside Chat Input
-                     chatInput.style.position = 'relative';
-                     targetPopover.style.position = 'absolute';
-                     targetPopover.style.left = '6px';
-                     targetPopover.style.bottom = '10px'; // Align with "Send" button row roughly
-                     targetPopover.style.zIndex = '1000';
+                     // FLEXBOX INTEGRATION
+                     // We insert the button as a Sibling of the Text Area.
+                     // This pushes the text area to the right naturally, preserving clickability.
                      
-                     chatInput.appendChild(targetPopover);
-                 }
-                 
-                 // ENFORCE Padding on Text Area (React overrides this, so we re-apply)
-                 const textArea = chatInput.querySelector('textarea');
-                 if (textArea) {
-                     // We check if it's already set to avoid infinite loops if observer triggers on style change
-                     // But style.paddingLeft usually normalized.
-                     if (textArea.style.paddingLeft !== '50px') {
-                         textArea.style.paddingLeft = '50px';
+                     targetPopover.style.position = 'relative';
+                     targetPopover.style.left = 'auto';
+                     targetPopover.style.bottom = 'auto';
+                     targetPopover.style.top = 'auto';
+                     targetPopover.style.zIndex = '1';
+                     targetPopover.style.marginRight = '8px';
+                     targetPopover.style.marginLeft = '5px';
+                     targetPopover.style.display = 'flex';
+                     targetPopover.style.alignItems = 'center';
+                     
+                     // Insert as FIRST child (Left side)
+                     chatInput.insertBefore(targetPopover, chatInput.firstChild);
+                     
+                     // Clear any forced padding from previous attempts
+                     const textArea = chatInput.querySelector('textarea');
+                     if (textArea) {
+                         textArea.style.paddingLeft = '0px'; 
                      }
                  }
             }
