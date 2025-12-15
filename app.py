@@ -2325,14 +2325,20 @@ with tab4:
                     
                     if paste_result.image_data is not None:
                          img = paste_result.image_data
-                         if img.mode == 'RGBA': img = img.convert('RGB')
-                         # Check Duplicates
-                         should_append = True
-                         if st.session_state['pasted_images']:
-                             if st.session_state['pasted_images'][-1].size == img.size:
-                                  should_append = False
-                         if should_append:
+                         
+                         # FIX: Prevent Re-Insertion Loop
+                         # Hash the image to check if we already processed this specific paste event
+                         import hashlib
+                         img_bytes = img.tobytes()
+                         img_hash = hashlib.md5(img_bytes).hexdigest()
+                         
+                         last_hash = st.session_state.get('last_paste_hash')
+                         
+                         # Only append if it's a NEW paste (Hash changed)
+                         if img_hash != last_hash:
+                             if img.mode == 'RGBA': img = img.convert('RGB')
                              st.session_state['pasted_images'].append(img)
+                             st.session_state['last_paste_hash'] = img_hash # Mark as processed
                              st.toast("Imagen pegada con éxito!", icon='📸')
                 except Exception as e:
                     st.error(f"Error cargando botón: {e}")
