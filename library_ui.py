@@ -520,7 +520,11 @@ def render_library(assistant):
         tab2, tab1, tab4, tab3 = st.tabs(["✨ Crear Carpeta", "📂 Subir Archivos", "✍🏻 Escribir contenido", "📥 Importar chat masivo"])
     
         with tab1:
-            upl_files = st.file_uploader("Archivos (PDF, TXT, Word, Imágenes):", accept_multiple_files=True)
+            upl_files = st.file_uploader(
+                "Archivos (PDF, TXT, Word, Imágenes):", 
+                type=['pdf', 'txt', 'docx', 'md', 'json', 'jpg', 'png', 'jpeg'],
+                accept_multiple_files=True
+            )
             if st.button("Subir Archivos", type="primary"):
                 if not target_unit_id:
                      # Check if user entered a new folder name
