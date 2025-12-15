@@ -2979,7 +2979,7 @@ with tab6:
 
 
 
-        col_chat, col_info = st.columns([2, 1], gap="large")
+        col_chat, col_info = st.columns([3, 1], gap="large")
         
         with col_info:
             st.info(f"📝 **Clase Actual:** {current_sess['name']}")
@@ -3206,7 +3206,7 @@ with tab6:
                 else:
                      row_style += " justify-content: flex-start;"
                 
-                bubble_style = "padding: 10px 14px; border-radius: 12px; max-width: 70%; word-wrap: break-word; font-size: 16px; line-height: 1.5; position: relative; box-shadow: 0 1px 2px rgba(0,0,0,0.1); font-family: inherit;"
+                bubble_style = "padding: 10px 14px; border-radius: 12px; max-width: 85%; word-wrap: break-word; font-size: 16px; line-height: 1.5; position: relative; box-shadow: 0 1px 2px rgba(0,0,0,0.1); font-family: inherit;"
                 if is_user:
                     bubble_style += " background-color: #d9fdd3; color: #111; border-bottom-right-radius: 2px; margin-right: 8px;"
                 else:
