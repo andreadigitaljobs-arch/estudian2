@@ -2,6 +2,7 @@
 import streamlit as st
 import os
 import glob
+import uuid
 from transcriber import Transcriber
 from study_assistant import StudyAssistant
 from PIL import Image, ImageGrab
@@ -2368,7 +2369,9 @@ with tab4:
                     
                         else:
                             # Image Processing
-                            temp_img_path = f"temp_quiz_{i}.png"
+                            # FIX CONCURRENCY: Use UUID
+                            u_id = uuid.uuid4().hex
+                            temp_img_path = f"temp_quiz_{u_id}_{i}.png"
                             if item["type"] == "upload":
                                 with open(temp_img_path, "wb") as f: f.write(item["obj"].getbuffer())
                             else:
