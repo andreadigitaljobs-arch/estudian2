@@ -117,7 +117,8 @@ def get_user_courses(user_id):
         res = supabase.table("courses").select("*").eq("user_id", user_id).order("created_at", desc=True).execute()
         return res.data
     except Exception as e:
-        return []
+        print(f"Error fetching courses: {e}")
+        return None
 
 def create_course(user_id, name):
     supabase = init_supabase()
