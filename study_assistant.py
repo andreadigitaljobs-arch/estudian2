@@ -106,23 +106,28 @@ Google ofrece una capa gratuita generosa, pero limitada.
         """Solves a quiz question from an image or text."""
         
         prompt = f"""
-        Analiza esta pregunta de examen como un TUTOR EXPERTO.
+        Analiza esta pregunta de examen con el rigor de un CATEDRÁTICO UNIVERSITARIO.
         
-        CONTEXTO DE LA BIBLIOTECA (PRIORIDAD ALTA):
+        CONTEXTO DE LA BIBLIOTECA:
         {global_context}
         
-        INSTRUCCIONES CLAVE:
-        1. **BÚSQUEDA**: Busca la respuesta primero en el Contexto de la Biblioteca.
-        2. **RESPUESTA HÍBRIDA**: Si la respuesta NO está en el contexto, **UGO TUS CONOCIMIENTOS GENERALES** de inmediato.
-           - **IMPORTANTE**: NO digas "No encontré la información en el archivo".
-           - NO digas "Basado en mi conocimiento general".
-           - Simplemente responde con la verdad, sea del archivo o de tu base de datos global.
-        3. **EXPLICACIÓN**: Explica por qué es la opción correcta. Si usaste el contexto, cita la fuente sutilmente. Si es conocimiento general, explica el concepto teórico.
+        INSTRUCCIONES SUPREMAS:
+        1. **RESOLUCIÓN DIRECTA**: Identifica la respuesta correcta de inmediato.
+        2. **FUENTE DE VERDAD**: 
+           - Busca primero en la Biblioteca.
+           - Si NO está ahí, AUTOMÁTICAMENTE usa tu conocimiento enciclopédico mundial.
+           - **PROHIBIDO** decir "El texto no lo dice" o "No tengo información".
+           - **PROHIBIDO** ser vago (ej: "épocas tempranas"). Sé preciso (ej: "Año 1732").
+        3. **EXPLICACIÓN MAGISTRAL (El valor real)**:
+           - Tu explicación NO debe ser una simple justificación. Debe ser una **mini-clase**.
+           - Aporta contexto histórico, define conceptos clave, menciona autores o fechas si aplica.
+           - El estudiante debe aprender el "POR QUÉ" profundo, no solo cuál es la opción correcta.
+           - Sé asertivo, profesional y detallista.
 
-        Salida (Directa y al grano):
-        **Pregunta:** [Texto]
-        **Respuesta Correcta:** [Opción]
-        **Explicación:** [Razonamiento claro]
+        Salida Estructurada:
+        **Pregunta:** [Texto completo]
+        **Respuesta Correcta:** [Opción exacta]
+        **Explicación:** [Párrafo robusto, educativo y detallado que demuestre dominio total del tema]
         """
         
         content_parts = [prompt]
