@@ -1114,8 +1114,8 @@ with st.sidebar:
                 
                 st.rerun()
 
-        # VIEW ALL BUTTON
-        if len(sessions) > 0:
+        # VIEW ALL BUTTON ALWAYS VISIBLE
+        if True:
             st.write("")
             if st.button("📂 Ver todo el historial...", help="Ir al panel de gestión completo", use_container_width=True):
                 st.session_state['redirect_target_name'] = "Inicio"
