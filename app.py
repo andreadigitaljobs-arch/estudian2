@@ -10,7 +10,12 @@ import time
 import datetime
 import extra_streamlit_components as stx  # --- PERSISTENCE ---
 from library_ui import render_library # --- LIBRARY UI ---
-from database import delete_course, rename_course # Force import availability
+from database import (
+    get_user_courses, create_course, delete_course, rename_course, 
+    get_chat_sessions, create_chat_session, rename_chat_session, delete_chat_session, 
+    get_dashboard_stats, update_user_nickname, get_recent_chats, check_and_update_streak, 
+    update_user_footprint, init_supabase, update_last_course
+)
 
 
 # --- GENERATE VALID ICO (FIX) ---
@@ -1056,7 +1061,7 @@ with st.sidebar:
     st.divider()
     
     # --- 1.5 HISTORIAL DE CLASES (MULTI-CHAT) ---
-    from database import get_chat_sessions, create_chat_session, rename_chat_session, delete_chat_session
+    # from database import ... (Moved to top)
 
     if 'current_chat_session' not in st.session_state:
         st.session_state['current_chat_session'] = None
@@ -1217,7 +1222,7 @@ with st.sidebar:
     st.caption("Diplomado Actual:")
     
     # DB Ops
-    from database import get_user_courses, create_course, get_dashboard_stats, update_user_nickname, get_recent_chats, check_and_update_streak, update_user_footprint, update_last_course
+    # from database import ... (Moved to top)
     
     # GUARD: Ensure user is logged in before accessing ID
     if not st.session_state.get('user'):
