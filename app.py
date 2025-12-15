@@ -175,10 +175,7 @@ if not st.session_state['user']:
             min-height: 10vh;
         }}
 
-        /* GLOBAL SCROLL KILLER */
-        * {{
-            overflow: hidden !important;
-        }}
+        /* GLOBAL SCROLL KILLER REMOVED */
         
         /* 3. LOGIN CARD CONTAINER (Theme Aware) */
         .login-card {{
