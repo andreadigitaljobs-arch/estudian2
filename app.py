@@ -3022,10 +3022,6 @@ with tab6:
             import markdown
             chat_html = '<div style="display: flex; flex-direction: column; gap: 15px; padding-bottom: 50px;">'
             
-            # AVATAR ASSETS (Data URIs for reliability)
-            bot_avatar_svg = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgc3R5bGU9ImZpbGw6ICM0NzQ3NDc7Ij48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxMiAxMikgc2NhbGUoMC42KSI+PHBhdGggZD0iTTM1LjQsMTQuNWMtMi4zLTAuNS00LTEuMy01LjgtMi40Yy0xLjgtMS4xLTMuOC0yLjQtNS44LTMuNWMtMC4zLTAuMS0wLjYtMC4xLTAuOSwwYy0yLDEuMS00LDIuNC01LjgsMy41Yy0xLjgsMS4xLTMuNSwxLjktNS44LDIuNGMtMiwyLjctMy4zLDYuMi0zLjMsMTAuNWMwLDEyLjcsMTAuNCwyMywyMy4xLDIzYzEyLjcsMCwyMy4xLTEwLjMsMjMuMS0yM0MzOC43LDIwLjcsMzcuNCwxNy4yLDM1LjQsMTQuNXogTTIyLjMsMzkuOGMtMy42LDAtNi41LTIuOS02LjUtNi41YzAtMy42LDIuOS02LjUsNi41LTYuNXM2LjUsMi45LDYuNSw2LjVDMjguNywzNi44LDI1LjksMzkuOCwyMi4zLDM5Ljh6IE0zOC45LDI3LjdjLTIuMSwwLTMuOS0xLjctMy45LTMuOXcxLjctMy45LDMuOS0zLjlzMy45LDEuNywzLjksMy45QzQyLjcsMjYsNDEsMjcuNywzOC45LDI3Ljd6Ii8+PC9Zz48L3N2Zz4="
-            user_avatar_svg = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2NCA2NCIgc3R5bGU9ImZpbGw6ICM0NzQ3NDc7Ij48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgxMiAxMikgc2NhbGUoMC42KSI+PHBhdGggZD0iTTMyLDJDMTUuNCwyLDIsMTUuNCwyLDMyczEzLjQsMzAsMzAsMzBzMzAtMTMuNCwzMC0zMFM0OC42LDIsMzIsMnogTTMyLDEzYzYuNiwwLDEyLDUuNCwxMiwxMmMwLDYuNi01LjQsMTItMTIsMTJzLTEyLTUuNC0xMi0xMkMyMCwxOC40LDI1LjQsMTMsMzIsMTN6IE0zMiw1M2MtOC44LDAtMTYuNi00LjMtMjEuMy0xMS4yYzAuMy02LjgsNS45LTEyLjMsMTMuNy0xMy41YzIuNCwxLjUsNC45LDIuNCw3LjYsMi40czUuMS0wLjksNy42LTIuNGM3LjgsMS4yLDEzLjMsNi43LDEzLjcsMTMuNUM0OC42LDQ4LjcsNDAuOCw1MywzMiw1M3oiLz48L2c+PC9zdmc+"
-            
             for msg in st.session_state['tutor_chat_history']:
                 is_user = msg['role'] == 'user'
                 
@@ -3041,9 +3037,16 @@ with tab6:
                     bubble_style += " background-color: #d9fdd3; color: #111; border-bottom-right-radius: 2px; margin-right: 8px;"
                 else:
                     bubble_style += " background-color: #ffffff; color: #111; border-bottom-left-radius: 2px; border: 1px solid #f0f0f0; margin-left: 8px;"
-
-                avatar_img = f'<img src="{user_avatar_svg if is_user else bot_avatar_svg}" style="width: 32px; height: 32px; border-radius: 50%; border: 1px solid #ddd; background: white; padding: 2px;">'
                 
+                # AVATAR (Emoji based for robustness)
+                avatar_icon = "👤" if is_user else "🎓"
+                avatar_bg = "#eee" if is_user else "#e6f3ff"
+                avatar_html = f'''
+                <div style="width: 35px; height: 35px; min-width: 35px; border-radius: 50%; background-color: {avatar_bg}; border: 1px solid #ccc; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                    {avatar_icon}
+                </div>
+                '''
+
                 # Convert Markdown
                 raw_content = msg.get('content', '') or ''
                 try:
@@ -3053,10 +3056,10 @@ with tab6:
 
                 if is_user:
                     # User: Bubble Left of Avatar (Avatar on far right)
-                    chat_html += f'<div style="{row_style}"><div style="{bubble_style}">{msg_html}</div>{avatar_img}</div>'
+                    chat_html += f'<div style="{row_style}"><div style="{bubble_style}">{msg_html}</div>{avatar_html}</div>'
                 else:
                     # Bot: Avatar Left of Bubble
-                    chat_html += f'<div style="{row_style}">{avatar_img}<div style="{bubble_style}">{msg_html}</div></div>'
+                    chat_html += f'<div style="{row_style}">{avatar_html}<div style="{bubble_style}">{msg_html}</div></div>'
                     
             chat_html += '</div>'
             st.markdown(chat_html, unsafe_allow_html=True)
@@ -3076,7 +3079,7 @@ with tab6:
             btn.innerHTML = "⬇️";
             btn.style.cssText = `
                 position: fixed;
-                bottom: 150px;
+                bottom: 120px;
                 right: 20px;
                 z-index: 999999;
                 width: 45px;
@@ -3084,7 +3087,7 @@ with tab6:
                 border-radius: 50%;
                 background: white;
                 box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-                border: none;
+                border: 1px solid #ddd;
                 cursor: pointer;
                 font-size: 20px;
                 display: flex;
@@ -3097,9 +3100,12 @@ with tab6:
             btn.onmouseout = () => { btn.style.transform = "scale(1)"; };
             
             btn.onclick = () => {
-                const container = window.parent.document.querySelector('section[data-testid="stAppViewContainer"]');
-                if (container) {
-                     container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+                const selectors = ['section[data-testid="stAppViewContainer"]', '.main', 'section.main'];
+                for (const sel of selectors) {
+                    const el = window.parent.document.querySelector(sel);
+                    if (el) {
+                        el.scrollTop = el.scrollHeight; // Direct snap
+                    }
                 }
             };
             
