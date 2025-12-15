@@ -2266,8 +2266,9 @@ with tab4:
                          st.toast("Imagen pegada con éxito!", icon='📸')
             
             except Exception as e:
-                st.info("💡 **Tip:** Usa Ctrl+V en el recuadro de subida si el botón no carga.")
-                print(f"Paste component error: {e}")
+                # DEBUG MODE: Show error to fix it
+                st.error(f"⚠️ Error cargando botón de pegar: {e}")
+                st.info("💡 **Tip:** Usa Ctrl+V en el recuadro de subida mientras lo arreglo.")
 
             # Show Pasted Thumbnails
             if st.session_state['pasted_images']:
