@@ -101,7 +101,7 @@ def render_library(assistant):
                     st.write(f"## {icon}")
                 
                 with c2:
-                    st.markdown(f"**{f['name']}**")
+                    st.markdown(f"{f['name']}")
                     # Context Label (Folder)
                     st.caption(f"📂 En: {f.get('unit_name', 'Módulo')}")
                     
