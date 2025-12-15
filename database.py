@@ -297,6 +297,9 @@ def get_files(unit_id):
             return []
 
 def upload_file_to_db(unit_id, name, content_text, file_type):
+    # SANITIZE: Remove asterisks and quotes from filename globally
+    if name:
+        name = name.replace("*", "").replace('"', "").replace("'", "").strip()
     """
     Saves file metadata and content (text) to DB via RPC (Bypass API Cache).
     """
@@ -331,6 +334,9 @@ def delete_file(file_id):
     except: return False
 
 def rename_file(file_id, new_name):
+    # SANITIZE
+    if new_name:
+        new_name = new_name.replace("*", "").replace('"', "").replace("'", "").strip()
     supabase = init_supabase()
     try:
         supabase.table("library_files").update({"name": new_name}).eq("id", file_id).execute()
