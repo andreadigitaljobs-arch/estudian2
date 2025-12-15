@@ -135,11 +135,15 @@ if not st.session_state['user']:
     import base64
 
     # --- HELPER: ASSETS ---
+    @st.cache_data
     def get_b64_image(image_path):
-        if os.path.exists(image_path):
-            with open(image_path, "rb") as f:
-                return base64.b64encode(f.read()).decode()
-        return None
+        try:
+            if os.path.exists(image_path):
+                with open(image_path, "rb") as f:
+                    return base64.b64encode(f.read()).decode()
+        except:
+            return "" # Return empty string on error to prevent crash
+        return ""
 
     logo_b64 = get_b64_image("assets/logo_main.png")
     hero_b64 = get_b64_image("assets/messimo_hero_new.png") # Updated to user provided PNG
