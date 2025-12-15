@@ -2609,8 +2609,37 @@ with tab6:
     current_sess = st.session_state.get('current_chat_session')
     
     if not current_sess:
-        st.warning("👈 Por favor, **inicia un nuevo chat** o selecciona uno existente en la barra lateral para comenzar.")
-        st.image("https://media.giphy.com/media/l0HlHFRbmaZtBRhXG/giphy.gif", width=300) # Optional fun placeholder
+        # CONSULTANT FIX: Direct Access - Start Chat Immediately
+        # Replaces the old "Go to sidebar" placeholder
+        st.markdown("### ¿En qué te ayudo hoy? 🎓")
+        st.caption("Escribe tu pregunta y crearé una sesión nueva automáticamente.")
+        
+        init_prompt = st.chat_input("Escribe tu pregunta para empezar...", key="new_chat_init_input")
+        
+        if init_prompt:
+             # 1. Create Session
+             # Generate a title from the prompt (truncated)
+             short_title = init_prompt[:30] + "..." if len(init_prompt) > 30 else init_prompt
+             new_session = create_chat_session(st.session_state['user'].id, short_title)
+             
+             if new_session:
+                 # 2. Set as Active
+                 st.session_state['current_chat_session'] = new_session
+                 st.session_state['tutor_chat_history'] = [] 
+                 
+                 # 3. Save User Message
+                 save_chat_message(new_session['id'], "user", init_prompt)
+                 st.session_state['tutor_chat_history'].append({"role": "user", "content": init_prompt})
+                 
+                 # 4. Update Footprint (Sidebar Access)
+                 update_user_footprint(st.session_state['user'].id, 'chat', short_title, new_session['id'], "Nueva consulta")
+                 
+                 # 5. Trigger AI Response
+                 st.session_state['trigger_ai_response'] = True
+                 
+                 st.rerun()
+             else:
+                 st.error("Error iniciando sesión de chat.")
     else:
         # Load History from DB (Sync)
         # We re-fetch to ensure we have the latest state relative to DB
