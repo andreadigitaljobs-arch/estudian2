@@ -144,6 +144,7 @@ def rename_course(course_id, new_name):
         return False
 
 # --- UNITS (CARPETAS) ---
+@st.cache_data(ttl=2, show_spinner=False)
 def get_units(course_id, parent_id=None, fetch_all=False):
     """
     Fetch folders.
@@ -247,6 +248,7 @@ def search_library(course_id, search_term):
         return []
 
 # --- FILES (ARCHIVOS) ---
+@st.cache_data(ttl=2, show_spinner=False)
 def get_files(unit_id):
     supabase = init_supabase()
     import time
