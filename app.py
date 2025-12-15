@@ -3101,47 +3101,43 @@ with tab6:
             const popovers = window.parent.document.querySelectorAll('div[data-testid="stPopover"]');
             const chatInput = window.parent.document.querySelector('[data-testid="stChatInput"]');
             
-            if (chatInput && popovers.length > 0) {
-                 const targetPopover = popovers[popovers.length - 1]; 
-                 const textArea = chatInput.querySelector('textarea');
-                 
-                 if (textArea && textArea.parentElement) {
-                     const capsule = textArea.parentElement;
-                     
-                     // 1. INJECT BUTTON
-                     if (!capsule.contains(targetPopover)) {
-                         targetPopover.style.position = 'relative';
-                         targetPopover.style.margin = '0 5px 0 5px';
-                         targetPopover.style.display = 'flex';
-                         targetPopover.style.alignItems = 'center';
-                         targetPopover.style.zIndex = '10';
-                         capsule.insertBefore(targetPopover, capsule.firstChild);
-                         textArea.style.paddingLeft = '0px';
-                         
-                         // 2. FOCUS FIX: Robust Listener
-                         capsule.style.cursor = 'text'; // Visual cue
-                         
-                         const focusHandler = (e) => {
-                             if (!targetPopover.contains(e.target)) {
-                                 e.preventDefault(); // Stop default (selection/etc)
-                                 textArea.focus();
-                                 setTimeout(() => textArea.focus(), 10);
-                             }
-                         };
-                         
-                         capsule.onclick = focusHandler;
-                         capsule.onmousedown = focusHandler; // Catch earlier interaction
+            // 1. FOCUS & LAYOUT FIX
+            if (chatInput) {
+                 // Ensure the whole bar is clickable
+                 chatInput.style.cursor = 'text';
+                 chatInput.onclick = (e) => {
+                     const ta = chatInput.querySelector('textarea');
+                     if (ta && e.target !== ta && !e.target.closest('button')) {
+                         ta.focus();
+                     }
+                 };
+
+                 // Inject + Button if needed
+                 if (popovers.length > 0) {
+                     const targetPopover = popovers[popovers.length - 1]; 
+                     const textArea = chatInput.querySelector('textarea');
+                     if (textArea && textArea.parentElement) {
+                         const capsule = textArea.parentElement;
+                         if (!capsule.contains(targetPopover)) {
+                             targetPopover.style.position = 'relative';
+                             targetPopover.style.margin = '0 8px 0 0'; // More spacing
+                             targetPopover.style.display = 'flex';
+                             targetPopover.style.alignItems = 'center';
+                             targetPopover.style.zIndex = '10';
+                             // Insert at start of CAPSULE (Generic wrapper)
+                             capsule.insertBefore(targetPopover, capsule.firstChild);
+                             textArea.style.paddingLeft = '0px';
+                         }
                      }
                  }
             }
             
-            // 3. PASTE HANDLER & HIDE RECEIVER
+            // 2. PASTE & GLOBAL DRAG-DROP HANDLER
             const allUploaders = Array.from(window.parent.document.querySelectorAll('[data-testid="stFileUploader"]'));
             let pasteUploaderWrapper = null;
             let pasteInput = null;
 
             allUploaders.forEach(wrapper => {
-                // Now that label is visible, this should always work
                 if (wrapper.innerText.includes("Paste_Receiver_Hidden_Bin")) {
                     pasteUploaderWrapper = wrapper;
                     pasteInput = wrapper.querySelector('input[type="file"]');
@@ -3149,27 +3145,67 @@ with tab6:
             });
 
             if (pasteUploaderWrapper) {
-                // Prevent Infinite Loop: Only hide if not already hidden
-                if (pasteUploaderWrapper.style.display !== 'none') {
-                    pasteUploaderWrapper.style.setProperty('display', 'none', 'important');
+                // HIDE VISUALLY BUT KEEP FUNCTIONAL (Opacity 0 vs Display None)
+                // Display: none can kill event listeners in some engines.
+                if (pasteUploaderWrapper.style.opacity !== '0') {
+                    pasteUploaderWrapper.style.opacity = '0';
+                    pasteUploaderWrapper.style.height = '0px';
+                    pasteUploaderWrapper.style.overflow = 'hidden';
+                    pasteUploaderWrapper.style.position = 'absolute';
+                    pasteUploaderWrapper.style.zIndex = '-1';
                 }
                 
                 if (pasteInput) {
-                    // Global Paste Listener
-                    // We assign this safely
-                    window.parent.document.onpaste = (event) => {
-                        const items = (event.clipboardData || event.originalEvent.clipboardData).items;
-                        for (index in items) {
-                            const item = items[index];
-                            if (item.kind === 'file') {
-                                const blob = item.getAsFile();
-                                const dataTransfer = new DataTransfer();
-                                dataTransfer.items.add(blob);
-                                pasteInput.files = dataTransfer.files;
-                                pasteInput.dispatchEvent(new Event('change', { bubbles: true }));
-                            }
+                    // HELPER: Send File to Input
+                    const sendFiles = (files) => {
+                        const dataTransfer = new DataTransfer();
+                        let hasFiles = false;
+                        for (let i = 0; i < files.length; i++) {
+                             dataTransfer.items.add(files[i]);
+                             hasFiles = true;
+                        }
+                        if (hasFiles) {
+                            pasteInput.files = dataTransfer.files;
+                            // Trigger Change exactly like user interaction
+                            pasteInput.dispatchEvent(new Event('change', { bubbles: true }));
                         }
                     };
+
+                    // A. PASTE Handler (Global)
+                    if (!window.parent.document.hasPasteHandler) {
+                        window.parent.document.addEventListener('paste', (event) => {
+                            const items = (event.clipboardData || event.originalEvent.clipboardData).items;
+                            const files = [];
+                            for (index in items) {
+                                const item = items[index];
+                                if (item.kind === 'file') {
+                                    files.push(item.getAsFile());
+                                }
+                            }
+                            if (files.length > 0) sendFiles(files);
+                        });
+                        window.parent.document.hasPasteHandler = true;
+                    }
+
+                    // B. DRAG & DROP Handler (Global)
+                    if (!window.parent.document.hasDropHandler) {
+                        // Drag Over (Allow drop)
+                        window.parent.document.addEventListener('dragover', (e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            // Optional: Highlight UI
+                        });
+                        
+                        // Drop
+                        window.parent.document.addEventListener('drop', (e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (e.dataTransfer && e.dataTransfer.files.length > 0) {
+                                sendFiles(e.dataTransfer.files);
+                            }
+                        });
+                        window.parent.document.hasDropHandler = true;
+                    }
                 }
             }
             
