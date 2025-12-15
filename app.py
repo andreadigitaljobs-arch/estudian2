@@ -2479,6 +2479,14 @@ with tab4:
                 progress_bar.progress(1.0)
                 status.success("¡Análisis Terminado! (100%)")
                 st.session_state['quiz_results'] = results # Save results
+                
+                # CONSULTANT FIX: Proactive Chat Start
+                # Clear previous chat and start fresh with context
+                st.session_state['quiz_chat'] = []
+                st.session_state['quiz_chat'].append({
+                    "role": "assistant", 
+                    "content": "✅ **Análisis completado.** He revisado tus preguntas.\n\n¿Estás de acuerdo con todas las respuestas o quieres debatir alguna?"
+                })
 
         # --- PERSISTENT RESULTS DISPLAY ---
         if st.session_state['quiz_results']:
@@ -2552,9 +2560,20 @@ with tab4:
                  
                  # Call AI
                  with st.chat_message("assistant"):
-                     with st.spinner("El profesor está analizando tu argumento..."):
+                     with st.spinner("El profesor está re-analizando las imágenes y tu argumento..."):
                           try:
-                              reply = assistant.debate_quiz(history=st.session_state['quiz_chat'][:-1], latest_input=prompt, quiz_context=ctx_quiz)
+                              # Gather Images for Context
+                              images_ctx = []
+                              if st.session_state['quiz_results']:
+                                  for r in st.session_state['quiz_results']:
+                                      if r.get('img_obj'): images_ctx.append(r['img_obj'])
+                              
+                              reply = assistant.debate_quiz(
+                                  history=st.session_state['quiz_chat'][:-1], 
+                                  latest_input=prompt, 
+                                  quiz_context=ctx_quiz,
+                                  images=images_ctx
+                              )
                               st.markdown(reply)
                               st.session_state['quiz_chat'].append({"role": "assistant", "content": reply})
                           except Exception as e:

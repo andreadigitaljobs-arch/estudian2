@@ -165,8 +165,8 @@ Google ofrece una capa gratuita generosa, pero limitada.
         response = self.model.generate_content(valid_parts)
         return response.text
 
-    def debate_quiz(self, history, latest_input, quiz_context=""):
-        """Interacts with user to debate quiz results."""
+    def debate_quiz(self, history, latest_input, quiz_context="", images=None):
+        """Interacts with user to debate quiz results, seeing the images."""
         
         # Build conversation string
         conv_str = ""
@@ -186,14 +186,25 @@ Google ofrece una capa gratuita generosa, pero limitada.
         ESTUDIANTE AHORA: {latest_input}
         
         INSTRUCCIONES:
-        1. Sé amable pero riguroso.
-        2. Si el estudiante reclama que una respuesta es incorrecta, ANALIZA su argumento.
-        3. Si tiene razón, ADMÍTELO, discúlpate y explica por qué la confusión (quizás ambigüedad).
-        4. Si no tiene razón, explica con pedagogía por qué la respuesta original es la correcta.
-        5. Tu objetivo es que APRENDA, no ganar la discusión.
+        1. Tienes acceso visual a las preguntas (Imágenes) si se adjuntaron. Úsalas para verificar tus respuestas.
+        2. Sé amable pero riguroso.
+        3. Si el estudiante reclama que una respuesta es incorrecta, ANALIZA su argumento vs la Imagen/Texto.
+        4. Si tiene razón, ADMÍTELO, discúlpate y explica por qué la confusión (quizás ambigüedad).
+        5. Si no tiene razón, explica con pedagogía por qué la respuesta original es la correcta.
+        6. Tu objetivo es que APRENDA, no ganar la discusión.
         """
         
-        response = self.model.generate_content(prompt)
+        content_parts = [prompt]
+        
+        # Add Images if available to Provide Context
+        if images:
+            for img in images:
+                content_parts.append(img)
+                
+        # Safety catch
+        valid_parts = [p for p in content_parts if p is not None]
+        
+        response = self.model.generate_content(valid_parts)
         return response.text
 
     def solve_homework(self, task_prompt, context_texts, task_attachment=None):
