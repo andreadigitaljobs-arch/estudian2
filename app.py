@@ -3020,22 +3020,29 @@ with tab6:
         with col_chat:
             # Display Chat History (WhatsApp Style)
             import markdown
-            chat_html = '<div class="chat-container">'
+            chat_html = '<div style="display: flex; flex-direction: column; gap: 10px; padding-bottom: 50px;">'
             for msg in st.session_state['tutor_chat_history']:
                 is_user = msg['role'] == 'user'
-                row_class = "row-reverse" if is_user else ""
-                bubble_class = "user-bubble" if is_user else "assistant-bubble"
                 
+                # Inline Styles for WhatsApp Look
+                row_style = "display: flex; width: 100%; margin-bottom: 5px;"
+                if is_user:
+                    row_style += " flex-direction: row-reverse;"
+                
+                bubble_style = "padding: 10px 14px; border-radius: 10px; max-width: 75%; word-wrap: break-word; font-size: 16px; line-height: 1.5; position: relative; box-shadow: 0 1px 1px rgba(0,0,0,0.1); font-family: inherit;"
+                if is_user:
+                    bubble_style += " background-color: #d9fdd3; color: #111; border-top-right-radius: 0;"
+                else:
+                    bubble_style += " background-color: #ffffff; color: #111; border-top-left-radius: 0; border: 1px solid #eee;"
+
                 # Convert Markdown to HTML
-                # Handling None content safety
                 raw_content = msg.get('content', '') or ''
-                # Convert
                 try:
                     msg_html = markdown.markdown(raw_content, extensions=['fenced_code', 'tables'])
                 except:
                     msg_html = raw_content
 
-                chat_html += f'<div class="chat-row {row_class}"><div class="chat-bubble {bubble_class}">{msg_html}</div></div>'
+                chat_html += f'<div style="{row_style}"><div style="{bubble_style}">{msg_html}</div></div>'
             chat_html += '</div>'
             st.markdown(chat_html, unsafe_allow_html=True)
             
@@ -3046,7 +3053,7 @@ with tab6:
                 position: fixed;
                 bottom: 110px;
                 right: 30px;
-                z-index: 9999;
+                z-index: 999999;
                 width: 45px;
                 height: 45px;
                 border-radius: 50%;
