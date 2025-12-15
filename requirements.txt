@@ -1,7 +1,8 @@
 streamlit
 google-generativeai
-supabase
+streamlit-paste-button
 extra-streamlit-components
-Pillow
+python-docx
+markdownw
 streamlit-paste-button
 python-docx
