@@ -1115,7 +1115,7 @@ with st.sidebar:
                 st.rerun()
 
         # VIEW ALL BUTTON
-        if len(sessions) > 1:
+        if len(sessions) > 0:
             st.write("")
             if st.button("📂 Ver todo el historial...", help="Ir al panel de gestión completo", use_container_width=True):
                 st.session_state['redirect_target_name'] = "Inicio"
@@ -1535,6 +1535,42 @@ with tab_home:
         all_chats = get_chat_sessions(st.session_state['user'].id)
         if q_hist:
             all_chats = [c for c in all_chats if q_hist.lower() in c['name'].lower()]
+            
+        # --- BULK DELETE IN DASHBOARD ---
+        if all_chats:
+            with st.expander("🗑️ Gestión Masiva (Eliminar)", expanded=False):
+                # Unique Keys Logic
+                sess_opts = []
+                name_map = {}
+                for s in all_chats:
+                    raw_n = s['name']
+                    count = name_map.get(raw_n, 0)
+                    suffix = "\u200b" * count
+                    label = f"{raw_n}{suffix}"
+                    s['_label'] = label
+                    sess_opts.append(s)
+                    name_map[raw_n] = count + 1
+                
+                sel_del = st.multiselect("Seleccionar para borrar:", sess_opts, format_func=lambda x: x['_label'], key="dash_bulk_del")
+                if sel_del:
+                    st.warning(f"¿Estás seguro de borrar {len(sel_del)} conversaciones?")
+                    if st.button("Sí, borrar definitivamente", key="btn_conf_dash_del"):
+                        succ = 0
+                        ids_del = []
+                        for d in sel_del:
+                            if delete_chat_session(d['id']):
+                                succ += 1
+                                ids_del.append(d['id'])
+                        
+                        if succ > 0:
+                            st.success(f"Se eliminaron {succ} chats.")
+                            # Check active
+                            curr_s = st.session_state.get('current_chat_session')
+                            if curr_s and curr_s['id'] in ids_del:
+                                st.session_state['current_chat_session'] = None
+                                st.session_state['tutor_chat_history'] = []
+                            time.sleep(1)
+                            st.rerun()
             
         if all_chats:
             h_cols = st.columns(3)
