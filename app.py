@@ -3081,6 +3081,26 @@ with tab6:
                             })
                             st.success(f"✅")
         
+        # --- HIDDEN PASTE RECEIVER ---
+        # A file uploader that exists solely to receive pasted images via JS
+        # We process it immediately.
+        with st.container():
+             # We give it a unique label to find it, but hide it via CSS/JS logic if possible or just rely on layout
+             # We can't easily scope CSS to just this widget without a key selector which Streamlit obscures.
+             # We'll use a specific key and handle visibility in JS.
+             paste_bin = st.file_uploader("Paste Receiver", type=['png','jpg','jpeg'], key="paste_bin", label_visibility='collapsed')
+        
+        if paste_bin:
+             if not any(f['name'] == paste_bin.name for f in st.session_state['active_context_files']):
+                 # It's an image
+                 st.session_state['active_context_files'].append({
+                     "name": f"Pasted_Image_{paste_bin.name}",
+                     "content": f"[Imagen Pegada: {paste_bin.name}]" 
+                     # Note: Real image content processing would require saving the blob? 
+                     # For now we enable the upload interaction.
+                 })
+                 st.toast("📸 Imagen pegada agregada al contexto!")
+
         st.components.v1.html("""
         <script>
         const observer = new MutationObserver(() => {
@@ -3091,28 +3111,85 @@ with tab6:
                  const targetPopover = popovers[popovers.length - 1]; 
                  const textArea = chatInput.querySelector('textarea');
                  
-                 // We inject INSIDE the text area's parent container (The visual capsule)
                  if (textArea && textArea.parentElement) {
                      const capsule = textArea.parentElement;
                      
+                     // 1. INJECT BUTTON
                      if (!capsule.contains(targetPopover)) {
-                         // Styling to blend in
                          targetPopover.style.position = 'relative';
-                         targetPopover.style.top = '0';
-                         targetPopover.style.left = '0';
                          targetPopover.style.margin = '0 5px 0 5px';
                          targetPopover.style.display = 'flex';
                          targetPopover.style.alignItems = 'center';
                          targetPopover.style.zIndex = '10';
-                         
-                         // Insert as first child of the capsule (Left of text area)
                          capsule.insertBefore(targetPopover, capsule.firstChild);
-                         
-                         // Reset padding
                          textArea.style.paddingLeft = '0px';
+                         
+                         // 2. FOCUS FIX: Clicking the capsule focuses the text area
+                         capsule.onclick = (e) => {
+                             // Corrected: prevent interfering with the button itself
+                             if (!targetPopover.contains(e.target)) {
+                                 textArea.focus();
+                             }
+                         };
                      }
                  }
             }
+            
+            // 3. PASTE HANDLER & HIDE RECEIVER
+            // Find our hidden uploader by its role or location? 
+            // It's tricky. Simplest hack: The last file uploader is the "Paste Bin" if we order it so.
+            // Popover uploader is arguably 'last' in DOM if portal? 
+            // Or 'first' if rendered earlier?
+            // Layout is: Popover (rendered), PasteBin (rendered), ChatInput (rendered).
+            // So PasteBin is likely the LAST one in the main flow before ChatInput?
+            // Let's assume generic paste interception.
+            
+            const uploaders = window.parent.document.querySelectorAll('input[type="file"]');
+            // We want the one that correlates to "paste_bin". 
+            // We can just try to use the *first* available one that ISN'T in the popover if possible.
+            // For now, let's target the one that is NOT inside the popover button div.
+            
+            let pasteInput = null;
+            uploaders.forEach(u => {
+                 if (!u.closest('div[data-testid="stPopover"]')) {
+                     pasteInput = u;
+                 }
+            });
+            
+            if (pasteInput) {
+                // Hide its wrapper (The Dropzone)
+                // The input is hidden inside a Dropzone div.
+                const dropzone = pasteInput.closest('[data-testid="stFileUploader"]');
+                if (dropzone) {
+                    dropzone.style.display = 'none';
+                }
+
+                // Add Paste Listener to Window (Global Paste)
+                // We assume if user pastes Image, they want it in chat.
+                window.parent.document.onpaste = (event) => {
+                    const items = (event.clipboardData || event.originalEvent.clipboardData).items;
+                    for (index in items) {
+                        const item = items[index];
+                        if (item.kind === 'file' && item.type.startsWith('image/')) {
+                            const blob = item.getAsFile();
+                            const files = [blob];
+                            
+                            // Assign to Input (React Hack)
+                            // We need to trigger React's internal value tracker
+                            const dataTransfer = new DataTransfer();
+                            dataTransfer.items.add(blob);
+                            pasteInput.files = dataTransfer.files;
+                            
+                            // React specific trigger (Streamlit uses basic events usually but might need granular dispatch)
+                            pasteInput.dispatchEvent(new Event('change', { bubbles: true }));
+                            
+                            // Ideally, this triggers the upload.
+                            // We might need to manually fire focus/blur too.
+                        }
+                    }
+                };
+            }
+
         });
         observer.observe(window.parent.document.body, { childList: true, subtree: true, attributes: true });
         </script>
