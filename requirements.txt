@@ -3,3 +3,4 @@ google-generativeai
 supabase
 extra-streamlit-components
 Pillow
+streamlit-paste-button
