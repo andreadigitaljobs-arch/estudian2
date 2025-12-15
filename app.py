@@ -1890,6 +1890,15 @@ with tab1:
 
             st.info(f"📂 {len(uploaded_files)} archivo(s) cargado(s).")
             
+            # --- RENAME FEATURE ---
+            file_renames = {}
+            if uploaded_files:
+                with st.expander("✍🏻 Renombrar archivos (Opcional)", expanded=True):
+                    for i, uf in enumerate(uploaded_files):
+                         base = os.path.splitext(uf.name)[0]
+                         new_n = st.text_input(f"Nombre para {uf.name}:", value=base, key=f"ren_{i}")
+                         file_renames[uf.name] = new_n
+            
             if st.button("▶️ Iniciar Transcripción", type="primary", key="btn_start_transcription", use_container_width=True, disabled=(not selected_unit_id)):
                 if not selected_unit_id:
                     st.error("Error: Carpeta no seleccionada.")
@@ -1915,10 +1924,14 @@ with tab1:
                             
                             with open(txt_path, "r", encoding="utf-8") as f: 
                                 trans_text = f.read()
-                                
-                            upload_file_to_db(t_unit_id, os.path.basename(txt_path), trans_text, "transcript")
-                            st.success(f"✅ Guardado en carpeta: {sel_name}") # Confirm location
-                            st.session_state['transcript_history'].append({"name": file.name, "text": trans_text})
+                            
+                            # Use Custom Name
+                            custom_n = file_renames.get(file.name, os.path.splitext(file.name)[0])
+                            final_name = f"{custom_n}.txt"
+                            
+                            upload_file_to_db(t_unit_id, final_name, trans_text, "transcript")
+                            st.success(f"✅ Guardado como: {final_name}") 
+                            st.session_state['transcript_history'].append({"name": custom_n, "text": trans_text})
                             
                             if os.path.exists(txt_path): os.remove(txt_path)
                             
