@@ -2978,35 +2978,37 @@ with tab6:
                  
                  st.session_state['trigger_ai_response'] = False # Safety
 
-    # --- INPUT MOVED OUTSIDE OF COLUMNS (STICKY FOOTER FIX) ---
-    if prompt := st.chat_input(f"Pregunta sobre {current_sess['name']}..."):
-        # 1. Handle New Uploads logic
-        if tutor_file:
-            try:
-                content = ""
-                if tutor_file.type == "application/pdf":
-                    content = assistant.extract_text_from_pdf(tutor_file.getvalue(), tutor_file.type)
-                else:
-                    try:
-                       content = tutor_file.getvalue().decode("utf-8", errors='ignore')
-                    except:
-                       content = "Archivo binario no procesado."
-                
-                # Deduplicate by name
-                if not any(f['name'] == tutor_file.name for f in st.session_state['active_context_files']):
-                    st.session_state['active_context_files'].append({"name": tutor_file.name, "content": content})
-                    st.toast(f"📎 Archivo {tutor_file.name} guardado en memoria.")
-            except Exception as e:
-                st.error(f"Error leyendo archivo: {e}")
-        
-        # 2. Add User Message
-        save_chat_message(current_sess['id'], "user", prompt)
-        
-        # Update UI State
-        st.session_state['tutor_chat_history'].append({"role": "user", "content": prompt})
-        
-        # 3. Trigger Response
-        st.session_state['trigger_ai_response'] = True
-        st.rerun()
+        # --- INPUT MOVED OUTSIDE OF COLUMNS (STICKY FOOTER FIX) ---
+        if prompt := st.chat_input(f"Pregunta sobre {current_sess['name']}..."):
+            # 1. Handle New Uploads logic
+            if tutor_file:
+                try:
+                    content = ""
+                    if tutor_file.type == "application/pdf":
+                        content = assistant.extract_text_from_pdf(tutor_file.getvalue(), tutor_file.type)
+                    else:
+                        try:
+                           content = tutor_file.getvalue().decode("utf-8", errors='ignore')
+                        except:
+                           content = "Archivo binario no procesado."
+                    
+                    # Deduplicate by name
+                    if 'active_context_files' not in st.session_state: st.session_state['active_context_files'] = []
+                    
+                    if not any(f['name'] == tutor_file.name for f in st.session_state['active_context_files']):
+                        st.session_state['active_context_files'].append({"name": tutor_file.name, "content": content})
+                        st.toast(f"📎 Archivo {tutor_file.name} guardado en memoria.")
+                except Exception as e:
+                    st.error(f"Error leyendo archivo: {e}")
+            
+            # 2. Add User Message
+            save_chat_message(current_sess['id'], "user", prompt)
+            
+            # Update UI State
+            st.session_state['tutor_chat_history'].append({"role": "user", "content": prompt})
+            
+            # 3. Trigger Response
+            st.session_state['trigger_ai_response'] = True
+            st.rerun()
 
 # Force Reload Triggered
