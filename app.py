@@ -3037,5 +3037,6 @@ with tab6:
                 # Let's simple save as 'assistant' for now since `chat_tutor` handles the conversion for Gemini.
                 
                 st.session_state['tutor_chat_history'].append({"role": "assistant", "content": response})
+                st.rerun()
 
 # Force Reload Triggered
