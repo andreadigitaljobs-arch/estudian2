@@ -3307,7 +3307,7 @@ with tab6:
         with col_chat:
             # Display Chat History (WhatsApp Style)
             import markdown
-            chat_html = '<div style="display: flex; flex-direction: column; gap: 15px; padding-bottom: 50px;">'
+            chat_html = '<div style="display: flex; flex-direction: column; gap: 15px; padding-bottom: 20px;">'
             
             for msg in st.session_state['tutor_chat_history']:
                 is_user = msg['role'] == 'user'
