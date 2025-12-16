@@ -3240,14 +3240,6 @@ with tab6:
                                 // But we can rely on the fact that the REAL uploader (in + button) is inside a Popover
                                 const isInPopover = wrapper.closest('[data-testid="stPopover"]');
                                 
-                                // Or we can rely on order (it's arguably the first one or specifically designated)
-                                // Better yet, checking if it is NOT the one we want to keep?
-                                // Actually, let's look for "Paste_Receiver_Hidden_Bin" in the ARIA label hopefully?
-                                // Streamlit creates a label element even if collapsed often.
-                                
-                                // LOGIC: If it's NOT in a popover, it's the hidden bin. HIDE IT.
-                                const isInPopover = wrapper.closest('[data-testid="stPopover"]');
-                                
                                 if (!isInPopover) {
                                      // Aggressive Hide
                                      wrapper.style.setProperty('display', 'none', 'important');
@@ -3255,11 +3247,7 @@ with tab6:
                                      wrapper.style.setProperty('height', '0px', 'important');
                                 }
                            });
-                      }, 1000);
-                      window.parent.document.hiderRunning = true;
-                 }
-                           });
-                      }, 1000);
+                      }, 500); // Increased frequency specifically for this fix
                       window.parent.document.hiderRunning = true;
                  }
                 
