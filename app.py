@@ -3398,16 +3398,7 @@ with tab6:
             chat_html += '<div id="tutor_chat_end_anchor" style="height: 1px;"></div></div>'
             st.markdown(chat_html, unsafe_allow_html=True)
             
-            # --- SHOW ATTACHED FILES IN MAIN CHAT ---
-            if st.session_state.get('active_context_files'):
-                with st.container():
-                     st.caption("📎 **Archivos en Contexto:**")
-                     for idx, f in enumerate(st.session_state['active_context_files']):
-                         c1, c2 = st.columns([0.85, 0.15])
-                         c1.info(f"📄 {f['name']}")  # Use st.info for a nice box look
-                         if c2.button("🗑️", key=f"del_main_chat_{idx}", help="Eliminar archivo"):
-                             st.session_state['active_context_files'].pop(idx)
-                             st.rerun()
+            # Files display removed per user request (handled in sidebar/backend now)
             
             # SCROLL BUTTON (INJECTED INTO PARENT)
             st.components.v1.html("""
