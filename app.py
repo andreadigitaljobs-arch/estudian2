@@ -3124,8 +3124,8 @@ with tab6:
              st.markdown("### 📎 Adjuntar")
              new_uploads = st.file_uploader("Archivos", type=['pdf', 'txt', 'md', 'py', 'png', 'jpg'], accept_multiple_files=True, key="float_up_inj")
              if new_uploads:
-                # UX IMPROVEMENT: Use st.status container for visible progress
-                with st.status("🔄 Procesando archivos... (Por favor espera)", expanded=True) as status:
+                # UX FIX: Move status to SIDEBAR so it never disappears if popover closes
+                with st.sidebar.status("🔄 Procesando archivos...", expanded=True) as status:
                     for up_file in new_uploads:
                         if not any(f['name'] == up_file.name for f in st.session_state['active_context_files']):
                             st.write(f"📖 Leyendo: **{up_file.name}**...")
