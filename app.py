@@ -54,22 +54,8 @@ if 'spotlight_query' not in st.session_state: st.session_state['spotlight_query'
 if 'spotlight_mode' not in st.session_state: st.session_state['spotlight_mode'] = "⚡ Concepto Rápido"
 if 'custom_api_key' not in st.session_state: st.session_state['custom_api_key'] = None
 
-# --- TAB RESTORATION LOGIC ---
+# --- TAB RESTORATION LOGIC (Removed - Switched to JS LocalStorage) ---
 if 'has_restored_tab' not in st.session_state:
-    try:
-        # Compatibility for different Streamlit versions
-        qp = st.query_params if hasattr(st, 'query_params') else st.experimental_get_query_params()
-        
-        # experimental returns list, stable returns value
-        target_tab = qp.get('tab') if hasattr(st, 'query_params') else (qp.get('tab')[0] if qp.get('tab') else None)
-        
-        if target_tab:
-            st.session_state['redirect_target_name'] = target_tab
-            st.session_state['force_chat_tab'] = True
-            # Debug Toast to confirm it is working
-            # st.toast(f"📍 Restaurando pestaña: {target_tab}", icon="🔄") 
-    except Exception as e:
-        print(f"Tab restore error: {e}")
     st.session_state['has_restored_tab'] = True
 
 # --- AUTHENTICATION CHECK ---
@@ -1165,7 +1151,7 @@ st.markdown(CSS_STYLE, unsafe_allow_html=True)
 
 # Sidebar
 with st.sidebar:
-    st.caption("🚀 v2.5 (Live)") # Deployment Tracer
+    st.caption("🚀 v3.0 (Storage Mode)") # Deployment Tracer
     # --- 1. LOGO & USER ---
     # Left Aligned ("RAS con el resto")
     @st.cache_data
@@ -1584,20 +1570,33 @@ with st.sidebar:
     setTimeout(addTabScrollButtons, 500);
     setTimeout(addTabScrollButtons, 1500); // Retry
     
-    // --- CONSULTANT FIX: URL SYNC ---
-    function syncTabsToUrl() {
+    // --- CONSULTANT FIX: LOCAL STORAGE PERSISTENCE (Option B) ---
+    function setupTabPersistence() {
         const tabs = window.parent.document.querySelectorAll('button[data-testid="stTab"]');
+        
+        // 1. ADD LISTENERS (Save on click)
         tabs.forEach(tab => {
             tab.onclick = () => {
-                const name = tab.innerText;
-                const newUrl = new URL(window.parent.location);
-                newUrl.searchParams.set('tab', name);
-                window.parent.history.pushState({}, '', newUrl);
+                localStorage.setItem("my_active_tab", tab.innerText);
             };
         });
+
+        // 2. RESTORE (Click saved tab)
+        const savedTab = localStorage.getItem("my_active_tab");
+        if (savedTab) {
+             for (const tab of tabs) {
+                 if (tab.innerText === savedTab && tab.getAttribute('aria-selected') !== 'true') {
+                     tab.click();
+                     break;
+                 }
+             }
+        }
     }
-    setTimeout(syncTabsToUrl, 1000); // Wait for tabs to render
-    setInterval(syncTabsToUrl, 5000); // Re-attach periodically in case of re-renders
+    
+    // Run periodically to catch re-renders
+    setTimeout(setupTabPersistence, 1000);
+    setInterval(setupTabPersistence, 3000); 
+    
     </script>
     """, height=0)
 
