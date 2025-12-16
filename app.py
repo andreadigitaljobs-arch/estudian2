@@ -58,6 +58,27 @@ if 'custom_api_key' not in st.session_state: st.session_state['custom_api_key'] 
 if 'has_restored_tab' not in st.session_state:
     st.session_state['has_restored_tab'] = True
 
+# --- CHAT SESSION RESTORATION (URL PARAMS) ---
+# This runs once on startup or reload
+if 'has_restored_chat' not in st.session_state and st.session_state.get('user'):
+    try:
+        qp = st.query_params if hasattr(st, 'query_params') else st.experimental_get_query_params()
+        target_chat_id = qp.get('chat_id') if hasattr(st, 'query_params') else (qp.get('chat_id')[0] if qp.get('chat_id') else None)
+        
+        if target_chat_id:
+            # Validate ownership
+            from database import get_chat_sessions
+            user_chats = get_chat_sessions(st.session_state['user'].id)
+            found_chat = next((c for c in user_chats if str(c['id']) == str(target_chat_id)), None)
+            
+            if found_chat:
+                st.session_state['current_chat_session'] = found_chat
+                st.session_state['tutor_chat_history'] = [] # Force reload messages
+                # st.toast(f"📂 Chat restaurado: {found_chat['name']}")
+    except Exception as e:
+        print(f"Chat restore error: {e}")
+    st.session_state['has_restored_chat'] = True
+
 # --- AUTHENTICATION CHECK ---
 if 'user' not in st.session_state:
     st.session_state['user'] = None
@@ -1151,7 +1172,7 @@ st.markdown(CSS_STYLE, unsafe_allow_html=True)
 
 # Sidebar
 with st.sidebar:
-    st.caption("🚀 v3.0 (Storage Mode)") # Deployment Tracer
+    st.caption("🚀 v3.1 (Deep URL)") # Deployment Tracer
     # --- 1. LOGO & USER ---
     # Left Aligned ("RAS con el resto")
     @st.cache_data
@@ -1205,6 +1226,15 @@ with st.sidebar:
                 st.session_state['tutor_chat_history'] = [] # Reset for new chat
                 st.session_state['redirect_target_name'] = "Tutoría 1 a 1" # Explicit Redirect
                 st.session_state['force_chat_tab'] = True # Force switch
+                
+                # UPDATE URL
+                try:
+                    if hasattr(st, 'query_params'):
+                        st.query_params['chat_id'] = str(new_sess['id'])
+                    else:
+                        st.experimental_set_query_params(chat_id=str(new_sess['id']))
+                except: pass
+                
                 st.rerun()
 
         # List Sessions
@@ -1242,6 +1272,14 @@ with st.sidebar:
                     "subtitle": "Continuar conversación"
                 })
                 
+                # UPDATE URL
+                try:
+                    if hasattr(st, 'query_params'):
+                        st.query_params['chat_id'] = str(sess['id'])
+                    else:
+                        st.experimental_set_query_params(chat_id=str(sess['id']))
+                except: pass
+                
                 st.rerun()
 
         # VIEW ALL BUTTON ALWAYS VISIBLE
@@ -1272,6 +1310,15 @@ with st.sidebar:
                 delete_chat_session(st.session_state['current_chat_session']['id'])
                 st.session_state['current_chat_session'] = None
                 st.session_state['tutor_chat_history'] = []
+                
+                # CLEAR URL
+                try:
+                    if hasattr(st, 'query_params'):
+                        if 'chat_id' in st.query_params: del st.query_params['chat_id']
+                    else:
+                        st.experimental_set_query_params()
+                except: pass
+                
                 st.rerun()
 
         # --- BULK DELETE (GESTIÓN MASIVA) ---
@@ -1740,6 +1787,15 @@ with tab_home:
                         st.session_state['tutor_chat_history'] = [] 
                         st.session_state['redirect_target_name'] = "Tutoría 1 a 1"
                         st.session_state['force_chat_tab'] = True
+                        
+                        # UPDATE URL
+                        try:
+                            if hasattr(st, 'query_params'):
+                                st.query_params['chat_id'] = str(chat['id'])
+                            else:
+                                st.experimental_set_query_params(chat_id=str(chat['id']))
+                        except: pass
+
                         st.rerun()
         else:
             st.warning("No se encontraron chats.")
@@ -1824,13 +1880,18 @@ with tab_home:
              if ftype == 'chat':
                  def go_chat():
                      # Re-fetch session data (mock object minimal)
-                     # ideally fetch full object, but for now ID and Name is enough for current_chat_session logic 
-                     # if app relies on full object properties, we might need a fetch.
-                     # Assuming app just needs id/name.
                      st.session_state['current_chat_session'] = {'id': ftarget, 'name': ftitle}
                      st.session_state['tutor_chat_history'] = []
                      st.session_state['redirect_target_name'] = "Tutoría 1 a 1"
                      st.session_state['force_chat_tab'] = True
+                     
+                     # UPDATE URL
+                     try:
+                         if hasattr(st, 'query_params'):
+                             st.query_params['chat_id'] = str(ftarget)
+                         else:
+                             st.experimental_set_query_params(chat_id=str(ftarget))
+                     except: pass
                  
                  render_smart_card("💬", f"Chat: {ftitle}", "Estabas conversando con tu asistente", "Retomar Chat", go_chat)
                  
