@@ -438,6 +438,9 @@ if not st.session_state['user']:
         </style>
     ''', unsafe_allow_html=True)
 
+
+
+
     # --- JS: NUCLEAR SCROLL LOCK ---
     import streamlit.components.v1 as components
     components.html("""
@@ -3097,7 +3100,7 @@ with tab6:
         
         with st.container():
              # Use Dynamic Key to allow clearing
-             paste_bin = st.file_uploader("Paste_Receiver_Hidden_Bin", type=['png','jpg','jpeg','pdf'], key=f"paste_bin_{st.session_state['paste_key']}", label_visibility='visible')
+             paste_bin = st.file_uploader("Paste_Receiver_Hidden_Bin", type=['png','jpg','jpeg','pdf'], key=f"paste_bin_{st.session_state['paste_key']}", label_visibility='collapsed')
         
         if paste_bin:
              # Check for duplicates (Original Name OR Pasted Name)
@@ -3146,51 +3149,88 @@ with tab6:
                      const textArea = chatInput.querySelector('textarea');
                      if (textArea && textArea.parentElement) {
                          const capsule = textArea.parentElement;
-                     // 1. INJECT BUTTON
+                     // 1.5. VERTICAL LAYOUT REDESIGN
+                     // Request: Text on TOP, Button on BOTTOM.
+                     
+                     // A. Force Container to Column
+                     capsule.style.setProperty('flex-direction', 'column', 'important');
+                     capsule.style.setProperty('align-items', 'flex-start', 'important'); // Align left
+                     capsule.style.setProperty('gap', '5px', 'important');
+                     
+                     // B. Ensure Button is at the BOTTOM (Append moves it to end)
                      if (!capsule.contains(targetPopover)) {
                          targetPopover.style.position = 'relative';
-                         targetPopover.style.margin = '0 5px 0 5px';
-                         targetPopover.style.display = 'flex';
-                         targetPopover.style.alignItems = 'center';
+                         targetPopover.style.margin = '0px'; 
                          targetPopover.style.zIndex = '10';
-                         capsule.insertBefore(targetPopover, capsule.firstChild);
+                         targetPopover.style.width = '1000%'; // Full width for alignment
                          
-                         // FORCE ALIGNMENT
-                         textArea.style.setProperty('padding-left', '10px', 'important');
-                         textArea.style.setProperty('text-align', 'left', 'important');
-                         textArea.style.setProperty('margin-left', '0px', 'important');
-                         
-                         capsule.style.setProperty('justify-content', 'flex-start', 'important');
-                         capsule.style.setProperty('align-items', 'center', 'important');
-                         
-                         // 2. FOCUS FIX: Robust Listener
+                         // Insert at END (Bottom)
+                         capsule.appendChild(targetPopover);
+                     } else {
+                         // Already there, just ensure order if needed (re-append moves to end)
+                         // But be careful not to trigger infinite loop if observer reacts to this.
+                         // Check if it's already the last child
+                         if (capsule.lastElementChild !== targetPopover) {
+                             capsule.appendChild(targetPopover);
                          }
                      }
+                     
+                     // C. Style the Textarea (Top Element)
+                     textArea.style.setProperty('width', '100%', 'important');
+                     textArea.style.setProperty('text-align', 'left', 'important');
+                     textArea.style.setProperty('padding', '10px 0px 0px 0px', 'important'); // Visual tweak
+                     
+                     // D. ENFORCER (Relaxed to prevent lag)
+                     const enforceLayout = () => {
+                          if (capsule) {
+                              capsule.style.setProperty('flex-direction', 'column', 'important');
+                              capsule.style.setProperty('gap', '5px', 'important');
+                          }
+                          if (textArea) {
+                              textArea.style.setProperty('width', '100%', 'important');
+                              textArea.style.border = 'none';
+                          }
+                     };
+                     
+                     // Run loop (Less aggressive: 1s)
+                if (textArea.dataset.layout_v2 === undefined) {
+                      setInterval(enforceLayout, 1000);
+                      textArea.dataset.layout_v2 = 'active';
                  }
-            }
-            
-            // 2. PASTE & GLOBAL DRAG-DROP HANDLER
-            const allUploaders = Array.from(window.parent.document.querySelectorAll('[data-testid="stFileUploader"]'));
-            let pasteUploaderWrapper = null;
-            let pasteInput = null;
-
-            allUploaders.forEach(wrapper => {
-                if (wrapper.innerText.includes("Paste_Receiver_Hidden_Bin")) {
-                    pasteUploaderWrapper = wrapper;
-                    pasteInput = wrapper.querySelector('input[type="file"]');
-                }
-            });
-
-            if (pasteUploaderWrapper) {
-                // HIDE VISUALLY BUT KEEP FUNCTIONAL (Opacity 0 vs Display None)
-                // Display: none can kill event listeners in some engines.
-                if (pasteUploaderWrapper.style.opacity !== '0') {
-                    pasteUploaderWrapper.style.opacity = '0';
-                    pasteUploaderWrapper.style.height = '0px';
-                    pasteUploaderWrapper.style.overflow = 'hidden';
-                    pasteUploaderWrapper.style.position = 'absolute';
-                    pasteUploaderWrapper.style.zIndex = '-1';
-                }
+                 
+                 // E. CONTINUOUS HIDER FOR PASTE BIN (Global Scope Check)
+                 // Start this once per observer triggered or check if already running
+                 if (!window.parent.document.hiderRunning) {
+                      setInterval(() => {
+                           const allUploaders = Array.from(window.parent.document.querySelectorAll('[data-testid="stFileUploader"]'));
+                           allUploaders.forEach(wrapper => {
+                                // Check if it's the Hidden Bin (by structure or text if collapsed)
+                                // Since we collapsed label, innerText might be empty or just "Drag and drop..."
+                                // But we can rely on the fact that the REAL uploader (in + button) is inside a Popover
+                                const isInPopover = wrapper.closest('[data-testid="stPopover"]');
+                                
+                                // Or we can rely on order (it's arguably the first one or specifically designated)
+                                // Better yet, checking if it is NOT the one we want to keep?
+                                // Actually, let's look for "Paste_Receiver_Hidden_Bin" in the ARIA label hopefully?
+                                // Streamlit creates a label element even if collapsed often.
+                                
+                                // LOGIC: If it's NOT in a popover, it's the hidden bin. HIDE IT.
+                                const isInPopover = wrapper.closest('[data-testid="stPopover"]');
+                                
+                                if (!isInPopover) {
+                                     // Aggressive Hide
+                                     wrapper.style.setProperty('display', 'none', 'important');
+                                     wrapper.style.setProperty('visibility', 'hidden', 'important');
+                                     wrapper.style.setProperty('height', '0px', 'important');
+                                }
+                           });
+                      }, 1000);
+                      window.parent.document.hiderRunning = true;
+                 }
+                           });
+                      }, 1000);
+                      window.parent.document.hiderRunning = true;
+                 }
                 
                 if (pasteInput) {
                     // HELPER: Send File to Input

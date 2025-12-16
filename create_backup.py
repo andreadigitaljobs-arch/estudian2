@@ -28,5 +28,21 @@ def ignore_patterns(path, names):
 try:
     shutil.make_archive(archive_name, 'zip', PROJECT_ROOT)
     print(f"Backup created successfully: {archive_name}.zip")
+
+    # --- ROTATION LOGIC (Keep last 3) ---
+    archives = sorted([
+        os.path.join(BACKUP_DIR, f) 
+        for f in os.listdir(BACKUP_DIR) 
+        if f.startswith("Estudian2_Backup_") and f.endswith(".zip")
+    ], key=os.path.getctime)
+
+    while len(archives) > 3:
+        oldest = archives.pop(0)
+        try:
+            os.remove(oldest)
+            print(f"Deleted old backup: {oldest}")
+        except Exception as e:
+            print(f"Error deleting old backup: {e}")
+
 except Exception as e:
     print(f"Error creating backup: {e}")
