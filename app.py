@@ -1172,7 +1172,7 @@ st.markdown(CSS_STYLE, unsafe_allow_html=True)
 
 # Sidebar
 with st.sidebar:
-    st.caption("🚀 v3.1 (Deep URL)") # Deployment Tracer
+    st.caption("🚀 v3.2 (Visual Feedback)") # Deployment Tracer
     # --- 1. LOGO & USER ---
     # Left Aligned ("RAS con el resto")
     @st.cache_data
@@ -3110,6 +3110,9 @@ with tab6:
 
 
 
+        # --- UPLOAD STATUS PLACEHOLDER (Centralized) ---
+        upload_status_container = st.empty()
+
         col_chat, col_info = st.columns([3, 1], gap="large")
         
         with col_info:
@@ -3185,8 +3188,10 @@ with tab6:
              st.markdown("### 📎 Adjuntar")
              new_uploads = st.file_uploader("Archivos", type=['pdf', 'txt', 'md', 'py', 'png', 'jpg'], accept_multiple_files=True, key="float_up_inj")
              if new_uploads:
-                # UX FIX: Move status to SIDEBAR so it never disappears if popover closes
-                with st.sidebar.status("🔄 Procesando archivos...", expanded=True) as status:
+                # UX FIX: Use central placeholder so it's visible in main chat area
+                st.toast("Procesando archivos...", icon="⏳")
+                
+                with upload_status_container.status("🔄 Procesando archivos...", expanded=True) as status:
                     for up_file in new_uploads:
                         if not any(f['name'] == up_file.name for f in st.session_state['active_context_files']):
                             st.write(f"📖 Leyendo: **{up_file.name}**...")
