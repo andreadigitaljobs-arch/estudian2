@@ -3124,9 +3124,11 @@ with tab6:
              st.markdown("### 📎 Adjuntar")
              new_uploads = st.file_uploader("Archivos", type=['pdf', 'txt', 'md', 'py', 'png', 'jpg'], accept_multiple_files=True, key="float_up_inj")
              if new_uploads:
-                for up_file in new_uploads:
-                    if not any(f['name'] == up_file.name for f in st.session_state['active_context_files']):
-                        with st.spinner(f"Procesando {up_file.name}..."):
+                # UX IMPROVEMENT: Use st.status container for visible progress
+                with st.status("🔄 Procesando archivos... (Por favor espera)", expanded=True) as status:
+                    for up_file in new_uploads:
+                        if not any(f['name'] == up_file.name for f in st.session_state['active_context_files']):
+                            st.write(f"📖 Leyendo: **{up_file.name}**...")
                             content_text = ""
                             if up_file.type == "application/pdf":
                                 try:
@@ -3149,7 +3151,12 @@ with tab6:
                                 "name": up_file.name,
                                 "content": content_text
                             })
-                            st.success(f"✅")
+                            st.write(f"✅ ¡{up_file.name} listo!")
+                    
+                    status.update(label="✅ Todos los archivos cargados correctamente", state="complete", expanded=False)
+                    # Short delay to let user see success
+                    import time
+                    time.sleep(1)
         
         # --- HIDDEN PASTE RECEIVER ---
         if 'paste_key' not in st.session_state: st.session_state['paste_key'] = 0
