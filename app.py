@@ -1148,6 +1148,14 @@ CSS_STYLE = """
         flex: 0 0 280px !important;
     }
 
+    /* --- ROBUST HIDDEN UPLOADER FIX --- */
+    /* Target via ARIA label if supported */
+    div[data-testid="stFileUploader"]:has(input[aria-label="Paste_Receiver_Hidden_Bin"]) {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0px !important;
+    }
+    
 </style>
 """
 st.markdown(CSS_STYLE, unsafe_allow_html=True)
@@ -1872,11 +1880,26 @@ if st.session_state.get('force_chat_tab'):
                 for (const tab of tabs) {{
                     if (tab.innerText.includes(targetName)) {{
                         tab.click();
+                        // Also sync URL immediately to be sure
+                        const newUrl = new URL(window.parent.location);
+                        newUrl.searchParams.set('tab', tab.innerText);
+                        window.parent.history.pushState({}, '', newUrl);
                         break;
                     }}
                 }}
             }} catch(e) {{ console.log(e); }}
-        }}, 100);
+        }}, 500);
+        // Retry logic for slow loaders
+        setTimeout(() => {{ 
+             const tabs = window.parent.document.querySelectorAll('button[data-testid="stTab"]');
+             const targetName = "{st.session_state.get('redirect_target_name', 'Ayudante de Tareas')}"; 
+             for (const tab of tabs) {{ if (tab.innerText.includes(targetName)) tab.click(); }}
+        }}, 2000);
+        setTimeout(() => {{ 
+             const tabs = window.parent.document.querySelectorAll('button[data-testid="stTab"]');
+             const targetName = "{st.session_state.get('redirect_target_name', 'Ayudante de Tareas')}"; 
+             for (const tab of tabs) {{ if (tab.innerText.includes(targetName)) tab.click(); }}
+        }}, 5000); 
         // {ts}
     </script>
     """, height=0)
@@ -3241,14 +3264,26 @@ with tab6:
                                 // But we can rely on the fact that the REAL uploader (in + button) is inside a Popover
                                 const isInPopover = wrapper.closest('[data-testid="stPopover"]');
                                 
-                                if (!isInPopover) {
-                                     // Aggressive Hide
-                                     wrapper.style.setProperty('display', 'none', 'important');
-                                     wrapper.style.setProperty('visibility', 'hidden', 'important');
-                                     wrapper.style.setProperty('height', '0px', 'important');
+                                // LOGIC: Strategy 1 - Popover Check
+                                const isInPopover = wrapper.closest('[data-testid="stPopover"]');
+                                
+                                // LOGIC: Strategy 2 - ARIA Label Check (Specific Target)
+                                const inputInner = wrapper.querySelector('input[aria-label="Paste_Receiver_Hidden_Bin"]');
+                                
+                                if (!isInPopover || inputInner) {
+                                     // Only hide if it IS the hidden bin (Strategy 2) or NOT the popover one (Strategy 1 fallback)
+                                     // We want to be careful not to hide the real one.
+                                     // The REAL one is IN a popover.
+                                     // The HIDDEN one is NOT.
+                                     
+                                     if (!isInPopover) {
+                                         wrapper.style.setProperty('display', 'none', 'important');
+                                         wrapper.style.setProperty('visibility', 'hidden', 'important');
+                                         wrapper.style.setProperty('height', '0px', 'important');
+                                     }
                                 }
                            });
-                      }, 500); // Increased frequency specifically for this fix
+                      }, 200); // Very aggressive check
                       window.parent.document.hiderRunning = true;
                  }
                 
