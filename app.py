@@ -54,6 +54,22 @@ if 'spotlight_query' not in st.session_state: st.session_state['spotlight_query'
 if 'spotlight_mode' not in st.session_state: st.session_state['spotlight_mode'] = "⚡ Concepto Rápido"
 if 'custom_api_key' not in st.session_state: st.session_state['custom_api_key'] = None
 
+# --- TAB RESTORATION LOGIC ---
+if 'has_restored_tab' not in st.session_state:
+    try:
+        # Compatibility for different Streamlit versions
+        qp = st.query_params if hasattr(st, 'query_params') else st.experimental_get_query_params()
+        
+        # experimental returns list, stable returns value
+        target_tab = qp.get('tab') if hasattr(st, 'query_params') else (qp.get('tab')[0] if qp.get('tab') else None)
+        
+        if target_tab:
+            st.session_state['redirect_target_name'] = target_tab
+            st.session_state['force_chat_tab'] = True
+    except Exception as e:
+        print(f"Tab restore error: {e}")
+    st.session_state['has_restored_tab'] = True
+
 # --- AUTHENTICATION CHECK ---
 if 'user' not in st.session_state:
     st.session_state['user'] = None
@@ -1556,6 +1572,21 @@ with st.sidebar:
     // Run Tab Buttons
     setTimeout(addTabScrollButtons, 500);
     setTimeout(addTabScrollButtons, 1500); // Retry
+    
+    // --- CONSULTANT FIX: URL SYNC ---
+    function syncTabsToUrl() {
+        const tabs = window.parent.document.querySelectorAll('button[data-testid="stTab"]');
+        tabs.forEach(tab => {
+            tab.onclick = () => {
+                const name = tab.innerText;
+                const newUrl = new URL(window.parent.location);
+                newUrl.searchParams.set('tab', name);
+                window.parent.history.pushState({}, '', newUrl);
+            };
+        });
+    }
+    setTimeout(syncTabsToUrl, 1000); // Wait for tabs to render
+    setInterval(syncTabsToUrl, 5000); // Re-attach periodically in case of re-renders
     </script>
     """, height=0)
 
