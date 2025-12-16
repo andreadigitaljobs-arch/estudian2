@@ -1155,6 +1155,7 @@ st.markdown(CSS_STYLE, unsafe_allow_html=True)
 
 # Sidebar
 with st.sidebar:
+    st.caption("🚀 v2.5 (Live)") # Deployment Tracer
     # --- 1. LOGO & USER ---
     # Left Aligned ("RAS con el resto")
     @st.cache_data
