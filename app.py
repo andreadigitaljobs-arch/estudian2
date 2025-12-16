@@ -3219,10 +3219,12 @@ with tab6:
                             })
                             st.write(f"✅ ¡{up_file.name} listo!")
                     
-                    status.update(label="✅ Todos los archivos cargados correctamente", state="complete", expanded=False)
-                    # Short delay to let user see success
+                    status.update(label="✅ Carga Completa", state="complete", expanded=True)
+                    st.toast("✅ ¡Archivos listos para usar!", icon="🚀")
+                    
+                    # Small delay to ensure they see it before any potential rerun
                     import time
-                    time.sleep(1)
+                    time.sleep(1.5)
         
         # --- HIDDEN PASTE RECEIVER ---
         if 'paste_key' not in st.session_state: st.session_state['paste_key'] = 0
