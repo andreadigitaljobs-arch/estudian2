@@ -66,6 +66,8 @@ if 'has_restored_tab' not in st.session_state:
         if target_tab:
             st.session_state['redirect_target_name'] = target_tab
             st.session_state['force_chat_tab'] = True
+            # Debug Toast to confirm it is working
+            # st.toast(f"📍 Restaurando pestaña: {target_tab}", icon="🔄") 
     except Exception as e:
         print(f"Tab restore error: {e}")
     st.session_state['has_restored_tab'] = True
@@ -3153,9 +3155,10 @@ with tab6:
         # --- HIDDEN PASTE RECEIVER ---
         if 'paste_key' not in st.session_state: st.session_state['paste_key'] = 0
         
-        with st.container():
-             # Use Dynamic Key to allow clearing
-             paste_bin = st.file_uploader("Paste_Receiver_Hidden_Bin", type=['png','jpg','jpeg','pdf'], key=f"paste_bin_{st.session_state['paste_key']}", label_visibility='collapsed')
+        # MOVE TO SIDEBAR to prevent layout issues in main chat
+        with st.sidebar:
+             # Make it VISIBLE so we can target the text, but hide it via CSS/JS immediately
+             paste_bin = st.file_uploader("Paste_Receiver_Hidden_Bin", type=['png','jpg','jpeg','pdf'], key=f"paste_bin_{st.session_state['paste_key']}", label_visibility='visible')
         
         if paste_bin:
              # Check for duplicates (Original Name OR Pasted Name)
@@ -3264,23 +3267,13 @@ with tab6:
                                 // But we can rely on the fact that the REAL uploader (in + button) is inside a Popover
                                 const isInPopover = wrapper.closest('[data-testid="stPopover"]');
                                 
-                                // LOGIC: Strategy 1 - Popover Check
-                                const isInPopover = wrapper.closest('[data-testid="stPopover"]');
-                                
-                                // LOGIC: Strategy 2 - ARIA Label Check (Specific Target)
-                                const inputInner = wrapper.querySelector('input[aria-label="Paste_Receiver_Hidden_Bin"]');
-                                
-                                if (!isInPopover || inputInner) {
-                                     // Only hide if it IS the hidden bin (Strategy 2) or NOT the popover one (Strategy 1 fallback)
-                                     // We want to be careful not to hide the real one.
-                                     // The REAL one is IN a popover.
-                                     // The HIDDEN one is NOT.
-                                     
-                                     if (!isInPopover) {
-                                         wrapper.style.setProperty('display', 'none', 'important');
-                                         wrapper.style.setProperty('visibility', 'hidden', 'important');
-                                         wrapper.style.setProperty('height', '0px', 'important');
-                                     }
+                                // LOGIC: Strategy 3 - TEXT CONTENT CHECK (Bulletproof)
+                                // Since we set label_visibility='visible', the text is definitely there.
+                                if (wrapper.innerText.includes("Paste_Receiver_Hidden_Bin") || wrapper.innerHTML.includes("Paste_Receiver_Hidden_Bin")) {
+                                     wrapper.style.setProperty('display', 'none', 'important');
+                                     wrapper.style.setProperty('visibility', 'hidden', 'important');
+                                     wrapper.style.setProperty('height', '0px', 'important');
+                                     wrapper.style.setProperty('position', 'absolute', 'important'); // Remove from flow
                                 }
                            });
                       }, 200); // Very aggressive check
