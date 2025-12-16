@@ -1883,7 +1883,7 @@ if st.session_state.get('force_chat_tab'):
                         // Also sync URL immediately to be sure
                         const newUrl = new URL(window.parent.location);
                         newUrl.searchParams.set('tab', tab.innerText);
-                        window.parent.history.pushState({}, '', newUrl);
+                        window.parent.history.pushState({{}}, '', newUrl);
                         break;
                     }}
                 }}
