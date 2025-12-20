@@ -1165,6 +1165,12 @@ CSS_STYLE = """
         height: 0px !important;
     }
     
+    /* STUDY SYSTEM COLORS */
+    span[style*="background-color"] {
+        display: inline-block !important;
+        margin: 1px 0 !important;
+    }
+    
 </style>
 """
 st.markdown(CSS_STYLE, unsafe_allow_html=True)

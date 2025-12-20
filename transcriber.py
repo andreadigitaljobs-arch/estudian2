@@ -70,19 +70,23 @@ class Transcriber:
         prompt = """
         Eres un transcriptor experto. Escucha el audio y genera una transcripción exacta, pero bien formateada.
         
-        SISTEMA DE ESTUDIO POR COLORES (CRÍTICO):
-        Aplica un código de colores visual usando etiquetas <span style="background-color: COLOR; ...">TEXTO</span> para jerarquizar la información:
-        1. ROJO (#ffd9d9): Conceptos ESENCIALES y definiciones base.
-        2. AZUL (#d1e9ff): EJEMPLOS y casos prácticos.
-        3. VERDE (#d4f2d2): Notas secundarias o contexto adicional.
-        4. AMARILLO (#fff9c4): Detalles RELEVANTES, fechas o datos específicos.
-        5. LILA (#f0e6ff): Ideas importantes o conclusiones clave.
+        REGLAS DE ORO (MÁXIMA PRIORIDAD):
+        1. ORTOGRAFÍA ESPAÑOLA PERFECTA: Uso obligatorio de tildes, signos de interrogación y exclamación de apertura y cierre (¿?, ¡!), y mayúsculas correctas. No descuides esto bajo ninguna circunstancia.
+        2. SISTEMA DE ESTUDIO POR COLORES: Identifica y resalta estratégicamente usando etiquetas HTML EXACTAS:
+           - <span style="background-color: #ffd9d9; padding: 2px 4px; border-radius: 4px; font-weight: bold;">CONCEPTO_ESENCIAL</span> (Rojo)
+           - <span style="background-color: #d1e9ff; padding: 2px 4px; border-radius: 4px; color: #004080;">EJEMPLO</span> (Azul)
+           - <span style="background-color: #d4f2d2; padding: 2px 4px; border-radius: 4px;">NOTA_SECUNDARIA</span> (Verde)
+           - <span style="background-color: #fff9c4; padding: 2px 4px; border-radius: 4px; font-weight: 500;">DETALLE_RELEVANTE</span> (Amarillo)
+           - <span style="background-color: #f0e6ff; padding: 2px 4px; border-radius: 4px; color: #4625b8; font-weight: 500;">IDEA_IMPORTANTE</span> (Lila)
+        
+        EJEMPLO DE SALIDA ESPERADA:
+        "## Introducción al Marketing
+        El <span style="background-color: #ffd9d9; padding: 2px 4px; border-radius: 4px; font-weight: bold;">Marketing Digital</span> es el uso de canales digitales para vender. Por ejemplo: <span style="background-color: #d1e9ff; padding: 2px 4px; border-radius: 4px; color: #004080;">una campaña en Instagram</span>."
         
         REGLAS ADICIONALES:
-        - IMPORTANTE: No uses comillas adicionales ni bloques de código para estas etiquetas, deben ser parte del texto.
-        - Divide en secciones con títulos de Markdown (##, ###).
-        - Ortografía perfecta en español (tildes, puntuación).
-        - Legibilidad extrema con viñetas y párrafos limpios.
+        - Estructura con títulos Markdown (##, ###).
+        - Divide en párrafos claros con una línea en blanco entre ellos.
+        - Elimina muletillas pero mantén toda la información.
         """
         
         response = self.model.generate_content([prompt, audio_file])
