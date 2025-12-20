@@ -1164,18 +1164,15 @@ CSS_STYLE = """
             style.id = 'estudian2-hider-styles';
             style.innerHTML = `
                 /* Hide any uploader that contains the key text in its structure */
-                div[data-testid="stFileUploader"] {
-                    transition: opacity 0.2s;
-                }
-                
-                /* Target by ARIA label (most stable) */
                 div[data-testid="stFileUploader"]:has(input[aria-label*="Paste_Receiver"]),
                 div[data-testid="stFileUploader"]:has(input[aria-label*="Hidden_Bin"]) {
                     display: none !important;
                     visibility: hidden !important;
-                    height: 0px !important;
-                    position: absolute !important;
-                    pointer-events: none !important;
+                }
+                
+                /* Hide scroll button by default (it will be shown contextually in the Tutor tab) */
+                #tutor_scroll_btn {
+                    display: none !important;
                 }
             `;
             root.head.appendChild(style);
@@ -3566,7 +3563,7 @@ with tab6:
                 border: 1px solid #ddd;
                 cursor: pointer;
                 font-size: 20px;
-                display: flex;
+                display: flex !important; /* Force visibility in this tab */
                 align-items: center;
                 justify-content: center;
                 transition: transform 0.2s;
