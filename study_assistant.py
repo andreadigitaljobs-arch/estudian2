@@ -27,13 +27,16 @@ class StudyAssistant:
         2. "intermedio": 10-12 bullets con los conceptos clave explicados brevemente.
         3. "profundo": Un resumen detallado (aprox 1 página).
         
-        SISTEMA DE COLORES (MODO ESTUDIO):
-        En los tres niveles, resalta conceptos importantes usando etiquetas <span> con estas CLASES (NO USES BLOQUES DE CÓDIGO ```):
-        - <span class="sc-base">[Concepto Base]</span> (Color: Rojo claro)
-        - <span class="sc-example">[Ejemplo]</span> (Color: Azul claro)
-        - <span class="sc-note">[Nota]</span> (Color: Verde claro)
-        - <span class="sc-data">[Dato]</span> (Color: Amarillo claro)
-        - <span class="sc-key">[Idea Clave]</span> (Color: Púrpura claro)
+        SISTEMA DE COLORES (MODO ESTUDIO OBLIGATORIO):
+        En los tres niveles, DEBES resaltar conceptos importantes usando etiquetas <span> con estas CLASES (USO INTENSIVO):
+        - <span class="sc-base">...</span> : Para Conceptos Base y Definiciones. (ROJO)
+        - <span class="sc-example">...</span> : Para Ejemplos prácticos. (AZUL)
+        - <span class="sc-note">...</span> : Para Notas y tips. (VERDE)
+        - <span class="sc-data">...</span> : Para Datos y cifras. (AMARILLO)
+        - <span class="sc-key">...</span> : Para Ideas clave. (PÚRPURA)
+        
+        OBJETIVO: Los apuntes deben ser MUY COLORIDOS. Usa todos los colores. 
+        Ejemplo de uso: <span class="sc-key">Metodología Ágil</span> es un <span class="sc-base">marco de trabajo</span>.
         
         FORMATO DE SALIDA (JSON ÚNICAMENTE):
         {{

@@ -70,12 +70,15 @@ class Transcriber:
         Tu tarea es transcribir el audio a ESPAÑOL con ortografía PERFECTA (tildes, signos ¿ ¡, puntuación). Está PROHIBIDO generar texto en Inglés.
 
         SISTEMA DE COLORES (MODO ESTUDIO):
-        Resalta conceptos importantes usando etiquetas <span> con estas CLASES (NO USES BLOQUES DE CÓDIGO ```):
-        - <span class="sc-base">[Concepto Base]</span> (Color: Rojo claro)
-        - <span class="sc-example">[Ejemplo]</span> (Color: Azul claro)
-        - <span class="sc-note">[Nota]</span> (Color: Verde claro)
-        - <span class="sc-data">[Dato]</span> (Color: Amarillo claro)
-        - <span class="sc-key">[Idea Clave]</span> (Color: Púrpura claro)
+        Resalta conceptos importantes usando etiquetas <span> con estas CLASES OBLIGATORIAS:
+        - <span class="sc-base">...</span> : Para Conceptos Base, Definiciones y Títulos internos. (USO: FRECUENTE)
+        - <span class="sc-example">...</span> : Para Ejemplos prácticos y situaciones reales. (USO: FRECUENTE)
+        - <span class="sc-note">...</span> : Para Notas aclaratorias, recordatorios o tips. (USO: FRECUENTE)
+        - <span class="sc-data">...</span> : Para Datos, cifras, fechas o nombres propios. (USO: FRECUENTE)
+        - <span class="sc-key">...</span> : Para Ideas clave, conclusiones y "Pepitas de oro". (USO: FRECUENTE)
+
+        OBJETIVO VISUAL: El texto debe parecer un libro estudiado con resaltadores de varios colores. Usa los 5 colores de forma equilibrada y FRECUENTE por todo el texto.
+        Ejemplo: "La <span class="sc-base">fotosíntesis</span> es un proceso <span class="sc-key">vital</span> que ocurre en las <span class="sc-example">plantas verdes</span>."
 
         ESTRUCTURA: Usa títulos Markdown (##, ###) y listas (-).
         """

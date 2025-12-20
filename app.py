@@ -1252,32 +1252,30 @@ with st.sidebar:
             time.sleep(0.5) # Allow cleanup time
             st.rerun()
     # --- MODO ESTUDIO TOGGLE ---
-    study_mode = st.sidebar.toggle("Modo Estudio (Resaltadores) 🎨", value=True, help="Activa o desactiva los colores de estudio en las transcripciones y apuntes.")
+    study_mode = st.sidebar.toggle("Modo Estudio (Resaltadores) 🎨", value=True, help="Activa o desactiva los colores de estudio.")
     st.sidebar.divider()
 
-    # Global Highlights CSS
+    # Dynamic CSS Injection for Study Mode
     if study_mode:
         highlight_css = """
         <style>
-        .sc-base { background-color: #ffd9d9 !important; padding: 2px 4px !important; border-radius: 4px !important; font-weight: bold !important; color: #111 !important; }
-        .sc-example { background-color: #d1e9ff !important; padding: 2px 4px !important; border-radius: 4px !important; color: #004080 !important; }
-        .sc-note { background-color: #d4f2d2 !important; padding: 2px 4px !important; border-radius: 4px !important; color: #111 !important; }
-        .sc-data { background-color: #fff9c4 !important; padding: 2px 4px !important; border-radius: 4px !important; font-weight: 500 !important; color: #111 !important; }
-        .sc-key { background-color: #f0e6ff !important; padding: 2px 4px !important; border-radius: 4px !important; color: #4625b8 !important; font-weight: 500 !important; }
+        .sc-base { background-color: #ffcccc !important; padding: 2px 5px !important; border-radius: 5px !important; font-weight: bold !important; color: #900 !important; border: 1px solid #ff9999 !important; display: inline; }
+        .sc-example { background-color: #cce5ff !important; padding: 2px 5px !important; border-radius: 5px !important; color: #004085 !important; border: 1px solid #b8daff !important; display: inline; }
+        .sc-note { background-color: #d4edda !important; padding: 2px 5px !important; border-radius: 5px !important; color: #155724 !important; border: 1px solid #c3e6cb !important; display: inline; }
+        .sc-data { background-color: #fff3cd !important; padding: 2px 5px !important; border-radius: 5px !important; color: #856404 !important; border: 1px solid #ffeeba !important; display: inline; }
+        .sc-key { background-color: #e2d9f3 !important; padding: 2px 5px !important; border-radius: 5px !important; color: #512da8 !important; border: 1px solid #d1c4e9 !important; display: inline; }
         </style>
         """
     else:
         highlight_css = """
         <style>
-        /* Target Classes */
         .sc-base, .sc-example, .sc-note, .sc-data, .sc-key,
-        /* Target Legacy Inline Styles (Backward Compatibility) */
         span[style*="#ffd9d9"], span[style*="#d1e9ff"], span[style*="#d4f2d2"], 
         span[style*="#fff9c4"], span[style*="#f0e6ff"] { 
             background-color: transparent !important; 
             padding: 0 !important; 
             color: inherit !important; 
-            border: initial !important; 
+            border: none !important; 
             font-weight: inherit !important; 
         }
         </style>
@@ -2441,7 +2439,7 @@ with tab2:
                         # LEVEL 1: Ultracorto
                         with st.expander("🟢 Nivel 1: Ultracorto (5 Puntos)", expanded=True):
                             c1, c2 = st.columns([0.9, 0.1])
-                            with c1: st.markdown(res.get('ultracorto', ''))
+                            with c1: st.markdown(res.get('ultracorto', ''), unsafe_allow_html=True)
                             with c2:
                                 if st.button("📄", key="copy_l1", help="Copiar Nivel 1"):
                                     copy_to_clipboard(res.get('ultracorto', ''))
@@ -2450,7 +2448,7 @@ with tab2:
                         # LEVEL 2: Intermedio
                         with st.expander("🟡 Nivel 2: Intermedio (Conceptos Clave)", expanded=False):
                             c1, c2 = st.columns([0.9, 0.1])
-                            with c1: st.markdown(res.get('intermedio', ''))
+                            with c1: st.markdown(res.get('intermedio', ''), unsafe_allow_html=True)
                             with c2:
                                 if st.button("📄", key="copy_l2", help="Copiar Nivel 2"):
                                     copy_to_clipboard(res.get('intermedio', ''))
@@ -2459,7 +2457,7 @@ with tab2:
                         # LEVEL 3: Profundo
                         with st.expander("🔴 Nivel 3: Profundidad (Explicación Completa)", expanded=False):
                             c1, c2 = st.columns([0.9, 0.1])
-                            with c1: st.markdown(res.get('profundo', ''))
+                            with c1: st.markdown(res.get('profundo', ''), unsafe_allow_html=True)
                             with c2:
                                  if st.button("📄", key="copy_l3", help="Copiar Nivel 3"):
                                     copy_to_clipboard(res.get('profundo', ''))
