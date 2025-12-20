@@ -1172,7 +1172,7 @@ st.markdown(CSS_STYLE, unsafe_allow_html=True)
 
 # Sidebar
 with st.sidebar:
-    st.caption("🚀 v3.3 (API Fix)") # Deployment Tracer
+    # st.caption("🚀 v3.3 (API Fix)") # Removed per user request
     # --- 1. LOGO & USER ---
     # Left Aligned ("RAS con el resto")
     @st.cache_data
@@ -2256,7 +2256,21 @@ with tab1:
                     """
                      components.html(html_cp, height=40)
                  
-                 st.markdown(item['text'])
+                 st.markdown(f"""
+                 <div style="
+                    max-height: 400px; 
+                    overflow-y: auto; 
+                    padding: 15px; 
+                    background-color: rgba(0,0,0,0.02); 
+                    border-radius: 10px; 
+                    border: 1px solid rgba(0,0,0,0.05);
+                    font-size: 0.95rem;
+                    line-height: 1.6;
+                    white-space: pre-wrap;
+                 ">
+                 {item['text']}
+                 </div>
+                 """, unsafe_allow_html=True)
 
 
 # --- TAB 2: Apuntes Simples ---

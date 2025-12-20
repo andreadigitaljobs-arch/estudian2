@@ -70,12 +70,13 @@ class Transcriber:
         prompt = """
         Eres un transcriptor experto. Escucha el audio y genera una transcripción exacta, pero bien formateada.
         
-        REGLAS DE FORMATO:
+        REGLAS DE FORMATO CRÍTICAS:
         1. NO crees un solo bloque de texto gigante.
-        2. Usa PÁRRAFOS claros para separar ideas. Deja una línea en blanco entre párrafos.
-        3. Si detectas cambios de tema claros, usa Títulos (Markdown # o ##) para estructurar el texto.
-        4. Usa guiones (-) para listas si se enumeran cosas.
-        5. Mantén la fidelidad del contenido pero prioriza la legibilidad.
+        2. Usa PÁRRAFOS claros para separar ideas. 
+        3. IMPORTANTE: DEJA DOS LÍNEAS EN BLANCO (\n\n) entre párrafos. Esto es vital para que el usuario pueda copiar y pegar el texto con claridad.
+        4. Si detectas cambios de tema claros, usa Títulos (Markdown # o ##) para estructurar el texto.
+        5. Usa guiones (-) para listas si se enumeran cosas.
+        6. Mantén la fidelidad del contenido pero prioriza la legibilidad visual extrema.
         """
         
         response = self.model.generate_content([prompt, audio_file])
