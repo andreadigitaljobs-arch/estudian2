@@ -5,9 +5,9 @@ from google.api_core.exceptions import ResourceExhausted, ServiceUnavailable
 from PIL import Image
 
 class StudyAssistant:
-    def __init__(self, api_key, model_name="gemini-2.0-flash", cache_breaker="V5"):
+    def __init__(self, api_key, model_name="gemini-2.0-flash", cache_breaker="V6"):
         genai.configure(api_key=api_key)
-        self.sync_id = f"STUDY_V5_LEGEND_{cache_breaker}"
+        self.sync_id = f"STUDY_V6_PRECISION_{cache_breaker}"
         
         system_instruction = """
         ERES UN TUTOR ACADÉMICO DE ALTO NIVEL.
@@ -39,20 +39,18 @@ class StudyAssistant:
         2. "intermedio": 10-12 bullets con los conceptos clave explicados brevemente.
         3. "profundo": Un resumen detallado (aprox 1 página).
         
-        SISTEMA DE COLORES SEMÁNTICO (MODO ESTUDIO OBLIGATORIO):
-        En los tres niveles, DEBES analizar el contenido y resaltar siguiendo esta LÓGICA ESTRICTA:
-        - <span class="sc-base">...</span> : CONCEPTOS BASE. Definiciones fundamentales y términos técnicos. (ROJO)
-        - <span class="sc-example">...</span> : EJEMPLOS. Casos prácticos y analogías. (AZUL)
-        - <span class="sc-note">...</span> : NOTAS. Tips del profesor, aclaraciones y recordatorios. (VERDE)
-        - <span class="sc-data">...</span> : DATOS Y CIFRAS. Nombres, fechas, leyes, estadísticas. (AMARILLO)
-        - <span class="sc-key">...</span> : IDEAS CLAVE. Conclusiones y lo más importante para el examen. (PÚRPURA)
+        SISTEMA DE RESALTADO QUIRÚRGICO (MODO ESTUDIO V6.0):
+        REGLA DE ORO: NO subrayes oraciones completas ni párrafos. Debes identificar solo las PALABRAS CLAVE según su categoría:
+        - <span class="sc-base">Palabra</span> : Solo la definición técnica o término base. (ROJO)
+        - <span class="sc-example">Analogía</span> : Solo el corazón del ejemplo práctico. (AZUL)
+        - <span class="sc-note">Tip</span> : Solo el consejo o aclaración específica del profesor. (VERDE)
+        - <span class="sc-data">2024 / Juan Pérez / 15%</span> : Solo el dato, nombre, fecha o cifra. (AMARILLO)
+        - <span class="sc-key">Frase Clave</span> : Solo la conclusión o idea más potente. (PÚRPURA)
         
-        REGLA DE DENSIDAD: Los apuntes deben ser MUY COLORIDOS. No dejes conceptos importantes sin su color correspondiente. 
+        CRÍTICO: Busca la estética de un libro de medicina o leyes. Muchos resaltados pequeños y precisos en lugar de bloques grandes de color.
         
-        EJEMPLO DE LÓGICA SEMÁNTICA (SIGUE ESTE MODELO):
-        "Durante la <span class="sc-base">planificación estratégica</span>, es fundamental realizar un <span class="sc-key">análisis DAFO</span>. Por <span class="sc-example">ejemplo, una empresa local</span> descubrió que su <span class="sc-note">mayor debilidad</span> era su <span class="sc-data">falta de presencia digital en 2023</span>."
-        
-        [ETIQUETA DE CONTROL: (Lógica Semántica V5.0)]
+        EJEMPLO DE PRECISIÓN:
+        "La <span class="sc-base">economía circular</span> busca el <span class="sc-key">residuo cero</span>. Por <span class="sc-example">ejemplo, reciclando plásticos</span>, se logra un ahorro del <span class="sc-data">30%</span> según el <span class="sc-note">estudio de la ONU</span>."
         
         FORMATO DE SALIDA (JSON ÚNICAMENTE):
         {{

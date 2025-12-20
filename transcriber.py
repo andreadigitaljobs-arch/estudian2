@@ -6,9 +6,9 @@ import math
 import glob
 
 class Transcriber:
-    def __init__(self, api_key, model_name="gemini-2.0-flash", cache_breaker="V5"):
+    def __init__(self, api_key, model_name="gemini-2.0-flash", cache_breaker="V6"):
         genai.configure(api_key=api_key)
-        self.sync_id = f"TRANS_V5_STRICT_{cache_breaker}"
+        self.sync_id = f"TRANS_V6_PRECISION_{cache_breaker}"
         
         system_instruction = """
         ERES UN TRANSCRIPTOR EDITORIAL EXPERTO.
@@ -81,22 +81,20 @@ class Transcriber:
         TRANSCRIPCIÓN EDITORIAL EXPERTA (OBLIGATORIO: SOLAMENTE ESPAÑOL):
         Tu tarea es transcribir el audio a ESPAÑOL con ortografía PERFECTA (tildes, signos ¿ ¡, puntuación). Está PROHIBIDO generar texto en Inglés.
 
-        SISTEMA DE COLORES SEMÁNTICO (MODO ESTUDIO):
-        Debes analizar el contenido y resaltar de forma INTELIGENTE siguiendo esta LÓGICA ESTRICTA:
-        - <span class="sc-base">...</span> : CONCEPTOS BASE. Úsalo para definiciones, términos técnicos nuevos o el "qué es" de un tema.
-        - <span class="sc-example">...</span> : EJEMPLOS. Úsalo para casos prácticos, analogías o cuando se mencione una situación real.
-        - <span class="sc-note">...</span> : NOTAS DEL PROFESOR. Úsalo para aclaraciones, tips, "trucos" o advertencias del docente.
-        - <span class="sc-data">...</span> : DATOS Y CIFRAS. Úsalo para nombres de autores, fechas, estadísticas, porcentajes o leyes específicas.
-        - <span class="sc-key">...</span> : IDEAS CLAVE. Úsalo para conclusiones críticas, el "para qué" sirve algo o el punto más importante del discurso.
+        SISTEMA DE RESALTADO QUIRÚRGICO (MODO ESTUDIO V6.0):
+        REGLA DE ORO: NO subrayes oraciones completas ni párrafos. Debes identificar solo las PALABRAS O FRASES CLAVE según su categoría:
+        - <span class="sc-base">Palabra</span> : Solo la definición técnica o término base. (ROJO)
+        - <span class="sc-example">Analogía</span> : Solo el corazón del ejemplo práctico. (AZUL)
+        - <span class="sc-note">Tip</span> : Solo el consejo o aclaración específica del profesor. (VERDE)
+        - <span class="sc-data">2024 / Juan Pérez / 15%</span> : Solo el dato, nombre, fecha o cifra. (AMARILLO)
+        - <span class="sc-key">Frase Clave</span> : Solo la conclusión o idea más potente. (PÚRPURA)
 
-        REGLA DE DENSIDAD: El texto debe estar MUY resaltado. No dejes párrafos largos sin al menos 2 o 3 resaltados. Usa los 5 colores de forma equilibrada.
+        ESTÉTICA: Busca resaltar palabras sueltas o frases cortas. PROHIBIDO bloques largos de color. Muchos resaltados pequeños dan una sensación de estudio profundo.
 
-        OBJETIVO VISUAL: El texto debe parecer un libro estudiado con resaltadores de varios colores. Usa los 5 colores de forma equilibrada y MUY FRECUENTE por todo el texto.
-        
-        EJEMPLO DE LÓGICA SEMÁNTICA: 
-        "En la <span class="sc-base">clase de hoy</span>, el <span class="sc-note">profesor enfatizó</span> que el <span class="sc-key">ROI digital</span> es la métrica reina. Por <span class="sc-example">ejemplo, invertimos 10€</span> y <span class="sc-data">ganamos 50€ en enero</span>."
+        EJEMPLO DE PRECISIÓN: 
+        "En la <span class="sc-base">clase de hoy</span>, el <span class="sc-note">profesor enfatizó</span> que el <span class="sc-key">ROI digital</span> es la métrica reina."
 
-        [ETIQUETA DE CONTROL: (Lógica Semántica V5.0)]
+        [ETIQUETA DE CONTROL: (Lógica Semántica V6.0)]
 
         ESTRUCTURA: Usa títulos Markdown (##, ###) y listas (-).
         """
