@@ -1250,7 +1250,8 @@ with st.sidebar:
             import time
             time.sleep(0.5) # Allow cleanup time
             st.rerun()
-    st.sidebar.markdown('<p style="color: grey; font-size: 0.7rem;">SYNC_ID: 1591_PARALLEL_FLASH</p>', unsafe_allow_html=True)
+    engine_status = "✅ CONECTADO" if transcriber and getattr(transcriber, 'sync_id', None) == "1591_PARALLEL_FLASH" else "⚠️ DESINCRONIZADO"
+    st.sidebar.markdown(f'<p style="color: grey; font-size: 0.7rem;">SYNC_ID: 1591_PARALLEL_FLASH ({engine_status})</p>', unsafe_allow_html=True)
     st.sidebar.divider()
     
     # --- 1. HISTORIAL DE CHATS ---
