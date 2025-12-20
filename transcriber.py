@@ -6,10 +6,9 @@ import math
 import glob
 
 class Transcriber:
-    def __init__(self, api_key):
+    def __init__(self, api_key, model_name="gemini-2.0-flash"):
         genai.configure(api_key=api_key)
-        # Reverting to 2.0 Flash (The working model)
-        self.model = genai.GenerativeModel('gemini-2.0-flash')
+        self.model = genai.GenerativeModel(model_name)
 
     def check_ffmpeg(self):
         """Checks if ffmpeg is available."""
@@ -124,7 +123,7 @@ class Transcriber:
                     os.remove(chunk_path)
                 return index, text
             except Exception as e:
-                return index, f"[Error en parte {index+1}: {str(e)}]"
+                return index, f"[MOTOR_V99] Error en parte {index+1}: {str(e)}"
 
         if progress_callback: progress_callback(f"Transcribiendo {total_chunks} partes en paralelo...", 0.3)
 

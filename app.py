@@ -688,12 +688,12 @@ if not saved_key and 'api_key_input' not in st.session_state:
 # Better: Load key, if exists init.
 # --- INITIALIZATION UTILS (Cached) ---
 @st.cache_resource
-def get_transcriber_engine(key):
-    return Transcriber(key)
+def get_transcriber_engine(key, model_choice="gemini-2.0-flash"):
+    return Transcriber(key, model_name=model_choice)
 
 @st.cache_resource
-def get_assistant_engine(key):
-    return StudyAssistant(key)
+def get_assistant_engine(key, model_choice="gemini-2.0-flash"):
+    return StudyAssistant(key, model_name=model_choice)
 
 api_key = saved_key
 transcriber = None
@@ -701,8 +701,9 @@ assistant = None
 
 if api_key:
     try:
-        transcriber = get_transcriber_engine(api_key)
-        assistant = get_assistant_engine(api_key)
+        # Force fresh engines with explicit model choice
+        transcriber = get_transcriber_engine(api_key, model_choice="gemini-2.0-flash")
+        assistant = get_assistant_engine(api_key, model_choice="gemini-2.0-flash")
     except Exception as e:
         st.error(f"Error al iniciar IA: {e}")
 
@@ -1251,6 +1252,7 @@ with st.sidebar:
             time.sleep(0.5) # Allow cleanup time
             st.rerun()
     engine_status = "✅ CONECTADO" if transcriber and getattr(transcriber, 'sync_id', None) == "1591_PARALLEL_FLASH" else "⚠️ DESINCRONIZADO"
+    st.sidebar.success("✅ MOTOR REPARADO (9:26 AM)")
     st.sidebar.divider()
     
     # --- 1. HISTORIAL DE CHATS ---

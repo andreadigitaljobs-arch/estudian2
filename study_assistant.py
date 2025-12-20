@@ -5,10 +5,9 @@ from google.api_core.exceptions import ResourceExhausted, ServiceUnavailable
 from PIL import Image
 
 class StudyAssistant:
-    def __init__(self, api_key):
+    def __init__(self, api_key, model_name="gemini-2.0-flash"):
         genai.configure(api_key=api_key)
-        # Reverting to 2.0 Flash (The working model)
-        self.model = genai.GenerativeModel('gemini-2.0-flash')
+        self.model = genai.GenerativeModel(model_name)
 
     def generate_notes(self, transcript_text, global_context=""):
         """Generates progressive notes (3 levels) in JSON format."""
