@@ -3,7 +3,7 @@ import streamlit as st
 import os
 import glob
 import uuid
-from transcriber_v2 import Transcriber
+from transcriber import Transcriber
 from study_assistant import StudyAssistant
 from PIL import Image, ImageGrab
 import shutil
@@ -688,11 +688,11 @@ if not saved_key and 'api_key_input' not in st.session_state:
 # Better: Load key, if exists init.
 # --- INITIALIZATION UTILS (Cached) ---
 @st.cache_resource
-def get_transcriber_engine(key, cache_breaker="1591_PARALLEL_FLASH"):
+def get_transcriber_engine(key):
     return Transcriber(key)
 
 @st.cache_resource
-def get_assistant_engine(key, cache_breaker="1591_PARALLEL_FLASH"):
+def get_assistant_engine(key):
     return StudyAssistant(key)
 
 api_key = saved_key
@@ -701,8 +701,8 @@ assistant = None
 
 if api_key:
     try:
-        transcriber = get_transcriber_engine(api_key, cache_breaker="1591_PARALLEL_FLASH")
-        assistant = get_assistant_engine(api_key, cache_breaker="1591_PARALLEL_FLASH")
+        transcriber = get_transcriber_engine(api_key)
+        assistant = get_assistant_engine(api_key)
     except Exception as e:
         st.error(f"Error al iniciar IA: {e}")
 
@@ -1251,7 +1251,6 @@ with st.sidebar:
             time.sleep(0.5) # Allow cleanup time
             st.rerun()
     engine_status = "✅ CONECTADO" if transcriber and getattr(transcriber, 'sync_id', None) == "1591_PARALLEL_FLASH" else "⚠️ DESINCRONIZADO"
-    st.sidebar.markdown(f'<p style="color: grey; font-size: 0.7rem;">SYNC_ID: 1591_PARALLEL_FLASH ({engine_status})</p>', unsafe_allow_html=True)
     st.sidebar.divider()
     
     # --- 1. HISTORIAL DE CHATS ---
@@ -2224,9 +2223,7 @@ with tab1:
         # Recents Header
         st.divider()
         c_hist_1, c_hist_2, c_hist_3 = st.columns([0.5, 0.25, 0.25], vertical_alignment="center")
-        ti_v = getattr(transcriber, "sync_id", "STALE_VERSION")
         c_hist_1.markdown(f"### 📝 Resultados Recientes")
-        c_hist_1.caption(f"Motor: {ti_v}")
         
         # CLEAR BUTTON
         if c_hist_2.button("🧹 Limpiar Pantalla", help="Borra la pantalla y los archivos subidos (no borra de la biblioteca)", use_container_width=True):

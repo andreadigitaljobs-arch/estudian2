@@ -7,8 +7,8 @@ from PIL import Image
 class StudyAssistant:
     def __init__(self, api_key):
         genai.configure(api_key=api_key)
-        # Using 1.5 Flash for guaranteed access
-        self.model = genai.GenerativeModel('gemini-1.5-flash')
+        # Reverting to 2.0 Flash (The working model)
+        self.model = genai.GenerativeModel('gemini-2.0-flash')
 
     def generate_notes(self, transcript_text, global_context=""):
         """Generates progressive notes (3 levels) in JSON format."""
