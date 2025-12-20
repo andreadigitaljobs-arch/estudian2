@@ -1433,6 +1433,7 @@ with st.sidebar:
     
     # --- 3. CONFIGURACIÓN PERSONAL ---
     # (Removed per user request)
+    st.divider()
     
     # --- 4. ESPACIO DE TRABAJO ---
     st.markdown("#### 📂 Espacio de Trabajo")
