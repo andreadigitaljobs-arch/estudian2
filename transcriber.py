@@ -70,12 +70,14 @@ class Transcriber:
         prompt = """
         Eres un transcriptor experto. Escucha el audio y genera una transcripción exacta, pero bien formateada.
         
-        REGLAS DE FORMATO:
-        1. NO crees un solo bloque de texto gigante.
-        2. Usa PÁRRAFOS claros para separar ideas. Deja una línea en blanco entre párrafos.
-        3. Si detectas cambios de tema claros, usa Títulos (Markdown # o ##) para estructurar el texto.
-        4. Usa guiones (-) para listas si se enumeran cosas.
-        5. Mantén la fidelidad del contenido pero prioriza la legibilidad.
+        REGLAS DE ORO PARA LA TRANSCRIPCIÓN:
+        1. ORTOGRAFÍA PERFECTA: Es obligatorio el uso correcto de tildes (acentos), signos de interrogación/exclamación de apertura y cierre (¿?, ¡!), y puntuación profesional.
+        2. ESTRUCTURA SEMÁNTICA: No generes un bloque de texto plano. Divide el contenido en Secciones usando Títulos de Markdown (## para temas principales, ### para subtemas).
+        3. RESALTADO ESTRATÉGICO (LILA): Identifica las ideas, conclusiones o datos más importantes y envuélvelos en esta etiqueta HTML exacta: 
+           <span style="background-color: #f0e6ff; padding: 2px 4px; border-radius: 4px; font-weight: 500; color: #4625b8;">IDEA_IMPORTANTE</span>
+        4. LEGIBILIDAD: Usa listas con viñetas (-) para enumeraciones. Deja una línea en blanco entre párrafos.
+        5. FIDELIDAD: Limpia muletillas (ehh, mmm, este...) pero mantén el 100% de la información y el tono original.
+        6. IDIOMA: Transcribe siempre en el idioma original del audio, aplicando estas reglas de excelencia gramatical.
         """
         
         response = self.model.generate_content([prompt, audio_file])
