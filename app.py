@@ -1111,42 +1111,25 @@ CSS_STYLE = """
     }
     
     /* Specific Streamlit markdown headers */
+    /* Specific Streamlit markdown headers */
     .stMarkdown h1, .stMarkdown h2, .stMarkdown h3 {
         color: #4B22DD !important;
     } 
-           User said "Morados en su mayoría y si no verdes". 
-           Let's double check if we want to force EVERYTHING purple. 
-           For "primary", Streamlit usually uses Red (User's ref). 
-           I will enforce the SHAPE primarily. 
-        */
-    }
-    
+
     div.stButton > button:active {
         background-color: #2a1275 !important;
         transform: translateY(0);
     }
     
-    /* Specific overrides for "Green" actions can be handled via key-specific CSS if needed, 
-       but for now "Iniciar Transcripción" will become Purple, which fits "Morados en su mayoría". */
-
-
-    /* TAB SCROLL ARROWS (Corrected) */
-    /* Target buttons in the tab list that are NOT tabs */
+    /* TAB SCROLL ARROWS */
     .stTabs [data-baseweb="tab-list"] button:not([role="tab"]) {
-        background-color: #4B22DD !important; /* Brand Purple */
+        background-color: #4B22DD !important;
         color: white !important;
-        border-radius: 50% !important; /* Round */
+        border-radius: 50% !important;
         width: 30px !important;
         height: 30px !important;
         border: none !important;
         display: flex !important;
-        color: white !important;
-
-    }
-
-    /* Hover State */
-    .stTabs [data-baseweb="tab-list"] button:not([role="tab"]):hover {
-        background-color: #3b1aa3 !important;
     }
 
     /* --- SIDEBAR WIDTH CONTROL --- */
@@ -1157,21 +1140,51 @@ CSS_STYLE = """
         flex: 0 0 280px !important;
     }
 
-    /* --- ROBUST HIDDEN UPLOADER FIX --- */
-    /* Target via ARIA label if supported */
-    div[data-testid="stFileUploader"]:has(input[aria-label="Paste_Receiver_Hidden_Bin"]) {
+    /* --- NUCLEAR UPLOADER HIDING --- */
+    div[data-testid="stFileUploader"]:has(input[aria-label="Paste_Receiver_Hidden_Bin"]),
+    div[data-testid="stFileUploader"]:has(label:contains("Paste_Receiver_Hidden_Bin")),
+    div[id*="Paste_Receiver_Hidden_Bin"] {
         display: none !important;
         visibility: hidden !important;
         height: 0px !important;
+        opacity: 0 !important;
+        position: absolute !important;
+        pointer-events: none !important;
     }
     
     /* STUDY SYSTEM COLORS */
     span[style*="background-color"] {
         display: inline-block !important;
         margin: 1px 0 !important;
+        padding: 2px 4px !important;
+        border-radius: 4px !important;
     }
     
 </style>
+
+<script>
+    // GLOBAL NUCLEAR HIDER
+    const runHider = () => {
+        const root = window.parent.document;
+        const boxes = root.querySelectorAll('[data-testid="stFileUploader"]');
+        boxes.forEach(b => {
+            const isTarget = b.innerText.includes("Paste_Receiver_Hidden_Bin") || 
+                             b.innerHTML.includes("Paste_Receiver_Hidden_Bin") ||
+                             (b.querySelector('input') && b.querySelector('input').getAttribute('aria-label') === "Paste_Receiver_Hidden_Bin");
+            if (isTarget) {
+                b.style.display = 'none';
+                b.style.visibility = 'hidden';
+                b.style.height = '0px';
+                b.style.position = 'absolute';
+                b.style.zIndex = '-9999';
+            }
+        });
+    };
+    if (!window.parent.hiderActive) {
+        setInterval(runHider, 150);
+        window.parent.hiderActive = true;
+    }
+</script>
 """
 st.markdown(CSS_STYLE, unsafe_allow_html=True)
 
@@ -3341,30 +3354,6 @@ with tab6:
                       textArea.dataset.layout_v2 = 'active';
                  }
                  
-                  // E. CONTINUOUS HIDER FOR PASTE BIN (NUCLEAR)
-                  if (!window.parent.document.hiderRunning) {
-                       const hider = () => {
-                            const root = window.parent.document;
-                            const widgets = root.querySelectorAll('[data-testid="stFileUploader"]');
-                            widgets.forEach(w => {
-                                 const isBin = w.innerText.includes("Paste_Receiver_Hidden_Bin") || 
-                                               w.innerHTML.includes("Paste_Receiver_Hidden_Bin") ||
-                                               (w.querySelector('input') && w.querySelector('input').getAttribute('aria-label') === "Paste_Receiver_Hidden_Bin");
-                                 if (isBin) {
-                                      w.style.setProperty('display', 'none', 'important');
-                                      w.style.setProperty('visibility', 'hidden', 'important');
-                                      w.style.setProperty('height', '0px', 'important');
-                                      w.style.setProperty('margin', '0px', 'important');
-                                      w.style.setProperty('padding', '0px', 'important');
-                                      w.style.setProperty('position', 'absolute', 'important');
-                                      w.style.setProperty('z-index', '-1', 'important');
-                                 }
-                            });
-                       };
-                       setInterval(hider, 150);
-                       window.parent.document.hiderRunning = true;
-                  }
-
                   const pasteInput = Array.from(window.parent.document.querySelectorAll('input[type="file"]'))
                       .find(i => i.getAttribute('aria-label') === "Paste_Receiver_Hidden_Bin" || i.parentElement.innerText.includes("Paste_Receiver_Hidden_Bin"));
                  
