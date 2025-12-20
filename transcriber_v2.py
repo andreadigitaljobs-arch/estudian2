@@ -8,6 +8,7 @@ import glob
 class Transcriber:
     def __init__(self, api_key):
         genai.configure(api_key=api_key)
+        self.sync_id = "1591_PARALLEL_FLASH"
         # Use 1.5 Flash for maximum compatibility and speed
         self.model = genai.GenerativeModel('gemini-1.5-flash')
 
@@ -127,7 +128,7 @@ class Transcriber:
                     os.remove(chunk_path)
                 return index, text
             except Exception as e:
-                return index, f"[FLASH_SYNC_V1] Error en parte {index+1}: {str(e)}"
+                return index, f"[ERROR_FLASH] En parte {index+1}: {str(e)}"
 
         if progress_callback: progress_callback(f"Transcribiendo {total_chunks} partes en paralelo...", 0.3)
 
