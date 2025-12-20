@@ -27,13 +27,21 @@ class StudyAssistant:
         Genera un objeto JSON estricto con las siguientes claves:
         1. "ultracorto": 5 bullets points con lo esencial (Key takeaways).
         2. "intermedio": 10-12 bullets con los conceptos clave explicados brevemente.
-        3. "profundo": Un resumen detallado (aprox 1 página) con ejemplos, estructura clara, y conectando conceptos con el Contexto Global si aplica.
+        3. "profundo": Un resumen detallado (aprox 1 página).
         
-        FORMATO DE SALIDA (JSON ÚNICAMENTE - NO PYTHON):
+        SISTEMA DE COLORES (MODO ESTUDIO):
+        En los tres niveles, resalta conceptos importantes usando etiquetas <span> con estas CLASES (NO USES BLOQUES DE CÓDIGO ```):
+        - <span class="sc-base">[Concepto Base]</span> (Color: Rojo claro)
+        - <span class="sc-example">[Ejemplo]</span> (Color: Azul claro)
+        - <span class="sc-note">[Nota]</span> (Color: Verde claro)
+        - <span class="sc-data">[Dato]</span> (Color: Amarillo claro)
+        - <span class="sc-key">[Idea Clave]</span> (Color: Púrpura claro)
+        
+        FORMATO DE SALIDA (JSON ÚNICAMENTE):
         {{
-            "ultracorto": "Texto breve con \\n para saltos...",
-            "intermedio": "Texto medio...",
-            "profundo": "Texto largo..."
+            "ultracorto": "Texto breve con resaltados...",
+            "intermedio": "Texto medio con resaltados...",
+            "profundo": "Texto largo con resaltados..."
         }}
         (IMPORTANTE: Usa comillas dobles para las claves y valores. Escapa las comillas internas con \\". NO uses triple comilla \"\"\")
 

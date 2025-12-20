@@ -69,13 +69,13 @@ class Transcriber:
         TRANSCRIPCIÓN EDITORIAL EXPERTA:
         Tu tarea es transcribir el audio a Español con ortografía PERFECTA (tildes, signos ¿ ¡, puntuación).
 
-        SISTEMA DE COLORES (HTML):
-        Resalta conceptos usando etiquetas <span> (NO USES BLOQUES DE CÓDIGO ```):
-        - <span style="background-color: #ffd9d9; padding: 2px 4px; border-radius: 4px; font-weight: bold;">[Concepto Base]</span>
-        - <span style="background-color: #d1e9ff; padding: 2px 4px; border-radius: 4px; color: #004080;">[Ejemplo]</span>
-        - <span style="background-color: #d4f2d2; padding: 2px 4px; border-radius: 4px;">[Nota]</span>
-        - <span style="background-color: #fff9c4; padding: 2px 4px; border-radius: 4px; font-weight: 500;">[Dato]</span>
-        - <span style="background-color: #f0e6ff; padding: 2px 4px; border-radius: 4px; color: #4625b8; font-weight: 500;">[Idea Clave]</span>
+        SISTEMA DE COLORES (MODO ESTUDIO):
+        Resalta conceptos importantes usando etiquetas <span> con estas CLASES (NO USES BLOQUES DE CÓDIGO ```):
+        - <span class="sc-base">[Concepto Base]</span> (Color: Rojo claro)
+        - <span class="sc-example">[Ejemplo]</span> (Color: Azul claro)
+        - <span class="sc-note">[Nota]</span> (Color: Verde claro)
+        - <span class="sc-data">[Dato]</span> (Color: Amarillo claro)
+        - <span class="sc-key">[Idea Clave]</span> (Color: Púrpura claro)
 
         ESTRUCTURA: Usa títulos Markdown (##, ###) y listas (-).
         """

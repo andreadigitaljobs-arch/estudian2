@@ -1251,8 +1251,38 @@ with st.sidebar:
             import time
             time.sleep(0.5) # Allow cleanup time
             st.rerun()
-    engine_status = "✅ CONECTADO" if transcriber and getattr(transcriber, 'sync_id', None) == "1591_PARALLEL_FLASH" else "⚠️ DESINCRONIZADO"
-    st.sidebar.success("✅ MOTOR REPARADO (9:26 AM)")
+    # --- MODO ESTUDIO TOGGLE ---
+    study_mode = st.sidebar.toggle("Modo Estudio (Resaltadores) 🎨", value=True, help="Activa o desactiva los colores de estudio en las transcripciones y apuntes.")
+    st.sidebar.divider()
+
+    # Global Highlights CSS
+    if study_mode:
+        highlight_css = """
+        <style>
+        .sc-base { background-color: #ffd9d9 !important; padding: 2px 4px !important; border-radius: 4px !important; font-weight: bold !important; color: #111 !important; }
+        .sc-example { background-color: #d1e9ff !important; padding: 2px 4px !important; border-radius: 4px !important; color: #004080 !important; }
+        .sc-note { background-color: #d4f2d2 !important; padding: 2px 4px !important; border-radius: 4px !important; color: #111 !important; }
+        .sc-data { background-color: #fff9c4 !important; padding: 2px 4px !important; border-radius: 4px !important; font-weight: 500 !important; color: #111 !important; }
+        .sc-key { background-color: #f0e6ff !important; padding: 2px 4px !important; border-radius: 4px !important; color: #4625b8 !important; font-weight: 500 !important; }
+        </style>
+        """
+    else:
+        highlight_css = """
+        <style>
+        /* Target Classes */
+        .sc-base, .sc-example, .sc-note, .sc-data, .sc-key,
+        /* Target Legacy Inline Styles (Backward Compatibility) */
+        span[style*="#ffd9d9"], span[style*="#d1e9ff"], span[style*="#d4f2d2"], 
+        span[style*="#fff9c4"], span[style*="#f0e6ff"] { 
+            background-color: transparent !important; 
+            padding: 0 !important; 
+            color: inherit !important; 
+            border: initial !important; 
+            font-weight: inherit !important; 
+        }
+        </style>
+        """
+    st.markdown(highlight_css, unsafe_allow_html=True)
     st.sidebar.divider()
     
     # --- 1. HISTORIAL DE CHATS ---
