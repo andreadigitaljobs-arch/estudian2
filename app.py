@@ -2261,7 +2261,7 @@ with tab1:
                  
                  # NATIVE SCROLL CONTAINER (Cleanest approach)
                  with st.container(height=400):
-                      st.markdown(item['text'])
+                       st.markdown(item['text'], unsafe_allow_html=True)
 
 
 # --- TAB 2: Apuntes Simples ---

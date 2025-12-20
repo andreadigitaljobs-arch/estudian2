@@ -72,13 +72,14 @@ class Transcriber:
         
         SISTEMA DE ESTUDIO POR COLORES (CRÍTICO):
         Aplica un código de colores visual usando etiquetas <span style="background-color: COLOR; ...">TEXTO</span> para jerarquizar la información:
-        1. ROJO (#ffd9d9): Para conceptos ESENCIALES y definiciones base.
-        2. AZUL (#d1e9ff): Para EJEMPLOS y casos prácticos.
-        3. VERDE (#d4f2d2): Para notas secundarias, aclaraciones o contexto adicional.
-        4. AMARILLO (#fff9c4): Para detalles RELEVANTES, fechas o datos específicos.
-        5. LILA (#f0e6ff): Para ideas importantes o conclusiones clave.
+        1. ROJO (#ffd9d9): Conceptos ESENCIALES y definiciones base.
+        2. AZUL (#d1e9ff): EJEMPLOS y casos prácticos.
+        3. VERDE (#d4f2d2): Notas secundarias o contexto adicional.
+        4. AMARILLO (#fff9c4): Detalles RELEVANTES, fechas o datos específicos.
+        5. LILA (#f0e6ff): Ideas importantes o conclusiones clave.
         
         REGLAS ADICIONALES:
+        - IMPORTANTE: No uses comillas adicionales ni bloques de código para estas etiquetas, deben ser parte del texto.
         - Divide en secciones con títulos de Markdown (##, ###).
         - Ortografía perfecta en español (tildes, puntuación).
         - Legibilidad extrema con viñetas y párrafos limpios.
