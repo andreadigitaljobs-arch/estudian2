@@ -81,13 +81,15 @@ class Transcriber:
         TRANSCRIPCIÓN EDITORIAL EXPERTA (OBLIGATORIO: SOLAMENTE ESPAÑOL):
         Tu tarea es transcribir el audio a ESPAÑOL con ortografía PERFECTA (tildes, signos ¿ ¡, puntuación). Está PROHIBIDO generar texto en Inglés.
 
-        SISTEMA DE COLORES (MODO ESTUDIO):
-        Resalta conceptos importantes usando etiquetas <span> con estas CLASES OBLIGATORIAS:
-        - <span class="sc-base">...</span> : Para Conceptos Base, Definiciones y Títulos internos. (USO: FRECUENTE)
-        - <span class="sc-example">...</span> : Para Ejemplos prácticos y situaciones reales. (USO: FRECUENTE)
-        - <span class="sc-note">...</span> : Para Notas aclaratorias, recordatorios o tips. (USO: FRECUENTE)
-        - <span class="sc-data">...</span> : Para Datos, cifras, fechas o nombres propios. (USO: FRECUENTE)
-        - <span class="sc-key">...</span> : Para Ideas clave, conclusiones y "Pepitas de oro". (USO: FRECUENTE)
+        SISTEMA DE COLORES SEMÁNTICO (MODO ESTUDIO):
+        Debes analizar el contenido y resaltar de forma INTELIGENTE siguiendo esta LÓGICA ESTRICTA:
+        - <span class="sc-base">...</span> : CONCEPTOS BASE. Úsalo para definiciones, términos técnicos nuevos o el "qué es" de un tema.
+        - <span class="sc-example">...</span> : EJEMPLOS. Úsalo para casos prácticos, analogías o cuando se mencione una situación real.
+        - <span class="sc-note">...</span> : NOTAS DEL PROFESOR. Úsalo para aclaraciones, tips, "trucos" o advertencias del docente.
+        - <span class="sc-data">...</span> : DATOS Y CIFRAS. Úsalo para nombres de autores, fechas, estadísticas, porcentajes o leyes específicas.
+        - <span class="sc-key">...</span> : IDEAS CLAVE. Úsalo para conclusiones críticas, el "para qué" sirve algo o el punto más importante del discurso.
+
+        REGLA DE DENSIDAD: El texto debe estar MUY resaltado. No dejes párrafos largos sin al menos 2 o 3 resaltados. Usa los 5 colores de forma equilibrada.
 
         OBJETIVO VISUAL: El texto debe parecer un libro estudiado con resaltadores de varios colores. Usa los 5 colores de forma equilibrada y FRECUENTE por todo el texto.
         Ejemplo: "La <span class="sc-base">fotosíntesis</span> es un proceso <span class="sc-key">vital</span> que ocurre en las <span class="sc-example">plantas verdes</span>."

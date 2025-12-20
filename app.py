@@ -1253,6 +1253,18 @@ with st.sidebar:
             st.rerun()
     # --- MODO ESTUDIO TOGGLE ---
     study_mode = st.sidebar.toggle("Modo Estudio (Resaltadores) 🎨", value=True, help="Activa o desactiva los colores de estudio.")
+    
+    # Legend UI
+    with st.sidebar.expander("📚 Leyenda de Colores", expanded=study_mode):
+        st.markdown('''
+            <div style="font-size: 0.8rem; line-height: 1.4;">
+                <div style="margin-bottom:8px;"><span style="background-color: #ffcccc; color: #900; border: 1px solid #ff9999; padding: 1px 4px; border-radius: 3px; font-weight: bold;">Rojo</span>: Definiciones y conceptos base.</div>
+                <div style="margin-bottom:8px;"><span style="background-color: #cce5ff; color: #004085; border: 1px solid #b8daff; padding: 1px 4px; border-radius: 3px; font-weight: bold;">Azul</span>: Ejemplos y casos prácticos.</div>
+                <div style="margin-bottom:8px;"><span style="background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; padding: 1px 4px; border-radius: 3px; font-weight: bold;">Verde</span>: Notas, tips y aclaraciones.</div>
+                <div style="margin-bottom:8px;"><span style="background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; padding: 1px 4px; border-radius: 3px; font-weight: bold;">Amarillo</span>: Datos, fechas y nombres.</div>
+                <div style="margin-bottom:8px;"><span style="background-color: #e2d9f3; color: #512da8; border: 1px solid #d1c4e9; padding: 1px 4px; border-radius: 3px; font-weight: bold;">Púrpura</span>: Ideas clave y conclusiones.</div>
+            </div>
+        ''', unsafe_allow_html=True)
     st.sidebar.divider()
 
     # Dynamic CSS Injection for Study Mode

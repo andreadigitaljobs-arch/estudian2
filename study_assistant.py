@@ -39,16 +39,16 @@ class StudyAssistant:
         2. "intermedio": 10-12 bullets con los conceptos clave explicados brevemente.
         3. "profundo": Un resumen detallado (aprox 1 página).
         
-        SISTEMA DE COLORES (MODO ESTUDIO OBLIGATORIO):
-        En los tres niveles, DEBES resaltar conceptos importantes usando etiquetas <span> con estas CLASES (USO INTENSIVO):
-        - <span class="sc-base">...</span> : Para Conceptos Base y Definiciones. (ROJO)
-        - <span class="sc-example">...</span> : Para Ejemplos prácticos. (AZUL)
-        - <span class="sc-note">...</span> : Para Notas y tips. (VERDE)
-        - <span class="sc-data">...</span> : Para Datos y cifras. (AMARILLO)
-        - <span class="sc-key">...</span> : Para Ideas clave. (PÚRPURA)
+        SISTEMA DE COLORES SEMÁNTICO (MODO ESTUDIO OBLIGATORIO):
+        En los tres niveles, DEBES analizar el contenido y resaltar siguiendo esta LÓGICA ESTRICTA:
+        - <span class="sc-base">...</span> : CONCEPTOS BASE. Definiciones fundamentales y términos técnicos. (ROJO)
+        - <span class="sc-example">...</span> : EJEMPLOS. Casos prácticos y analogías. (AZUL)
+        - <span class="sc-note">...</span> : NOTAS. Tips del profesor, aclaraciones y recordatorios. (VERDE)
+        - <span class="sc-data">...</span> : DATOS Y CIFRAS. Nombres, fechas, leyes, estadísticas. (AMARILLO)
+        - <span class="sc-key">...</span> : IDEAS CLAVE. Conclusiones y lo más importante para el examen. (PÚRPURA)
         
-        OBJETIVO: Los apuntes deben ser MUY COLORIDOS. Usa todos los colores. 
-        Ejemplo de uso: <span class="sc-key">Metodología Ágil</span> es un <span class="sc-base">marco de trabajo</span>.
+        REGLA DE DENSIDAD: Los apuntes deben ser MUY COLORIDOS. No ahorres en resaltadores.
+        Ejemplo de uso: <span class="sc-key">Metodología Ágil</span> es un <span class="sc-base">marco de trabajo</span> basado en <span class="sc-data">iteraciones cortas</span>.
         
         FORMATO DE SALIDA (JSON ÚNICAMENTE):
         {{
