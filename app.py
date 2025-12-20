@@ -1432,10 +1432,7 @@ with st.sidebar:
             st.rerun()
     
     # --- 3. CONFIGURACIÓN PERSONAL ---
-    st.divider()
-    # (Removed badge per user request)
-    st.divider()
-    # (Reload Trigger)
+    # (Removed per user request)
     
     # --- 4. ESPACIO DE TRABAJO ---
     st.markdown("#### 📂 Espacio de Trabajo")
