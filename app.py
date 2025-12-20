@@ -1433,15 +1433,7 @@ with st.sidebar:
     
     # --- 3. CONFIGURACIÓN PERSONAL ---
     st.divider()
-    st.markdown("""
-        <div style="background-color: #e6f4ea; color: #1e4620; padding: 10px; border-radius: 10px; border: 1px solid #1e4620; display: flex; align-items: center; gap: 8px;">
-            <span style="font-size: 1.2rem;">🛸</span>
-            <div style="display: flex; flex-direction: column;">
-                <b style="font-size: 0.9rem;">Motor de Élite</b>
-                <span style="font-size: 0.75rem;">Gemini Pro 1.5 Activo</span>
-            </div>
-        </div>
-    """, unsafe_allow_html=True)
+    # (Removed badge per user request)
     st.divider()
     # (Reload Trigger)
     
@@ -2315,8 +2307,6 @@ with tab1:
                        if "```" in processed_text:
                             processed_text = processed_text.replace("```markdown", "").replace("```html", "").replace("```", "")
                        
-                       # Add a small badge for the NEW engine if it's recent
-                       st.markdown(f'<div style="text-align: right; margin-bottom: -25px;"><span style="background-color: #e6f4ea; color: #1e4620; font-size: 0.7rem; padding: 2px 8px; border-radius: 10px; border: 1px solid #1e4620;">✨ Calidad Pro 1.5</span></div>', unsafe_allow_html=True)
                        st.markdown(processed_text, unsafe_allow_html=True)
 
 
@@ -3292,9 +3282,10 @@ with tab6:
         
         # MOVE TO SIDEBAR to prevent layout issues in main chat
         with st.sidebar:
-             st.markdown('<div class="paste-bin-hidden-wrapper">', unsafe_allow_html=True)
-             paste_bin = st.file_uploader("KILL_ME_NOW", type=['png','jpg','jpeg','pdf'], key=f"paste_bin_{st.session_state['paste_key']}", label_visibility='collapsed')
-             st.markdown('</div>', unsafe_allow_html=True)
+             # st.markdown('<div class="paste-bin-hidden-wrapper">', unsafe_allow_html=True)
+             # paste_bin = st.file_uploader("KILL_ME_NOW", type=['png','jpg','jpeg','pdf'], key=f"paste_bin_{st.session_state['paste_key']}", label_visibility='collapsed')
+             # st.markdown('</div>', unsafe_allow_html=True)
+             paste_bin = None # Disabled to prevent rendering
         
         if paste_bin:
              # Check for duplicates (Original Name OR Pasted Name)
