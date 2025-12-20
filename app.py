@@ -2225,16 +2225,16 @@ with tab1:
         
         for i, item in enumerate(st.session_state['transcript_history']):
             with st.expander(f"📄 {item['name']}", expanded=True):
-                 # Header with Copy
-                 c_txt, c_cp = st.columns([0.7, 0.3])
-                 with c_txt:
-                     st.caption("Texto Transcrito:")
+                 # Header with Copy integrated better
+                 c_lbl, c_cp = st.columns([0.85, 0.15])
+                 with c_lbl:
+                      st.markdown(f"**Transcripción: {item['name']}**")
                  with c_cp:
-                     # JS COPY COMPONENT
-                     import json
-                     import streamlit.components.v1 as components
-                     safe_txt = json.dumps(item['text'])
-                     html_cp = f"""
+                      # JS COPY COMPONENT (Fixed positioning)
+                      import json
+                      import streamlit.components.v1 as components
+                      safe_txt = json.dumps(item['text'])
+                      html_cp = f"""
                     <html>
                     <body style="margin:0; padding:0; background: transparent;">
                         <script>
@@ -2242,35 +2242,26 @@ with tab1:
                             navigator.clipboard.writeText({safe_txt}).then(function() {{
                                 const b = document.getElementById('btn');
                                 b.innerText = '✅';
-                                setTimeout(() => {{ b.innerText = '📄'; }}, 2000);
+                                b.style.color = '#4625b8';
+                                setTimeout(() => {{ b.innerText = '📄'; b.style.color = '#888'; }}, 2000);
                             }});
                         }}
                         </script>
-                        <button id="btn" onclick="copyT()" style="
-                            cursor: pointer; background: transparent; border: none; font-size: 20px;
-                        " title="Copiar al portapapeles">
-                            📄
-                        </button>
+                        <div style="display: flex; justify-content: flex-end; padding-top: 5px;">
+                            <button id="btn" onclick="copyT()" style="
+                                cursor: pointer; background: transparent; border: none; font-size: 18px; color: #888;
+                            " title="Copiar al portapapeles">
+                                📄
+                            </button>
+                        </div>
                     </body>
                     </html>
                     """
-                     components.html(html_cp, height=40)
+                      components.html(html_cp, height=35)
                  
-                 st.markdown(f"""
-                 <div style="
-                    max-height: 400px; 
-                    overflow-y: auto; 
-                    padding: 15px; 
-                    background-color: rgba(0,0,0,0.02); 
-                    border-radius: 10px; 
-                    border: 1px solid rgba(0,0,0,0.05);
-                    font-size: 0.95rem;
-                    line-height: 1.6;
-                    white-space: pre-wrap;
-                 ">
-                 {item['text']}
-                 </div>
-                 """, unsafe_allow_html=True)
+                 # NATIVE SCROLL CONTAINER (Cleanest approach)
+                 with st.container(height=400):
+                      st.markdown(item['text'])
 
 
 # --- TAB 2: Apuntes Simples ---
