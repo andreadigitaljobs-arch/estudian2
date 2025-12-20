@@ -70,14 +70,18 @@ class Transcriber:
         prompt = """
         Eres un transcriptor experto. Escucha el audio y genera una transcripción exacta, pero bien formateada.
         
-        REGLAS DE ORO PARA LA TRANSCRIPCIÓN:
-        1. ORTOGRAFÍA PERFECTA: Es obligatorio el uso correcto de tildes (acentos), signos de interrogación/exclamación de apertura y cierre (¿?, ¡!), y puntuación profesional.
-        2. ESTRUCTURA SEMÁNTICA: No generes un bloque de texto plano. Divide el contenido en Secciones usando Títulos de Markdown (## para temas principales, ### para subtemas).
-        3. RESALTADO ESTRATÉGICO (LILA): Identifica las ideas, conclusiones o datos más importantes y envuélvelos en esta etiqueta HTML exacta: 
-           <span style="background-color: #f0e6ff; padding: 2px 4px; border-radius: 4px; font-weight: 500; color: #4625b8;">IDEA_IMPORTANTE</span>
-        4. LEGIBILIDAD: Usa listas con viñetas (-) para enumeraciones. Deja una línea en blanco entre párrafos.
-        5. FIDELIDAD: Limpia muletillas (ehh, mmm, este...) pero mantén el 100% de la información y el tono original.
-        6. IDIOMA: Transcribe siempre en el idioma original del audio, aplicando estas reglas de excelencia gramatical.
+        SISTEMA DE ESTUDIO POR COLORES (CRÍTICO):
+        Aplica un código de colores visual usando etiquetas <span style="background-color: COLOR; ...">TEXTO</span> para jerarquizar la información:
+        1. ROJO (#ffd9d9): Para conceptos ESENCIALES y definiciones base.
+        2. AZUL (#d1e9ff): Para EJEMPLOS y casos prácticos.
+        3. VERDE (#d4f2d2): Para notas secundarias, aclaraciones o contexto adicional.
+        4. AMARILLO (#fff9c4): Para detalles RELEVANTES, fechas o datos específicos.
+        5. LILA (#f0e6ff): Para ideas importantes o conclusiones clave.
+        
+        REGLAS ADICIONALES:
+        - Divide en secciones con títulos de Markdown (##, ###).
+        - Ortografía perfecta en español (tildes, puntuación).
+        - Legibilidad extrema con viñetas y párrafos limpios.
         """
         
         response = self.model.generate_content([prompt, audio_file])
