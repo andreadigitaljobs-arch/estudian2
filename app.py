@@ -54,19 +54,6 @@ if 'spotlight_query' not in st.session_state: st.session_state['spotlight_query'
 if 'spotlight_mode' not in st.session_state: st.session_state['spotlight_mode'] = "⚡ Concepto Rápido"
 if 'custom_api_key' not in st.session_state: st.session_state['custom_api_key'] = None
 
-# --- PLAN NUKE: SCROLL BUTTON REMOVAL ---
-NUKE_SCROLL_JS = """
-<script>
-    (function() {
-        const btn = window.parent.document.getElementById('tutor_scroll_btn');
-        if (btn) {
-            btn.remove();
-            console.log("PLAN NUKE: Persistent Scroll Button Removed.");
-        }
-    })();
-</script>
-"""
-
 # --- TAB RESTORATION LOGIC (Removed - Switched to JS LocalStorage) ---
 if 'has_restored_tab' not in st.session_state:
     st.session_state['has_restored_tab'] = True
@@ -1168,7 +1155,7 @@ CSS_STYLE = """
 
 <script>
     (function() {
-        // RADICAL HIDING & GLOBAL NUKE
+        // RADICAL HIDING & UNIFIED GLOBAL MANAGER
         const injectStyles = () => {
             const root = window.parent.document;
             if (root.getElementById('estudian2-hider-styles')) return;
@@ -1176,25 +1163,71 @@ CSS_STYLE = """
             const style = root.createElement('style');
             style.id = 'estudian2-hider-styles';
             style.innerHTML = `
-                /* Hide any uploader that contains key text */
+                /* Hide unwanted uploaders */
                 div[data-testid="stFileUploader"]:has(input[aria-label*="Paste_Receiver"]),
                 div[data-testid="stFileUploader"]:has(input[aria-label*="Hidden_Bin"]) {
                     display: none !important;
                     visibility: hidden !important;
                 }
                 
-                /* Fail-safe: Hide scroll button by default */
+                /* Scroll Button Initial State */
                 #tutor_scroll_btn {
                     display: none !important;
+                    position: fixed;
+                    bottom: 120px;
+                    right: 20px;
+                    z-index: 999999;
+                    width: 45px;
+                    height: 45px;
+                    border-radius: 50%;
+                    background: white;
+                    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+                    border: 1px solid #ddd;
+                    cursor: pointer;
+                    font-size: 20px;
+                    align-items: center;
+                    justify-content: center;
+                    transition: transform 0.2s;
+                    border: none;
                 }
+                #tutor_scroll_btn:hover { transform: scale(1.1); }
             `;
             root.head.appendChild(style);
         };
 
-        const nukeScrollButton = () => {
+        const manageScrollButton = () => {
             const root = window.parent.document;
-            const btn = root.getElementById('tutor_scroll_btn');
-            if (btn) btn.remove();
+            const tabs = root.querySelectorAll('button[role="tab"]');
+            
+            let isTutorTab = false;
+            tabs.forEach(tab => {
+                if (tab.getAttribute('aria-selected') === 'true') {
+                    if (tab.innerText.includes("Tutoría")) isTutorTab = true;
+                }
+            });
+
+            let btn = root.getElementById('tutor_scroll_btn');
+            
+            if (isTutorTab) {
+                if (!btn) {
+                    btn = root.createElement("button");
+                    btn.id = "tutor_scroll_btn";
+                    btn.innerHTML = "⬇️";
+                    btn.onclick = () => {
+                        const anchor = root.getElementById("tutor_chat_end_anchor");
+                        if (anchor) {
+                            anchor.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                        } else {
+                            const main = root.querySelector('section.main');
+                            if (main) main.scrollTop = main.scrollHeight;
+                        }
+                    };
+                    root.body.appendChild(btn);
+                }
+                btn.style.setProperty('display', 'flex', 'important');
+            } else {
+                if (btn) btn.style.setProperty('display', 'none', 'important');
+            }
         };
 
         const watchDOM = () => {
@@ -1214,13 +1247,15 @@ CSS_STYLE = """
                      b.style.setProperty('display', 'none', 'important');
                 }
             });
+
+            // 2. Manage Scroll Button Visibility
+            manageScrollButton();
         };
 
         injectStyles();
-        nukeScrollButton(); // KILL ON RERUN
         
         if (!window.hasGlobalWatcher) {
-            setInterval(watchDOM, 250); 
+            setInterval(watchDOM, 300); 
             window.hasGlobalWatcher = true;
         }
     })();
@@ -1764,7 +1799,6 @@ import pandas as pd # FIX: Missing import for charts
 
 # --- DASHBOARD TAB (HOME) ---
 with tab_home:
-    st.components.v1.html(NUKE_SCROLL_JS, height=0)
     # Load Stats
     current_c_id = st.session_state.get('current_course_id')
     current_c_name = st.session_state.get('current_course', 'General')
@@ -2104,7 +2138,6 @@ def render_image_card(img_path):
 
 # --- TAB LIBRARY ---
 with tab_lib:
-    st.components.v1.html(NUKE_SCROLL_JS, height=0)
     if 'assistant' in locals() and assistant:
          render_library(assistant)
     else:
@@ -2138,7 +2171,6 @@ if st.session_state.get('current_course_id'):
 
 # --- TAB 1: Transcriptor ---
 with tab1:
-    st.components.v1.html(NUKE_SCROLL_JS, height=0)
     # LAYOUT: Image Left (1) | Text Right (1.4)
     col_img, col_text = st.columns([1, 1.4], gap="large")
     
@@ -2373,7 +2405,6 @@ with tab1:
 
 # --- TAB 2: Apuntes Simples ---
 with tab2:
-    st.components.v1.html(NUKE_SCROLL_JS, height=0)
     col_img, col_text = st.columns([1, 1.5], gap="large")
     
     with col_img:
@@ -2505,7 +2536,6 @@ with tab2:
 
 # --- TAB 3: Guía de Estudio ---
 with tab3:
-    st.components.v1.html(NUKE_SCROLL_JS, height=0)
     col_img, col_text = st.columns([1, 1.5], gap="large") # Swapped to Image Left
     
     with col_img:
@@ -2597,7 +2627,6 @@ with tab3:
 
 # --- TAB 4: Quiz ---
 with tab4:
-    st.components.v1.html(NUKE_SCROLL_JS, height=0)
     col_img, col_text = st.columns([1, 1.5], gap="large")
     
     with col_img:
@@ -2914,7 +2943,6 @@ with tab4:
 
 # --- TAB 5: Ayudante de Tareas ---
 with tab5:
-    st.components.v1.html(NUKE_SCROLL_JS, height=0)
     tab5_html = (
         '<div class="card-text">'
         '<h2 style="margin-top:0;">5. Ayudante de Tareas</h2>'
@@ -3565,67 +3593,7 @@ with tab6:
             # Files display removed per user request (handled in sidebar/backend now)
             
             # SCROLL BUTTON (INJECTED INTO PARENT)
-            st.components.v1.html("""
-            <script>
-            // Create Floating Button
-            const btnId = "tutor_scroll_btn";
-            const existingBtn = window.parent.document.getElementById(btnId);
-            if (existingBtn) {
-                existingBtn.remove();
-            }
-
-            const btn = window.parent.document.createElement("button");
-            btn.id = btnId;
-            btn.innerHTML = "⬇️";
-            btn.style.cssText = `
-                position: fixed;
-                bottom: 120px;
-                right: 20px;
-                z-index: 999999;
-                width: 45px;
-                height: 45px;
-                border-radius: 50%;
-                background: white;
-                box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-                border: 1px solid #ddd;
-                cursor: pointer;
-                font-size: 20px;
-                display: flex; 
-                align-items: center;
-                justify-content: center;
-                transition: transform 0.2s;
-            `;
-            
-            btn.onmouseover = () => { btn.style.transform = "scale(1.1)"; };
-            btn.onmouseout = () => { btn.style.transform = "scale(1)"; };
-            
-            btn.onclick = () => {
-                const anchor = window.parent.document.getElementById("tutor_chat_end_anchor");
-                if (anchor) {
-                    anchor.scrollIntoView({ behavior: 'smooth', block: 'end' });
-                } else {
-                     const selectors = ['section[data-testid="stAppViewContainer"]', '.main', 'section.main'];
-                     for (const sel of selectors) {
-                        const el = window.parent.document.querySelector(sel);
-                        if (el) el.scrollTop = el.scrollHeight;
-                     }
-                }
-                
-                // FOCUS INPUT
-                try {
-                    const chatInput = window.parent.document.querySelector('[data-testid="stChatInput"]');
-                    if (chatInput) {
-                        const textArea = chatInput.querySelector('textarea');
-                        if (textArea) {
-                            setTimeout(() => { textArea.focus(); }, 100); // Small delay to ensure scroll finishes or UI stabilizes
-                        }
-                    }
-                } catch(e) { console.error("Focus failed", e); }
-            };
-            
-            window.parent.document.body.appendChild(btn);
-            </script>
-            """, height=0)
+            # CLEANUP: NO INJECTION HERE. Global manager handles this.
 
             # --- AI GENERATION BLOCK (Context-Aware) ---
             if st.session_state.get('trigger_ai_response'):
