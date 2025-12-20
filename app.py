@@ -3243,7 +3243,7 @@ with tab6:
         # MOVE TO SIDEBAR to prevent layout issues in main chat
         with st.sidebar:
              # Make it VISIBLE so we can target the text, but hide it via CSS/JS immediately
-             paste_bin = st.file_uploader("Paste_Receiver_Hidden_Bin", type=['png','jpg','jpeg','pdf'], key=f"paste_bin_{st.session_state['paste_key']}", label_visibility='visible')
+             paste_bin = st.file_uploader("Paste_Receiver_Hidden_Bin", type=['png','jpg','jpeg','pdf'], key=f"paste_bin_{st.session_state['paste_key']}", label_visibility='collapsed')
         
         if paste_bin:
              # Check for duplicates (Original Name OR Pasted Name)
@@ -3341,61 +3341,54 @@ with tab6:
                       textArea.dataset.layout_v2 = 'active';
                  }
                  
-                 // E. CONTINUOUS HIDER FOR PASTE BIN (Global Scope Check)
-                 // Start this once per observer triggered or check if already running
-                 if (!window.parent.document.hiderRunning) {
-                      setInterval(() => {
-                           const allUploaders = Array.from(window.parent.document.querySelectorAll('[data-testid="stFileUploader"]'));
-                           allUploaders.forEach(wrapper => {
-                                // Check if it's the Hidden Bin (by structure or text if collapsed)
-                                // Since we collapsed label, innerText might be empty or just "Drag and drop..."
-                                // But we can rely on the fact that the REAL uploader (in + button) is inside a Popover
-                                const isInPopover = wrapper.closest('[data-testid="stPopover"]');
-                                
-                                // LOGIC: Strategy 3 - TEXT CONTENT CHECK (Bulletproof)
-                                // Since we set label_visibility='visible', the text is definitely there.
-                                if (wrapper.innerText.includes("Paste_Receiver_Hidden_Bin") || wrapper.innerHTML.includes("Paste_Receiver_Hidden_Bin")) {
-                                     wrapper.style.setProperty('display', 'none', 'important');
-                                     wrapper.style.setProperty('visibility', 'hidden', 'important');
-                                     wrapper.style.setProperty('height', '0px', 'important');
-                                     wrapper.style.setProperty('position', 'absolute', 'important'); // Remove from flow
-                                }
-                           });
-                      }, 200); // Very aggressive check
-                      window.parent.document.hiderRunning = true;
-                 }
-                
-                if (pasteInput) {
-                    // HELPER: Send File to Input
-                    const sendFiles = (files) => {
-                        const dataTransfer = new DataTransfer();
-                        let hasFiles = false;
-                        for (let i = 0; i < files.length; i++) {
-                             dataTransfer.items.add(files[i]);
-                             hasFiles = true;
-                        }
-                        if (hasFiles) {
-                            pasteInput.files = dataTransfer.files;
-                            // Trigger Change exactly like user interaction
-                            pasteInput.dispatchEvent(new Event('change', { bubbles: true }));
-                        }
-                    };
+                  // E. CONTINUOUS HIDER FOR PASTE BIN
+                  if (!window.parent.document.hiderRunning) {
+                       setInterval(() => {
+                            const allUploaders = window.parent.document.querySelectorAll('[data-testid="stFileUploader"]');
+                            allUploaders.forEach(wrapper => {
+                                 // Check by label text OR by internal input aria-label since we collapsed it
+                                 const label = wrapper.querySelector('label');
+                                 const input = wrapper.querySelector('input');
+                                 const isPasteBin = (label && label.innerText.includes("Paste_Receiver_Hidden_Bin")) || 
+                                                    (input && input.getAttribute('aria-label') === "Paste_Receiver_Hidden_Bin");
+                                 
+                                 if (isPasteBin) {
+                                      wrapper.style.display = 'none';
+                                      wrapper.style.visibility = 'hidden';
+                                      wrapper.style.height = '0px';
+                                      wrapper.style.position = 'absolute';
+                                 }
+                            });
+                       }, 250);
+                       window.parent.document.hiderRunning = true;
+                  }
 
-                    // A. PASTE Handler (Global)
-                    if (!window.parent.document.hasPasteHandler) {
-                        window.parent.document.addEventListener('paste', (event) => {
-                            const items = (event.clipboardData || event.originalEvent.clipboardData).items;
-                            const files = [];
-                            for (index in items) {
-                                const item = items[index];
-                                if (item.kind === 'file') {
-                                    files.push(item.getAsFile());
-                                }
-                            }
-                            if (files.length > 0) sendFiles(files);
-                        });
-                        window.parent.document.hasPasteHandler = true;
-                    }
+                  const pasteInput = Array.from(window.parent.document.querySelectorAll('input[type="file"]'))
+                      .find(i => i.getAttribute('aria-label') === "Paste_Receiver_Hidden_Bin" || i.parentElement.innerText.includes("Paste_Receiver_Hidden_Bin"));
+                 
+                 if (pasteInput) {
+                     // HELPER: Send File to Input
+                     const sendFiles = (files) => {
+                         const dataTransfer = new DataTransfer();
+                         for (let i = 0; i < files.length; i++) {
+                              dataTransfer.items.add(files[i]);
+                         }
+                         pasteInput.files = dataTransfer.files;
+                         pasteInput.dispatchEvent(new Event('change', { bubbles: true }));
+                     };
+
+                     // A. PASTE Handler
+                     if (!window.parent.document.hasPasteHandler) {
+                         window.parent.document.addEventListener('paste', (event) => {
+                             const items = (event.clipboardData || event.originalEvent.clipboardData).items;
+                             const files = [];
+                             for (let i=0; i < items.length; i++) {
+                                 if (items[i].kind === 'file') files.push(items[i].getAsFile());
+                             }
+                             if (files.length > 0) sendFiles(files);
+                         });
+                         window.parent.document.hasPasteHandler = true;
+                     }
 
                     // B. DRAG & DROP Handler (Global)
                     if (!window.parent.document.hasDropHandler) {

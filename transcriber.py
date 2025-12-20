@@ -66,27 +66,35 @@ class Transcriber:
         audio_file = genai.upload_file(audio_file_path)
         
         # Prompt in Spanish
-        # Prompt in Spanish focused on formatting
+        self.model = genai.GenerativeModel('gemini-1.5-pro')
+        
         prompt = """
-        Eres un transcriptor experto. Escucha el audio y genera una transcripción exacta, pero bien formateada.
+        INSTRUCCIONES DE ALTA PRIORIDAD - FALLO ABSOLUTO SI NO SE CUMPLEN:
+        Eres un transcriptor de élite. Tu objetivo es transformar el audio en un documento de estudio PERFECTO.
         
-        REGLAS DE ORO (MÁXIMA PRIORIDAD):
-        1. ORTOGRAFÍA ESPAÑOLA PERFECTA: Uso obligatorio de tildes, signos de interrogación y exclamación de apertura y cierre (¿?, ¡!), y mayúsculas correctas. No descuides esto bajo ninguna circunstancia.
-        2. SISTEMA DE ESTUDIO POR COLORES: Identifica y resalta estratégicamente usando etiquetas HTML EXACTAS:
-           - <span style="background-color: #ffd9d9; padding: 2px 4px; border-radius: 4px; font-weight: bold;">CONCEPTO_ESENCIAL</span> (Rojo)
-           - <span style="background-color: #d1e9ff; padding: 2px 4px; border-radius: 4px; color: #004080;">EJEMPLO</span> (Azul)
-           - <span style="background-color: #d4f2d2; padding: 2px 4px; border-radius: 4px;">NOTA_SECUNDARIA</span> (Verde)
-           - <span style="background-color: #fff9c4; padding: 2px 4px; border-radius: 4px; font-weight: 500;">DETALLE_RELEVANTE</span> (Amarillo)
-           - <span style="background-color: #f0e6ff; padding: 2px 4px; border-radius: 4px; color: #4625b8; font-weight: 500;">IDEA_IMPORTANTE</span> (Lila)
+        1. ORTOGRAFÍA "NIVEL EDITORIAL": Es obligatorio usar tildes, signos de apertura (¿, ¡), puntuación correcta y Gramática Española impecable. No ignores esto.
+        2. SISTEMA DE ESTUDIO POR COLORES (CRÍTICO): Debes identificar temas y aplicar estos resaltados usando etiquetas HTML EXACTAS:
+           - <span style="background-color: #ffd9d9; padding: 2px 4px; border-radius: 4px; font-weight: bold;">[Concepto Base]</span> para definiciones troncales.
+           - <span style="background-color: #d1e9ff; padding: 2px 4px; border-radius: 4px; color: #004080;">[Ejemplo]</span> para casos prácticos.
+           - <span style="background-color: #d4f2d2; padding: 2px 4px; border-radius: 4px;">[Nota]</span> para contexto extra.
+           - <span style="background-color: #fff9c4; padding: 2px 4px; border-radius: 4px; font-weight: 500;">[Dato]</span> para fechas o cifras.
+           - <span style="background-color: #f0e6ff; padding: 2px 4px; border-radius: 4px; color: #4625b8; font-weight: 500;">[Idea Clave]</span> para conclusiones.
         
-        EJEMPLO DE SALIDA ESPERADA:
-        "## Introducción al Marketing
-        El <span style="background-color: #ffd9d9; padding: 2px 4px; border-radius: 4px; font-weight: bold;">Marketing Digital</span> es el uso de canales digitales para vender. Por ejemplo: <span style="background-color: #d1e9ff; padding: 2px 4px; border-radius: 4px; color: #004080;">una campaña en Instagram</span>."
+        3. ESTRUCTURA: 
+           - USA TÍTULOS DE MARKDOWN (## Tema Principal, ### Subtema). Obligatorio.
+           - Divide en párrafos cortos.
+           - Usa listas (-) para enumeraciones.
         
-        REGLAS ADICIONALES:
-        - Estructura con títulos Markdown (##, ###).
-        - Divide en párrafos claros con una línea en blanco entre ellos.
-        - Elimina muletillas pero mantén toda la información.
+        4. LIMPIEZA: Elimina muletillas pero mantén el 100% del significado.
+        
+        EJEMPLO DE FORMATO REQUERIDO:
+        "## La Revolución Industrial
+        Fue un <span style="background-color: #ffd9d9; padding: 2px 4px; border-radius: 4px; font-weight: bold;">proceso de transformación económica</span> que comenzó en el siglo XVIII.
+        
+        ### Impacto Social
+        Las ciudades crecieron rápido. 
+        - <span style="background-color: #fff9c4; padding: 2px 4px; border-radius: 4px; font-weight: 500;">Dato: Londres duplicó su población</span>.
+        - Un ejemplo claro fue <span style="background-color: #d1e9ff; padding: 2px 4px; border-radius: 4px; color: #004080;">la industria textil</span>."
         """
         
         response = self.model.generate_content([prompt, audio_file])
