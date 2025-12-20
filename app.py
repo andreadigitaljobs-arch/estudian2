@@ -54,6 +54,19 @@ if 'spotlight_query' not in st.session_state: st.session_state['spotlight_query'
 if 'spotlight_mode' not in st.session_state: st.session_state['spotlight_mode'] = "⚡ Concepto Rápido"
 if 'custom_api_key' not in st.session_state: st.session_state['custom_api_key'] = None
 
+# --- PLAN NUKE: SCROLL BUTTON REMOVAL ---
+NUKE_SCROLL_JS = """
+<script>
+    (function() {
+        const btn = window.parent.document.getElementById('tutor_scroll_btn');
+        if (btn) {
+            btn.remove();
+            console.log("PLAN NUKE: Persistent Scroll Button Removed.");
+        }
+    })();
+</script>
+"""
+
 # --- TAB RESTORATION LOGIC (Removed - Switched to JS LocalStorage) ---
 if 'has_restored_tab' not in st.session_state:
     st.session_state['has_restored_tab'] = True
@@ -1155,7 +1168,7 @@ CSS_STYLE = """
 
 <script>
     (function() {
-        // RADICAL HIDING & TAB SNIFFER
+        // RADICAL HIDING & GLOBAL NUKE
         const injectStyles = () => {
             const root = window.parent.document;
             if (root.getElementById('estudian2-hider-styles')) return;
@@ -1170,7 +1183,7 @@ CSS_STYLE = """
                     visibility: hidden !important;
                 }
                 
-                /* Hide scroll button by default (Sniffer will manage visibility) */
+                /* Fail-safe: Hide scroll button by default */
                 #tutor_scroll_btn {
                     display: none !important;
                 }
@@ -1178,29 +1191,10 @@ CSS_STYLE = """
             root.head.appendChild(style);
         };
 
-        const watchTabs = () => {
+        const nukeScrollButton = () => {
             const root = window.parent.document;
-            const tabs = root.querySelectorAll('button[role="tab"]');
-            const scrollBtn = root.getElementById('tutor_scroll_btn');
-            if (!scrollBtn) return;
-
-            let isTutorTab = false;
-            tabs.forEach(tab => {
-                // In Streamlit, the active tab has aria-selected="true"
-                if (tab.getAttribute('aria-selected') === 'true') {
-                    const label = tab.innerText || "";
-                    // Target: "📚 Tutoría 1 a 1"
-                    if (label.includes("Tutoría")) {
-                        isTutorTab = true;
-                    }
-                }
-            });
-
-            if (isTutorTab) {
-                scrollBtn.style.setProperty('display', 'flex', 'important');
-            } else {
-                scrollBtn.style.setProperty('display', 'none', 'important');
-            }
+            const btn = root.getElementById('tutor_scroll_btn');
+            if (btn) btn.remove();
         };
 
         const watchDOM = () => {
@@ -1220,15 +1214,13 @@ CSS_STYLE = """
                      b.style.setProperty('display', 'none', 'important');
                 }
             });
-
-            // 2. Sniff active tab for scroll button visibility
-            watchTabs();
         };
 
         injectStyles();
+        nukeScrollButton(); // KILL ON RERUN
         
         if (!window.hasGlobalWatcher) {
-            setInterval(watchDOM, 250); // Robust interval
+            setInterval(watchDOM, 250); 
             window.hasGlobalWatcher = true;
         }
     })();
@@ -1772,6 +1764,7 @@ import pandas as pd # FIX: Missing import for charts
 
 # --- DASHBOARD TAB (HOME) ---
 with tab_home:
+    st.components.v1.html(NUKE_SCROLL_JS, height=0)
     # Load Stats
     current_c_id = st.session_state.get('current_course_id')
     current_c_name = st.session_state.get('current_course', 'General')
@@ -2111,6 +2104,7 @@ def render_image_card(img_path):
 
 # --- TAB LIBRARY ---
 with tab_lib:
+    st.components.v1.html(NUKE_SCROLL_JS, height=0)
     if 'assistant' in locals() and assistant:
          render_library(assistant)
     else:
@@ -2144,6 +2138,7 @@ if st.session_state.get('current_course_id'):
 
 # --- TAB 1: Transcriptor ---
 with tab1:
+    st.components.v1.html(NUKE_SCROLL_JS, height=0)
     # LAYOUT: Image Left (1) | Text Right (1.4)
     col_img, col_text = st.columns([1, 1.4], gap="large")
     
@@ -2378,6 +2373,7 @@ with tab1:
 
 # --- TAB 2: Apuntes Simples ---
 with tab2:
+    st.components.v1.html(NUKE_SCROLL_JS, height=0)
     col_img, col_text = st.columns([1, 1.5], gap="large")
     
     with col_img:
@@ -2509,6 +2505,7 @@ with tab2:
 
 # --- TAB 3: Guía de Estudio ---
 with tab3:
+    st.components.v1.html(NUKE_SCROLL_JS, height=0)
     col_img, col_text = st.columns([1, 1.5], gap="large") # Swapped to Image Left
     
     with col_img:
@@ -2600,6 +2597,7 @@ with tab3:
 
 # --- TAB 4: Quiz ---
 with tab4:
+    st.components.v1.html(NUKE_SCROLL_JS, height=0)
     col_img, col_text = st.columns([1, 1.5], gap="large")
     
     with col_img:
@@ -2916,6 +2914,7 @@ with tab4:
 
 # --- TAB 5: Ayudante de Tareas ---
 with tab5:
+    st.components.v1.html(NUKE_SCROLL_JS, height=0)
     tab5_html = (
         '<div class="card-text">'
         '<h2 style="margin-top:0;">5. Ayudante de Tareas</h2>'
