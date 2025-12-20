@@ -6,9 +6,21 @@ import math
 import glob
 
 class Transcriber:
-    def __init__(self, api_key, model_name="gemini-2.0-flash"):
+    def __init__(self, api_key, model_name="gemini-2.0-flash", cache_breaker="V2"):
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel(model_name)
+        self.sync_id = f"TRANS_V1_{cache_breaker}"
+        
+        system_instruction = """
+        ERES UN TRANSCRIPTOR EDITORIAL EXPERTO.
+        REGLA ABSOLUTA: TU SALIDA DEBE SER EXCLUSIVAMENTE EN ESPAÑOL.
+        Incluso si el audio contiene palabras en inglés, tradúcelas o adapta el texto para que el resultado final sea 100% en español con ortografía perfecta.
+        Prohibido generar texto en inglés.
+        """
+        
+        self.model = genai.GenerativeModel(
+            model_name=model_name,
+            system_instruction=system_instruction
+        )
 
     def check_ffmpeg(self):
         """Checks if ffmpeg is available."""
