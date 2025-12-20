@@ -42,6 +42,11 @@ st.set_page_config(
 
 if 'quiz_results' not in st.session_state: st.session_state['quiz_results'] = []
 if 'transcript_history' not in st.session_state: st.session_state['transcript_history'] = []
+
+# --- BANDERA DE DEPURACIÓN (BORRAR DESPUÉS DE CONFIRMAR) ---
+st.error("🚀 VERIFICACIÓN DE DESPLIEGUE: Si ves este mensaje, la web se ha actualizado correctamente.")
+# ----------------------------------------------------------
+
 if 'notes_result' not in st.session_state: st.session_state['notes_result'] = None
 if 'guide_result' not in st.session_state: st.session_state['guide_result'] = None
 
