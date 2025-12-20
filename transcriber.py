@@ -58,9 +58,9 @@ class Transcriber:
         return chunks
 
     def transcribe_file(self, audio_file_path):
-        """Transcribes using Gemini 1.5 Flash."""
+        """Transcribes using Gemini 2.0 Flash."""
         # Check standard file size limits if needed, but Gemini API usually handles direct upload via File API
-        # actually for 1.5 Flash we should use the File API for audio.
+        # actually for 2.0 Flash we should use the File API for audio.
         
         audio_file = genai.upload_file(audio_file_path)
         
