@@ -8,7 +8,7 @@ import glob
 class Transcriber:
     def __init__(self, api_key):
         genai.configure(api_key=api_key)
-        # Use 1.5 Flash for stability (Pro was 404 for user)
+        # Use 1.5 Flash for maximum compatibility and speed
         self.model = genai.GenerativeModel('gemini-1.5-flash')
 
     def check_ffmpeg(self):
@@ -32,7 +32,7 @@ class Transcriber:
         return output_audio_path
 
     def chunk_audio(self, audio_path, chunk_length_sec=600): # 10 minutes default
-        """Splits audio into chunks using ffmpeg (segment muxer)."""
+        """Splits audio into chunks."""
         base_name, _ = os.path.splitext(audio_path)
         chunk_pattern = f"{base_name}_part%03d.wav"
         
@@ -59,7 +59,7 @@ class Transcriber:
         return chunks
 
     def transcribe_file(self, audio_file_path):
-        """Uploads and transcribes a single file using Gemini API."""
+        """Transcribes using Gemini 1.5 Flash."""
         # Check standard file size limits if needed, but Gemini API usually handles direct upload via File API
         # actually for 1.5 Flash we should use the File API for audio.
         
@@ -67,31 +67,21 @@ class Transcriber:
         
         
         prompt = """
-        INSTRUCCIONES DE ALTA PRIORIDAD - ENTREGAR RESULTADO DIRECTO:
-        Eres un transcriptor de élite con precisión quirúrgica. Tu objetivo es transformar el audio en un documento de estudio PERFECTO en Español.
+        TRANSCRIPCIÓN EDITORIAL EXPERTA:
+        Tu tarea es transcribir el audio a Español con ortografía PERFECTA (tildes, signos ¿ ¡, puntuación).
 
-        1. ORTOGRAFÍA "NIVEL REAL ACADEMIA": Es OBLIGATORIO usar tildes, signos de apertura (¿, ¡), puntuación correcta y gramática impecable. El fallo en una sola tilde es un fallo del sistema.
-        2. SISTEMA DE ESTUDIO POR COLORES (CRÍTICO): Identifica temas y aplica estos resaltados usando etiquetas HTML EXACTAS. NO USES BLOQUES DE CÓDIGO (```). Entrega el texto plano con el HTML embebido:
-           - <span style="background-color: #ffd9d9; padding: 2px 4px; border-radius: 4px; font-weight: bold;">[Concepto Base]</span> para definiciones troncales.
-           - <span style="background-color: #d1e9ff; padding: 2px 4px; border-radius: 4px; color: #004080;">[Ejemplo]</span> para casos prácticos.
-           - <span style="background-color: #d4f2d2; padding: 2px 4px; border-radius: 4px;">[Nota]</span> para contexto extra.
-           - <span style="background-color: #fff9c4; padding: 2px 4px; border-radius: 4px; font-weight: 500;">[Dato]</span> para fechas o cifras.
-           - <span style="background-color: #f0e6ff; padding: 2px 4px; border-radius: 4px; color: #4625b8; font-weight: 500;">[Idea Clave]</span> para conclusiones.
+        SISTEMA DE COLORES (HTML):
+        Resalta conceptos usando etiquetas <span> con estilos exactos (NO USES CODES BOCKS ```):
+        - <span style="background-color: #ffd9d9; padding: 2px 4px; border-radius: 4px; font-weight: bold;">[Concepto Base]</span>
+        - <span style="background-color: #d1e9ff; padding: 2px 4px; border-radius: 4px; color: #004080;">[Ejemplo]</span>
+        - <span style="background-color: #d4f2d2; padding: 2px 4px; border-radius: 4px;">[Nota]</span>
+        - <span style="background-color: #fff9c4; padding: 2px 4px; border-radius: 4px; font-weight: 500;">[Dato]</span>
+        - <span style="background-color: #f0e6ff; padding: 2px 4px; border-radius: 4px; color: #4625b8; font-weight: 500;">[Idea Clave]</span>
 
-        3. ESTRUCTURA: 
-           - Usa TÍTULOS DE MARKDOWN (## Tema Principal, ### Subtema). Obligatorio.
-           - Usa listas (-) para enumeraciones.
-
-        4. PROHIBICIÓN ABSOLUTA: NO envuelvas el resultado en bloques de código (```html, ```markdown, etc). Entrega el contenido listo para ser renderizado.
-
-        EJEMPLO DE FORMATO REQUERIDO:
-        ## La Revolución Industrial
-        Fue un <span style="background-color: #ffd9d9; padding: 2px 4px; border-radius: 4px; font-weight: bold;">proceso de transformación económica</span> que comenzó en el siglo XVIII.
-        
-        ### Impacto Social
-        Las ciudades crecieron rápido. 
-        - <span style="background-color: #fff9c4; padding: 2px 4px; border-radius: 4px; font-weight: 500;">Dato: Londres duplicó su población</span>.
-        - Un ejemplo claro fue <span style="background-color: #d1e9ff; padding: 2px 4px; border-radius: 4px; color: #004080;">la industria textil</span>."
+        ESTRUCTURA: Usa títulos Markdown (##, ###) y listas (-).
+        EJEMPLO: 
+        ## Título
+        Este es un <span style="background-color: #ffd9d9; padding: 2px 4px; border-radius: 4px; font-weight: bold;">concepto clave</span> con tildes correctas.
         """
         
         response = self.model.generate_content([prompt, audio_file])

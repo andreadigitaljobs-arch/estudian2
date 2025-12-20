@@ -1141,26 +1141,13 @@ CSS_STYLE = """
     }
 
     /* --- NUCLEAR UPLOADER HIDING --- */
-    #paste-nuclear-container, 
-    div[data-testid="stFileUploader"]:has(input[aria-label="Paste_Receiver_Hidden_Bin"]),
-    div[id*="Paste_Receiver_Hidden_Bin"] {
+    div[data-testid="stFileUploader"]:has(input[aria-label="KILL_ME_NOW"]),
+    div[data-testid="stFileUploader"]:has(label:contains("KILL_ME_NOW")),
+    .paste-bin-hidden-wrapper {
         display: none !important;
         visibility: hidden !important;
         height: 0px !important;
-        opacity: 0 !important;
         position: absolute !important;
-        pointer-events: none !important;
-    }
-    
-    /* EXTRA: Prevent any margin from the parent container */
-    #paste-nuclear-container + div { margin-top: 0 !important; }
-    
-    /* STUDY SYSTEM COLORS */
-    span[style*="background-color"] {
-        display: inline-block !important;
-        margin: 1px 0 !important;
-        padding: 2px 4px !important;
-        border-radius: 4px !important;
     }
     
 </style>
@@ -3305,8 +3292,8 @@ with tab6:
         
         # MOVE TO SIDEBAR to prevent layout issues in main chat
         with st.sidebar:
-             st.markdown('<div class="paste-bin-hidden-wrapper" style="display:none; height:0px; overflow:hidden;">', unsafe_allow_html=True)
-             paste_bin = st.file_uploader("", type=['png','jpg','jpeg','pdf'], key=f"paste_bin_{st.session_state['paste_key']}")
+             st.markdown('<div class="paste-bin-hidden-wrapper">', unsafe_allow_html=True)
+             paste_bin = st.file_uploader("KILL_ME_NOW", type=['png','jpg','jpeg','pdf'], key=f"paste_bin_{st.session_state['paste_key']}", label_visibility='collapsed')
              st.markdown('</div>', unsafe_allow_html=True)
         
         if paste_bin:
