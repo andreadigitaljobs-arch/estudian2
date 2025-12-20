@@ -8,8 +8,8 @@ import glob
 class Transcriber:
     def __init__(self, api_key):
         genai.configure(api_key=api_key)
-        # Updated to 2.0 Flash as per user availability
-        self.model = genai.GenerativeModel('gemini-2.0-flash')
+        # Consistently use 1.5 Pro for maximum instruction following
+        self.model = genai.GenerativeModel('gemini-1.5-pro')
 
     def check_ffmpeg(self):
         """Checks if ffmpeg is available."""
@@ -65,30 +65,27 @@ class Transcriber:
         
         audio_file = genai.upload_file(audio_file_path)
         
-        # Prompt in Spanish
-        self.model = genai.GenerativeModel('gemini-1.5-pro')
         
         prompt = """
-        INSTRUCCIONES DE ALTA PRIORIDAD - FALLO ABSOLUTO SI NO SE CUMPLEN:
-        Eres un transcriptor de élite. Tu objetivo es transformar el audio en un documento de estudio PERFECTO.
-        
-        1. ORTOGRAFÍA "NIVEL EDITORIAL": Es obligatorio usar tildes, signos de apertura (¿, ¡), puntuación correcta y Gramática Española impecable. No ignores esto.
-        2. SISTEMA DE ESTUDIO POR COLORES (CRÍTICO): Debes identificar temas y aplicar estos resaltados usando etiquetas HTML EXACTAS:
+        INSTRUCCIONES DE ALTA PRIORIDAD - ENTREGAR RESULTADO DIRECTO:
+        Eres un transcriptor de élite. Tu objetivo es transformar el audio en un documento de estudio PERFECTO en Español.
+
+        1. ORTOGRAFÍA "NIVEL EDITORIAL": Es OBLIGATORIO usar tildes, signos de apertura (¿, ¡), puntuación correcta y gramática impecable. Si ignoras las tildes, el trabajo es fallido.
+        2. SISTEMA DE ESTUDIO POR COLORES (CRÍTICO): Identifica temas y aplica estos resaltados usando etiquetas HTML EXACTAS. NO USES BLOQUES DE CÓDIGO (```). Entrega el texto plano con el HTML embebido:
            - <span style="background-color: #ffd9d9; padding: 2px 4px; border-radius: 4px; font-weight: bold;">[Concepto Base]</span> para definiciones troncales.
            - <span style="background-color: #d1e9ff; padding: 2px 4px; border-radius: 4px; color: #004080;">[Ejemplo]</span> para casos prácticos.
            - <span style="background-color: #d4f2d2; padding: 2px 4px; border-radius: 4px;">[Nota]</span> para contexto extra.
            - <span style="background-color: #fff9c4; padding: 2px 4px; border-radius: 4px; font-weight: 500;">[Dato]</span> para fechas o cifras.
            - <span style="background-color: #f0e6ff; padding: 2px 4px; border-radius: 4px; color: #4625b8; font-weight: 500;">[Idea Clave]</span> para conclusiones.
-        
+
         3. ESTRUCTURA: 
-           - USA TÍTULOS DE MARKDOWN (## Tema Principal, ### Subtema). Obligatorio.
-           - Divide en párrafos cortos.
-           - Usa listas (-) para enumeraciones.
-        
-        4. LIMPIEZA: Elimina muletillas pero mantén el 100% del significado.
-        
+           - Usa TÍTULOS DE MARKDOWN (## Tema Principal, ### Subtema). Obligatorio.
+           - Listas (-) para enumeraciones.
+
+        4. PROHIBICIÓN: NO envuelvas el resultado en bloques de código de markdown como ```html o ```markdown. Entrega el contenido directamente.
+
         EJEMPLO DE FORMATO REQUERIDO:
-        "## La Revolución Industrial
+        ## La Revolución Industrial
         Fue un <span style="background-color: #ffd9d9; padding: 2px 4px; border-radius: 4px; font-weight: bold;">proceso de transformación económica</span> que comenzó en el siglo XVIII.
         
         ### Impacto Social

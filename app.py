@@ -42,11 +42,6 @@ st.set_page_config(
 
 if 'quiz_results' not in st.session_state: st.session_state['quiz_results'] = []
 if 'transcript_history' not in st.session_state: st.session_state['transcript_history'] = []
-
-# --- BANDERA DE DEPURACIÓN (BORRAR DESPUÉS DE CONFIRMAR) ---
-st.error("🚀 VERIFICACIÓN DE DESPLIEGUE: Si ves este mensaje, la web se ha actualizado correctamente.")
-# ----------------------------------------------------------
-
 if 'notes_result' not in st.session_state: st.session_state['notes_result'] = None
 if 'guide_result' not in st.session_state: st.session_state['guide_result'] = None
 
@@ -1146,8 +1141,8 @@ CSS_STYLE = """
     }
 
     /* --- NUCLEAR UPLOADER HIDING --- */
+    #paste-nuclear-container, 
     div[data-testid="stFileUploader"]:has(input[aria-label="Paste_Receiver_Hidden_Bin"]),
-    div[data-testid="stFileUploader"]:has(label:contains("Paste_Receiver_Hidden_Bin")),
     div[id*="Paste_Receiver_Hidden_Bin"] {
         display: none !important;
         visibility: hidden !important;
@@ -1156,6 +1151,9 @@ CSS_STYLE = """
         position: absolute !important;
         pointer-events: none !important;
     }
+    
+    /* EXTRA: Prevent any margin from the parent container */
+    #paste-nuclear-container + div { margin-top: 0 !important; }
     
     /* STUDY SYSTEM COLORS */
     span[style*="background-color"] {
@@ -1414,9 +1412,17 @@ with st.sidebar:
             st.session_state['spotlight_mode'] = search_mode
             st.rerun()
     
-    # --- 3. CONFIGURACIÓN PERSONAL (HIDDEN via User Request) ---
-    # System uses st.secrets["GEMINI_API_KEY"] automatically via load_api_key()
-
+    # --- 3. CONFIGURACIÓN PERSONAL ---
+    st.divider()
+    st.markdown("""
+        <div style="background-color: #e6f4ea; color: #1e4620; padding: 10px; border-radius: 10px; border: 1px solid #1e4620; display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 1.2rem;">🛸</span>
+            <div style="display: flex; flex-direction: column;">
+                <b style="font-size: 0.9rem;">Motor de Élite</b>
+                <span style="font-size: 0.75rem;">Gemini Pro 1.5 Activo</span>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
     st.divider()
     # (Reload Trigger)
     
@@ -3260,8 +3266,9 @@ with tab6:
         
         # MOVE TO SIDEBAR to prevent layout issues in main chat
         with st.sidebar:
-             # Make it VISIBLE so we can target the text, but hide it via CSS/JS immediately
-             paste_bin = st.file_uploader("Paste_Receiver_Hidden_Bin", type=['png','jpg','jpeg','pdf'], key=f"paste_bin_{st.session_state['paste_key']}", label_visibility='visible')
+             st.markdown('<div id="paste-nuclear-container">', unsafe_allow_html=True)
+             paste_bin = st.file_uploader("Paste_Receiver_Hidden_Bin", type=['png','jpg','jpeg','pdf'], key=f"paste_bin_{st.session_state['paste_key']}", label_visibility='collapsed')
+             st.markdown('</div>', unsafe_allow_html=True)
         
         if paste_bin:
              # Check for duplicates (Original Name OR Pasted Name)
