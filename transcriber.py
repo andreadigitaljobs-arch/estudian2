@@ -8,8 +8,8 @@ import glob
 class Transcriber:
     def __init__(self, api_key):
         genai.configure(api_key=api_key)
-        # Consistently use 1.5 Pro for maximum instruction following
-        self.model = genai.GenerativeModel('gemini-1.5-pro')
+        # Use 1.5 Flash for stability (Pro was 404 for user)
+        self.model = genai.GenerativeModel('gemini-1.5-flash')
 
     def check_ffmpeg(self):
         """Checks if ffmpeg is available."""
@@ -68,9 +68,9 @@ class Transcriber:
         
         prompt = """
         INSTRUCCIONES DE ALTA PRIORIDAD - ENTREGAR RESULTADO DIRECTO:
-        Eres un transcriptor de élite. Tu objetivo es transformar el audio en un documento de estudio PERFECTO en Español.
+        Eres un transcriptor de élite con precisión quirúrgica. Tu objetivo es transformar el audio en un documento de estudio PERFECTO en Español.
 
-        1. ORTOGRAFÍA "NIVEL EDITORIAL": Es OBLIGATORIO usar tildes, signos de apertura (¿, ¡), puntuación correcta y gramática impecable. Si ignoras las tildes, el trabajo es fallido.
+        1. ORTOGRAFÍA "NIVEL REAL ACADEMIA": Es OBLIGATORIO usar tildes, signos de apertura (¿, ¡), puntuación correcta y gramática impecable. El fallo en una sola tilde es un fallo del sistema.
         2. SISTEMA DE ESTUDIO POR COLORES (CRÍTICO): Identifica temas y aplica estos resaltados usando etiquetas HTML EXACTAS. NO USES BLOQUES DE CÓDIGO (```). Entrega el texto plano con el HTML embebido:
            - <span style="background-color: #ffd9d9; padding: 2px 4px; border-radius: 4px; font-weight: bold;">[Concepto Base]</span> para definiciones troncales.
            - <span style="background-color: #d1e9ff; padding: 2px 4px; border-radius: 4px; color: #004080;">[Ejemplo]</span> para casos prácticos.
@@ -80,9 +80,9 @@ class Transcriber:
 
         3. ESTRUCTURA: 
            - Usa TÍTULOS DE MARKDOWN (## Tema Principal, ### Subtema). Obligatorio.
-           - Listas (-) para enumeraciones.
+           - Usa listas (-) para enumeraciones.
 
-        4. PROHIBICIÓN: NO envuelvas el resultado en bloques de código de markdown como ```html o ```markdown. Entrega el contenido directamente.
+        4. PROHIBICIÓN ABSOLUTA: NO envuelvas el resultado en bloques de código (```html, ```markdown, etc). Entrega el contenido listo para ser renderizado.
 
         EJEMPLO DE FORMATO REQUERIDO:
         ## La Revolución Industrial

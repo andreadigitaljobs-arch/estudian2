@@ -1195,17 +1195,23 @@ CSS_STYLE = """
 
         const watchDOM = () => {
             const root = window.parent.document;
+            // 1. Target by our custom class if possible
+            const wrappers = root.querySelectorAll('.paste-bin-hidden-wrapper');
+            wrappers.forEach(w => w.style.display = 'none');
+
+            // 2. Direct widget target (Catch-all)
             const boxes = root.querySelectorAll('[data-testid="stFileUploader"]');
             boxes.forEach(b => {
                 const text = b.innerText || "";
-                const input = b.querySelector('input');
-                const aria = input ? input.getAttribute('aria-label') : "";
-                if (text.includes("Paste_Receiver") || text.includes("Hidden_Bin") || aria.includes("Paste_Receiver")) {
+                if (text.includes("Paste_Receiver") || text.includes("Hidden_Bin")) {
                     b.style.setProperty('display', 'none', 'important');
-                    b.style.setProperty('visibility', 'hidden', 'important');
                     b.style.setProperty('height', '0px', 'important');
-                    b.style.setProperty('margin', '0px', 'important');
-                    b.style.setProperty('padding', '0px', 'important');
+                }
+                // Target empty label uploaders in sidebar specifically
+                const isSidebar = b.closest('section[data-testid="stSidebar"]');
+                const hasLabel = b.querySelector('label') && b.querySelector('label').innerText.trim() !== "";
+                if (isSidebar && !hasLabel) {
+                     b.style.setProperty('display', 'none', 'important');
                 }
             });
         };
@@ -3299,8 +3305,8 @@ with tab6:
         
         # MOVE TO SIDEBAR to prevent layout issues in main chat
         with st.sidebar:
-             st.markdown('<div id="paste-nuclear-container">', unsafe_allow_html=True)
-             paste_bin = st.file_uploader("Paste_Receiver_Hidden_Bin", type=['png','jpg','jpeg','pdf'], key=f"paste_bin_{st.session_state['paste_key']}", label_visibility='collapsed')
+             st.markdown('<div class="paste-bin-hidden-wrapper" style="display:none; height:0px; overflow:hidden;">', unsafe_allow_html=True)
+             paste_bin = st.file_uploader("", type=['png','jpg','jpeg','pdf'], key=f"paste_bin_{st.session_state['paste_key']}")
              st.markdown('</div>', unsafe_allow_html=True)
         
         if paste_bin:
