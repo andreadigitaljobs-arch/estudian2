@@ -1163,28 +1163,36 @@ CSS_STYLE = """
             const style = root.createElement('style');
             style.id = 'estudian2-hider-styles';
             style.innerHTML = `
-                /* Hide any uploader that contains the key text in its structure */
+                /* Hide any uploader that contains key text */
                 div[data-testid="stFileUploader"]:has(input[aria-label*="Paste_Receiver"]),
                 div[data-testid="stFileUploader"]:has(input[aria-label*="Hidden_Bin"]) {
                     display: none !important;
                     visibility: hidden !important;
                 }
                 
-                /* Hide scroll button by default (it will be shown contextually in the Tutor tab) */
+                /* Hide scroll button by default (contextual control) */
                 #tutor_scroll_btn {
                     display: none !important;
+                }
+                
+                /* Show it ONLY when the parent body has the active class */
+                body.tutor-tab-active #tutor_scroll_btn {
+                    display: flex !important;
                 }
             `;
             root.head.appendChild(style);
         };
 
+        const resetContext = () => {
+            const root = window.parent.document;
+            root.body.classList.remove('tutor-tab-active');
+        };
+
         const watchDOM = () => {
             const root = window.parent.document;
-            // 1. Target by our custom class if possible
             const wrappers = root.querySelectorAll('.paste-bin-hidden-wrapper');
             wrappers.forEach(w => w.style.display = 'none');
 
-            // 2. Direct widget target (Catch-all)
             const boxes = root.querySelectorAll('[data-testid="stFileUploader"]');
             boxes.forEach(b => {
                 const text = b.innerText || "";
@@ -1192,7 +1200,6 @@ CSS_STYLE = """
                     b.style.setProperty('display', 'none', 'important');
                     b.style.setProperty('height', '0px', 'important');
                 }
-                // Target empty label uploaders in sidebar specifically
                 const isSidebar = b.closest('section[data-testid="stSidebar"]');
                 const hasLabel = b.querySelector('label') && b.querySelector('label').innerText.trim() !== "";
                 if (isSidebar && !hasLabel) {
@@ -1202,7 +1209,13 @@ CSS_STYLE = """
         };
 
         injectStyles();
-        setInterval(watchDOM, 150);
+        resetContext(); // Reset class on every rerun
+        
+        // Use a flag to avoid multiple intervals if script reruns partially
+        if (!window.hasGlobalWatcher) {
+            setInterval(watchDOM, 200);
+            window.hasGlobalWatcher = true;
+        }
     })();
 </script>
 """
@@ -3563,11 +3576,14 @@ with tab6:
                 border: 1px solid #ddd;
                 cursor: pointer;
                 font-size: 20px;
-                display: flex !important; /* Force visibility in this tab */
+                display: flex; /* Class tutor-tab-active managed by parent wins */
                 align-items: center;
                 justify-content: center;
                 transition: transform 0.2s;
             `;
+            
+            // Mark tab as active in parent context
+            window.parent.document.body.classList.add('tutor-tab-active');
             
             btn.onmouseover = () => { btn.style.transform = "scale(1.1)"; };
             btn.onmouseout = () => { btn.style.transform = "scale(1)"; };
