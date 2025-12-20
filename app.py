@@ -3,7 +3,7 @@ import streamlit as st
 import os
 import glob
 import uuid
-from transcriber import Transcriber
+from transcriber_v2 import Transcriber
 from study_assistant import StudyAssistant
 from PIL import Image, ImageGrab
 import shutil
@@ -1250,9 +1250,10 @@ with st.sidebar:
             import time
             time.sleep(0.5) # Allow cleanup time
             st.rerun()
-    st.divider()
+    st.sidebar.markdown('<p style="color: grey; font-size: 0.7rem;">SYNC_ID: 1591_PARALLEL_FLASH</p>', unsafe_allow_html=True)
+    st.sidebar.divider()
     
-    # --- 1.5 HISTORIAL DE CLASES (MULTI-CHAT) ---
+    # --- 1. HISTORIAL DE CHATS ---
     # from database import ... (Moved to top)
 
     if 'current_chat_session' not in st.session_state:
