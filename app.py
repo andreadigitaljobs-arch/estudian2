@@ -1155,7 +1155,7 @@ CSS_STYLE = """
 
 <script>
     (function() {
-        // RADICAL HIDING INJECTION
+        // RADICAL HIDING & TAB SNIFFER
         const injectStyles = () => {
             const root = window.parent.document;
             if (root.getElementById('estudian2-hider-styles')) return;
@@ -1170,29 +1170,43 @@ CSS_STYLE = """
                     visibility: hidden !important;
                 }
                 
-                /* Hide scroll button by default (contextual control) */
+                /* Hide scroll button by default (Sniffer will manage visibility) */
                 #tutor_scroll_btn {
                     display: none !important;
-                }
-                
-                /* Show it ONLY when the parent body has the active class */
-                body.tutor-tab-active #tutor_scroll_btn {
-                    display: flex !important;
                 }
             `;
             root.head.appendChild(style);
         };
 
-        const resetContext = () => {
+        const watchTabs = () => {
             const root = window.parent.document;
-            root.body.classList.remove('tutor-tab-active');
+            const tabs = root.querySelectorAll('button[role="tab"]');
+            const scrollBtn = root.getElementById('tutor_scroll_btn');
+            if (!scrollBtn) return;
+
+            let isTutorTab = false;
+            tabs.forEach(tab => {
+                // In Streamlit, the active tab has aria-selected="true"
+                if (tab.getAttribute('aria-selected') === 'true') {
+                    const label = tab.innerText || "";
+                    // Target: "📚 Tutoría 1 a 1"
+                    if (label.includes("Tutoría")) {
+                        isTutorTab = true;
+                    }
+                }
+            });
+
+            if (isTutorTab) {
+                scrollBtn.style.setProperty('display', 'flex', 'important');
+            } else {
+                scrollBtn.style.setProperty('display', 'none', 'important');
+            }
         };
 
         const watchDOM = () => {
             const root = window.parent.document;
-            const wrappers = root.querySelectorAll('.paste-bin-hidden-wrapper');
-            wrappers.forEach(w => w.style.display = 'none');
-
+            
+            // 1. Hide unwanted uploaders
             const boxes = root.querySelectorAll('[data-testid="stFileUploader"]');
             boxes.forEach(b => {
                 const text = b.innerText || "";
@@ -1206,14 +1220,15 @@ CSS_STYLE = """
                      b.style.setProperty('display', 'none', 'important');
                 }
             });
+
+            // 2. Sniff active tab for scroll button visibility
+            watchTabs();
         };
 
         injectStyles();
-        resetContext(); // Reset class on every rerun
         
-        // Use a flag to avoid multiple intervals if script reruns partially
         if (!window.hasGlobalWatcher) {
-            setInterval(watchDOM, 200);
+            setInterval(watchDOM, 250); // Robust interval
             window.hasGlobalWatcher = true;
         }
     })();
@@ -3576,14 +3591,11 @@ with tab6:
                 border: 1px solid #ddd;
                 cursor: pointer;
                 font-size: 20px;
-                display: flex; /* Class tutor-tab-active managed by parent wins */
+                display: flex; 
                 align-items: center;
                 justify-content: center;
                 transition: transform 0.2s;
             `;
-            
-            // Mark tab as active in parent context
-            window.parent.document.body.classList.add('tutor-tab-active');
             
             btn.onmouseover = () => { btn.style.transform = "scale(1.1)"; };
             btn.onmouseout = () => { btn.style.transform = "scale(1)"; };
