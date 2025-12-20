@@ -3243,7 +3243,7 @@ with tab6:
         # MOVE TO SIDEBAR to prevent layout issues in main chat
         with st.sidebar:
              # Make it VISIBLE so we can target the text, but hide it via CSS/JS immediately
-             paste_bin = st.file_uploader("Paste_Receiver_Hidden_Bin", type=['png','jpg','jpeg','pdf'], key=f"paste_bin_{st.session_state['paste_key']}", label_visibility='collapsed')
+             paste_bin = st.file_uploader("Paste_Receiver_Hidden_Bin", type=['png','jpg','jpeg','pdf'], key=f"paste_bin_{st.session_state['paste_key']}", label_visibility='visible')
         
         if paste_bin:
              # Check for duplicates (Original Name OR Pasted Name)
@@ -3341,25 +3341,27 @@ with tab6:
                       textArea.dataset.layout_v2 = 'active';
                  }
                  
-                  // E. CONTINUOUS HIDER FOR PASTE BIN
+                  // E. CONTINUOUS HIDER FOR PASTE BIN (NUCLEAR)
                   if (!window.parent.document.hiderRunning) {
-                       setInterval(() => {
-                            const allUploaders = window.parent.document.querySelectorAll('[data-testid="stFileUploader"]');
-                            allUploaders.forEach(wrapper => {
-                                 // Check by label text OR by internal input aria-label since we collapsed it
-                                 const label = wrapper.querySelector('label');
-                                 const input = wrapper.querySelector('input');
-                                 const isPasteBin = (label && label.innerText.includes("Paste_Receiver_Hidden_Bin")) || 
-                                                    (input && input.getAttribute('aria-label') === "Paste_Receiver_Hidden_Bin");
-                                 
-                                 if (isPasteBin) {
-                                      wrapper.style.display = 'none';
-                                      wrapper.style.visibility = 'hidden';
-                                      wrapper.style.height = '0px';
-                                      wrapper.style.position = 'absolute';
+                       const hider = () => {
+                            const root = window.parent.document;
+                            const widgets = root.querySelectorAll('[data-testid="stFileUploader"]');
+                            widgets.forEach(w => {
+                                 const isBin = w.innerText.includes("Paste_Receiver_Hidden_Bin") || 
+                                               w.innerHTML.includes("Paste_Receiver_Hidden_Bin") ||
+                                               (w.querySelector('input') && w.querySelector('input').getAttribute('aria-label') === "Paste_Receiver_Hidden_Bin");
+                                 if (isBin) {
+                                      w.style.setProperty('display', 'none', 'important');
+                                      w.style.setProperty('visibility', 'hidden', 'important');
+                                      w.style.setProperty('height', '0px', 'important');
+                                      w.style.setProperty('margin', '0px', 'important');
+                                      w.style.setProperty('padding', '0px', 'important');
+                                      w.style.setProperty('position', 'absolute', 'important');
+                                      w.style.setProperty('z-index', '-1', 'important');
                                  }
                             });
-                       }, 250);
+                       };
+                       setInterval(hider, 150);
                        window.parent.document.hiderRunning = true;
                   }
 
