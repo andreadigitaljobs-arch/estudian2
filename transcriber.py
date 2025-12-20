@@ -66,8 +66,8 @@ class Transcriber:
         
         
         prompt = """
-        TRANSCRIPCIÓN EDITORIAL EXPERTA:
-        Tu tarea es transcribir el audio a Español con ortografía PERFECTA (tildes, signos ¿ ¡, puntuación).
+        TRANSCRIPCIÓN EDITORIAL EXPERTA (OBLIGATORIO: SOLAMENTE ESPAÑOL):
+        Tu tarea es transcribir el audio a ESPAÑOL con ortografía PERFECTA (tildes, signos ¿ ¡, puntuación). Está PROHIBIDO generar texto en Inglés.
 
         SISTEMA DE COLORES (MODO ESTUDIO):
         Resalta conceptos importantes usando etiquetas <span> con estas CLASES (NO USES BLOQUES DE CÓDIGO ```):

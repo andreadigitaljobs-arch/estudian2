@@ -13,12 +13,10 @@ class StudyAssistant:
         """Generates progressive notes (3 levels) in JSON format."""
         import json
         
-        # --- MOCK ERROR TRIGGER (For User Testing) ---
-        if "SIMULAR_ERROR" in transcript_text:
-            raise ResourceExhausted("Simulated Quota Error for Testing")
-            
         prompt = f"""
         Actúa como un profesor experto. Tu objetivo es crear apuntes en 3 niveles de profundidad (Progresivos) basados en la transcripción.
+        
+        *** REGLA DE ORO: TODA LA RESPUESTA DEBE SER EN ESPAÑOL ***
         
         CONTEXTO GLOBAL (DEFINICIONES OFICIALES):
         {global_context}
@@ -97,6 +95,8 @@ Google ofrece una capa gratuita generosa, pero limitada.
         prompt = f"""
         Actúa como un estratega de estudio. Crea una "Guía de Estudio" basada en esta transcripción.
         Tu objetivo es que el estudiante apruebe el examen estudiando de forma eficiente.
+        
+        *** REGLA DE ORO: RESPONDER ÚNICAMENTE EN ESPAÑOL ***
 
         CONTEXTO GLOBAL (DEFINICIONES OFICIALES):
         {global_context}
@@ -169,7 +169,7 @@ Google ofrece una capa gratuita generosa, pero limitada.
         # Safety catch for None images
         valid_parts = [p for p in content_parts if p is not None]
         
-        response = self.model.generate_content(valid_parts)
+        response = self.model.generate_content(valid_parts + ["\nRecordatorio: Responde siempre en ESPAÑOL."])
         return response.text
 
     def debate_quiz(self, history, latest_input, quiz_context="", images=None):
@@ -211,7 +211,7 @@ Google ofrece una capa gratuita generosa, pero limitada.
         # Safety catch
         valid_parts = [p for p in content_parts if p is not None]
         
-        response = self.model.generate_content(valid_parts)
+        response = self.model.generate_content(valid_parts + ["\nPor favor, responde en ESPAÑOL."])
         return response.text
 
     def solve_homework(self, task_prompt, context_texts, task_attachment=None):
@@ -268,15 +268,15 @@ Google ofrece una capa gratuita generosa, pero limitada.
             }
             content_parts.append(blob)
         
-        response = self.model.generate_content(content_parts)
+        response = self.model.generate_content(content_parts + ["\nIMPORTANTE: Redacta la tarea en ESPAÑOL."])
         return response.text
 
     def extract_text_from_pdf(self, pdf_data, mime_type="application/pdf"):
         """Extracts text from a PDF using Gemini (High Quality OCR/Layout analysis)."""
         prompt = """
-        Extract ALL text from this document verbatim. 
-        Preserve the structure (headers, lists) using Markdown.
-        Do not summarize. Just output the full content.
+        Extrae TODO el texto de este documento palabra por palabra.
+        Preserva la estructura (encabezados, listas) usando Markdown.
+        NO resumas. Simplemente entrega el contenido completo en ESPAÑOL.
         """
         
         blob = {"mime_type": mime_type, "data": pdf_data}
@@ -301,7 +301,7 @@ Google ofrece una capa gratuita generosa, pero limitada.
             --------------------------------------------------
             
             OBJETIVO:
-            Da una definición DIRECTA y CONCISA.
+            Da una definición DIRECTA y CONCISA en ESPAÑOL.
             Cita explícitamente el archivo o video de donde sale la información.
             Si no está en el contexto, dilo claramente.
             
@@ -322,6 +322,7 @@ Google ofrece una capa gratuita generosa, pero limitada.
             
             OBJETIVO:
             Realiza un análisis profundo conectando puntos entre diferentes clases/archivos.
+            Responde ÚNICAMENTE en ESPAÑOL.
             Explica la relación entre conceptos si es necesario.
             Sintetiza la respuesta como un experto.
             
@@ -334,7 +335,7 @@ Google ofrece una capa gratuita generosa, pero limitada.
             - [Archivo 2]
             """
 
-        response = self.model.generate_content(prompt)
+        response = self.model.generate_content(prompt + "\n\nRespuesta en ESPAÑOL:")
         return response.text
 
     def solve_argumentative_task(self, task_prompt, context_files=[], global_context=""):
@@ -380,7 +381,8 @@ Google ofrece una capa gratuita generosa, pero limitada.
         """
         
         try:
-            response = self.model.generate_content(prompt)
+            # Enforce Spanish in complex tasks
+            response = self.model.generate_content(prompt + "\nNOTA: El JSON debe estar en ESPAÑOL.")
             clean_text = response.text.replace("```json", "").replace("```", "").strip()
             return json.loads(clean_text)
         except Exception as e:
@@ -445,6 +447,9 @@ Google ofrece una capa gratuita generosa, pero limitada.
         5. **USO DE FUENTES**:
            - Si usas la biblioteca, cita: "Según el archivo [Nombre]...".
            - Si no hay info, usa tu criterio experto mundial.
+            
+        6. **IDIOMA OBLIGATORIO**:
+           - Responde SIEMPRE en ESPAÑOL DE ESPAÑA/LATAM. Está terminantemente prohibido usar Inglés.
         
         HISTORIAL DE CONVERSACIÓN:
         """
@@ -483,7 +488,7 @@ Google ofrece una capa gratuita generosa, pero limitada.
         {snippet}
         ...
         
-        SALIDA ESPERADA (Solo texto, tono amable y servicial):
+        SALIDA ESPERADA (Solo texto en ESPAÑOL, tono amable y servicial):
         "Hola! He leído tu archivo. Parece contener [X, Y, Z]. Veo fechas de [Tema] y apuntes sobre [Tema]. ¿Cómo quieres que lo organice?"
         """
         response = self.model.generate_content(prompt)
@@ -556,7 +561,7 @@ Google ofrece una capa gratuita generosa, pero limitada.
         """
         
         try:
-             response = self.model.generate_content(prompt)
+             response = self.model.generate_content(prompt + "\nIMPORTANTE: Todo el contenido (texto y JSON) DEBE estar en ESPAÑOL.")
              txt = response.text.strip()
              
              # Robust Parsing: Find first { and last }
