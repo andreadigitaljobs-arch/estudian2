@@ -5,9 +5,9 @@ from google.api_core.exceptions import ResourceExhausted, ServiceUnavailable
 from PIL import Image
 
 class StudyAssistant:
-    def __init__(self, api_key, model_name="gemini-2.0-flash", cache_breaker="V2"):
+    def __init__(self, api_key, model_name="gemini-2.0-flash", cache_breaker="V5"):
         genai.configure(api_key=api_key)
-        self.sync_id = f"STUDY_V1_{cache_breaker}"
+        self.sync_id = f"STUDY_V5_LEGEND_{cache_breaker}"
         
         system_instruction = """
         ERES UN TUTOR ACADÉMICO DE ALTO NIVEL.
@@ -47,8 +47,12 @@ class StudyAssistant:
         - <span class="sc-data">...</span> : DATOS Y CIFRAS. Nombres, fechas, leyes, estadísticas. (AMARILLO)
         - <span class="sc-key">...</span> : IDEAS CLAVE. Conclusiones y lo más importante para el examen. (PÚRPURA)
         
-        REGLA DE DENSIDAD: Los apuntes deben ser MUY COLORIDOS. No ahorres en resaltadores.
-        Ejemplo de uso: <span class="sc-key">Metodología Ágil</span> es un <span class="sc-base">marco de trabajo</span> basado en <span class="sc-data">iteraciones cortas</span>.
+        REGLA DE DENSIDAD: Los apuntes deben ser MUY COLORIDOS. No dejes conceptos importantes sin su color correspondiente. 
+        
+        EJEMPLO DE LÓGICA SEMÁNTICA (SIGUE ESTE MODELO):
+        "Durante la <span class="sc-base">planificación estratégica</span>, es fundamental realizar un <span class="sc-key">análisis DAFO</span>. Por <span class="sc-example">ejemplo, una empresa local</span> descubrió que su <span class="sc-note">mayor debilidad</span> era su <span class="sc-data">falta de presencia digital en 2023</span>."
+        
+        [ETIQUETA DE CONTROL: (Lógica Semántica V5.0)]
         
         FORMATO DE SALIDA (JSON ÚNICAMENTE):
         {{

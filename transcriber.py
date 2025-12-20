@@ -6,9 +6,9 @@ import math
 import glob
 
 class Transcriber:
-    def __init__(self, api_key, model_name="gemini-2.0-flash", cache_breaker="V2"):
+    def __init__(self, api_key, model_name="gemini-2.0-flash", cache_breaker="V5"):
         genai.configure(api_key=api_key)
-        self.sync_id = f"TRANS_V1_{cache_breaker}"
+        self.sync_id = f"TRANS_V5_STRICT_{cache_breaker}"
         
         system_instruction = """
         ERES UN TRANSCRIPTOR EDITORIAL EXPERTO.
@@ -91,8 +91,12 @@ class Transcriber:
 
         REGLA DE DENSIDAD: El texto debe estar MUY resaltado. No dejes párrafos largos sin al menos 2 o 3 resaltados. Usa los 5 colores de forma equilibrada.
 
-        OBJETIVO VISUAL: El texto debe parecer un libro estudiado con resaltadores de varios colores. Usa los 5 colores de forma equilibrada y FRECUENTE por todo el texto.
-        Ejemplo: "La <span class="sc-base">fotosíntesis</span> es un proceso <span class="sc-key">vital</span> que ocurre en las <span class="sc-example">plantas verdes</span>."
+        OBJETIVO VISUAL: El texto debe parecer un libro estudiado con resaltadores de varios colores. Usa los 5 colores de forma equilibrada y MUY FRECUENTE por todo el texto.
+        
+        EJEMPLO DE LÓGICA SEMÁNTICA: 
+        "En la <span class="sc-base">clase de hoy</span>, el <span class="sc-note">profesor enfatizó</span> que el <span class="sc-key">ROI digital</span> es la métrica reina. Por <span class="sc-example">ejemplo, invertimos 10€</span> y <span class="sc-data">ganamos 50€ en enero</span>."
+
+        [ETIQUETA DE CONTROL: (Lógica Semántica V5.0)]
 
         ESTRUCTURA: Usa títulos Markdown (##, ###) y listas (-).
         """
