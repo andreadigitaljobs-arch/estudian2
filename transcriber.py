@@ -127,7 +127,7 @@ class Transcriber:
                     os.remove(chunk_path)
                 return index, text
             except Exception as e:
-                return index, f"[Error en parte {index+1}: {str(e)}]"
+                return index, f"[FLASH_SYNC_V1] Error en parte {index+1}: {str(e)}"
 
         if progress_callback: progress_callback(f"Transcribiendo {total_chunks} partes en paralelo...", 0.3)
 
