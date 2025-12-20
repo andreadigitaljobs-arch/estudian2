@@ -1166,27 +1166,53 @@ CSS_STYLE = """
 </style>
 
 <script>
-    // GLOBAL NUCLEAR HIDER
-    const runHider = () => {
-        const root = window.parent.document;
-        const boxes = root.querySelectorAll('[data-testid="stFileUploader"]');
-        boxes.forEach(b => {
-            const isTarget = b.innerText.includes("Paste_Receiver_Hidden_Bin") || 
-                             b.innerHTML.includes("Paste_Receiver_Hidden_Bin") ||
-                             (b.querySelector('input') && b.querySelector('input').getAttribute('aria-label') === "Paste_Receiver_Hidden_Bin");
-            if (isTarget) {
-                b.style.display = 'none';
-                b.style.visibility = 'hidden';
-                b.style.height = '0px';
-                b.style.position = 'absolute';
-                b.style.zIndex = '-9999';
-            }
-        });
-    };
-    if (!window.parent.hiderActive) {
-        setInterval(runHider, 150);
-        window.parent.hiderActive = true;
-    }
+    (function() {
+        // RADICAL HIDING INJECTION
+        const injectStyles = () => {
+            const root = window.parent.document;
+            if (root.getElementById('estudian2-hider-styles')) return;
+            
+            const style = root.createElement('style');
+            style.id = 'estudian2-hider-styles';
+            style.innerHTML = `
+                /* Hide any uploader that contains the key text in its structure */
+                div[data-testid="stFileUploader"] {
+                    transition: opacity 0.2s;
+                }
+                
+                /* Target by ARIA label (most stable) */
+                div[data-testid="stFileUploader"]:has(input[aria-label*="Paste_Receiver"]),
+                div[data-testid="stFileUploader"]:has(input[aria-label*="Hidden_Bin"]) {
+                    display: none !important;
+                    visibility: hidden !important;
+                    height: 0px !important;
+                    position: absolute !important;
+                    pointer-events: none !important;
+                }
+            `;
+            root.head.appendChild(style);
+        };
+
+        const watchDOM = () => {
+            const root = window.parent.document;
+            const boxes = root.querySelectorAll('[data-testid="stFileUploader"]');
+            boxes.forEach(b => {
+                const text = b.innerText || "";
+                const input = b.querySelector('input');
+                const aria = input ? input.getAttribute('aria-label') : "";
+                if (text.includes("Paste_Receiver") || text.includes("Hidden_Bin") || aria.includes("Paste_Receiver")) {
+                    b.style.setProperty('display', 'none', 'important');
+                    b.style.setProperty('visibility', 'hidden', 'important');
+                    b.style.setProperty('height', '0px', 'important');
+                    b.style.setProperty('margin', '0px', 'important');
+                    b.style.setProperty('padding', '0px', 'important');
+                }
+            });
+        };
+
+        injectStyles();
+        setInterval(watchDOM, 150);
+    })();
 </script>
 """
 st.markdown(CSS_STYLE, unsafe_allow_html=True)
@@ -2291,7 +2317,14 @@ with tab1:
                  
                  # NATIVE SCROLL CONTAINER (Cleanest approach)
                  with st.container(height=400):
-                       st.markdown(item['text'], unsafe_allow_html=True)
+                       # CLEANUP: Remove any accidental markdown code blocks that prevent color rendering
+                       processed_text = item['text']
+                       if "```" in processed_text:
+                            processed_text = processed_text.replace("```markdown", "").replace("```html", "").replace("```", "")
+                       
+                       # Add a small badge for the NEW engine if it's recent
+                       st.markdown(f'<div style="text-align: right; margin-bottom: -25px;"><span style="background-color: #e6f4ea; color: #1e4620; font-size: 0.7rem; padding: 2px 8px; border-radius: 10px; border: 1px solid #1e4620;">✨ Calidad Pro 1.5</span></div>', unsafe_allow_html=True)
+                       st.markdown(processed_text, unsafe_allow_html=True)
 
 
 # --- TAB 2: Apuntes Simples ---
