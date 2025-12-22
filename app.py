@@ -2827,16 +2827,14 @@ with tab1:
             # --- MEMORY SAFETY CHECK (TRAFFIC CONTROL) ---
             total_size_bytes = sum(f.size for f in uploaded_files)
             total_size_mb = total_size_bytes / (1024 * 1024)
-            SAFE_RAM_LIMIT_MB = 800 # Safe Limit for 1GB Server
+            SAFE_RAM_LIMIT_MB = 1000 # 1GB Limit requested by user
             
             if total_size_mb > SAFE_RAM_LIMIT_MB:
                 st.error(
-                    f"🛑 **¡ALTA SOBRECARGA DE CAMIÓN! (RAM ALERT)**\n\n"
-                    f"Has intentado subir **{total_size_mb:.1f} MB** de golpe.\n"
-                    f"El servidor gratuito solo tiene capacidad segura para **{SAFE_RAM_LIMIT_MB} MB** en memoria simultánea.\n\n"
-                    f"👮🏻‍♂️ **Acción Obligatoria:**\n"
-                    f"Elimina algunos archivos de la lista de arriba (cruz 'x') hasta bajar de 800MB. Procesa esos primero y luego sube el resto.", 
-                    icon="🚨"
+                    f"⚠️ **¡TE PASASTE DEL GIGABYTE! ({total_size_mb:.0f} MB / {SAFE_RAM_LIMIT_MB} MB)**\n\n"
+                    f"El servidor no aguanta tanto peso de una sola vez.\n"
+                    f"👉 **SOLUCIÓN INMEDIATA:** Ve a la lista de archivos aquí arriba 👆 y **haz clic en la 'X'** para eliminar videos hasta que este mensaje rojo desaparezca.", 
+                    icon="🛑"
                 )
                 st.stop() # Force execution stop
 
