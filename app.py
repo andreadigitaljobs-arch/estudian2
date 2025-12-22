@@ -3163,7 +3163,11 @@ with tab_didactic:
                              
                              modules = []
                              if isinstance(didactic_data, list):
-                                 modules = didactic_data
+                                 # Unpack wrapper if present
+                                 if len(didactic_data) > 0 and isinstance(didactic_data[0], dict) and 'modules' in didactic_data[0]:
+                                     modules = didactic_data[0]['modules']
+                                 else:
+                                     modules = didactic_data
                              elif isinstance(didactic_data, dict):
                                  modules = didactic_data.get('modules', [])
                              
@@ -3217,7 +3221,11 @@ with tab_didactic:
                     # DYNAMIC MODULE RENDERER
                     modules = []
                     if isinstance(res, list):
-                        modules = res
+                        # Check if it's a list containing the root object -> [{'modules': ...}]
+                        if len(res) > 0 and isinstance(res[0], dict) and 'modules' in res[0]:
+                             modules = res[0]['modules']
+                        else:
+                             modules = res
                     elif isinstance(res, dict):
                         modules = res.get('modules', [])
                         if not modules and 'blocks' in res: 
