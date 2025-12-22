@@ -1163,10 +1163,18 @@ CSS_STYLE = """
         border: none !important;
     }
 
+    /* --- AESTHETIC SEPARATORS --- */
+    .aesthetic-sep {
+        height: 1px;
+        background: radial-gradient(circle, rgba(75, 34, 221, 0.2) 0%, rgba(255, 255, 255, 0) 100%);
+        margin: 15px 0 !important;
+        width: 100%;
+    }
+
     /* Kill margins on element containers to prevent ghost spacing */
     [data-testid="stSidebar"] [data-testid="element-container"] {
-        margin-bottom: 0px !important;
-        margin-top: 0px !important;
+        margin-bottom: 2px !important;
+        margin-top: 2px !important;
     }
     
     /* Ensure no background or border on expanders in sidebar */
@@ -1352,6 +1360,9 @@ with st.sidebar:
             import time
             time.sleep(0.5) # Allow cleanup time
             st.rerun()
+
+    st.markdown('<div class="aesthetic-sep"></div>', unsafe_allow_html=True)
+
     # --- MODO ESTUDIO & LEYENDA ---
     study_mode = st.toggle("Modo Estudio (Resaltadores) 🎨", value=True, help="Activa o desactiva los colores de estudio.", key="study_mode_toggle")
     
@@ -1367,6 +1378,9 @@ with st.sidebar:
                 <div style="margin-bottom:8px;"><span style="background-color: #e2d9f3; color: #512da8; border: 1px solid #d1c4e9; padding: 1px 4px; border-radius: 3px; font-weight: bold;">Púrpura</span>: Ideas clave y conclusiones.</div>
             </div>
         """, unsafe_allow_html=True)
+
+    st.markdown('<div class="aesthetic-sep"></div>', unsafe_allow_html=True)
+
     # --- 2. HISTORIAL DE CHATS ---
     if 'current_chat_session' not in st.session_state:
         st.session_state['current_chat_session'] = None
@@ -1517,6 +1531,7 @@ with st.sidebar:
                         time.sleep(0.5)
                         st.rerun()
 
+    st.markdown('<div class="aesthetic-sep"></div>', unsafe_allow_html=True)
 
     # --- 3. SPOTLIGHT ACADÉMICO ---
     st.markdown("#### 🔍 Búsqueda rápida")
@@ -1531,9 +1546,8 @@ with st.sidebar:
             st.session_state['spotlight_query'] = search_query
             st.session_state['spotlight_mode'] = search_mode
             st.rerun()
-    
-    # --- 3. CONFIGURACIÓN PERSONAL ---
-    # (Removed per user request)
+
+    st.markdown('<div class="aesthetic-sep"></div>', unsafe_allow_html=True)
 
     # --- 4. ESPACIO DE TRABAJO ---
     st.markdown("#### 📂 Espacio de Trabajo")
