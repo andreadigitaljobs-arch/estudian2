@@ -3523,7 +3523,7 @@ with tab_quiz:
                               st.error(f"Error en chat: {e}")
 
 # --- TAB 5: Ayudante de Tareas ---
-with tab5:
+with tab_tasks:
     tab5_html = (
         '<div class="card-text">'
         '<h2 style="margin-top:0;">5. Ayudante de Tareas</h2>'
@@ -3766,7 +3766,7 @@ with tab5:
 # --- TAB 6: Tutoría 1 a 1 (Docente Artificial) ---
 if 'tutor_chat_history' not in st.session_state: st.session_state['tutor_chat_history'] = []
 
-with tab6:
+with tab_tutor:
     tutor_html = (
         '<div class="card-text">'
         '<h2 style="margin-top:0;">6. Tutoría Personalizada (Profesor IA)</h2>'
