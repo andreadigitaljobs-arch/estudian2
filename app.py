@@ -1226,70 +1226,60 @@ CSS_STYLE = """
                     visibility: hidden !important;
                 }
                 
-                /* Scroll Button Initial State */
-                #tutor_scroll_btn {
-                    display: none !important;
+                /* Botón de Desplazamiento Universal */
+                #global_scroll_btn {
                     position: fixed;
-                    bottom: 120px;
-                    right: 20px;
-                    z-index: 999999;
-                    width: 45px;
-                    height: 45px;
+                    bottom: 30px;
+                    right: 30px;
+                    z-index: 2147483647;
+                    width: 50px;
+                    height: 50px;
                     border-radius: 50%;
-                    background: white;
-                    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-                    border: 1px solid #ddd;
+                    background: #4B22DD;
+                    color: white;
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+                    border: none;
                     cursor: pointer;
-                    font-size: 20px;
+                    font-size: 24px;
+                    display: flex;
                     align-items: center;
                     justify-content: center;
-                    transition: transform 0.2s;
-                    border: none;
+                    transition: transform 0.2s, background-color 0.2s;
                 }
-                #tutor_scroll_btn:hover { transform: scale(1.1); }
+                #global_scroll_btn:hover { 
+                    transform: scale(1.1); 
+                    background-color: #3b1aa3;
+                }
             `;
             root.head.appendChild(style);
         };
 
-        const manageScrollButton = () => {
+        const manageGlobalScroll = () => {
             const root = window.parent.document;
-            const tabs = root.querySelectorAll('button[role="tab"]');
+            let btn = root.getElementById('global_scroll_btn');
             
-            let isTutorTab = false;
-            tabs.forEach(tab => {
-                if (tab.getAttribute('aria-selected') === 'true') {
-                    if (tab.innerText.includes("Tutoría")) isTutorTab = true;
-                }
-            });
-
-            let btn = root.getElementById('tutor_scroll_btn');
-            
-            if (isTutorTab) {
-                if (!btn) {
-                    btn = root.createElement("button");
-                    btn.id = "tutor_scroll_btn";
-                    btn.innerHTML = "⬇️";
-                    btn.onclick = () => {
-                        const anchor = root.getElementById("tutor_chat_end_anchor");
-                        if (anchor) {
-                            anchor.scrollIntoView({ behavior: 'smooth', block: 'end' });
-                        } else {
-                            const main = root.querySelector('section.main');
-                            if (main) main.scrollTop = main.scrollHeight;
-                        }
-                    };
-                    root.body.appendChild(btn);
-                }
-                btn.style.setProperty('display', 'flex', 'important');
-            } else {
-                if (btn) btn.style.setProperty('display', 'none', 'important');
+            if (!btn) {
+                btn = root.createElement("button");
+                btn.id = "global_scroll_btn";
+                btn.innerHTML = "⬇️";
+                btn.title = "Ir al final";
+                btn.onclick = () => {
+                    const main = root.querySelector('section.main');
+                    if (main) {
+                        main.scrollTo({
+                            top: main.scrollHeight,
+                            behavior: 'smooth'
+                        });
+                    }
+                };
+                root.body.appendChild(btn);
             }
         };
 
         const watchDOM = () => {
             const root = window.parent.document;
             
-            // 1. Hide unwanted uploaders
+            // 1. Ocultar subidores no deseados
             const boxes = root.querySelectorAll('[data-testid="stFileUploader"]');
             boxes.forEach(b => {
                 const text = b.innerText || "";
@@ -1297,21 +1287,16 @@ CSS_STYLE = """
                     b.style.setProperty('display', 'none', 'important');
                     b.style.setProperty('height', '0px', 'important');
                 }
-                const isSidebar = b.closest('section[data-testid="stSidebar"]');
-                const hasLabel = b.querySelector('label') && b.querySelector('label').innerText.trim() !== "";
-                if (isSidebar && !hasLabel) {
-                     b.style.setProperty('display', 'none', 'important');
-                }
             });
 
-            // 2. Manage Scroll Button Visibility
-            manageScrollButton();
+            // 2. Asegurar botón de scroll
+            manageGlobalScroll();
         };
 
         injectStyles();
         
         if (!window.hasGlobalWatcher) {
-            setInterval(watchDOM, 300); 
+            setInterval(watchDOM, 500); 
             window.hasGlobalWatcher = true;
         }
     })();
@@ -3530,19 +3515,7 @@ with tab6:
                 }
             }
             
-            // SCROLL BUTTON
-            const scrollBtn = window.parent.document.getElementById("tutor_scroll_btn");
-            if (scrollBtn) {
-                 scrollBtn.onclick = () => {
-                    const anchor = window.parent.document.getElementById("tutor_chat_end_anchor");
-                    if (anchor) anchor.scrollIntoView({ behavior: 'smooth', block: 'end' });
-                    if (chatInput) {
-                        const ta = chatInput.querySelector('textarea');
-                        if (ta) setTimeout(() => ta.focus(), 50);
-                    }
-                 };
-            }
-
+        
         });
         observer.observe(window.parent.document.body, { childList: true, subtree: true, attributes: true });
         </script>
@@ -3649,7 +3622,7 @@ with tab6:
         # --- INPUT MOVED OUTSIDE OF COLUMNS (STICKY FOOTER FIX) ---
         if prompt := st.chat_input(f"Pregunta sobre {current_sess['name']}..."):
             
-            # 2. Add User Message
+             # 2. Add User Message
             save_chat_message(current_sess['id'], "user", prompt)
             
             # Update UI State
