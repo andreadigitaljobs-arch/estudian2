@@ -589,7 +589,7 @@ def get_course_files(course_id, type_filter=None):
 
 def upload_file_v2(unit_id, filename, content, f_type="note"):
     """
-    Saves a file to the database.
+    Saves a file to the database (library_files).
     Upsert: Update if exists, Insert if new.
     """
     supabase = init_supabase()
@@ -597,21 +597,26 @@ def upload_file_v2(unit_id, filename, content, f_type="note"):
     if not user: return None
     
     try:
-        # Check existence
-        res = supabase.table('files').select('id').eq('unit_id', unit_id).eq('name', filename).execute()
+        # Check existence in library_files
+        res = supabase.table('library_files').select('id').eq('unit_id', unit_id).eq('name', filename).execute()
         
         if res.data:
             # Update
             f_id = res.data[0]['id']
-            supabase.table('files').update({'content': content}).eq('id', f_id).execute()
+            # Column is 'content_text', not 'content'
+            supabase.table('library_files').update({'content_text': content}).eq('id', f_id).execute()
         else:
-            # Insert
-            supabase.table('files').insert({
+            # Insert - use content_text
+            supabase.table('library_files').insert({
                 'unit_id': unit_id,
                 'name': filename,
-                'content': content,
+                'content_text': content,
                 'type': f_type,
-                'user_id': user.id
+                # 'user_id': user.id # library_files might not have user_id if it uses RLS via auth.uid() or if it's inherited from unit. 
+                # Checking get_files(line 579) it selects id,name,type,unit_id.
+                # create_library_file RPC doesn't pass user_id. 
+                # So I'll omit user_id and rely on RLS/Default.
+                # Wait, create_library_file RPC (Line 310) takes p_unit_id, p_name, p_content, p_type. User ID is likely inferred.
             }).execute()
         return True
     except Exception as e:
