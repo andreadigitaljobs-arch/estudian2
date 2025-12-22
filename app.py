@@ -297,7 +297,6 @@ components.html("""
     })();
 </script>
 """.format(overflow_val="auto" if st.session_state.get('user') else "hidden"), height=0)
-""", height=0)
 
 # --- JS FORCE LOGOUT CLEANUP ---
 if st.session_state.get('force_logout'):
