@@ -226,6 +226,30 @@ if not st.session_state['user'] and not st.session_state.get('force_logout'):
     except Exception as e:
         print(f"Auto-login failed: {e}")
 
+# --- GUARANTEED SCROLLBAR HIDE (Run before Login Stop) ---
+components.html("""
+<script>
+    (function() {
+        const root = window.parent.document;
+        const style = root.createElement('style');
+        style.id = 'estudian2_scrollbar_kill_early';
+        style.innerHTML = `
+            ::-webkit-scrollbar {
+                width: 0px !important;
+                background: transparent !important;
+                display: none !important;
+            }
+            html, body {
+                scrollbar-width: none !important; 
+                -ms-overflow-style: none !important;
+                overflow-y: auto !important;
+            }
+        `;
+        if (!root.getElementById(style.id)) root.head.appendChild(style);
+    })();
+</script>
+""", height=0)
+
 # --- JS FORCE LOGOUT CLEANUP ---
 if st.session_state.get('force_logout'):
     components.html("""
