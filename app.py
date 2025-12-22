@@ -99,6 +99,20 @@ st.markdown("""
         display: none !important;
     }
     
+    /* DYNAMIC: FREEZE SCROLL & HIDE SIDEBAR ON LOGIN */
+    """ + ("""
+    .stApp, section.main, .block-container, [data-testid="stAppViewContainer"], html, body {
+        overflow: hidden !important;
+    }
+    [data-testid="stSidebar"] {
+        display: none !important;
+    }
+    """ if not st.session_state.get('user') else """
+    .stApp, section.main, .block-container, [data-testid="stAppViewContainer"], html, body {
+        overflow: auto !important;
+    }
+    """) + """
+    
     /* TAB SCROLL ARROWS */
     .stTabs [data-baseweb="tab-list"] button:not([role="tab"]) {
         background-color: #4B22DD !important;
