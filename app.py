@@ -1197,65 +1197,84 @@ CSS_STYLE = """
         position: absolute !important;
     }
 </style>
-
-<div id="scroller-container">
-    <button id="universal_scroll_btn" onclick="scrollToBottom()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="12" y1="5" x2="12" y2="19"></line>
-            <polyline points="19 12 12 19 5 12"></polyline>
-        </svg>
-    </button>
-</div>
-
-<style>
-    #universal_scroll_btn {
-        position: fixed !important;
-        bottom: 120px !important;
-        right: 30px !important;
-        z-index: 9999999 !important;
-        width: 55px !important;
-        height: 55px !important;
-        border-radius: 50% !important;
-        background-color: #4B22DD !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        cursor: pointer !important;
-        border: none !important;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.3) !important;
-        transition: transform 0.2s !important;
-    }
-    #universal_scroll_btn:hover { transform: scale(1.1); background-color: #3b1aa3; }
-    #universal_scroll_btn svg { width: 26px; height: 26px; }
-</style>
-
-<script>
-    function scrollToBottom() {
-        // Broad search for scrollable areas
-        const scroll = (win) => {
-            const doc = win.document;
-            const targets = [
-                doc.querySelector('section.main'),
-                doc.querySelector('.main'),
-                doc.querySelector('[data-testid="stAppViewContainer"]'),
-                doc.documentElement,
-                doc.body
-            ];
-            targets.forEach(t => {
-                if (t) {
-                    t.scrollTo({ top: t.scrollHeight + 10000, behavior: 'smooth' });
-                    setTimeout(() => { t.scrollTop = t.scrollHeight + 10000; }, 100);
-                }
-            });
-            win.scrollTo({ top: 999999, behavior: 'smooth' });
-        };
-        
-        scroll(window);
-        if (window.parent !== window) scroll(window.parent);
-    }
-</script>
 """
 st.markdown(CSS_STYLE, unsafe_allow_html=True)
+
+# --- NUCLEAR UNIVERSAL SCROLLER (DEFINITIVE) ---
+import streamlit.components.v1 as components
+components.html("""
+<script>
+    (function() {
+        const root = window.parent.document;
+        const inject = () => {
+            try {
+                if (root.getElementById('estudian2_nuclear_scroller')) return;
+                
+                const btn = root.createElement('button');
+                btn.id = 'estudian2_nuclear_scroller';
+                btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="width: 28px; height: 28px; pointer-events: none;"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>';
+                
+                btn.style.cssText = `
+                    position: fixed !important;
+                    bottom: 120px !important;
+                    right: 30px !important;
+                    z-index: 2147483647 !important;
+                    width: 55px !important;
+                    height: 55px !important;
+                    border-radius: 50% !important;
+                    background-color: #4B22DD !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    cursor: pointer !important;
+                    border: none !important;
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.4) !important;
+                    transition: transform 0.2s !important;
+                    outline: none !important;
+                `;
+                
+                btn.onclick = function() {
+                    const scrollRecursive = (doc) => {
+                        // 1. Scroll known main containers
+                        const mains = doc.querySelectorAll('section.main, .main, [data-testid="stAppViewContainer"]');
+                        mains.forEach(m => {
+                            m.scrollTo({ top: m.scrollHeight + 10000, behavior: 'smooth' });
+                        });
+                        
+                        // 2. Scroll ANY element that has a scrollbar
+                        const all = doc.querySelectorAll('*');
+                        all.forEach(el => {
+                            if (el.scrollHeight > el.clientHeight) {
+                                el.scrollTo({ top: el.scrollHeight + 10000, behavior: 'smooth' });
+                            }
+                        });
+                        
+                        // 3. Recurse into iframes
+                        const iframes = doc.querySelectorAll('iframe');
+                        for (let i = 0; i < iframes.length; i++) {
+                            try {
+                                const idoc = iframes[i].contentDocument || iframes[i].contentWindow.document;
+                                scrollRecursive(idoc);
+                            } catch(e) {}
+                        }
+                    };
+                    
+                    scrollRecursive(window.parent.document);
+                    window.parent.scrollTo({ top: 999999, behavior: 'smooth' });
+                };
+                
+                btn.onmouseenter = () => btn.style.transform = 'scale(1.1)';
+                btn.onmouseleave = () => btn.style.transform = 'scale(1.0)';
+                
+                root.body.appendChild(btn);
+            } catch(e) { console.error("Scroller Error:", e); }
+        };
+        
+        setInterval(inject, 1000);
+        inject();
+    })();
+</script>
+""", height=0)
 
 # Sidebar
 with st.sidebar:
