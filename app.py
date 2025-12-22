@@ -10,6 +10,7 @@ import shutil
 import time
 import datetime
 import markdown
+import streamlit.components.v1 as components
 import extra_streamlit_components as stx  # --- PERSISTENCE ---
 from library_ui import render_library # --- LIBRARY UI ---
 from database import (
@@ -1227,7 +1228,6 @@ CSS_STYLE = """
 st.markdown(CSS_STYLE, unsafe_allow_html=True)
 
 # --- NUCLEAR UNIVERSAL SCROLLER (DEFINITIVE) ---
-import streamlit.components.v1 as components
 
 # 1. GLOBAL LOADING FIX (Always running)
 components.html("""
