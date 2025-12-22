@@ -1166,15 +1166,15 @@ CSS_STYLE = """
     /* --- AESTHETIC SEPARATORS --- */
     .aesthetic-sep {
         height: 1px;
-        background: radial-gradient(circle, rgba(75, 34, 221, 0.2) 0%, rgba(255, 255, 255, 0) 100%);
-        margin: 15px 0 !important;
+        background: rgba(75, 34, 221, 0.15);
+        margin: 25px 0 !important;
         width: 100%;
     }
 
-    /* Kill margins on element containers to prevent ghost spacing */
+    /* Generous margins on element containers for breathing room */
     [data-testid="stSidebar"] [data-testid="element-container"] {
-        margin-bottom: 2px !important;
-        margin-top: 2px !important;
+        margin-bottom: 12px !important;
+        margin-top: 0px !important;
     }
     
     /* Ensure no background or border on expanders in sidebar */
@@ -1371,11 +1371,11 @@ with st.sidebar:
         st.markdown(f"""
             <div style='display:none'><script>window.parent.document.body.classList.{'add' if not study_mode else 'remove'}('study-mode-off');</script></div>
             <div style="font-size: 0.8rem; line-height: 1.4;">
-                <div style="margin-bottom:8px;"><span style="background-color: #ffcccc; color: #900; border: 1px solid #ff9999; padding: 1px 4px; border-radius: 3px; font-weight: bold;">Rojo</span>: Definiciones y conceptos base.</div>
-                <div style="margin-bottom:8px;"><span style="background-color: #cce5ff; color: #004085; border: 1px solid #b8daff; padding: 1px 4px; border-radius: 3px; font-weight: bold;">Azul</span>: Ejemplos y casos prácticos.</div>
-                <div style="margin-bottom:8px;"><span style="background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; padding: 1px 4px; border-radius: 3px; font-weight: bold;">Verde</span>: Notas, tips y aclaraciones.</div>
-                <div style="margin-bottom:8px;"><span style="background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; padding: 1px 4px; border-radius: 3px; font-weight: bold;">Amarillo</span>: Datos, fechas y nombres.</div>
-                <div style="margin-bottom:8px;"><span style="background-color: #e2d9f3; color: #512da8; border: 1px solid #d1c4e9; padding: 1px 4px; border-radius: 3px; font-weight: bold;">Púrpura</span>: Ideas clave y conclusiones.</div>
+                <div style="margin-bottom:12px;"><span style="background-color: #ffcccc; color: #900; border: 1px solid #ff9999; padding: 1px 4px; border-radius: 3px; font-weight: bold;">Rojo</span>: Definiciones y conceptos base.</div>
+                <div style="margin-bottom:12px;"><span style="background-color: #cce5ff; color: #004085; border: 1px solid #b8daff; padding: 1px 4px; border-radius: 3px; font-weight: bold;">Azul</span>: Ejemplos y casos prácticos.</div>
+                <div style="margin-bottom:12px;"><span style="background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; padding: 1px 4px; border-radius: 3px; font-weight: bold;">Verde</span>: Notas, tips y aclaraciones.</div>
+                <div style="margin-bottom:12px;"><span style="background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; padding: 1px 4px; border-radius: 3px; font-weight: bold;">Amarillo</span>: Datos, fechas y nombres.</div>
+                <div style="margin-bottom:12px;"><span style="background-color: #e2d9f3; color: #512da8; border: 1px solid #d1c4e9; padding: 1px 4px; border-radius: 3px; font-weight: bold;">Púrpura</span>: Ideas clave y conclusiones.</div>
             </div>
         """, unsafe_allow_html=True)
 
