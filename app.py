@@ -3206,7 +3206,7 @@ with tab_didactic:
 
 
 # --- TAB 4: Quiz ---
-with tab4:
+with tab_quiz:
     col_img, col_text = st.columns([1, 1.5], gap="large")
     
     with col_img:
