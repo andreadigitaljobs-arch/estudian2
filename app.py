@@ -689,13 +689,13 @@ THEME_CSS = """
         border-radius: 30px !important;
     }
 
-    /* LOGIN FORM BUTTON - GREEN FORCE */
-    [data-testid="stForm"] button {
+    /* LOGIN FORM BUTTON - GREEN FORCE (Specific to Submit) */
+    [data-testid="stForm"] button[kind="primary"] {
         background-color: #6CC04A !important;
         border: none !important;
         color: white !important;
     }
-    [data-testid="stForm"] button:hover {
+    [data-testid="stForm"] button[kind="primary"]:hover {
         background-color: #5ab03a !important;
     }
 
@@ -1759,13 +1759,13 @@ CSS_STYLE = """
         border-radius: 30px !important;
     }
 
-    /* LOGIN FORM BUTTON - GREEN FORCE */
-    [data-testid="stForm"] button {
+    /* LOGIN FORM BUTTON - GREEN FORCE (Specific to Submit) */
+    [data-testid="stForm"] button[kind="primary"] {
         background-color: #6CC04A !important;
         border: none !important;
         color: white !important;
     }
-    [data-testid="stForm"] button:hover {
+    [data-testid="stForm"] button[kind="primary"]:hover {
         background-color: #5ab03a !important;
     }
 
