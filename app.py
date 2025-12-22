@@ -80,6 +80,12 @@ if 'pasted_images' not in st.session_state: st.session_state['pasted_images'] = 
 # --- GLOBAL CSS (Prevents FOUC on Logout) ---
 st.markdown("""
     <style>
+    /* HIDE SCROLLBAR GLOBALLY */
+    ::-webkit-scrollbar {
+        width: 0px;
+        background: transparent;
+    }
+    
     /* TAB SCROLL ARROWS */
     .stTabs [data-baseweb="tab-list"] button:not([role="tab"]) {
         background-color: #4B22DD !important;
