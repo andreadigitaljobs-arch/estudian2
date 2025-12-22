@@ -1692,7 +1692,7 @@ with st.sidebar:
 
 
 # --- INJECT CUSTOM TAB SCROLL BUTTONS (JS) ---
-    st.components.v1.html("""
+    components.html("""
     <script>
     function lockSidebar() {
         const doc = window.parent.document;
@@ -2100,7 +2100,7 @@ if st.session_state.get('force_chat_tab'):
     # timestamp ensures the component sends a new message to frontend even if target is same
     import time
     ts = time.time()
-    st.components.v1.html(f"""
+    components.html(f"""
     <script>
         setTimeout(() => {{
             try {{
@@ -3444,7 +3444,7 @@ with tab6:
                  # Let's just reset to be clean.
                  pass
 
-        st.components.v1.html("""
+        components.html("""
         <script>
         const observer = new MutationObserver(() => {
             const popovers = window.parent.document.querySelectorAll('div[data-testid="stPopover"]');
