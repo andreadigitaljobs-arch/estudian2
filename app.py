@@ -689,6 +689,15 @@ THEME_CSS = """
         border-radius: 30px !important;
     }
 
+    /* LOGIN FORM BUTTON - GREEN */
+    div[data-testid="stForm"] div.stButton > button {
+        background-color: #6CC04A !important;
+        border: none !important;
+    }
+    div[data-testid="stForm"] div.stButton > button:hover {
+        background-color: #5ab03a !important;
+    }
+
     /* --- GLOBAL HEADERS (BRANDING) --- */
     h1, h2, h3, h4, h5, h6 {
         color: #4B22DD !important;
@@ -1140,7 +1149,7 @@ if not st.session_state['user']:
              logo_html = f'<img src="data:image/png;base64,{logo_b64}" style="height: 280px; width: auto; max-width: 100%; display: block; margin: -110px auto -50px auto;">'
         
         # Title: "Vamos a estudiar" - Title lifted closer to logo, inputs compensated
-        st.markdown(f'<div style="text-align: center; margin-bottom: 30px; margin-top: 0px;"><div style="display: flex; align-items: center; justify-content: center; margin-bottom: -20px;">{logo_html}</div><div class="messimo-title" style="margin-top: -30px;">¡Vamos a estudiar!</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div style="text-align: center; margin-bottom: 30px; margin-top: 0px;"><div style="display: flex; align-items: center; justify-content: center; margin-bottom: -20px;">{logo_html}</div><div class="messimo-title" style="margin-top: -30px; color: #4B22DD;">¡Vamos a estudiar!</div></div>', unsafe_allow_html=True)
 
         # FORM INPUTS (Wrapped in st.form to prevent jitter/refresh while typing)
         with st.form("login_form", clear_on_submit=False, border=False):
@@ -1747,6 +1756,15 @@ CSS_STYLE = """
     /* Target Primary Buttons (if any are used, e.g. Delete, ensuring they are also round) */
     div.stButton > button[kind="primary"] {
         border-radius: 30px !important;
+    }
+
+    /* LOGIN FORM BUTTON - GREEN */
+    div[data-testid="stForm"] div.stButton > button {
+        background-color: #6CC04A !important;
+        border: none !important;
+    }
+    div[data-testid="stForm"] div.stButton > button:hover {
+        background-color: #5ab03a !important;
     }
 
     /* --- GLOBAL HEADERS (BRANDING) --- */
