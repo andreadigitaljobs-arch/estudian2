@@ -2248,6 +2248,7 @@ with tab1:
                 <span style="font-size: 0.9rem; color: #888; font-weight: 500;">Soporta: MP4, MOV, MP3, WAV, M4A</span>
             </p>
         ''', unsafe_allow_html=True)
+        st.info("💡 **Consejo Pro:** Para evitar saturar el límite de la IA (Quota Exceeded), te recomendamos subir y procesar tus videos en **bloques de 3 en 3**. Espera a que terminen antes de iniciar los siguientes.", icon="🚦")
         
         # Dynamic Key for Uploader Reset
         if 'transcriptor_key' not in st.session_state: st.session_state['transcriptor_key'] = "up1"
