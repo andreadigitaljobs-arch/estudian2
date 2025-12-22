@@ -1167,7 +1167,7 @@ CSS_STYLE = """
     .aesthetic-sep {
         height: 1px;
         background: rgba(75, 34, 221, 0.15);
-        margin: 25px 0 !important;
+        margin: 35px 0 20px 0 !important; /* More space above than below */
         width: 100%;
     }
 
@@ -1185,32 +1185,35 @@ CSS_STYLE = """
 
     /* INTERNAL TEXT SPACING (Breathing room for captions/headers) */
     [data-testid="stSidebar"] h4 {
-        margin-top: 22px !important;
-        margin-bottom: 10px !important;
+        margin-top: 35px !important;
+        margin-bottom: 12px !important;
         font-weight: 700 !important;
     }
     [data-testid="stSidebar"] [data-testid="stCaptionContainer"] {
-        margin-top: 10px !important;
-        margin-bottom: 6px !important;
-        line-height: 1.4 !important;
+        margin-top: 18px !important;
+        margin-bottom: 8px !important;
+        line-height: 1.5 !important;
     }
     
     /* Spacing for widget labels (like "Renombrar:") */
     [data-testid="stSidebar"] [data-testid="stWidgetLabel"] {
-        margin-top: 12px !important;
-        margin-bottom: 6px !important;
+        margin-top: 20px !important;
+        margin-bottom: 8px !important;
         font-weight: 600 !important;
     }
 
-    /* FIX: Protect Toggle alignment (reset internal label margins) */
+    /* FIX: Protect Toggle alignment (reset internal label margins and force center) */
+    [data-testid="stSidebar"] [data-testid="stToggle"] {
+        display: flex !important;
+        align-items: center !important;
+        margin-bottom: 20px !important;
+        gap: 15px !important;
+    }
+    
     [data-testid="stSidebar"] [data-testid="stToggle"] [data-testid="stWidgetLabel"] {
         margin-top: 0px !important;
         margin-bottom: 0px !important;
-    }
-
-    /* Specific spacing for the toggle widget itself */
-    [data-testid="stSidebar"] [data-testid="stToggle"] {
-        margin-bottom: 15px !important;
+        flex: 1 !important;
     }
 
     /* Surgical Highlight Styles (Study Mode) */
