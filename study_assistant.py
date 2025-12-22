@@ -145,6 +145,65 @@ Google ofrece una capa gratuita generosa, pero limitada.
         response = self.model.generate_content(prompt)
         return response.text
 
+    def generate_didactic_explanation(self, transcript_text, global_context=""):
+        """
+        Generates a didactic, analogy-based explanation (NOT a summary).
+        Focus: "Knowledge Translation" from Academic to Simple.
+        """
+        import json
+        
+        prompt = f"""
+        Actúa como el MEJOR COMUNICADOR DEL MUNDO (Estilo Feynman + Divulgador Científico).
+        
+        TU MISIÓN:
+        Tienes una transcripción de una clase. El estudiante NO entendió nada porque el lenguaje era muy técnico o aburrido.
+        Tu trabajo es **TRADUCIR** ese contenido a una explicación:
+        1. Clara.
+        2. Simple (Lenguaje natural).
+        3. Llena de **ANALOGÍAS** y ejemplos de la vida real.
+        
+        REGLA DE ORO: 
+        NO RESUMAS. NO CORTES INFORMACIÓN. EXPLICALA MEJOR.
+        Si la transcripción dice: "El sujeto pasivo tributario tiene la obligación...", tú dices: "Imagina que el sujeto pasivo es como el cliente en un restaurante, es quien finalmente paga la cuenta..."
+        
+        CONTEXTO GLOBAL (BIBLIOTECA):
+        {global_context}
+        
+        INSTRUCCIONES DE FORMATO (JSON ESTRICTO):
+        Genera una lista de "Bloques de Conocimiento". Cada bloque debe explicar un tema principal del video.
+        
+        {{
+            "introduction": "Un párrafo introductorio amigable y motivador que diga de qué va la clase en palabras llanas.",
+            "blocks": [
+                {{
+                    "concept_title": "Nombre del Concepto (Ej: Impuestos Directos)",
+                    "academic_definition": "La definición técnica breve (para tener la referencia).",
+                    "simplified_explanation": "La explicación 'traducción' en lenguaje de calle.",
+                    "analogy": "Una analogía EXACTA y MEMORABLE (Ej: 'Es como cuando...').",
+                    "why_it_matters": "¿Por qué demonios debo saber esto? (Utilidad real)."
+                }},
+                ... (Mínimo 3 bloques, máximo 6)
+            ],
+            "conclusion": "Una conclusión empática y de cierre."
+        }}
+
+        TRANSCRIPCIÓN ORIGINAL:
+        {transcript_text}
+        """
+        
+        try:
+            response = self.model.generate_content(
+                prompt,
+                generation_config={"response_mime_type": "application/json"}
+            )
+            return json.loads(response.text)
+        except Exception as e:
+            return {
+                "introduction": "Hubo un error generando la explicación.",
+                "blocks": [],
+                "conclusion": str(e)
+            }
+
     def solve_quiz(self, images=None, question_text=None, global_context=""):
         """Solves a quiz question from images (list) or text."""
         

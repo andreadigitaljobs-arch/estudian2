@@ -2411,12 +2411,12 @@ with st.sidebar:
     # --- TABS DEFINITION ---
 # --- TABS DEFINITION ---
 # NEW: "Inicio" is the Dashboard Tab
-tab_home, tab1, tab2, tab3, tab4, tab_lib, tab5, tab6 = st.tabs([
+# NEW: "Explorador Didáctico" replaces Apuntes/Guide
+tab_home, tab1, tab_didactic, tab_quiz, tab_lib, tab_tasks, tab_tutor = st.tabs([
     "🏠 Inicio",
     "📹 Transcriptor", 
-    "📝 Apuntes Simples", 
-    "🗺️ Guía de Estudio", 
-    "🧠 Zona Quiz",
+    "🧠 Explorador Didáctico", 
+    "🧩 Zona Quiz",
     "📂 Biblioteca",
     "👩🏻‍🏫 Ayudante de Tareas",
     "📚 Tutoría 1 a 1"
@@ -3086,15 +3086,15 @@ with tab1:
                        st.markdown(processed_text, unsafe_allow_html=True)
 
 
-# --- TAB 2: Apuntes Simples ---
-with tab2:
+# --- TAB 2: Explorador Didáctico (Traductor de Conocimiento) ---
+with tab_didactic:
     col_img, col_text = st.columns([1, 1.5], gap="large")
     
     with col_img:
-        # Image Display (Dynamic Update)
+        # Image Display
         import base64
         img_b64_notes = ""
-        img_path_notes = "assets/notes_header.jpg"
+        img_path_notes = "assets/notes_header.jpg" # Reusing assets or we can add new one
         if os.path.exists(img_path_notes):
             with open(img_path_notes, "rb") as image_file:
                 img_b64_notes = base64.b64encode(image_file.read()).decode()
@@ -3108,8 +3108,8 @@ with tab2:
     with col_text:
         tab2_html = (
             '<div class="card-text">'
-            '<h2 style="margin-top:0;">2. Generador de Apuntes</h2>'
-            '<p style="color: #64748b; font-size: 1.1rem;">Convierte transcripciones en apuntes claros y concisos.</p>'
+            '<h2 style="margin-top:0;">🧠 Explorador Didáctico</h2>'
+            '<p style="color: #64748b; font-size: 1.1rem;">"Traduce" la clase difícil a lenguaje simple con analogías y ejemplos cotidianos.</p>'
             '</div>'
         )
         st.markdown(tab2_html, unsafe_allow_html=True)
@@ -3118,13 +3118,8 @@ with tab2:
         if not c_id:
              st.info("Selecciona Espacio de Trabajo.")
         else:
-             # Fetch Transcripts from DB
-             from database import get_units, get_files, get_file_content, upload_file_to_db, get_course_files
+             from database import get_files, get_file_content, upload_file_to_db, get_course_files, get_units, create_unit
              
-             units = get_units(c_id)
-             
-             # GLOBAL SEARCH: Fetch "type=transcript" from ANY folder in this course
-             # This finds files even if user has moved/renamed them or put them in custom folders
              transcript_files = get_course_files(c_id, type_filter="transcript")
              
              # Check Global Memory
@@ -3133,186 +3128,82 @@ with tab2:
                 st.success(f"✅ **Memoria Global Activa:** {gl_count} archivos base detectados.")
             
              if not transcript_files:
-                st.info("No hay transcripciones. Sube videos en la Pestaña 1 (se creará carpeta 'Transcriptor').")
+                st.info("No hay transcripciones disponibles. Sube videos en la Pestaña 1.")
              else:
                 options = [f['name'] for f in transcript_files]
                 file_map = {f['name']: f['id'] for f in transcript_files}
                 
-                selected_file = st.selectbox("Selecciona una transcripción:", options, key="sel2")
+                selected_file = st.selectbox("Selecciona la clase a traducir:", options, key="sel_didactic")
                 
-                if selected_file and st.button("Generar apuntes", key="btn2"):
-                    # Get content from DB
+                if selected_file and st.button("🔍 Traducir a Lenguaje Simple", key="btn_didactic", type="primary"):
                     f_id = file_map[selected_file]
                     text = get_file_content(f_id)
                     
-                    with st.spinner("Creando apuntes progresivos (3 Niveles)..."):
-                        # Now returns a JSON dict
-                        notes_data = assistant.generate_notes(text, global_context=gl_ctx)
+                    with st.spinner("Traduciendo conceptos complejos a lenguaje humano..."):
+                        # CALL NEW AI FUNCTION
+                        didactic_data = assistant.generate_didactic_explanation(text, global_context=gl_ctx)
                         
-                        # Save to "Apuntes Simples" Unit in DB
-                        target_folder = "Apuntes Simples"
+                        st.session_state['didactic_result'] = didactic_data
+                        
+                        # Save result to DB (Optional, maybe under "Apuntes Didacticos"?)
+                        # We won't auto-save to DB yet unless requested, to keep it as an exploration tool.
+                        # Or we save it to the "Apuntes Simples" folder but with a prefix.
+                        
+                        # Let's save it for persistence!
+                        units = get_units(c_id)
+                        target_folder = "Apuntes Didácticos"
                         n_unit = next((u for u in units if u['name'] == target_folder), None)
                         if not n_unit:
-                             # Silent Fallback
-                             from database import create_unit
                              n_unit = create_unit(c_id, target_folder)
                         
                         if n_unit:
-                             # Convert JSON structure to Clean Markdown
-                             md_content = f"# 📝 Apuntes: {selected_file.replace('_transcripcion.txt', '')}\n\n"
-                             md_content += f"## 🟢 Nivel 1: Resumen Ultracorto\n{notes_data.get('ultracorto', '')}\n\n"
-                             md_content += "---\n\n"
-                             md_content += f"## 🟡 Nivel 2: Conceptos Intermedios\n{notes_data.get('intermedio', '')}\n\n"
-                             md_content += "---\n\n"
-                             md_content += f"## 🔴 Nivel 3: Profundidad Detallada\n{notes_data.get('profundo', '')}"
+                             # Create a Markdown representation for saving
+                             md_save = f"# 🧠 Explicación Didáctica: {selected_file}\n\n"
+                             md_save += f"_{didactic_data.get('introduction', '')}_\n\n"
+                             for b in didactic_data.get('blocks', []):
+                                 md_save += f"### {b.get('concept_title', 'Concepto')}\n"
+                                 md_save += f"**Definición:** {b.get('academic_definition', '')}\n\n"
+                                 md_save += f"**Explicación Simple:** {b.get('simplified_explanation', '')}\n\n"
+                                 md_save += f"> **💡 Analogía:** {b.get('analogy', '')}\n\n"
+                                 md_save += f"**¿Por qué importa?** {b.get('why_it_matters', '')}\n\n---\n"
+                             
+                             md_save += f"\n**Conclusión:**\n{didactic_data.get('conclusion', '')}"
                              
                              base_name = selected_file.replace("_transcripcion.txt", "").replace(".txt", "").strip()
-                             fname = f"Apuntes {base_name}.md"
-                             
-                             upload_file_to_db(n_unit['id'], fname, md_content, "note")
-                             st.success(f"Apuntes guardados en '{target_folder}'/{fname}")
-                        
-                        st.session_state['notes_result'] = notes_data
-                        st.success("¡Apuntes generados en 3 capas!")
+                             fname = f"Explicacion {base_name}.md"
+                             upload_file_to_db(n_unit['id'], fname, md_save, "note")
+                             st.success(f"Explicación guardada en '{target_folder}'")
 
-                # --- DISPLAY RESULTS ---
-                res = st.session_state.get('notes_result')
-                if res:
+                # --- RENDER RESULT ---
+                res = st.session_state.get('didactic_result')
+                if res and isinstance(res, dict):
+                    st.divider()
                     
-                    # Check if it's new dict format (Progressive) or old string (Legacy)
-                    if isinstance(res, dict):
-                        st.markdown("### 📝 Apuntes Progresivos")
-                        
-                        # LEVEL 1: Ultracorto
-                        with st.expander("🟢 Nivel 1: Ultracorto (5 Puntos)", expanded=True):
-                            c1, c2 = st.columns([0.9, 0.1])
-                            with c1: st.markdown(res.get('ultracorto', ''), unsafe_allow_html=True)
+                    # 1. Intro
+                    st.markdown(f"#### 👋🏻 Introducción")
+                    st.info(res.get('introduction', ''))
+                    
+                    st.markdown("#### 🧱 Bloques de Conocimiento")
+                    
+                    blocks = res.get('blocks', [])
+                    for i, b in enumerate(blocks):
+                        with st.expander(f"🔹 {b.get('concept_title', f'Concepto {i+1}')}", expanded=True):
+                            c1, c2 = st.columns([1, 1])
+                            
+                            with c1:
+                                st.markdown(f"**📖 Definición Académica:**\n*{b.get('academic_definition')}*")
+                                st.markdown(f"**🗣️ En Español Simple:**\n{b.get('simplified_explanation')}")
+                                st.markdown(f"**🎯 ¿Por qué importa?**\n{b.get('why_it_matters')}")
+                                
                             with c2:
-                                if st.button("📄", key="copy_l1", help="Copiar Nivel 1"):
-                                    copy_to_clipboard(res.get('ultracorto', ''))
-                                    st.toast("Copiado Nivel 1")
+                                # Highlight the Analogy Box
+                                st.markdown("#### 💡 Analogía")
+                                st.success(f"{b.get('analogy')}")
+                                
+                    # 3. Conclusion
+                    st.markdown("#### 🏁 Conclusión")
+                    st.caption(res.get('conclusion', ''))
 
-                        # LEVEL 2: Intermedio
-                        with st.expander("🟡 Nivel 2: Intermedio (Conceptos Clave)", expanded=False):
-                            c1, c2 = st.columns([0.9, 0.1])
-                            with c1: st.markdown(res.get('intermedio', ''), unsafe_allow_html=True)
-                            with c2:
-                                if st.button("📄", key="copy_l2", help="Copiar Nivel 2"):
-                                    copy_to_clipboard(res.get('intermedio', ''))
-                                    st.toast("Copiado Nivel 2")
-
-                        # LEVEL 3: Profundo
-                        with st.expander("🔴 Nivel 3: Profundidad (Explicación Completa)", expanded=False):
-                            c1, c2 = st.columns([0.9, 0.1])
-                            with c1: st.markdown(res.get('profundo', ''), unsafe_allow_html=True)
-                            with c2:
-                                 if st.button("📄", key="copy_l3", help="Copiar Nivel 3"):
-                                    copy_to_clipboard(res.get('profundo', ''))
-                                    st.toast("Copiado Nivel 3")
-                                    
-                    else:
-                        # Legacy String Display
-                        st.markdown(res)
-                        if st.button("Copiar Apuntes", key="copy_notes_btn"):
-                             copy_to_clipboard(res)
-                             st.toast("Copiado")
-
-# --- TAB 3: Guía de Estudio ---
-with tab3:
-    col_img, col_text = st.columns([1, 1.5], gap="large") # Swapped to Image Left
-    
-    with col_img:
-        # Image Display (Dynamic Update)
-        import base64
-        img_b64_guide = ""
-        img_path_guide = "assets/study_guide_header.jpg"
-        if os.path.exists(img_path_guide):
-            with open(img_path_guide, "rb") as image_file:
-                img_b64_guide = base64.b64encode(image_file.read()).decode()
-        
-        st.markdown(f'''
-            <div class="green-frame" style="padding: 20px;">
-                <img src="data:image/jpeg;base64,{img_b64_guide}" style="width: 100%; border-radius: 15px; object-fit: cover;">
-            </div>
-        ''', unsafe_allow_html=True)
-    
-    with col_text:
-        tab3_html = (
-            '<div class="card-text">'
-            '<h2 style="margin-top:0;">3. Guía de Estudio Estratégica</h2>'
-            '<p style="color: #64748b; font-size: 1.1rem;">Crea mapas, resúmenes y preguntas de examen.</p>'
-            '</div>'
-        )
-        st.markdown(tab3_html, unsafe_allow_html=True)
-        
-        c_id = st.session_state.get('current_course_id')
-        if not c_id:
-             st.info("Selecciona Espacio de Trabajo.")
-        else:
-            from database import get_units, get_files, get_file_content, upload_file_to_db, create_unit, get_course_files
-            
-            # Fetch Transcripts (Global Search in Course)
-            units = get_units(c_id)
-            transcript_files = get_course_files(c_id, type_filter="transcript")
-            
-            # Check Global Memory
-            gl_ctx, gl_count = get_global_context()
-            if gl_count > 0:
-                st.success(f"✅ **Memoria Global Activa:** {gl_count} archivos base detectados.")
-
-            if not transcript_files:
-                 st.info("Primero sube videos en la Pestaña 1.")
-            else:
-                options_guide = [f['name'] for f in transcript_files]
-                file_map_guide = {f['name']: f['id'] for f in transcript_files}
-                
-                selected_guide_file = st.selectbox("Archivo base:", options_guide, key="sel3")
-                
-                if selected_guide_file and st.button("Generar Guía", key="btn3"):
-                    # Get content from DB
-                    f_id = file_map_guide[selected_guide_file]
-                    text = get_file_content(f_id)
-                        
-                    with st.spinner("Diseñando estrategia de estudio..."):
-                        guide = assistant.generate_study_guide(text, global_context=gl_ctx)
-                        
-                        # Save to "Guía de Estudio" Unit in DB
-                        target_guide_folder = "Guía de Estudio"
-                        g_unit = next((u for u in units if u['name'] == target_guide_folder), None)
-                        if not g_unit:
-                             g_unit = create_unit(c_id, target_guide_folder)
-                        
-                        if g_unit:
-                             base_name = selected_guide_file.replace("_transcripcion.txt", "").replace(".txt", "").strip()
-                             fname = f"Guia {base_name}.md"
-                             upload_file_to_db(g_unit['id'], fname, guide, "guide")
-                             st.success(f"Guía guardada en '{target_guide_folder}'/{fname}")
-
-                        st.success("¡Guía lista!")
-                        st.session_state['guide_result'] = guide # Save to session
-            
-            # --- PERSISTENT RESULTS DISPLAY ---
-            res_guide = st.session_state.get('guide_result')
-            if res_guide:
-                st.divider()
-                
-                # HEADER + COPY ICON
-                c_head, c_copy = st.columns([0.9, 0.1])
-                with c_head:
-                    st.markdown("### 🗺️ Tu Guía de Estudio")
-                with c_copy:
-                    if st.button("📄", key="cp_guide", help="Copiar Guía Limpia"):
-                        clean_txt = clean_markdown(res_guide)
-                        if copy_to_clipboard(clean_txt):
-                            st.toast("¡Copiado!", icon='📋')
-                
-                with st.expander("🛠️ Acciones", expanded=False):
-                    if st.button("📥 Descargar Guía (.md)", key="dl_guide"):
-                        clean_txt = clean_markdown(res_guide)
-                        st.download_button("Click para descargar", clean_txt, file_name="guia_estudio.md")
-                
-                # Visual Display
-                st.markdown(res_guide)
 
 # --- TAB 4: Quiz ---
 with tab4:
