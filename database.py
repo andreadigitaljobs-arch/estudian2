@@ -586,3 +586,35 @@ def get_course_files(course_id, type_filter=None):
     except Exception as e:
         print(f"Error fetching course files: {e}")
         return []
+
+def upload_file_to_db(unit_id, filename, content, f_type="note"):
+    """
+    Saves a file to the database.
+    Upsert: Update if exists, Insert if new.
+    """
+    supabase = init_supabase()
+    user = st.session_state.get('user')
+    if not user: return None
+    
+    try:
+        # Check existence
+        res = supabase.table('files').select('id').eq('unit_id', unit_id).eq('name', filename).execute()
+        
+        if res.data:
+            # Update
+            f_id = res.data[0]['id']
+            supabase.table('files').update({'content': content}).eq('id', f_id).execute()
+        else:
+            # Insert
+            supabase.table('files').insert({
+                'unit_id': unit_id,
+                'name': filename,
+                'content': content,
+                'type': f_type,
+                'user_id': user.id
+            }).execute()
+        return True
+    except Exception as e:
+        print(f"Error saving file {filename}: {e}")
+        st.error(f"Error guardando archivo: {e}")
+        return False
