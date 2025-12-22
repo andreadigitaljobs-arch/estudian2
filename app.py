@@ -1207,81 +1207,66 @@ CSS_STYLE = """
         position: absolute !important;
     }
     
+    /* --- ULTIMATE LOCAL SCROLLER --- */
+    #estudian2_local_scroller_btn {
+        position: fixed !important;
+        bottom: 120px !important;
+        right: 30px !important;
+        z-index: 2147483647 !important;
+        width: 55px !important;
+        height: 55px !important;
+        border-radius: 50% !important;
+        background-color: #4B22DD !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        cursor: pointer !important;
+        border: none !important;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.5) !important;
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        outline: none !important;
+    }
+    #estudian2_local_scroller_btn:hover {
+        transform: scale(1.15) !important;
+        background-color: #3b1aa3 !important;
+        box-shadow: 0 6px 25px rgba(0,0,0,0.6) !important;
+    }
+    #estudian2_local_scroller_btn svg {
+        width: 28px !important;
+        height: 28px !important;
+        pointer-events: none !important;
+    }
 </style>
+<button id="estudian2_local_scroller_btn" title="Ir al final" onclick="(function(){
+    const targets = [
+        window.parent.document.querySelector('section.main'),
+        window.parent.document.querySelector('.main'),
+        window.parent.document.querySelector('[data-testid=stAppViewContainer]'),
+        window.parent.document.body,
+        window.parent.document.documentElement,
+        document.querySelector('section.main'),
+        document.querySelector('.main'),
+        window
+    ];
+    targets.forEach(t => {
+        if(t) {
+            try {
+                t.scrollTo({top: t.scrollHeight + 10000, behavior: 'smooth'});
+                setTimeout(() => { t.scrollTop = t.scrollHeight + 10000; }, 200);
+            } catch(e) {}
+        }
+    });
+    window.parent.scrollTo({top: 999999, behavior: 'smooth'});
+})()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="5" x2="12" y2="19"></line>
+        <polyline points="19 12 12 19 5 12"></polyline>
+    </svg>
+</button>
 """
 st.markdown(CSS_STYLE, unsafe_allow_html=True)
-
-# --- DEFINITIVE UNIVERSAL SCROLLER (RELIABLE LOCAL FIX) ---
-import streamlit.components.v1 as components
-components.html("""
-<script>
-    (function() {
-        const inject = () => {
-            try {
-                // We target window.parent to overlay the whole app
-                const root = window.parent.document;
-                if (root.getElementById('estudian2_scroller_v5')) return;
-                
-                const btn = root.createElement('button');
-                btn.id = 'estudian2_scroller_v5';
-                btn.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="pointer-events: none;"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>';
-                
-                btn.style.cssText = `
-                    position: fixed !important;
-                    bottom: 120px !important;
-                    right: 30px !important;
-                    z-index: 2147483647 !important;
-                    width: 50px !important;
-                    height: 50px !important;
-                    border-radius: 50% !important;
-                    background-color: #4B22DD !important;
-                    display: flex !important;
-                    align-items: center !important;
-                    justify-content: center !important;
-                    cursor: pointer !important;
-                    border: none !important;
-                    box-shadow: 0 4px 15px rgba(0,0,0,0.4) !important;
-                    transition: all 0.2s !important;
-                    outline: none !important;
-                `;
-                
-                // Use a proper event listener
-                btn.addEventListener('click', function() {
-                    const doc = window.parent.document;
-                    const targets = [
-                        doc.querySelector('section.main'),
-                        doc.querySelector('.main'),
-                        doc.querySelector('[data-testid="stAppViewContainer"]'),
-                        doc.documentElement,
-                        doc.body,
-                        window.parent
-                    ];
-                    
-                    targets.forEach(t => {
-                        if (t) {
-                            try {
-                                t.scrollTo({ top: 999999, behavior: 'smooth' });
-                                // Secondary check for instant scroll
-                                setTimeout(() => { t.scrollTop = 999999; }, 100);
-                            } catch(err) {}
-                        }
-                    });
-                });
-                
-                // Hover effects
-                btn.onmouseenter = () => { btn.style.transform = 'scale(1.1)'; btn.style.backgroundColor = '#3b1aa3'; };
-                btn.onmouseleave = () => { btn.style.transform = 'scale(1.0)'; btn.style.backgroundColor = '#4B22DD'; };
-                
-                root.body.appendChild(btn);
-            } catch(e) { console.error("Scroller Error:", e); }
-        };
-
-        // Aggressive polling
-        setInterval(inject, 1000);
-        inject();
-    })();
-</script>
-""", height=0)
 
 # Sidebar
 with st.sidebar:
