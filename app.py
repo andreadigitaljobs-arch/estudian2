@@ -257,14 +257,26 @@ components.html("""
             
             /* 3. Streamlit Specific Containers */
             .stApp, section.main, .block-container, [data-testid="stAppViewContainer"] {
-                overflow-y: auto !important; /* Allow scroll */
-                scrollbar-width: none !important; /* Hide bar */
+                overflow: hidden !important; /* FREEZE SCROLL */
+                scrollbar-width: none !important; 
             }
             
             /* 4. Root Kill */
             html, body {
+                overflow: hidden !important; /* FREEZE SCROLL */
                 scrollbar-width: none !important;
-                overflow-y: auto !important;
+                height: 100vh !important;
+            }
+            
+            /* 5. KILL TOP PADDING */
+            .block-container {
+                padding-top: 0px !important;
+                margin-top: 0px !important;
+                max-width: 100% !important;
+            }
+            header {
+                visibility: hidden !important;
+                display: none !important;
             }
         `;
         root.head.appendChild(style);
