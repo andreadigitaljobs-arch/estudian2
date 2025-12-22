@@ -1184,12 +1184,7 @@ if not st.session_state['user']:
 
         
         # Sign up button/link
-        # Sign up button/link
-        col_up_1, col_up_2, col_up_3 = st.columns([0.15, 0.7, 0.15])
-        with col_up_2:
-             if st.button("¿No tienes una cuenta? Regístrate", type="secondary", key="goto_signup"):
-                st.session_state['auth_mode'] = 'signup'
-                st.rerun()
+        st.markdown('<div style="text-align: center; color: #6b7280; font-size: 0.9rem; margin-top: 15px;">¿No tienes una cuenta? <span style="color: #4B22DD; font-weight: 600;">Regístrate</span></div>', unsafe_allow_html=True)
 
 
     st.stop()
