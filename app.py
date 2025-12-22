@@ -3286,8 +3286,30 @@ with tab_didactic:
                             with st.container():
                                 st.markdown(f"### 🛠️ {title}")
                                 st.caption(c.get('intro'))
-                                for j, step in enumerate(c.get('steps', [])):
-                                    st.checkbox(step, key=f"step_{i}_{j}")
+                                check_steps = c.get('steps', [])
+                                for j, step in enumerate(check_steps):
+                                    c1, c2 = st.columns([0.85, 0.15])
+                                    with c1:
+                                        st.checkbox(step, key=f"step_{i}_{j}")
+                                    with c2:
+                                        if st.button("❓", key=f"help_{i}_{j}", help="Dime cómo hago esto"):
+                                            with st.spinner("Generando guía..."):
+                                                guide = assistant.generate_micro_guide(step)
+                                                st.session_state[f"guide_{i}_{j}"] = guide
+                                    
+                                    # Show guide if exists
+                                    if f"guide_{i}_{j}" in st.session_state:
+                                        with st.expander(f"💡 Guía: {step[:30]}...", expanded=True):
+                                            st.markdown(st.session_state[f"guide_{i}_{j}"])
+                                
+                                # Export Action Plan
+                                csv_content = "To-Do;Estado\n" + "\n".join([f"{s};Pendiente" for s in check_steps])
+                                st.download_button(
+                                    label="📥 Descargar Plan de Acción",
+                                    data=csv_content,
+                                    file_name=f"Plan_Accion_{title.replace(' ', '_')}.csv",
+                                    mime="text/csv"
+                                )
                             st.divider()
 
 

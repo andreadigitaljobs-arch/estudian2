@@ -266,6 +266,30 @@ Google ofrece una capa gratuita generosa, pero limitada.
                     }]
                 }
 
+    def generate_micro_guide(self, step_text):
+        """Generates a quick how-to guide for a specific checklist step."""
+        prompt = f"""
+        ACTÚA COMO: Un Consultor de Operaciones Experto.
+        TAREA: El usuario debe ejecutar este paso: "{step_text}".
+        
+        OBJETIVO: Dale una guía ULTRA-RÁPIDA (Micro-Guide) de cómo hacerlo ahora mismo.
+        
+        FORMATO:
+        1. 🛠️ **Herramienta recomendada:** (Nombre de 1 herramienta gratis o común).
+        2. 🦶 **3 Pasos de Ejecución:**
+           - [Imperativo] ...
+           - [Imperativo] ...
+           - [Imperativo] ...
+        3. 💡 **Pro-Tip:** (Un truco de experto en 1 frase).
+        
+        TONO: Directo, técnico y accionable. Sin introducciones ni saludos.
+        """
+        try:
+            response = self.model.generate_content(prompt)
+            return response.text
+        except Exception:
+            return "No pude generar la guía en este momento. Inténtalo de nuevo."
+
     def solve_quiz(self, images=None, question_text=None, global_context=""):
         """Solves a quiz question from images (list) or text."""
         
