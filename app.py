@@ -1177,11 +1177,6 @@ CSS_STYLE = """
         background-color: transparent !important;
     }
 
-    /* Small breathing room above the study mode toggle */
-    [data-testid="stSidebar"] [data-testid="stToggle"] {
-        margin-top: 15px !important;
-    }
-
     /* Surgical Highlight Styles (Study Mode) */
 
     /* Surgical Highlight Styles (Study Mode) */
@@ -1363,6 +1358,7 @@ with st.sidebar:
             st.rerun()
 
     st.markdown('<div class="aesthetic-sep"></div>', unsafe_allow_html=True)
+    st.markdown('<div style="height:15px;"></div>', unsafe_allow_html=True)
 
     # --- MODO ESTUDIO & LEYENDA ---
     study_mode = st.toggle("Modo Estudio (Resaltadores) 🎨", value=True, help="Activa o desactiva los colores de estudio.", key="study_mode_toggle")
