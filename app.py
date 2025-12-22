@@ -1867,15 +1867,15 @@ if st.session_state.get('user'):
                     
                     const btn = root.createElement('button');
                     btn.id = 'estudian2_nuclear_scroller';
-                    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="width: 28px; height: 28px; pointer-events: none;"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>';
+                    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px; pointer-events: none;"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>';
                     
                     btn.style.cssText = `
                         position: fixed !important;
                         bottom: 120px !important;
                         right: 30px !important;
                         z-index: 2147483647 !important;
-                        width: 55px !important;
-                        height: 55px !important;
+                        width: 40px !important;
+                        height: 40px !important;
                         border-radius: 50% !important;
                         background-color: #4B22DD !important;
                         display: flex !important;
