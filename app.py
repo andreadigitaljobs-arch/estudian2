@@ -689,13 +689,13 @@ THEME_CSS = """
         border-radius: 30px !important;
     }
 
-    /* LOGIN FORM BUTTON - GREEN FORCE (Specific to Submit) */
-    [data-testid="stForm"] button[kind="primary"] {
+    /* LOGIN FORM BUTTON - GREEN FORCE (Submit Only - No SVGs) */
+    [data-testid="stForm"] button:not(:has(svg)) {
         background-color: #6CC04A !important;
         border: none !important;
         color: white !important;
     }
-    [data-testid="stForm"] button[kind="primary"]:hover {
+    [data-testid="stForm"] button:not(:has(svg)):hover {
         background-color: #5ab03a !important;
     }
 
@@ -1759,13 +1759,13 @@ CSS_STYLE = """
         border-radius: 30px !important;
     }
 
-    /* LOGIN FORM BUTTON - GREEN FORCE (Specific to Submit) */
-    [data-testid="stForm"] button[kind="primary"] {
+    /* LOGIN FORM BUTTON - GREEN FORCE (Submit Only - No SVGs) */
+    [data-testid="stForm"] button:not(:has(svg)) {
         background-color: #6CC04A !important;
         border: none !important;
         color: white !important;
     }
-    [data-testid="stForm"] button[kind="primary"]:hover {
+    [data-testid="stForm"] button:not(:has(svg)):hover {
         background-color: #5ab03a !important;
     }
 
