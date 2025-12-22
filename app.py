@@ -1185,21 +1185,32 @@ CSS_STYLE = """
 
     /* INTERNAL TEXT SPACING (Breathing room for captions/headers) */
     [data-testid="stSidebar"] h4 {
-        margin-top: 30px !important;
-        margin-bottom: 15px !important;
+        margin-top: 22px !important;
+        margin-bottom: 10px !important;
         font-weight: 700 !important;
     }
     [data-testid="stSidebar"] [data-testid="stCaptionContainer"] {
-        margin-top: 15px !important;
-        margin-bottom: 10px !important;
-        line-height: 1.5 !important;
+        margin-top: 10px !important;
+        margin-bottom: 6px !important;
+        line-height: 1.4 !important;
     }
     
     /* Spacing for widget labels (like "Renombrar:") */
     [data-testid="stSidebar"] [data-testid="stWidgetLabel"] {
-        margin-top: 15px !important;
-        margin-bottom: 8px !important;
+        margin-top: 12px !important;
+        margin-bottom: 6px !important;
         font-weight: 600 !important;
+    }
+
+    /* FIX: Protect Toggle alignment (reset internal label margins) */
+    [data-testid="stSidebar"] [data-testid="stToggle"] [data-testid="stWidgetLabel"] {
+        margin-top: 0px !important;
+        margin-bottom: 0px !important;
+    }
+
+    /* Specific spacing for the toggle widget itself */
+    [data-testid="stSidebar"] [data-testid="stToggle"] {
+        margin-bottom: 15px !important;
     }
 
     /* Surgical Highlight Styles (Study Mode) */
