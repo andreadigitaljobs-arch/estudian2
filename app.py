@@ -1207,92 +1207,67 @@ CSS_STYLE = """
         position: absolute !important;
     }
     
-    /* --- UNIVERSAL SCROLL BUTTON --- */
-    #universal_scroll_btn {
-        position: fixed !important;
-        bottom: 30px !important;
-        right: 30px !important;
-        z-index: 2147483647 !important;
-        width: 50px !important;
-        height: 50px !important;
-        border-radius: 50% !important;
-        background-color: #4B22DD !important;
-        color: white !important;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.4) !important;
-        border: none !important;
-        cursor: pointer !important;
-        font-size: 24px !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        transition: transform 0.2s, background-color 0.2s !important;
-    }
-    #universal_scroll_btn:hover { 
-        transform: scale(1.1) !important; 
-        background-color: #3b1aa3 !important;
-    }
 </style>
-
-<script>
-    (function() {
-        const getRoot = () => {
-            try { return window.parent.document || document; } catch(e) { return document; }
-        };
-
-        const manageScroll = () => {
-            const root = getRoot();
-            if (root.getElementById('universal_scroll_btn')) return;
-            
-            const btn = root.createElement("button");
-            btn.id = "universal_scroll_btn";
-            btn.innerHTML = "⬇️";
-            
-            // INLINE STYLES (Crucial for Parent Document Injection)
-            btn.style.position = 'fixed';
-            btn.style.bottom = '30px';
-            btn.style.right = '30px';
-            btn.style.zIndex = '2147483647';
-            btn.style.width = '50px';
-            btn.style.height = '50px';
-            btn.style.borderRadius = '50%';
-            btn.style.backgroundColor = '#4B22DD';
-            btn.style.color = 'white';
-            btn.style.boxShadow = '0 4px 15px rgba(0,0,0,0.4)';
-            btn.style.border = 'none';
-            btn.style.cursor = 'pointer';
-            btn.style.fontSize = '24px';
-            btn.style.display = 'flex';
-            btn.style.alignItems = 'center';
-            btn.style.justifyContent = 'center';
-            btn.style.transition = 'transform 0.2s';
-            
-            btn.onclick = () => {
-                // Try multiple scroll targets in both parent and local context
-                const findScrollable = (d) => d.querySelector('section.main') || d.querySelector('.main') || d.documentElement;
-                const target = findScrollable(root) || findScrollable(document);
-                
-                if (target) {
-                    target.scrollTo({ top: target.scrollHeight + 2000, behavior: 'smooth' });
-                }
-                
-                // Fallback for some browsers/Streamlit versions
-                window.scrollTo({ top: 999999, behavior: 'smooth' });
-                try { window.parent.scrollTo({ top: 999999, behavior: 'smooth' }); } catch(e) {}
-            };
-
-            btn.onmouseenter = () => btn.style.transform = 'scale(1.1)';
-            btn.onmouseleave = () => btn.style.transform = 'scale(1.0)';
-            
-            root.body.appendChild(btn);
-        };
-
-        // Persistence and context retry
-        setInterval(manageScroll, 1000);
-        manageScroll();
-    })();
-</script>
 """
 st.markdown(CSS_STYLE, unsafe_allow_html=True)
+
+# --- ROBUST UNIVERSAL SCROLLER (COMPONENT INJECTION) ---
+import streamlit.components.v1 as components
+components.html("""
+<script>
+    (function() {
+        const inject = () => {
+            try {
+                const root = window.parent.document;
+                if (root.getElementById('robust_universal_scroller')) return;
+                
+                const btn = root.createElement('button');
+                btn.id = 'robust_universal_scroller';
+                btn.innerHTML = '⬇️';
+                
+                // URGENT: High priority inline styles
+                btn.style.cssText = `
+                    position: fixed !important;
+                    bottom: 110px !important;
+                    right: 30px !important;
+                    z-index: 999999999 !important;
+                    width: 50px !important;
+                    height: 50px !important;
+                    border-radius: 50% !important;
+                    background-color: #4B22DD !important;
+                    color: white !important;
+                    font-size: 24px !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    cursor: pointer !important;
+                    border: none !important;
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.4) !important;
+                    transition: transform 0.2s !important;
+                `;
+                
+                btn.onclick = () => {
+                    const main = root.querySelector('section.main') || root.querySelector('.main') || root.documentElement;
+                    if (main) {
+                        main.scrollTo({top: main.scrollHeight + 3000, behavior: 'smooth'});
+                    }
+                    // Global fallback
+                    window.parent.scrollTo({top: 999999, behavior: 'smooth'});
+                };
+                
+                btn.onmouseenter = () => btn.style.transform = 'scale(1.1)';
+                btn.onmouseleave = () => btn.style.transform = 'scale(1.0)';
+                
+                root.body.appendChild(btn);
+            } catch(e) { console.error("Scroller Error:", e); }
+        };
+        
+        // Polling ensuring it survives Streamlit reruns
+        setInterval(inject, 1000);
+        inject();
+    })();
+</script>
+""", height=0)
 
 
 # Sidebar
