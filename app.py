@@ -3159,18 +3159,46 @@ with tab_didactic:
                         if n_unit:
                              # Create a Markdown representation for saving
                              md_save = f"# 🧠 Explicación Didáctica: {selected_file}\n\n"
-                             md_save += f"_{didactic_data.get('introduction', '')}_\n\n"
-                             for b in didactic_data.get('blocks', []):
-                                 md_save += f"### {b.get('concept_title', 'Concepto')}\n"
-                                 md_save += f"**Definición:** {b.get('academic_definition', '')}\n\n"
-                                 md_save += f"**Explicación Simple:** {b.get('simplified_explanation', '')}\n\n"
-                                 md_save += f"> **💡 Analogía:** {b.get('analogy', '')}\n\n"
-                                 md_save += f"**¿Por qué importa?** {b.get('why_it_matters', '')}\n\n---\n"
                              
-                             md_save += f"\n**Conclusión:**\n{didactic_data.get('conclusion', '')}"
+                             modules = didactic_data.get('modules', [])
                              
-                             base_name = selected_file.replace("_transcripcion.txt", "").replace(".txt", "").strip()
-                             fname = f"Explicacion {base_name}.md"
+                             if not modules:
+                                 # Fallback for error/old format
+                                 md_save += f"_{didactic_data.get('introduction', '')}_\n\n"
+                                 for b in didactic_data.get('blocks', []):
+                                     md_save += f"### {b.get('concept_title', 'Concepto')}\n"
+                                     md_save += f"{b.get('simplified_explanation', '')}\n\n"
+                                 md_save += f"\n{didactic_data.get('conclusion', '')}"
+                             else:
+                                 for m in modules:
+                                     m_type = m.get('type', 'DEEP_DIVE')
+                                     title = m.get('title', 'Módulo')
+                                     c = m.get('content', {})
+                                     
+                                     md_save += f"## {title}\n"
+                                     
+                                     if m_type == 'STRATEGIC_BRIEF':
+                                         md_save += f"**Tesis:** {c.get('thesis')}\n\n"
+                                         md_save += f"**Impacto:** {c.get('impact')}\n\n"
+                                         
+                                     elif m_type == 'DEEP_DIVE':
+                                         md_save += f"**Definición:** {c.get('definition')}\n\n"
+                                         md_save += f"**Explicación:** {c.get('explanation')}\n\n"
+                                         if c.get('example'):
+                                            md_save += f"> **Ejemplo:** {c.get('example')}\n\n"
+                                     
+                                     elif m_type == 'REALITY_CHECK':
+                                         md_save += f"❓ **{c.get('question')}**\n\n"
+                                         md_save += f"✅ {c.get('insight')}\n\n"
+                                         
+                                     elif m_type == 'TOOLKIT':
+                                         md_save += f"{c.get('intro')}\n"
+                                         for s in c.get('steps', []):
+                                             md_save += f"- [ ] {s}\n"
+                                         md_save += "\n"
+                                         
+                                     md_save += "---\n\n"
+                             
                              upload_file_to_db(n_unit['id'], fname, md_save, "note")
                              st.success(f"Explicación guardada en '{target_folder}'")
 
