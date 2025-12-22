@@ -760,23 +760,32 @@ CSS_STYLE = """
 /* Import Google Fonts */
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
-    /* HIDE STREAMLIT STATUS WIDGET */
-    div[data-testid="stStatusWidget"] { visibility: hidden; }
-    div[data-testid="stDecoration"] { visibility: hidden; }
+    /* HIDE STREAMLIT STATUS WIDGET & DECORATION */
+    div[data-testid="stStatusWidget"] { visibility: hidden !important; }
+    div[data-testid="stDecoration"] { visibility: hidden !important; }
 
-    /* KILL LOADING OVERLAY (NO MORE WHITE TRANSPARENCY) */
+    /* --- ULTIMATE KILL TO LOADING OVERLAY (NO MORE WHITE TRANSPARENCY) --- */
+    /* Target every possible container Streamlit uses for the "dimming" effect */
     [data-testid="stAppViewBlockContainer"],
     [data-testid="stAppViewContainer"],
+    [data-testid="stMainViewContainer"],
+    [data-test-script-state="running"] [data-testid="stAppViewBlockContainer"],
+    [data-test-script-state="running"] [data-testid="stAppViewContainer"],
+    [data-test-script-state="running"] .stApp,
+    section.main,
     div.block-container,
-    div[data-testid="stAppViewBlockContainer"] > div {
+    .stApp > div {
         opacity: 1 !important;
         filter: none !important;
         transition: none !important;
     }
     
-    /* Ensure nothing dims during execution */
-    .stApp > div {
-        opacity: 1 !important;
+    /* Force background to stay solid and kill any covering pseudo-elements */
+    .stApp::before, .stApp::after, 
+    [data-testid="stAppViewContainer"]::before,
+    [data-testid="stAppViewContainer"]::after {
+        display: none !important;
+        opacity: 0 !important;
     }
 
     /* --- GLOBAL VARIABLES --- */
