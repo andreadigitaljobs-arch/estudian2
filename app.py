@@ -85,6 +85,16 @@ st.markdown("""
         width: 0px;
         background: transparent;
     }
+
+    /* --- GLOBAL VARIABLES (Theme Persistence) --- */
+    :root {
+        --primary-purple: #4B22DD;
+        --accent-green: #6CC04A;
+        --bg-color: #F8F9FE;
+        --card-bg: #FFFFFF;
+        --text-color: #1A1A1A;
+        --border-color: #E3E4EA;
+    }
     
     /* --- SYNC LAYOUT STABILITY (Prevent FOUC) --- */
     /* Remove padding immediately for cleaner load */
@@ -1021,15 +1031,8 @@ CSS_STYLE = """
         opacity: 0 !important;
     }
 
-    /* --- GLOBAL VARIABLES --- */
-    :root {
-        --primary-purple: #4B22DD;
-        --accent-green: #6CC04A;
-        --bg-color: #F8F9FE;
-        --card-bg: #FFFFFF;
-        --text-color: #1A1A1A;
-        --border-color: #E3E4EA;
-    }
+    /* --- GLOBAL VARIABLES (Moved to Top) --- */
+    /* :root variables are now prevalent globally to prevent FOUC */
 
     html, body, [class*="css"] {
         font-family: 'Inter', sans-serif;
