@@ -9,6 +9,7 @@ from PIL import Image, ImageGrab
 import shutil
 import time
 import datetime
+import markdown
 import extra_streamlit_components as stx  # --- PERSISTENCE ---
 from library_ui import render_library # --- LIBRARY UI ---
 from database import (
