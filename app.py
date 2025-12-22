@@ -269,34 +269,34 @@ components.html("""
             }}
             
             /* 3. Streamlit Specific Containers */
-            .stApp, section.main, .block-container, [data-testid="stAppViewContainer"] {{
+            .stApp, section.main, .block-container, [data-testid="stAppViewContainer"] {
                 /* CONDITIONAL SCROLL LOGIC INJECTED HERE */
-                overflow-y: {overflow_val} !important;
+                overflow-y: __OVERFLOW_MODE__ !important;
                 scrollbar-width: none !important; 
-            }}
+            }
             
             /* 4. Root Kill */
-            html, body {{
-                overflow-y: {overflow_val} !important;
+            html, body {
+                overflow-y: __OVERFLOW_MODE__ !important;
                 scrollbar-width: none !important;
                 height: 100vh !important;
-            }}
+            }
             
             /* 5. KILL TOP PADDING (REDUNDANT SAFEGUARD) */
-            .block-container {{
+            .block-container {
                 padding-top: 0px !important;
                 margin-top: 0px !important;
                 max-width: 100% !important;
-            }}
-            header {{
+            }
+            header {
                 visibility: hidden !important;
                 display: none !important;
-            }}
+            }
         `;
         root.head.appendChild(style);
     })();
 </script>
-""".format(overflow_val="auto" if st.session_state.get('user') else "hidden"), height=0)
+""".replace("__OVERFLOW_MODE__", "auto" if st.session_state.get('user') else "hidden"), height=0)
 
 # --- JS FORCE LOGOUT CLEANUP ---
 if st.session_state.get('force_logout'):
