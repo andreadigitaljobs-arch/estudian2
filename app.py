@@ -1177,20 +1177,14 @@ CSS_STYLE = """
         background-color: transparent !important;
     }
 
-    /* Surgical Highlight Styles (Study Mode) */
+    /* Highlight Styles */
     .sc-base { background-color: #ffcccc !important; padding: 2px 5px !important; border-radius: 5px !important; font-weight: bold !important; color: #900 !important; border: 1px solid #ff9999 !important; display: inline; }
     .sc-example { background-color: #cce5ff !important; padding: 2px 5px !important; border-radius: 5px !important; color: #004085 !important; border: 1px solid #b8daff !important; display: inline; }
     .sc-note { background-color: #d4edda !important; padding: 2px 5px !important; border-radius: 5px !important; color: #155724 !important; border: 1px solid #c3e6cb !important; display: inline; }
     .sc-data { background-color: #fff3cd !important; padding: 2px 5px !important; border-radius: 5px !important; color: #856404 !important; border: 1px solid #ffeeba !important; display: inline; }
     .sc-key { background-color: #e2d9f3 !important; padding: 2px 5px !important; border-radius: 5px !important; color: #512da8 !important; border: 1px solid #d1c4e9 !important; display: inline; }
-
-    /* Hide highlighting classes when needed */
     .study-mode-off .sc-base, .study-mode-off .sc-example, .study-mode-off .sc-note, .study-mode-off .sc-data, .study-mode-off .sc-key {
-        background-color: transparent !important; 
-        padding: 0 !important; 
-        color: inherit !important; 
-        border: none !important; 
-        font-weight: inherit !important; 
+        background-color: transparent !important; padding: 0 !important; color: inherit !important; border: none !important; font-weight: inherit !important; 
     }
 
     /* --- NUCLEAR UPLOADER HIDING --- */
@@ -1204,67 +1198,61 @@ CSS_STYLE = """
     }
 </style>
 
+<div id="scroller-container">
+    <button id="universal_scroll_btn" onclick="scrollToBottom()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <polyline points="19 12 12 19 5 12"></polyline>
+        </svg>
+    </button>
+</div>
+
+<style>
+    #universal_scroll_btn {
+        position: fixed !important;
+        bottom: 120px !important;
+        right: 30px !important;
+        z-index: 9999999 !important;
+        width: 55px !important;
+        height: 55px !important;
+        border-radius: 50% !important;
+        background-color: #4B22DD !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        cursor: pointer !important;
+        border: none !important;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3) !important;
+        transition: transform 0.2s !important;
+    }
+    #universal_scroll_btn:hover { transform: scale(1.1); background-color: #3b1aa3; }
+    #universal_scroll_btn svg { width: 26px; height: 26px; }
+</style>
+
 <script>
-    (function() {
-        const root = window.parent.document;
-        const inject = () => {
-            try {
-                if (root.getElementById('universal_anchor_scroller')) return;
-                const btn = root.createElement('button');
-                btn.id = 'universal_anchor_scroller';
-                btn.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="pointer-events: none;"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>';
-                btn.style.cssText = `
-                    position: fixed !important;
-                    bottom: 120px !important;
-                    right: 30px !important;
-                    z-index: 2147483647 !important;
-                    width: 55px !important;
-                    height: 55px !important;
-                    border-radius: 50% !important;
-                    background-color: #4B22DD !important;
-                    display: flex !important;
-                    align-items: center !important;
-                    justify-content: center !important;
-                    cursor: pointer !important;
-                    border: none !important;
-                    box-shadow: 0 4px 15px rgba(0,0,0,0.4) !important;
-                    transition: transform 0.2s !important;
-                `;
-                btn.onclick = () => {
-                    // Search for anchor in all iframes and parent
-                    const findAnchor = () => {
-                        // Check parent
-                        if (root.getElementById('global-bottom-anchor')) return root.getElementById('global-bottom-anchor');
-                        // Check all iframes
-                        const iframes = root.querySelectorAll('iframe');
-                        for (let i = 0; i < iframes.length; i++) {
-                            try {
-                                const doc = iframes[i].contentDocument || iframes[i].contentWindow.document;
-                                const a = doc.getElementById('global-bottom-anchor');
-                                if (a) return a;
-                            } catch(e) {}
-                        }
-                        return null;
-                    };
-                    
-                    const anchor = findAnchor();
-                    if (anchor) {
-                        anchor.scrollIntoView({ behavior: 'smooth', block: 'end' });
-                    } else {
-                        // Last resort brute force
-                        const main = root.querySelector('section.main') || root.querySelector('.main') || root.documentElement;
-                        if (main) main.scrollTo({ top: 999999, behavior: 'smooth' });
-                        window.parent.scrollTo({ top: 999999, behavior: 'smooth' });
-                    }
-                };
-                btn.onmouseenter = () => btn.style.transform = 'scale(1.1)';
-                btn.onmouseleave = () => btn.style.transform = 'scale(1.0)';
-                root.body.appendChild(btn);
-            } catch(e) {}
+    function scrollToBottom() {
+        // Broad search for scrollable areas
+        const scroll = (win) => {
+            const doc = win.document;
+            const targets = [
+                doc.querySelector('section.main'),
+                doc.querySelector('.main'),
+                doc.querySelector('[data-testid="stAppViewContainer"]'),
+                doc.documentElement,
+                doc.body
+            ];
+            targets.forEach(t => {
+                if (t) {
+                    t.scrollTo({ top: t.scrollHeight + 10000, behavior: 'smooth' });
+                    setTimeout(() => { t.scrollTop = t.scrollHeight + 10000; }, 100);
+                }
+            });
+            win.scrollTo({ top: 999999, behavior: 'smooth' });
         };
-        setInterval(inject, 1000);
-        inject();
-    })();
+        
+        scroll(window);
+        if (window.parent !== window) scroll(window.parent);
+    }
 </script>
 """
 st.markdown(CSS_STYLE, unsafe_allow_html=True)
