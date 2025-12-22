@@ -1211,86 +1211,82 @@ CSS_STYLE = """
 """
 st.markdown(CSS_STYLE, unsafe_allow_html=True)
 
-# --- ROBUST UNIVERSAL SCROLLER (COMPONENT INJECTION) ---
+# --- DEFINITIVE UNIVERSAL SCROLLER (PARENT-CONTEXT INJECTION) ---
 import streamlit.components.v1 as components
 components.html("""
 <script>
     (function() {
-        const inject = () => {
-            try {
-                const root = window.parent.document;
-                let btn = root.getElementById('robust_universal_scroller');
-                
-                if (!btn) {
-                    btn = root.createElement('button');
-                    btn.id = 'robust_universal_scroller';
-                    btn.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>';
-                    
-                    btn.style.cssText = `
-                        position: fixed !important;
-                        bottom: 110px !important;
-                        right: 30px !important;
-                        z-index: 999999999 !important;
-                        width: 50px !important;
-                        height: 50px !important;
-                        border-radius: 50% !important;
-                        background-color: #4B22DD !important;
-                        display: flex !important;
-                        align-items: center !important;
-                        justify-content: center !important;
-                        cursor: pointer !important;
-                        border: none !important;
-                        box-shadow: 0 4px 15px rgba(0,0,0,0.4) !important;
-                        transition: transform 0.2s !important;
-                    `;
-                    
-                    btn.onclick = () => {
-                        // BRUTE FORCE SCROLLING
-                        const targets = [
-                            root.querySelector('section.main'),
-                            root.querySelector('.main'),
-                            root.querySelector('div[data-testid="stAppViewContainer"]'),
-                            root.querySelector('.stApp'),
-                            root.documentElement,
-                            root.body
-                        ];
-
-                        targets.forEach(t => {
-                            if (!t) return;
-                            try {
-                                // 1. Try smooth scroll
-                                t.scrollTo({ top: t.scrollHeight + 5000, behavior: 'smooth' });
-                                // 2. Hard skip if smooth fails
-                                t.scrollTop = t.scrollHeight + 5000;
-                            } catch(e) {}
-                        });
-
-                        // 3. Fallback: Find any anchor at the end or use window
-                        try {
-                            const lastChild = root.body.lastElementChild;
-                            if (lastChild) lastChild.scrollIntoView({ behavior: 'smooth', block: 'end' });
-                        } catch(e) {}
-                        
-                        window.parent.scrollTo({ top: 999999, behavior: 'smooth' });
-                    };
-                    
-                    btn.onmouseenter = () => btn.style.transform = 'scale(1.1)';
-                    btn.onmouseleave = () => btn.style.transform = 'scale(1.0)';
-                    
-                    root.body.appendChild(btn);
-                }
-            } catch(e) { console.error("Scroller Error:", e); }
-        };
+        const root = window.parent.document;
         
-        setInterval(inject, 1000);
-        inject();
+        // 1. Inject GLOBAL SCROLL FUNCTION into the parent window
+        // This ensures the parent window handles the scroll itself.
+        if (!window.parent.estudian2Scroll) {
+            window.parent.estudian2Scroll = function() {
+                try {
+                    const containers = [
+                        root.querySelector('section.main'),
+                        root.querySelector('.main'),
+                        root.querySelector('div[data-testid="stAppViewContainer"]'),
+                        root.querySelector('.stApp'),
+                        root.documentElement,
+                        root.body
+                    ];
+                    
+                    let done = false;
+                    for (const c of containers) {
+                        if (c && c.scrollHeight > c.clientHeight) {
+                            c.scrollTo({ top: c.scrollHeight + 10000, behavior: 'smooth' });
+                            done = true;
+                        }
+                    }
+                    if (!done) window.scrollTo({ top: 999999, behavior: 'smooth' });
+                } catch(e) { console.error("Scroll Logic Error:", e); }
+            };
+        }
+
+        // 2. Inject/Maintain the button in the parent body
+        const injectButton = () => {
+            try {
+                if (root.getElementById('estudian2_ultimate_scroller')) return;
+                
+                const btn = root.createElement('button');
+                btn.id = 'estudian2_ultimate_scroller';
+                btn.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="pointer-events: none;"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>';
+                
+                btn.style.cssText = `
+                    position: fixed !important;
+                    bottom: 120px !important;
+                    right: 30px !important;
+                    z-index: 2147483647 !important;
+                    width: 50px !important;
+                    height: 50px !important;
+                    border-radius: 50% !important;
+                    background-color: #4B22DD !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    cursor: pointer !important;
+                    border: none !important;
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.4) !important;
+                    transition: transform 0.2s !important;
+                    outline: none !important;
+                `;
+                
+                // CALL THE GLOBAL PARENT FUNCTION
+                btn.onclick = () => window.parent.estudian2Scroll();
+                
+                btn.onmouseenter = () => btn.style.transform = 'scale(1.1)';
+                btn.onmouseleave = () => btn.style.transform = 'scale(1.0)';
+                
+                root.body.appendChild(btn);
+            } catch(e) { console.error("Injection Error:", e); }
+        };
+
+        setInterval(injectButton, 1000);
+        injectButton();
     })();
 </script>
 """, height=0)
-
-
-# Sidebar
-with st.sidebar:
     # st.caption("🚀 v3.3 (API Fix)") # Removed per user request
     # --- 1. LOGO & USER ---
     # Left Aligned ("RAS con el resto")
