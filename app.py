@@ -285,6 +285,26 @@ if st.session_state.get('force_logout'):
 if not st.session_state['user']:
     import datetime
     import base64
+    
+    # --- HUNTER-KILLER: FORCE REMOVE SCROLLER ON LOGIN SCREEN ---
+    components.html("""
+    <script>
+        const root = window.parent.document;
+        // 1. Clear Interval
+        if (window.parent.estudian2_scroller_interval) clearInterval(window.parent.estudian2_scroller_interval);
+        
+        // 2. Kill Button Immediately
+        const btn = root.getElementById('estudian2_nuclear_scroller');
+        if (btn) btn.remove();
+        
+        // 3. Watch and Kill (Extra Security for 5 seconds)
+        const killer = setInterval(() => {
+             const b = root.getElementById('estudian2_nuclear_scroller');
+             if (b) b.remove();
+        }, 50);
+        setTimeout(() => clearInterval(killer), 5000);
+    </script>
+    """, height=0)
 
     # --- HELPER: ASSETS ---
     @st.cache_data
