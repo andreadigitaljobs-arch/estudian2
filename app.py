@@ -1979,10 +1979,23 @@ with st.sidebar:
     # --- MODO ESTUDIO & LEYENDA ---
     study_mode = st.toggle("Modo Estudio (Resaltadores) 🎨", value=True, help="Activa o desactiva los colores de estudio.", key="study_mode_toggle")
     
-    # Combined block for toggle logic and legend to avoid multiple vertical slots
+    # Combined block for toggle logic and legend
     with st.expander("📚 Leyenda de Colores", expanded=study_mode):
+        # LOGIC: If mode is OFF, we inject a Style Block to Override colors
+        if not study_mode:
+            st.markdown("""
+                <style>
+                .sc-base, .sc-example, .sc-note, .sc-data, .sc-key {
+                    background-color: transparent !important;
+                    padding: 0 !important;
+                    color: inherit !important;
+                    border: none !important;
+                    font-weight: inherit !important;
+                }
+                </style>
+            """, unsafe_allow_html=True)
+
         st.markdown(f"""
-            <div style='display:none'><script>window.parent.document.body.classList.{'add' if not study_mode else 'remove'}('study-mode-off');</script></div>
             <div style="font-size: 0.8rem; line-height: 1.4;">
                 <div style="margin-bottom:12px;"><span style="background-color: #ffcccc; color: #900; border: 1px solid #ff9999; padding: 1px 4px; border-radius: 3px; font-weight: bold;">Rojo</span>: Definiciones y conceptos base.</div>
                 <div style="margin-bottom:12px;"><span style="background-color: #cce5ff; color: #004085; border: 1px solid #b8daff; padding: 1px 4px; border-radius: 3px; font-weight: bold;">Azul</span>: Ejemplos y casos prácticos.</div>
