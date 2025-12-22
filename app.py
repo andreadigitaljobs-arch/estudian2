@@ -3136,6 +3136,7 @@ with tab_didactic:
                 selected_file = st.selectbox("Selecciona la clase a traducir:", options, key="sel_didactic")
                 
                 if selected_file and st.button("🔍 Traducir a Lenguaje Simple", key="btn_didactic", type="primary"):
+                    from database import get_file_content, upload_file_to_db, get_units, create_unit # Re-import to ensure scope safety
                     f_id = file_map[selected_file]
                     text = get_file_content(f_id)
                     
