@@ -86,6 +86,19 @@ st.markdown("""
         background: transparent;
     }
     
+    /* --- SYNC LAYOUT STABILITY (Prevent FOUC) --- */
+    /* Remove padding immediately for cleaner load */
+    .block-container {
+        padding-top: 0px !important;
+        padding-bottom: 2rem !important;
+        margin-top: 0px !important;
+        max-width: 100% !important;
+    }
+    header {
+        visibility: hidden !important;
+        display: none !important;
+    }
+    
     /* TAB SCROLL ARROWS */
     .stTabs [data-baseweb="tab-list"] button:not([role="tab"]) {
         background-color: #4B22DD !important;
@@ -256,32 +269,34 @@ components.html("""
             }
             
             /* 3. Streamlit Specific Containers */
-            .stApp, section.main, .block-container, [data-testid="stAppViewContainer"] {
-                overflow: hidden !important; /* FREEZE SCROLL */
+            .stApp, section.main, .block-container, [data-testid="stAppViewContainer"] {{
+                /* CONDITIONAL SCROLL LOGIC INJECTED HERE */
+                overflow-y: {overflow_val} !important;
                 scrollbar-width: none !important; 
-            }
+            }}
             
             /* 4. Root Kill */
-            html, body {
-                overflow: hidden !important; /* FREEZE SCROLL */
+            html, body {{
+                overflow-y: {overflow_val} !important;
                 scrollbar-width: none !important;
                 height: 100vh !important;
-            }
+            }}
             
-            /* 5. KILL TOP PADDING */
-            .block-container {
+            /* 5. KILL TOP PADDING (REDUNDANT SAFEGUARD) */
+            .block-container {{
                 padding-top: 0px !important;
                 margin-top: 0px !important;
                 max-width: 100% !important;
-            }
-            header {
+            }}
+            header {{
                 visibility: hidden !important;
                 display: none !important;
-            }
+            }}
         `;
         root.head.appendChild(style);
     })();
 </script>
+""".format(overflow_val="auto" if st.session_state.get('user') else "hidden"), height=0)
 """, height=0)
 
 # --- JS FORCE LOGOUT CLEANUP ---
