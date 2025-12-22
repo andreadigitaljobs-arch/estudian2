@@ -1339,24 +1339,13 @@ if st.session_state.get('user'):
                     `;
                     
                     btn.onclick = function() {
-                        try {
-                            // 1. STANDARD STREAMLIT CONTAINERS
-                            const mains = window.parent.document.querySelectorAll('.main, .appview-container, .stApp');
-                            mains.forEach(el => el.scrollTo({ top: 100000, behavior: 'smooth' }));
-
-                            // 2. BRUTE FORCE: FIND ANYTHING SCROLLABLE
-                            const allDivs = window.parent.document.querySelectorAll('div');
-                            allDivs.forEach(div => {
-                                if (div.scrollHeight > div.clientHeight) {
-                                     div.scrollTo({ top: 100000, behavior: 'smooth' });
-                                }
-                            });
-                            
-                            // 3. FALLBACK WINDOW SCROLL
-                            window.parent.scrollTo({ top: 100000, behavior: 'smooth' });
-                            
-                        } catch(err) {
-                            console.log("Scroll Error:", err);
+                        const marker = window.parent.document.getElementById('end_marker');
+                        if (marker) {
+                            marker.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                        } else {
+                            // Backup: Scroll Main Container
+                            const main = window.parent.document.querySelector('.main');
+                            if (main) main.scrollTo({ top: 100000, behavior: 'smooth' });
                         }
                     };
                     
@@ -3709,6 +3698,6 @@ with tab6:
             st.rerun()
 
 # --- DEFINITIVE SCROLL ANCHOR ---
-st.markdown("<div id='global-bottom-anchor' style='height: 10px; width: 10px; visibility: hidden;'></div>", unsafe_allow_html=True)
+st.markdown("<div id='end_marker' style='height: 1px; width: 1px; visibility: hidden;'></div>", unsafe_allow_html=True)
 
 # Force Reload Triggered
