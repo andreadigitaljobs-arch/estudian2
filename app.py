@@ -1202,24 +1202,30 @@ CSS_STYLE = """
         font-weight: 600 !important;
     }
 
-    /* FIX: Protect Toggle alignment (reset internal label margins and force center) */
+    /* FIX: Perfect Vertical Centering for Toggle */
     [data-testid="stSidebar"] [data-testid="stToggle"] {
         display: flex !important;
-        align-items: flex-start !important; /* Start at top to control offset manually */
+        align-items: center !important; /* Force vertical center */
         margin-bottom: 25px !important;
         gap: 15px !important;
+        height: auto !important;
+        min-height: 48px !important;
     }
     
     [data-testid="stSidebar"] [data-testid="stToggle"] [data-testid="stWidgetLabel"] {
-        margin-top: 0px !important;
-        margin-bottom: 0px !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        display: flex !important;
+        align-items: center !important;
         flex: 1 !important;
-        line-height: 1.4 !important;
+        line-height: normal !important;
+        font-size: 14px !important;
+        height: 100% !important;
     }
 
     [data-testid="stSidebar"] [data-testid="stToggle"] div[role="switch"] {
-        margin-top: 0px !important;
-        transform: translateY(12px) !important; /* Direct vertical centering nudge */
+        margin: 0 !important;
+        flex-shrink: 0 !important;
     }
 
     /* Surgical Highlight Styles (Study Mode) */
