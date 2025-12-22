@@ -263,64 +263,63 @@ if not st.session_state['user'] and not st.session_state.get('force_logout'):
     except Exception as e:
         print(f"Auto-login failed: {e}")
 
-# --- GUARANTEED SCROLLBAR HIDE (Run before Login Stop) ---
-components.html("""
+# --- SCROLLBAR & OVERFLOW CONTROL (Conditional) ---
+is_login_view = st.session_state.get('user') is None
+
+# Rules Config
+if is_login_view:
+    # LOGIN: Scorched Earth (No Scroll, Fixed Height)
+    scroll_rules = """
+            /* HIDE SCROLLBARS (Login) */
+            ::-webkit-scrollbar { width: 0px !important; height: 0px !important; background: transparent !important; display: none !important; }
+            * { scrollbar-width: none !important; -ms-overflow-style: none !important; }
+    """
+    overflow_mode = "hidden"
+    height_mode = "100vh"
+else:
+    # DASHBOARD: Native Scrolling (No Kill Rules)
+    scroll_rules = "/* Dashboard: Scrollbars Enabled */"
+    overflow_mode = "auto"
+    height_mode = "auto" 
+
+components.html(f"""
 <script>
-    (function() {
-        // SCORCHED EARTH POLICY - HIDE ALL SCROLLBARS EVERYWHERE
+    (function() {{
         const root = window.parent.document;
+        const styleId = 'estudian2_scrollbar_manager';
         
-        // Force replace old style if exists by using a new ID
-        const styleId = 'estudian2_scrollbar_kill_V3_FINAL';
+        // Cleanup Old Tags
         const old = root.getElementById(styleId);
         if (old) old.remove();
+        const oldLegacy = root.getElementById('estudian2_scrollbar_kill_V3_FINAL');
+        if (oldLegacy) oldLegacy.remove();
         
         const style = root.createElement('style');
         style.id = styleId;
         style.innerHTML = `
-            /* 1. Standard Webkit (Chrome/Edge/Safari) */
-            ::-webkit-scrollbar {{
-                width: 0px !important;
-                height: 0px !important;
-                background: transparent !important;
-                display: none !important;
+            {scroll_rules}
+            
+            /* Root Config */
+            html, body {{
+                overflow-y: {overflow_mode} !important;
+                height: {height_mode} !important;
             }}
             
-            /* 2. Firefox & Standard */
-            * {{
-                scrollbar-width: none !important;
-                -ms-overflow-style: none !important;
-            }}
-            
-            /* 3. Streamlit Specific Containers */
-            .stApp, section.main, .block-container, [data-testid="stAppViewContainer"] {
-                /* CONDITIONAL SCROLL LOGIC INJECTED HERE */
-                overflow-y: __OVERFLOW_MODE__ !important;
-                scrollbar-width: none !important; 
-            }
-            
-            /* 4. Root Kill */
-            html, body {
-                overflow-y: __OVERFLOW_MODE__ !important;
-                scrollbar-width: none !important;
-                height: 100vh !important;
-            }
-            
-            /* 5. KILL TOP PADDING (REDUNDANT SAFEGUARD) */
-            .block-container {
+            /* Clean Layout (Always Active) */
+            .block-container {{
                 padding-top: 0px !important;
                 margin-top: 0px !important;
                 max-width: 100% !important;
-            }
-            header {
+            }}
+            header {{
                 visibility: hidden !important;
                 display: none !important;
-            }
+            }}
         `;
         root.head.appendChild(style);
-    })();
+    }})();
 </script>
-""".replace("__OVERFLOW_MODE__", "auto" if st.session_state.get('user') else "hidden"), height=0)
+""", height=0)
 
 # --- GLOBAL THEME CSS (Moved to Top to Prevent Logout Flash) ---
 THEME_CSS = """
