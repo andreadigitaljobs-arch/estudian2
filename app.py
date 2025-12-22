@@ -1330,7 +1330,7 @@ def get_transcriber_engine(key, model_choice="gemini-2.0-flash", breaker="V6"):
     return Transcriber(key, model_name=model_choice, cache_breaker=breaker)
 
 @st.cache_resource
-def get_assistant_engine(key, model_choice="gemini-2.0-flash", breaker="V7"):
+def get_assistant_engine(key, model_choice="gemini-2.0-flash", breaker="V8"):
     return StudyAssistant(key, model_name=model_choice, cache_breaker=breaker)
 
 api_key = saved_key
@@ -1340,8 +1340,8 @@ assistant = None
 if api_key:
     try:
         # Force fresh engines with explicit model choice
-        transcriber = get_transcriber_engine(api_key, model_choice="gemini-2.0-flash", breaker="V7")
-        assistant = get_assistant_engine(api_key, model_choice="gemini-2.0-flash", breaker="V7")
+        transcriber = get_transcriber_engine(api_key, model_choice="gemini-2.0-flash", breaker="V7") # Transcriber can stay
+        assistant = get_assistant_engine(api_key, model_choice="gemini-2.0-flash", breaker="V8")
     except Exception as e:
         st.error(f"Error al iniciar IA: {e}")
 
@@ -3179,26 +3179,46 @@ with tab_didactic:
                 if res and isinstance(res, dict):
                     st.divider()
                     
-                    # 1. Intro
-                    st.markdown(f"#### 👋🏻 Introducción")
+                    # 1. Intro (Vision Global)
+                    st.markdown(f"#### 👋🏻 Visión Global")
                     st.info(res.get('introduction', ''))
                     
-                    st.markdown("#### 🧱 Bloques de Conocimiento")
+                    st.markdown("#### 🧱 Mapa de Conocimiento (Paso a Paso)")
                     
                     blocks = res.get('blocks', [])
                     for i, b in enumerate(blocks):
-                        with st.expander(f"🔹 {b.get('concept_title', f'Concepto {i+1}')}", expanded=True):
-                            c1, c2 = st.columns([1, 1])
-                            
-                            with c1:
-                                st.markdown(f"**📖 Definición Académica:**\n*{b.get('academic_definition')}*")
-                                st.markdown(f"**🗣️ En Español Simple:**\n{b.get('simplified_explanation')}")
-                                st.markdown(f"**🎯 ¿Por qué importa?**\n{b.get('why_it_matters')}")
-                                
-                            with c2:
-                                # Highlight the Analogy Box
-                                st.markdown("#### 💡 Analogía")
-                                st.success(f"{b.get('analogy')}")
+                        # Determine Type (Default to KEY for backward compatibility)
+                        b_type = b.get('type', 'KEY')
+                        content = b.get('content', b) # Handle old structure flattened
+                        
+                        title = b.get('concept_title', f'Concepto {i+1}')
+                        
+                        # --- RENDER STRATEGY BASED ON TYPE ---
+                        
+                        # TIPO A: CLAVE (Despliegue total)
+                        if b_type == 'KEY':
+                             with st.expander(f"🔑 {title}", expanded=True):
+                                c1, c2 = st.columns([1, 1])
+                                with c1:
+                                    if content.get('academic_def'):
+                                        st.caption(f"**📖 Definición:** {content.get('academic_def')}")
+                                    st.markdown(f"**🗣️ Explicación:**\n{content.get('explanation')}")
+                                    if content.get('why_matters'):
+                                        st.markdown(f"**🎯 Importancia:**\n{content.get('why_matters')}")
+                                with c2:
+                                    st.markdown("#### 💡 Analogía")
+                                    st.success(f"{content.get('analogy_or_example')}")
+
+                        # TIPO B: APOYO (Tarjeta compacta)
+                        elif b_type == 'SUPPORT':
+                             with st.container(border=True):
+                                 st.markdown(f"**🧱 {title}**")
+                                 st.write(content.get('explanation'))
+                                 st.info(f"💡 Ejemplo: {content.get('analogy_or_example')}", icon="🔹")
+
+                        # TIPO C: RECORDATORIO (Frase única)
+                        elif b_type == 'REMINDER':
+                             st.warning(f"📌 **{title}:** {content.get('explanation')}", icon="⚡")
                                 
                     # 3. Conclusion
                     st.markdown("#### 🏁 Conclusión")

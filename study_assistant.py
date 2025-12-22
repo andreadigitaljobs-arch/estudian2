@@ -149,6 +149,7 @@ Google ofrece una capa gratuita generosa, pero limitada.
         """
         Generates a didactic, analogy-based explanation (NOT a summary).
         Focus: "Knowledge Translation" from Academic to Simple.
+        Supports Variable Depth (Key, Support, Reminder).
         """
         import json
         
@@ -156,35 +157,41 @@ Google ofrece una capa gratuita generosa, pero limitada.
         Actúa como el MEJOR COMUNICADOR DEL MUNDO (Estilo Feynman + Divulgador Científico).
         
         TU MISIÓN:
-        Tienes una transcripción de una clase. El estudiante NO entendió nada porque el lenguaje era muy técnico o aburrido.
-        Tu trabajo es **TRADUCIR** ese contenido a una explicación:
-        1. Clara.
-        2. Simple (Lenguaje natural).
-        3. Llena de **ANALOGÍAS** y ejemplos de la vida real.
+        Tienes una transcripción de una clase. El estudiante NO entendió nada.
+        Tu trabajo es **TRADUCIR** ese contenido a una explicación dinámica y fluida.
         
-        REGLA DE ORO: 
-        NO RESUMAS. NO CORTES INFORMACIÓN. EXPLICALA MEJOR.
-        Si la transcripción dice: "El sujeto pasivo tributario tiene la obligación...", tú dices: "Imagina que el sujeto pasivo es como el cliente en un restaurante, es quien finalmente paga la cuenta..."
+        ESTRATEGIA DE RITMO (NO REPITAS ESTRUCTURAS):
+        Clasifica cada concepto en uno de estos 3 tipos para evitar la monotonía:
+        
+        1. 🔑 **TIPO A (CLAVE)**: Conceptos difíciles o centrales.
+           - Requieren: Explicación simple + **ANALOGÍA POTENTE** + Por qué importa.
+           
+        2. 🧱 **TIPO B (APOYO)**: Conceptos que refuerzan o complementan.
+           - Requieren: Explicación clara + **EJEMPLO RÁPIDO**. (SIN analogía larga).
+           
+        3. 📌 **TIPO C (RECORDATORIO)**: Conceptos obvios intuitivos.
+           - Requieren: Solo una frase memorable o un "Tip". (SIN explicación larga).
         
         CONTEXTO GLOBAL (BIBLIOTECA):
         {global_context}
         
         INSTRUCCIONES DE FORMATO (JSON ESTRICTO):
-        Genera una lista de "Bloques de Conocimiento". Cada bloque debe explicar un tema principal del video.
-        
         {{
-            "introduction": "Un párrafo introductorio amigable y motivador que diga de qué va la clase en palabras llanas.",
+            "introduction": "Visión Global: Un párrafo único al inicio que explica el mapa mental de toda la clase. 'Primero entenderemos X, luego Y...'",
             "blocks": [
                 {{
-                    "concept_title": "Nombre del Concepto (Ej: Impuestos Directos)",
-                    "academic_definition": "La definición técnica breve (para tener la referencia).",
-                    "simplified_explanation": "La explicación 'traducción' en lenguaje de calle.",
-                    "analogy": "Una analogía EXACTA y MEMORABLE (Ej: 'Es como cuando...').",
-                    "why_it_matters": "¿Por qué demonios debo saber esto? (Utilidad real)."
+                    "type": "KEY",  // o "SUPPORT" o "REMINDER"
+                    "concept_title": "Título del Concepto",
+                    "content": {{
+                        "academic_def": "Solo si es KEY o SUPPORT. Si es REMINDER, null.",
+                        "explanation": "La traducción a lenguaje simple.",
+                        "analogy_or_example": "Si es KEY: Analogía. Si es SUPPORT: Ejemplo. Si es REMINDER: null.",
+                        "why_matters": "Solo si es KEY. Sino, null."
+                    }}
                 }},
-                ... (Mínimo 3 bloques, máximo 6)
+                ... (Mezcla los tipos para dar ritmo. Mínimo 3 bloques)
             ],
-            "conclusion": "Una conclusión empática y de cierre."
+            "conclusion": "Cierre integrador que conecte todo."
         }}
 
         TRANSCRIPCIÓN ORIGINAL:
