@@ -1154,9 +1154,9 @@ CSS_STYLE = """
         box-shadow: none !important;
     }
     
-    /* KILL ALL LAYOUT GAPS (This is the key to removing that big space) */
+    /* KILL ALL LAYOUT GAPS */
     [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
-        gap: 0px !important;
+        gap: 8px !important; /* Restore a small, natural gap */
     }
     
     [data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"] {
@@ -1167,66 +1167,17 @@ CSS_STYLE = """
     .aesthetic-sep {
         height: 1px;
         background: rgba(75, 34, 221, 0.1);
-        margin: 15px 0 10px 0 !important;
+        margin: 10px 0 !important;
         width: 100%;
     }
 
-    /* Generous margins on element containers for breathing room */
-    [data-testid="stSidebar"] [data-testid="element-container"] {
-        margin-bottom: 12px !important;
-        margin-top: 0px !important;
-    }
-    
     /* Ensure no background or border on expanders in sidebar */
     [data-testid="stSidebar"] [data-testid="stExpander"] {
         border: none !important;
         background-color: transparent !important;
     }
 
-    /* INTERNAL TEXT SPACING (Breathing room for captions/headers) */
-    [data-testid="stSidebar"] h4 {
-        margin-top: 15px !important;
-        margin-bottom: 5px !important;
-        font-weight: 700 !important;
-    }
-    [data-testid="stSidebar"] [data-testid="stCaptionContainer"] {
-        margin-top: 5px !important;
-        margin-bottom: 5px !important;
-        line-height: 1.4 !important;
-    }
-    
-    /* Spacing for widget labels (like "Renombrar:") */
-    [data-testid="stSidebar"] [data-testid="stWidgetLabel"] {
-        margin-top: 10px !important;
-        margin-bottom: 4px !important;
-        font-weight: 600 !important;
-    }
-
-    /* FIX: Perfect Vertical Centering for Toggle */
-    [data-testid="stSidebar"] [data-testid="stToggle"] {
-        display: flex !important;
-        align-items: center !important; /* Force vertical center */
-        margin-bottom: 25px !important;
-        gap: 15px !important;
-        height: auto !important;
-        min-height: 48px !important;
-    }
-    
-    [data-testid="stSidebar"] [data-testid="stToggle"] [data-testid="stWidgetLabel"] {
-        margin: 0 !important;
-        padding: 0 !important;
-        display: flex !important;
-        align-items: center !important;
-        flex: 1 !important;
-        line-height: normal !important;
-        font-size: 14px !important;
-        height: 100% !important;
-    }
-
-    [data-testid="stSidebar"] [data-testid="stToggle"] div[role="switch"] {
-        margin: 0 !important;
-        flex-shrink: 0 !important;
-    }
+    /* Surgical Highlight Styles (Study Mode) */
 
     /* Surgical Highlight Styles (Study Mode) */
 
@@ -1386,9 +1337,9 @@ with st.sidebar:
     else:
         st.markdown("### 🎓 E-Education")
     if st.session_state.get('user'):
-        # User Info (More breathing room from logo)
+        # User Info (Consistent spacing)
         st.markdown(f"""
-        <div style="display: flex; align-items: center; gap: 10px; margin-top: 45px; margin-bottom: 25px;">
+        <div style="display: flex; align-items: center; gap: 10px; margin-top: 30px; margin-bottom: 20px;">
             <div style="font-size: 24px;">👤</div>
             <div style="font-size: 14px; color: #31333F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{st.session_state['user'].email}">
                 {st.session_state['user'].email}
