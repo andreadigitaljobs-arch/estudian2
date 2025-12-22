@@ -3209,8 +3209,7 @@ with tab_didactic:
                                          
                                      md_save += "---\n\n"
                              
-                             import database
-                             database.upload_file_to_db(n_unit['id'], fname, md_save, "note")
+                             upload_file_to_db(n_unit['id'], fname, md_save, "note")
                              st.success(f"Explicación guardada en '{target_folder}'")
 
                 # --- RENDER RESULT ---
