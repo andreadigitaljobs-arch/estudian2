@@ -2881,50 +2881,91 @@ with tab1:
                          new_n = st.text_input(f"Nombre para {uf.name}:", value=base, key=f"ren_{i}")
                          file_renames[uf.name] = new_n
             
-            if st.button("▶️ Iniciar Transcripción", type="primary", key="btn_start_transcription", use_container_width=True, disabled=(not selected_unit_id)):
+            if st.button("▶️ Iniciar Transcripción Inteligente (Auto-Lotes)", type="primary", key="btn_start_transcription", use_container_width=True, disabled=(not selected_unit_id)):
                 if not selected_unit_id:
                     st.error("Error: Carpeta no seleccionada.")
                 else:
                     progress_bar = st.progress(0)
                     status_text = st.empty()
+                    import time
+                    from google.api_core.exceptions import ResourceExhausted, ServiceUnavailable
                     
-                    # PROCESS LOOP
-                    for i, file in enumerate(uploaded_files):
-                        t_unit_id = selected_unit_id # Use manual selection
+                    # --- SMART BATCH LOGIC ---
+                    # User Request: "Procesar 40 videos de 3 en 3 automáticamente"
+                    all_files = uploaded_files
+                    total_files = len(all_files)
+                    BATCH_SIZE = 3
+                    
+                    for start_idx in range(0, total_files, BATCH_SIZE):
+                        batch = all_files[start_idx : start_idx + BATCH_SIZE]
+                        batch_num = (start_idx // BATCH_SIZE) + 1
+                        total_batches = (total_files + BATCH_SIZE - 1) // BATCH_SIZE
                         
-                        status_text.markdown(f"**Procesando {file.name}... (0%)**")
-                        temp_path = file.name
-                        with open(temp_path, "wb") as f: f.write(file.getbuffer())
+                        # Update Status for Lote
+                        status_text.markdown(f"**🚀 Procesando Lote {batch_num} de {total_batches}** (Archivos {start_idx+1} al {min(start_idx+BATCH_SIZE, total_files)})")
                         
-                        try:
-                            def update_ui(msg, prog):
-                                pct = int(prog * 100)
-                                progress_bar.progress(prog)
-                                status_text.markdown(f"**{msg} ({pct}%)**")
+                        for file in batch:
+                            t_unit_id = selected_unit_id 
+                            
+                            temp_path = file.name
+                            with open(temp_path, "wb") as f: f.write(file.getbuffer())
+                            
+                            # RETRY LOGIC (Quota Protection)
+                            max_retries = 3
+                            success = False
+                            attempt = 0
+                            
+                            while attempt < max_retries and not success:
+                                try:
+                                    status_text.markdown(f"**⚡ Transcribiendo: {file.name}... (Intento {attempt + 1})**")
+                                    
+                                    def update_ui(msg, prog):
+                                        pass # Keep main progress bar for TOTAL batches, not individual file chunks
+                                    
+                                    # Process
+                                    txt_path = transcriber.process_video(temp_path, progress_callback=update_ui, chunk_length_sec=600)
+                                    
+                                    # Save
+                                    with open(txt_path, "r", encoding="utf-8") as f: 
+                                        trans_text = f.read()
+                                    
+                                    custom_n = file_renames.get(file.name, os.path.splitext(file.name)[0])
+                                    final_name = f"{custom_n}.txt"
+                                    
+                                    upload_file_to_db(t_unit_id, final_name, trans_text, "transcript")
+                                    st.toast(f"✅ Listo: {final_name}") 
+                                    st.session_state['transcript_history'].append({"name": custom_n, "text": trans_text})
+                                    
+                                    if os.path.exists(txt_path): os.remove(txt_path)
+                                    success = True
+                                    time.sleep(2) # Micro-pause between files
+                                    
+                                except ResourceExhausted:
+                                    status_text.warning(f"⏳ **Alcalzamos el límite de IA (Quota).** Esperando 60 segundos para enfriar motores...")
+                                    time.sleep(65) # Wait out the minute limit
+                                    attempt += 1
+                                except ServiceUnavailable:
+                                    status_text.warning(f"⚠️ Servidor ocupado. Reintentando en 10s...")
+                                    time.sleep(10)
+                                    attempt += 1
+                                except Exception as e:
+                                    st.error(f"❌ Error fatal en {file.name}: {e}")
+                                    attempt = max_retries # Abort this file
+                                finally:
+                                    pass
 
-                            txt_path = transcriber.process_video(temp_path, progress_callback=update_ui, chunk_length_sec=600)
-                            
-                            with open(txt_path, "r", encoding="utf-8") as f: 
-                                trans_text = f.read()
-                            
-                            # Use Custom Name
-                            custom_n = file_renames.get(file.name, os.path.splitext(file.name)[0])
-                            final_name = f"{custom_n}.txt"
-                            
-                            upload_file_to_db(t_unit_id, final_name, trans_text, "transcript")
-                            st.success(f"✅ Guardado como: {final_name}") 
-                            st.session_state['transcript_history'].append({"name": custom_n, "text": trans_text})
-                            
-                            if os.path.exists(txt_path): os.remove(txt_path)
-                            
-                        except Exception as e:
-                            st.error(f"Error procesando {file.name}: {e}")
-                        finally:
+                            # Cleanup Temp
                             if os.path.exists(temp_path): os.remove(temp_path)
                         
-                        progress_bar.progress(1.0)
-
-                    status_text.success("¡Procesamiento completo!")
+                        # Update Global Progress
+                        progress_bar.progress(min((start_idx + BATCH_SIZE) / total_files, 1.0))
+                        
+                        # Inter-Batch Cooldown (Be nice to API)
+                        if start_idx + BATCH_SIZE < total_files:
+                            status_text.info(f"☕ Tomando un respiro de 10s antes del siguiente lote...")
+                            time.sleep(10)
+                            
+                    status_text.success("¡Misión Cumplida! Todos los archivos han sido procesados. 🏁")
 
     # History
     if st.session_state['transcript_history']:
