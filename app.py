@@ -764,6 +764,21 @@ CSS_STYLE = """
     div[data-testid="stStatusWidget"] { visibility: hidden; }
     div[data-testid="stDecoration"] { visibility: hidden; }
 
+    /* KILL LOADING OVERLAY (NO MORE WHITE TRANSPARENCY) */
+    [data-testid="stAppViewBlockContainer"],
+    [data-testid="stAppViewContainer"],
+    div.block-container,
+    div[data-testid="stAppViewBlockContainer"] > div {
+        opacity: 1 !important;
+        filter: none !important;
+        transition: none !important;
+    }
+    
+    /* Ensure nothing dims during execution */
+    .stApp > div {
+        opacity: 1 !important;
+    }
+
     /* --- GLOBAL VARIABLES --- */
     :root {
         --primary-purple: #4B22DD;
