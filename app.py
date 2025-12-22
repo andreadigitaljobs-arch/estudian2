@@ -2036,7 +2036,7 @@ with tab_home:
                      st.session_state['user_nickname'] = new_nick
                      st.rerun()
 
-    st.markdown(f"Estás estudiando: **{current_c_name}**")
+    st.markdown(f"Estás estudiando: **{current_c_name.strip()}**")
     
     # --- DAILY QUOTE ---
     import random
