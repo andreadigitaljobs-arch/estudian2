@@ -1206,14 +1206,18 @@ CSS_STYLE = """
     [data-testid="stSidebar"] [data-testid="stToggle"] {
         display: flex !important;
         align-items: center !important;
-        margin-bottom: 20px !important;
+        margin-bottom: 25px !important;
         gap: 15px !important;
     }
     
     [data-testid="stSidebar"] [data-testid="stToggle"] [data-testid="stWidgetLabel"] {
-        margin-top: 0px !important;
+        margin-top: 5px !important; /* Visual adjustment for the text */
         margin-bottom: 0px !important;
         flex: 1 !important;
+    }
+
+    [data-testid="stSidebar"] [data-testid="stToggle"] div[role="switch"] {
+        margin-top: 8px !important; /* Force the switch down to line up with text center */
     }
 
     /* Surgical Highlight Styles (Study Mode) */
@@ -1374,9 +1378,9 @@ with st.sidebar:
     else:
         st.markdown("### 🎓 E-Education")
     if st.session_state.get('user'):
-        # User Info (Added margin-top for breathing room from logo)
+        # User Info (More breathing room from logo)
         st.markdown(f"""
-        <div style="display: flex; align-items: center; gap: 10px; margin-top: 25px; margin-bottom: 20px;">
+        <div style="display: flex; align-items: center; gap: 10px; margin-top: 45px; margin-bottom: 25px;">
             <div style="font-size: 24px;">👤</div>
             <div style="font-size: 14px; color: #31333F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{st.session_state['user'].email}">
                 {st.session_state['user'].email}
