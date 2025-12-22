@@ -230,22 +230,44 @@ if not st.session_state['user'] and not st.session_state.get('force_logout'):
 components.html("""
 <script>
     (function() {
+        // SCORCHED EARTH POLICY - HIDE ALL SCROLLBARS EVERYWHERE
         const root = window.parent.document;
+        
+        // Force replace old style if exists by using a new ID
+        const styleId = 'estudian2_scrollbar_kill_V3_FINAL';
+        const old = root.getElementById(styleId);
+        if (old) old.remove();
+        
         const style = root.createElement('style');
-        style.id = 'estudian2_scrollbar_kill_early';
+        style.id = styleId;
         style.innerHTML = `
+            /* 1. Standard Webkit (Chrome/Edge/Safari) */
             ::-webkit-scrollbar {
                 width: 0px !important;
+                height: 0px !important;
                 background: transparent !important;
                 display: none !important;
             }
-            html, body {
-                scrollbar-width: none !important; 
+            
+            /* 2. Firefox & Standard */
+            * {
+                scrollbar-width: none !important;
                 -ms-overflow-style: none !important;
+            }
+            
+            /* 3. Streamlit Specific Containers */
+            .stApp, section.main, .block-container, [data-testid="stAppViewContainer"] {
+                overflow-y: auto !important; /* Allow scroll */
+                scrollbar-width: none !important; /* Hide bar */
+            }
+            
+            /* 4. Root Kill */
+            html, body {
+                scrollbar-width: none !important;
                 overflow-y: auto !important;
             }
         `;
-        if (!root.getElementById(style.id)) root.head.appendChild(style);
+        root.head.appendChild(style);
     })();
 </script>
 """, height=0)
