@@ -322,7 +322,394 @@ components.html("""
 </script>
 """.replace("__OVERFLOW_MODE__", "auto" if st.session_state.get('user') else "hidden"), height=0)
 
-# --- JS FORCE LOGOUT CLEANUP ---
+# --- GLOBAL THEME CSS (Moved to Top to Prevent Logout Flash) ---
+THEME_CSS = """
+<style>
+/* Import Google Fonts */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+    /* HIDE STREAMLIT STATUS WIDGET & DECORATION */
+    div[data-testid="stStatusWidget"] { visibility: hidden !important; }
+    div[data-testid="stDecoration"] { visibility: hidden !important; }
+
+    /* --- ULTIMATE KILL TO LOADING OVERLAY (NO MORE WHITE TRANSPARENCY) --- */
+    /* Target every possible container Streamlit uses for the "dimming" effect */
+    [data-testid="stAppViewBlockContainer"],
+    [data-testid="stAppViewContainer"],
+    [data-testid="stMainViewContainer"],
+    [data-test-script-state="running"] [data-testid="stAppViewBlockContainer"],
+    [data-test-script-state="running"] [data-testid="stAppViewContainer"],
+    [data-test-script-state="running"] .stApp,
+    section.main,
+    div.block-container,
+    .stApp > div {
+        opacity: 1 !important;
+        filter: none !important;
+        transition: none !important;
+    }
+    
+    /* Force background to stay solid and kill any covering pseudo-elements */
+    .stApp::before, .stApp::after, 
+    [data-testid="stAppViewContainer"]::before,
+    [data-testid="stAppViewContainer"]::after {
+        display: none !important;
+        opacity: 0 !important;
+    }
+
+    /* --- GLOBAL VARIABLES (Moved to Top) --- */
+    /* :root variables are now prevalent globally to prevent FOUC */
+
+    html, body, [class*="css"] {
+        font-family: 'Inter', sans-serif;
+        color: var(--text-color);
+        background-color: var(--bg-color);
+    }
+
+    /* 1. APP BACKGROUND (Light) */
+    .stApp {
+        background-color: var(--bg-color);
+        background-image: none;
+    }
+    
+    /* 2. TOP HEADER BAR - PURPLE */
+    header[data-testid="stHeader"] {
+        background-color: var(--primary-purple);
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    /* 3. THE CENTER CARD (Content) */
+    .main .block-container {
+        background-color: #ffffff;
+        border-radius: 30px;
+        padding: 3rem 4rem !important;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+        margin-top: 20px;
+        max-width: 95%;
+    }
+    div[data-testid="block-container"] {
+        background-color: #ffffff;
+        border-radius: 30px;
+        padding: 3rem !important;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+        margin: 20px auto;
+        max-width: 95%;
+    }
+
+    /* SIDEBAR CONTAINER */
+    section[data-testid="stSidebar"], div[data-testid="stSidebar"] {
+        background-color: #FFFFFF;
+        border-right: 1px solid var(--border-color);
+    }
+    
+    /* HEADERS */
+    h1, h2, h3, h4 {
+        color: var(--primary-purple);
+        font-weight: 700;
+        letter-spacing: -0.5px;
+    }
+    h1 { font-size: 2.5rem; }
+
+    /* --- SIDEBAR SPECIFIC STYLES (MATCH REF IMAGE) --- */
+    
+    /* Custom "Logout" Button -> Purple Block */
+    div[data-testid="stSidebar"] div.stButton button {
+        background-color: var(--primary-purple) !important;
+        color: white !important;
+        border-radius: 30px !important; /* Pill shape like reference */
+        text-align: center !important;
+        justify-content: center !important;
+        font-weight: 600 !important;
+        border: none !important;
+        padding: 0.5rem 1rem !important;
+        margin-top: 10px;
+    }
+    div[data-testid="stSidebar"] div.stButton button:hover {
+        background-color: #3b1aa3 !important;
+        color: white !important;
+    }
+
+    /* Sidebar Inputs -> Light Lilac BG */
+    [data-testid="stSidebar"] div.stTextInput input, 
+    [data-testid="stSidebar"] div[data-baseweb="select"] > div {
+        background-color: #F4F1FF !important; /* Very light purple */
+        border: 1px solid #E0D4FC !important;
+        border-radius: 12px !important;
+        color: #4B22DD !important;
+    }
+
+    /* "Clave del Sistema Activa" Box */
+    .system-key-box {
+        background-color: #E6F4EA;
+        color: #1E4620;
+        padding: 10px;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid #CEEAD6;
+    }
+
+    /* TABS */
+
+
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 10px;
+        background-color: transparent;
+        padding: 0px;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #F0F0F0;
+    }
+    .stTabs [data-baseweb="tab"] {
+        background-color: #F5F6FA;
+        border-radius: 8px 8px 0 0;
+        color: #64748b;
+        font-weight: 600;
+        padding: 10px 20px;
+        border: none;
+    }
+    
+    /* UPDATED TAB STYLES: GREEN BOTTOM LINE */
+    .stTabs [aria-selected="true"] {
+        background-color: var(--primary-purple) !important;
+        color: white !important;
+        border-radius: 8px 8px 0 0 !important;
+        border-bottom: 4px solid #6CC04A !important; /* THE GREEN LINE */
+    }
+    
+    /* Remove default Streamlit tab highlight if present */
+    .stTabs [data-baseweb="tab-highlight"] {
+        background-color: #6CC04A !important;
+    }
+
+    
+
+    /* REMOVE SIDEBAR TOP PADDING */
+    /* Target the container inside the sidebar */
+    section[data-testid="stSidebar"] > div > div:first-child {
+        padding-top: 0rem !important; /* LIFT LOGO (removed padding) */
+    }
+    
+    [data-testid="stSidebar"] input {
+        background-color: #F4F1FF !important;
+        color: #4B22DD !important;
+        font-weight: 500 !important;
+        border-radius: 8px !important;
+        border: 1px solid #D8CCF6 !important;
+    }
+    /* Target the container background for Selectbox */
+    [data-testid="stSidebar"] [data-baseweb="select"] > div {
+        background-color: #F4F1FF !important;
+        border-color: #D8CCF6 !important;
+        color: #4B22DD !important;
+    }
+    
+    /* 3. Sidebar Buttons (Pill Shape, Purple) */
+    /* We target the button element specifically inside sidebar */
+    [data-testid="stSidebar"] button[kind="secondary"] {
+        background-color: #4B22DD !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 20px !important; /* Pill */
+        margin-top: 10px !important;
+        box-shadow: 0 4px 6px rgba(75, 34, 221, 0.2) !important;
+    }
+    [data-testid="stSidebar"] button[kind="secondary"]:hover {
+        background-color: #3b1aa3 !important;
+        transform: translateY(-1px);
+    }
+    
+    /* 4. "System Key" Box Tweaks */
+    .system-key-box {
+        background-color: #E6F4EA !important;
+        border: 1px solid #CEEAD6 !important;
+        color: #1E4620 !important;
+        font-weight: 600 !important;
+    }
+    
+    /* 5. Radio Buttons -> Custom Coloring if possible (Streamlit limits this) */
+    [data-testid="stSidebar"] [role="radiogroup"] label {
+        color: #1A1A1A !important;
+        font-weight: 500 !important;
+    }
+
+    /* FORCE ALL SIDEBAR BUTTONS TO BE ROUNDED */
+    [data-testid="stSidebar"] button {
+        border-radius: 25px !important; /* High value for Pill shape */
+        border: none !important;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
+        transition: transform 0.1s, box-shadow 0.1s !important;
+    }
+    
+    [data-testid="stSidebar"] button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 8px rgba(0,0,0,0.15) !important;
+    }
+    
+    /* Ensure Multiselect tags are also rounded if possible (Optional polish) */
+    [data-testid="stSidebar"] span[data-baseweb="tag"] {
+        border-radius: 15px !important;
+    }
+
+    /* --- TAB 1 REBRAND CSS --- */
+    
+    /* File Uploader Container */
+    div[data-testid="stFileUploader"] section[data-testid="stFileUploaderDropzone"] {
+        background-color: #F8F9FE;
+        border: 2px dashed #B8B9E0 !important;
+        border-radius: 20px !important;
+        padding: 30px !important;
+    }
+    
+    /* "Browse files" Button -> Bright Green */
+    div[data-testid="stFileUploader"] button[kind="secondary"] {
+        background-color: #6CC04A !important;
+        color: white !important;
+        border-radius: 10px !important;
+        border: none !important;
+        font-weight: 700 !important;
+        padding: 0.6rem 1.8rem !important;
+        text-transform: none !important;
+        box-shadow: 0 4px 10px rgba(108, 192, 74, 0.4) !important;
+    }
+    div[data-testid="stFileUploader"] button[kind="secondary"]:hover {
+        background-color: #5ab03a !important;
+        color: white !important;
+        transform: translateY(-1px);
+    }
+    
+    /* Titles */
+    h2.transcriptor-title {
+        color: #4B22DD !important; /* Authentic Ref Purple */
+        font-family: 'Inter', sans-serif !important;
+        font-weight: 800 !important;
+        font-size: 2.2rem !important;
+        letter-spacing: -1px !important;
+        margin-bottom: 1.5rem !important;
+        margin-top: 1rem !important;
+    }
+    
+    p.transcriptor-subtitle {
+        color: #4A4A4A !important;
+        font-size: 1.05rem !important;
+        margin-bottom: 30px !important;
+        line-height: 1.6;
+    }
+    
+    /* Green Placeholder Frame */
+    .green-frame {
+        background-color: #6CC04A;
+        border-radius: 30px;
+        padding: 20px;
+        box-shadow: 0 15px 30px rgba(108, 192, 74, 0.25);
+        width: 350px !important;
+        min-width: 350px !important;
+        max-width: 350px !important;
+        flex: 0 0 350px !important; /* Strict Flex locking */
+        aspect-ratio: 1 / 1.1; /* Maintain exact proportion */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto; /* Center in column */
+        overflow: hidden;
+    }
+    
+    .green-frame img {
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: cover !important;
+        max-width: 100% !important;
+        border-radius: 20px;
+    }
+    .green-frame-inner {
+        background-color: #E2E8F0;
+        border-radius: 20px;
+        width: 100%;
+        height: 100%;
+        min-height: 360px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        color: #64748b;
+        font-weight: 600;
+    }
+    
+    /* Exact replica of green-frame but Purple */
+    .purple-frame {
+        background-color: #4B22DD;
+        border-radius: 30px;
+        padding: 20px;
+        box-shadow: 0 15px 30px rgba(75, 34, 221, 0.25);
+        width: 350px !important;
+        min-width: 350px !important;
+        max-width: 350px !important;
+        flex: 0 0 350px !important; /* Strict Flex locking */
+        aspect-ratio: 1 / 1.1; /* Maintain exact proportion */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto; /* Center in column */
+        overflow: hidden;
+    }
+    
+    .purple-frame img {
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: cover !important;
+        max-width: 100% !important;
+        border-radius: 20px;
+    }
+
+    /* --- GLOBAL BUTTON STYLING (Universal Consistency) --- */
+    
+    /* Target ALL standard buttons in the main app area */
+    div.stButton > button {
+        background-color: #4B22DD !important; /* Brand Purple */
+        color: white !important;
+        border-radius: 30px !important; /* Full Pill Shape */
+        border: none !important;
+        padding: 0.6rem 2rem !important;
+        font-weight: 600 !important;
+        box-shadow: 0 4px 6px rgba(75, 34, 221, 0.2) !important;
+        transition: all 0.2s ease !important;
+    }
+    
+    div.stButton > button:hover {
+        background-color: #3b1aa3 !important; /* Darker Purple */
+        color: white !important;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(75, 34, 221, 0.3) !important;
+    }
+    
+    /* Target Primary Buttons (if any are used, e.g. Delete, ensuring they are also round) */
+    div.stButton > button[kind="primary"] {
+        border-radius: 30px !important;
+    }
+
+    /* --- GLOBAL HEADERS (BRANDING) --- */
+    h1, h2, h3, h4, h5, h6 {
+        color: #4B22DD !important;
+        font-family: 'Inter', sans-serif !important;
+        font-weight: 700 !important;
+    }
+    
+    /* Specific Streamlit markdown headers */
+    /* Specific Streamlit markdown headers */
+    .stMarkdown h1, .stMarkdown h2, .stMarkdown h3 {
+        color: #4B22DD !important;
+    } 
+
+    div.stButton > button:active {
+        background-color: #2a1275 !important;
+        transform: translateY(0);
+    }
+</style>
+"""
+st.markdown(THEME_CSS, unsafe_allow_html=True)
+
 if st.session_state.get('force_logout'):
     components.html("""
     <script>
