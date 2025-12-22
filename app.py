@@ -1405,11 +1405,19 @@ else:
     components.html("""
     <script>
         const root = window.parent.document;
-        // KILL ZOMBIE INTERVAL
+        
+        // 1. KILL KNOWN INTERVALS
         if (window.parent.estudian2_scroller_interval) clearInterval(window.parent.estudian2_scroller_interval);
         
-        const btn = root.getElementById('estudian2_nuclear_scroller');
-        if (btn) btn.remove();
+        // 2. ACTIVE DEFENSE (Anti-Zombie Shield)
+        // Since we can't kill anonymous intervals from old versions, we constantly delete their work.
+        const killerInfo = setInterval(() => {
+            const btn = root.getElementById('estudian2_nuclear_scroller');
+            if (btn) btn.remove();
+        }, 50); // Run faster than the creator (which is 2000ms)
+        
+        // Store this killer so we can stop it if we login later (though page reload handles that)
+        window.parent.estudian2_killer_interval = killerInfo;
     </script>
     """, height=0)
 
