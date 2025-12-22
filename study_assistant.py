@@ -65,7 +65,10 @@ class StudyAssistant:
         """
         
         try:
-            response = self.model.generate_content(prompt)
+            response = self.model.generate_content(
+                prompt, 
+                generation_config={"response_mime_type": "application/json"}
+            )
             text = response.text
             
             # 1. Cleaning
@@ -399,7 +402,10 @@ Google ofrece una capa gratuita generosa, pero limitada.
         
         try:
             # Enforce Spanish in complex tasks
-            response = self.model.generate_content(prompt + "\nNOTA: El JSON debe estar en ESPAÑOL.")
+            response = self.model.generate_content(
+                prompt + "\nNOTA: El JSON debe estar en ESPAÑOL.",
+                generation_config={"response_mime_type": "application/json"}
+            )
             clean_text = response.text.replace("```json", "").replace("```", "").strip()
             return json.loads(clean_text)
         except Exception as e:
