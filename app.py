@@ -689,12 +689,13 @@ THEME_CSS = """
         border-radius: 30px !important;
     }
 
-    /* LOGIN FORM BUTTON - GREEN */
-    div[data-testid="stForm"] div.stButton > button {
+    /* LOGIN FORM BUTTON - GREEN FORCE */
+    [data-testid="stForm"] button {
         background-color: #6CC04A !important;
         border: none !important;
+        color: white !important;
     }
-    div[data-testid="stForm"] div.stButton > button:hover {
+    [data-testid="stForm"] button:hover {
         background-color: #5ab03a !important;
     }
 
@@ -1758,12 +1759,13 @@ CSS_STYLE = """
         border-radius: 30px !important;
     }
 
-    /* LOGIN FORM BUTTON - GREEN */
-    div[data-testid="stForm"] div.stButton > button {
+    /* LOGIN FORM BUTTON - GREEN FORCE */
+    [data-testid="stForm"] button {
         background-color: #6CC04A !important;
         border: none !important;
+        color: white !important;
     }
-    div[data-testid="stForm"] div.stButton > button:hover {
+    [data-testid="stForm"] button:hover {
         background-color: #5ab03a !important;
     }
 
