@@ -3232,7 +3232,7 @@ with tab_didactic:
                              # Fallback for old cache (v8)
                              st.warning("⚠️ Formato antiguo detectado. Por favor regenera la explicación.")
                     
-                    for m in modules:
+                    for i, m in enumerate(modules):
                         # --- SMART ADAPTER FOR LEGACY/MALFORMED BLOCKS ---
                         # If the AI returns a flat object (Old Schema) instead of nested 'content'
                         if 'content' not in m and 'simplified_explanation' in m:
@@ -3286,8 +3286,8 @@ with tab_didactic:
                             with st.container():
                                 st.markdown(f"### 🛠️ {title}")
                                 st.caption(c.get('intro'))
-                                for step in c.get('steps', []):
-                                    st.checkbox(step, key=f"step_{step[:10]}")
+                                for j, step in enumerate(c.get('steps', [])):
+                                    st.checkbox(step, key=f"step_{i}_{j}")
                             st.divider()
 
 
