@@ -2825,16 +2825,18 @@ with tab1:
         
         if uploaded_files:
             # --- MEMORY SAFETY CHECK (TRAFFIC CONTROL) ---
+            # --- MEMORY SAFETY CHECK (TRAFFIC CONTROL) ---
             total_size_bytes = sum(f.size for f in uploaded_files)
             total_size_mb = total_size_bytes / (1024 * 1024)
-            SAFE_RAM_LIMIT_MB = 1000 # 1GB Limit requested by user
+            SAFE_RAM_LIMIT_MB = 500 # Reduced to 500MB to prevent "Over Capacity" crash
             
             if total_size_mb > SAFE_RAM_LIMIT_MB:
                 st.error(
-                    f"⚠️ **¡TE PASASTE DEL GIGABYTE! ({total_size_mb:.0f} MB / {SAFE_RAM_LIMIT_MB} MB)**\n\n"
-                    f"El servidor no aguanta tanto peso de una sola vez.\n"
-                    f"👉 **SOLUCIÓN INMEDIATA:** Ve a la lista de archivos aquí arriba 👆 y **haz clic en la 'X'** para eliminar videos hasta que este mensaje rojo desaparezca.", 
-                    icon="🛑"
+                    f"💀 **¡ZONA DE CRASH! ({total_size_mb:.0f} MB / {SAFE_RAM_LIMIT_MB} MB)**\n\n"
+                    f"La pantalla de 'Over Capacity' que viste confirma que el servidor gratuito colapsa con más de 500MB.\n"
+                    f"He bajado el límite por tu seguridad para evitar que se rompa la app.\n\n"
+                    f"👉 **SOLUCIÓN:** Elimina archivos de la 'X' en la lista gris de arriba hasta bajar de 500MB.", 
+                    icon="☠️"
                 )
                 st.stop() # Force execution stop
 
