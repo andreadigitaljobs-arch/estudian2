@@ -1339,20 +1339,25 @@ if st.session_state.get('user'):
                     `;
                     
                     btn.onclick = function() {
-                        const targets = [
-                            window.parent.document.documentElement, 
-                            window.parent.document.body,
-                            window.parent.document.querySelector('[data-testid="stAppViewContainer"]'),
-                            window.parent.document.querySelector('section.main')
-                        ];
-                        
-                        targets.forEach(t => {
-                            if (t) {
-                                try {
-                                    t.scrollTo({ top: 100000, behavior: 'smooth' });
-                                } catch(e) {}
-                            }
-                        });
+                        try {
+                            // 1. STANDARD STREAMLIT CONTAINERS
+                            const mains = window.parent.document.querySelectorAll('.main, .appview-container, .stApp');
+                            mains.forEach(el => el.scrollTo({ top: 100000, behavior: 'smooth' }));
+
+                            // 2. BRUTE FORCE: FIND ANYTHING SCROLLABLE
+                            const allDivs = window.parent.document.querySelectorAll('div');
+                            allDivs.forEach(div => {
+                                if (div.scrollHeight > div.clientHeight) {
+                                     div.scrollTo({ top: 100000, behavior: 'smooth' });
+                                }
+                            });
+                            
+                            // 3. FALLBACK WINDOW SCROLL
+                            window.parent.scrollTo({ top: 100000, behavior: 'smooth' });
+                            
+                        } catch(err) {
+                            console.log("Scroll Error:", err);
+                        }
                     };
                     
                     btn.onmouseenter = () => btn.style.transform = 'scale(1.1)';
