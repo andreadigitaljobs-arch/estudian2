@@ -18,7 +18,7 @@ from database import (
     get_chat_sessions, create_chat_session, rename_chat_session, delete_chat_session, 
     get_dashboard_stats, update_user_nickname, get_recent_chats, check_and_update_streak, 
     update_user_footprint, init_supabase, update_last_course, 
-    save_chat_message, get_chat_messages, get_file_content, get_course_files, delete_file, get_course_full_context
+    save_chat_message, get_chat_messages, get_file_content, get_course_files, delete_file, get_course_full_context, upload_file_to_db
 )
 
 
@@ -3208,8 +3208,6 @@ with tab_didactic:
                                          
                                      md_save += "---\n\n"
                              
-                             # Force local import right before usage to prevent scope loss
-                             from database import upload_file_to_db
                              upload_file_to_db(n_unit['id'], fname, md_save, "note")
                              st.success(f"Explicación guardada en '{target_folder}'")
 
