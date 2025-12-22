@@ -1226,110 +1226,133 @@ st.markdown(CSS_STYLE, unsafe_allow_html=True)
 
 # --- NUCLEAR UNIVERSAL SCROLLER (DEFINITIVE) ---
 import streamlit.components.v1 as components
+
+# 1. GLOBAL LOADING FIX (Always running)
 components.html("""
 <script>
     (function() {
         const root = window.parent.document;
         
-        // 1. INJECT NUCLEAR CSS INTO PARENT
+        // Inject Base CSS
         const style = root.createElement('style');
+        style.id = 'estudian2_nuclear_overlay_kill';
         style.innerHTML = `
-            /* Kill transparency on ALL containers in both inner and outer worlds */
             [data-testid="stAppViewBlockContainer"],
             [data-testid="stAppViewContainer"],
             [data-testid="stMainViewContainer"],
-            [data-test-script-state="running"] [data-testid="stAppViewBlockContainer"],
-            [data-test-script-state="running"] [data-testid="stAppViewContainer"],
-            [data-test-script-state="running"] iframe,
-            [data-test-script-state="running"] .stApp,
             iframe, .stApp, section.main, .block-container {
                 opacity: 1 !important;
                 filter: none !important;
                 transition: none !important;
-                background-color: transparent !important;
             }
-            
-            /* Kill any covering pseudo-elements or loading layers */
             .stApp::before, .stApp::after, 
             [data-testid="stAppViewContainer"]::before,
-            [data-testid="stAppViewContainer"]::after,
-            div[class*="st-"]::before,
-            div[class*="st-"]::after {
+            [data-testid="stAppViewContainer"]::after {
                 display: none !important;
                 opacity: 0 !important;
             }
         `;
-        root.head.appendChild(style);
+        if (!root.getElementById(style.id)) root.head.appendChild(style);
 
-        const inject = () => {
-            try {
-                if (root.getElementById('estudian2_nuclear_scroller')) return;
-                
-                const btn = root.createElement('button');
-                btn.id = 'estudian2_nuclear_scroller';
-                btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="width: 28px; height: 28px; pointer-events: none;"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>';
-                
-                btn.style.cssText = `
-                    position: fixed !important;
-                    bottom: 120px !important;
-                    right: 30px !important;
-                    z-index: 2147483647 !important;
-                    width: 55px !important;
-                    height: 55px !important;
-                    border-radius: 50% !important;
-                    background-color: #4B22DD !important;
-                    display: flex !important;
-                    align-items: center !important;
-                    justify-content: center !important;
-                    cursor: pointer !important;
-                    border: none !important;
-                    box-shadow: 0 4px 15px rgba(0,0,0,0.4) !important;
-                    transition: transform 0.2s !important;
-                    outline: none !important;
-                `;
-                
-                btn.onclick = function() {
-                    const scrollRecursive = (doc) => {
-                        // 1. Scroll known main containers
-                        const mains = doc.querySelectorAll('section.main, .main, [data-testid="stAppViewContainer"]');
-                        mains.forEach(m => {
-                            m.scrollTo({ top: m.scrollHeight + 10000, behavior: 'smooth' });
-                        });
-                        
-                        // 2. Scroll ANY element that has a scrollbar
-                        const all = doc.querySelectorAll('*');
-                        all.forEach(el => {
-                            if (el.scrollHeight > el.clientHeight) {
-                                el.scrollTo({ top: el.scrollHeight + 10000, behavior: 'smooth' });
-                            }
-                        });
-                        
-                        // 3. Recurse into iframes
-                        const iframes = doc.querySelectorAll('iframe');
-                        for (let i = 0; i < iframes.length; i++) {
-                            try {
-                                const idoc = iframes[i].contentDocument || iframes[i].contentWindow.document;
-                                scrollRecursive(idoc);
-                            } catch(e) {}
-                        }
-                    };
-                    
-                    scrollRecursive(window.parent.document);
-                    window.parent.scrollTo({ top: 999999, behavior: 'smooth' });
-                };
-                
-                btn.onmouseenter = () => btn.style.transform = 'scale(1.1)';
-                btn.onmouseleave = () => btn.style.transform = 'scale(1.0)';
-                
-                root.body.appendChild(btn);
-            } catch(e) { console.error("Scroller Error:", e); }
-        };
-        
-        setInterval(inject, 1000);
-        inject();
+        // REAL-TIME VIGILANTE OBSERVER
+        const observer = new MutationObserver(() => {
+            const state = root.querySelector('.stApp')?.getAttribute('data-test-script-state');
+            if (state === 'running') {
+                const iframes = root.querySelectorAll('iframe');
+                iframes.forEach(i => {
+                    i.style.opacity = '1';
+                    i.style.filter = 'none';
+                });
+                const containers = root.querySelectorAll('[data-testid*="Container"]');
+                containers.forEach(c => {
+                    c.style.opacity = '1';
+                    c.style.filter = 'none';
+                });
+            }
+        });
+        observer.observe(root.body, { attributes: true, subtree: true, attributeFilter: ['style', 'data-test-script-state'] });
     })();
 </script>
 """, height=0)
+
+# 2. LOGGED-IN SCROLLER (Only after login)
+if st.session_state.get('user'):
+    components.html("""
+    <script>
+        (function() {
+            const root = window.parent.document;
+            const inject = () => {
+                try {
+                    if (root.getElementById('estudian2_nuclear_scroller')) return;
+                    
+                    const btn = root.createElement('button');
+                    btn.id = 'estudian2_nuclear_scroller';
+                    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="width: 28px; height: 28px; pointer-events: none;"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>';
+                    
+                    btn.style.cssText = `
+                        position: fixed !important;
+                        bottom: 120px !important;
+                        right: 30px !important;
+                        z-index: 2147483647 !important;
+                        width: 55px !important;
+                        height: 55px !important;
+                        border-radius: 50% !important;
+                        background-color: #4B22DD !important;
+                        display: flex !important;
+                        align-items: center !important;
+                        justify-content: center !important;
+                        cursor: pointer !important;
+                        border: none !important;
+                        box-shadow: 0 4px 15px rgba(0,0,0,0.4) !important;
+                        transition: transform 0.2s !important;
+                        outline: none !important;
+                    `;
+                    
+                    btn.onclick = function() {
+                        const scrollRecursive = (doc) => {
+                            const mains = doc.querySelectorAll('section.main, .main, [data-testid="stAppViewContainer"]');
+                            mains.forEach(m => {
+                                m.scrollTo({ top: m.scrollHeight + 10000, behavior: 'smooth' });
+                            });
+                            const all = doc.querySelectorAll('*');
+                            all.forEach(el => {
+                                if (el.scrollHeight > el.clientHeight) {
+                                    el.scrollTo({ top: el.scrollHeight + 10000, behavior: 'smooth' });
+                                }
+                            });
+                            const iframes = doc.querySelectorAll('iframe');
+                            for (let i = 0; i < iframes.length; i++) {
+                                try {
+                                    const idoc = iframes[i].contentDocument || iframes[i].contentWindow.document;
+                                    scrollRecursive(idoc);
+                                } catch(e) {}
+                            }
+                        };
+                        scrollRecursive(window.parent.document);
+                        window.parent.scrollTo({ top: 999999, behavior: 'smooth' });
+                    };
+                    
+                    btn.onmouseenter = () => btn.style.transform = 'scale(1.1)';
+                    btn.onmouseleave = () => btn.style.transform = 'scale(1.0)';
+                    
+                    root.body.appendChild(btn);
+                } catch(e) {}
+            };
+            setInterval(inject, 2000);
+            inject();
+        })();
+    </script>
+    """, height=0)
+else:
+    # Cleanup if logged out (important for estetico)
+    st.components.v1.html("""
+    <script>
+        const root = window.parent.document;
+        const btn = root.getElementById('estudian2_nuclear_scroller');
+        if (btn) btn.remove();
+    </script>
+    """, height=0)
+    """, height=0)
 
 # Sidebar
 with st.sidebar:
