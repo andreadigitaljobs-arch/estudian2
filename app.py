@@ -3204,6 +3204,8 @@ with tab_didactic:
                                          
                                      md_save += "---\n\n"
                              
+                             # Force local import right before usage to prevent scope loss
+                             from database import upload_file_to_db
                              upload_file_to_db(n_unit['id'], fname, md_save, "note")
                              st.success(f"Explicación guardada en '{target_folder}'")
 
