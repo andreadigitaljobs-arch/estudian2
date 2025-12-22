@@ -1219,50 +1219,62 @@ components.html("""
         const inject = () => {
             try {
                 const root = window.parent.document;
-                if (root.getElementById('robust_universal_scroller')) return;
+                let btn = root.getElementById('robust_universal_scroller');
                 
-                const btn = root.createElement('button');
-                btn.id = 'robust_universal_scroller';
-                btn.innerHTML = '⬇️';
-                
-                // URGENT: High priority inline styles
-                btn.style.cssText = `
-                    position: fixed !important;
-                    bottom: 110px !important;
-                    right: 30px !important;
-                    z-index: 999999999 !important;
-                    width: 50px !important;
-                    height: 50px !important;
-                    border-radius: 50% !important;
-                    background-color: #4B22DD !important;
-                    color: white !important;
-                    font-size: 24px !important;
-                    display: flex !important;
-                    align-items: center !important;
-                    justify-content: center !important;
-                    cursor: pointer !important;
-                    border: none !important;
-                    box-shadow: 0 4px 15px rgba(0,0,0,0.4) !important;
-                    transition: transform 0.2s !important;
-                `;
-                
-                btn.onclick = () => {
-                    const main = root.querySelector('section.main') || root.querySelector('.main') || root.documentElement;
-                    if (main) {
-                        main.scrollTo({top: main.scrollHeight + 3000, behavior: 'smooth'});
-                    }
-                    // Global fallback
-                    window.parent.scrollTo({top: 999999, behavior: 'smooth'});
-                };
-                
-                btn.onmouseenter = () => btn.style.transform = 'scale(1.1)';
-                btn.onmouseleave = () => btn.style.transform = 'scale(1.0)';
-                
-                root.body.appendChild(btn);
+                if (!btn) {
+                    btn = root.createElement('button');
+                    btn.id = 'robust_universal_scroller';
+                    // White arrow SVG (plain, no blue)
+                    btn.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>';
+                    
+                    btn.style.cssText = `
+                        position: fixed !important;
+                        bottom: 110px !important;
+                        right: 30px !important;
+                        z-index: 999999999 !important;
+                        width: 50px !important;
+                        height: 50px !important;
+                        border-radius: 50% !important;
+                        background-color: #4B22DD !important;
+                        display: flex !important;
+                        align-items: center !important;
+                        justify-content: center !important;
+                        cursor: pointer !important;
+                        border: none !important;
+                        box-shadow: 0 4px 15px rgba(0,0,0,0.4) !important;
+                        transition: transform 0.2s !important;
+                    `;
+                    
+                    btn.onclick = () => {
+                        // Broad Targeting Logic
+                        const scrollTargets = [
+                            root.querySelector('section.main'),
+                            root.querySelector('.main'),
+                            root.querySelector('div[data-testid="stAppViewContainer"]'),
+                            root.documentElement,
+                            root.body,
+                            window.parent
+                        ];
+                        
+                        let scrolled = false;
+                        for (const target of scrollTargets) {
+                            if (target && target.scrollHeight > target.clientHeight) {
+                                target.scrollTo({top: target.scrollHeight + 10000, behavior: 'smooth'});
+                                scrolled = true;
+                            }
+                        }
+                        // Ultimate fallback
+                        if (!scrolled) window.parent.scrollTo(0, 999999);
+                    };
+                    
+                    btn.onmouseenter = () => btn.style.transform = 'scale(1.1)';
+                    btn.onmouseleave = () => btn.style.transform = 'scale(1.0)';
+                    
+                    root.body.appendChild(btn);
+                }
             } catch(e) { console.error("Scroller Error:", e); }
         };
         
-        // Polling ensuring it survives Streamlit reruns
         setInterval(inject, 1000);
         inject();
     })();
