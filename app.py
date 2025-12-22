@@ -1224,7 +1224,6 @@ components.html("""
                 if (!btn) {
                     btn = root.createElement('button');
                     btn.id = 'robust_universal_scroller';
-                    // White arrow SVG (plain, no blue)
                     btn.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>';
                     
                     btn.style.cssText = `
@@ -1246,25 +1245,33 @@ components.html("""
                     `;
                     
                     btn.onclick = () => {
-                        // Broad Targeting Logic
-                        const scrollTargets = [
+                        // BRUTE FORCE SCROLLING
+                        const targets = [
                             root.querySelector('section.main'),
                             root.querySelector('.main'),
                             root.querySelector('div[data-testid="stAppViewContainer"]'),
+                            root.querySelector('.stApp'),
                             root.documentElement,
-                            root.body,
-                            window.parent
+                            root.body
                         ];
+
+                        targets.forEach(t => {
+                            if (!t) return;
+                            try {
+                                // 1. Try smooth scroll
+                                t.scrollTo({ top: t.scrollHeight + 5000, behavior: 'smooth' });
+                                // 2. Hard skip if smooth fails
+                                t.scrollTop = t.scrollHeight + 5000;
+                            } catch(e) {}
+                        });
+
+                        // 3. Fallback: Find any anchor at the end or use window
+                        try {
+                            const lastChild = root.body.lastElementChild;
+                            if (lastChild) lastChild.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                        } catch(e) {}
                         
-                        let scrolled = false;
-                        for (const target of scrollTargets) {
-                            if (target && target.scrollHeight > target.clientHeight) {
-                                target.scrollTo({top: target.scrollHeight + 10000, behavior: 'smooth'});
-                                scrolled = true;
-                            }
-                        }
-                        // Ultimate fallback
-                        if (!scrolled) window.parent.scrollTo(0, 999999);
+                        window.parent.scrollTo({ top: 999999, behavior: 'smooth' });
                     };
                     
                     btn.onmouseenter = () => btn.style.transform = 'scale(1.1)';
