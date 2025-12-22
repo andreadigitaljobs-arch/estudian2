@@ -1207,6 +1207,30 @@ CSS_STYLE = """
         position: absolute !important;
     }
     
+    /* --- UNIVERSAL SCROLL BUTTON --- */
+    #universal_scroll_btn {
+        position: fixed !important;
+        bottom: 30px !important;
+        right: 30px !important;
+        z-index: 2147483647 !important;
+        width: 50px !important;
+        height: 50px !important;
+        border-radius: 50% !important;
+        background-color: #4B22DD !important;
+        color: white !important;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.4) !important;
+        border: none !important;
+        cursor: pointer !important;
+        font-size: 24px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        transition: transform 0.2s, background-color 0.2s !important;
+    }
+    #universal_scroll_btn:hover { 
+        transform: scale(1.1) !important; 
+        background-color: #3b1aa3 !important;
+    }
 </style>
 
 <script>
