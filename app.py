@@ -3161,7 +3161,11 @@ with tab_didactic:
                              # Create a Markdown representation for saving
                              md_save = f"# 🧠 Explicación Didáctica: {selected_file}\n\n"
                              
-                             modules = didactic_data.get('modules', [])
+                             modules = []
+                             if isinstance(didactic_data, list):
+                                 modules = didactic_data
+                             elif isinstance(didactic_data, dict):
+                                 modules = didactic_data.get('modules', [])
                              
                              if not modules:
                                  # Fallback for error/old format
@@ -3205,15 +3209,18 @@ with tab_didactic:
 
                 # --- RENDER RESULT ---
                 res = st.session_state.get('didactic_result')
-                if res and isinstance(res, dict):
+                if res:
                     st.divider()
                     
                     # DYNAMIC MODULE RENDERER
-                    modules = res.get('modules', [])
-                    
-                    if not modules and 'blocks' in res: 
-                        # Fallback for old cache (v8)
-                        st.warning("⚠️ Formato antiguo detectado. Por favor regenera la explicación.")
+                    modules = []
+                    if isinstance(res, list):
+                        modules = res
+                    elif isinstance(res, dict):
+                        modules = res.get('modules', [])
+                        if not modules and 'blocks' in res: 
+                             # Fallback for old cache (v8)
+                             st.warning("⚠️ Formato antiguo detectado. Por favor regenera la explicación.")
                     
                     for m in modules:
                         m_type = m.get('type', 'DEEP_DIVE')
