@@ -1330,7 +1330,7 @@ def get_transcriber_engine(key, model_choice="gemini-2.0-flash", breaker="V6"):
     return Transcriber(key, model_name=model_choice, cache_breaker=breaker)
 
 @st.cache_resource
-def get_assistant_engine(key, model_choice="gemini-2.0-flash", breaker="V8"):
+def get_assistant_engine(key, model_choice="gemini-2.0-flash", breaker="V9"):
     return StudyAssistant(key, model_name=model_choice, cache_breaker=breaker)
 
 api_key = saved_key
@@ -1341,7 +1341,7 @@ if api_key:
     try:
         # Force fresh engines with explicit model choice
         transcriber = get_transcriber_engine(api_key, model_choice="gemini-2.0-flash", breaker="V7") # Transcriber can stay
-        assistant = get_assistant_engine(api_key, model_choice="gemini-2.0-flash", breaker="V8")
+        assistant = get_assistant_engine(api_key, model_choice="gemini-2.0-flash", breaker="V9")
     except Exception as e:
         st.error(f"Error al iniciar IA: {e}")
 
@@ -3179,50 +3179,52 @@ with tab_didactic:
                 if res and isinstance(res, dict):
                     st.divider()
                     
-                    # 1. Intro (Vision Global)
-                    st.markdown(f"#### 👋🏻 Visión Global")
-                    st.info(res.get('introduction', ''))
+                    # DYNAMIC MODULE RENDERER
+                    modules = res.get('modules', [])
                     
-                    st.markdown("#### 🧱 Mapa de Conocimiento (Paso a Paso)")
+                    if not modules and 'blocks' in res: 
+                        # Fallback for old cache (v8)
+                        st.warning("⚠️ Formato antiguo detectado. Por favor regenera la explicación.")
                     
-                    blocks = res.get('blocks', [])
-                    for i, b in enumerate(blocks):
-                        # Determine Type (Default to KEY for backward compatibility)
-                        b_type = b.get('type', 'KEY')
-                        content = b.get('content', b) # Handle old structure flattened
+                    for m in modules:
+                        m_type = m.get('type', 'DEEP_DIVE')
+                        title = m.get('title', 'Módulo')
+                        c = m.get('content', {})
                         
-                        title = b.get('concept_title', f'Concepto {i+1}')
-                        
-                        # --- RENDER STRATEGY BASED ON TYPE ---
-                        
-                        # TIPO A: CLAVE (Despliegue total)
-                        if b_type == 'KEY':
-                             with st.expander(f"🔑 {title}", expanded=True):
-                                c1, c2 = st.columns([1, 1])
-                                with c1:
-                                    if content.get('academic_def'):
-                                        st.caption(f"**📖 Definición:** {content.get('academic_def')}")
-                                    st.markdown(f"**🗣️ Explicación:**\n{content.get('explanation')}")
-                                    if content.get('why_matters'):
-                                        st.markdown(f"**🎯 Importancia:**\n{content.get('why_matters')}")
+                        # 1. 🎯 STRATEGIC BRIEF (Hero Section)
+                        if m_type == 'STRATEGIC_BRIEF':
+                            with st.container():
+                                st.markdown(f"## 🎯 {title}")
+                                st.info(f"**TESIS:** {c.get('thesis')}", icon="💡")
+                                st.markdown(f"**💎 Impacto:** {c.get('impact')}")
+                            st.divider()
+
+                        # 2. 🧠 DEEP DIVE (Technical Expander)
+                        elif m_type == 'DEEP_DIVE':
+                            with st.expander(f"🧠 {title}", expanded=True):
+                                st.markdown(f"**📖 Definición:** {c.get('definition')}")
+                                st.markdown(f"**⚙️ Funcionamiento:**\n{c.get('explanation')}")
+                                if c.get('example'):
+                                    st.markdown(f"**💼 Caso Real:**\n_{c.get('example')}_")
+
+                        # 3. 🕵🏻 REALITY CHECK (Critical Analysis)
+                        elif m_type == 'REALITY_CHECK':
+                            with st.container(border=True):
+                                c1, c2 = st.columns([0.1, 0.9])
+                                with c1: st.markdown("## 🕵🏻")
                                 with c2:
-                                    st.markdown("#### 💡 Analogía")
-                                    st.success(f"{content.get('analogy_or_example')}")
+                                    st.markdown(f"### {title}")
+                                    st.warning(f"**❓ {c.get('question')}**")
+                                    st.markdown(f"**✅ Insight:** {c.get('insight')}")
 
-                        # TIPO B: APOYO (Tarjeta compacta)
-                        elif b_type == 'SUPPORT':
-                             with st.container(border=True):
-                                 st.markdown(f"**🧱 {title}**")
-                                 st.write(content.get('explanation'))
-                                 st.info(f"💡 Ejemplo: {content.get('analogy_or_example')}", icon="🔹")
-
-                        # TIPO C: RECORDATORIO (Frase única)
-                        elif b_type == 'REMINDER':
-                             st.warning(f"📌 **{title}:** {content.get('explanation')}", icon="⚡")
-                                
-                    # 3. Conclusion
-                    st.markdown("#### 🏁 Conclusión")
-                    st.caption(res.get('conclusion', ''))
+                        # 4. 🛠️ TOOLKIT (Action Steps)
+                        elif m_type == 'TOOLKIT':
+                            with st.container():
+                                st.markdown(f"### 🛠️ {title}")
+                                st.caption(c.get('intro'))
+                                for step in c.get('steps', []):
+                                    st.checkbox(step, key=f"step_{step[:10]}")
+                            st.divider()
 
 
 # --- TAB 4: Quiz ---

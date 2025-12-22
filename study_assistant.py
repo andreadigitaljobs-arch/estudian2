@@ -147,51 +147,81 @@ Google ofrece una capa gratuita generosa, pero limitada.
 
     def generate_didactic_explanation(self, transcript_text, global_context=""):
         """
-        Generates a didactic, analogy-based explanation (NOT a summary).
-        Focus: "Knowledge Translation" from Academic to Simple.
-        Supports Variable Depth (Key, Support, Reminder).
+        Generates a Hybrid Professional explanation using Dynamic Modules.
+        Personas: Strategic Analyst, Academic Mentor, Critical Investigator.
         """
         import json
         
         prompt = f"""
-        Actúa como el MEJOR COMUNICADOR DEL MUNDO (Estilo Feynman + Divulgador Científico).
+        Actúa como un CONSULTOR SÉNIOR y MENTOR ACADÉMICO DE ÉLITE.
         
         TU MISIÓN:
-        Tienes una transcripción de una clase. El estudiante NO entendió nada.
-        Tu trabajo es **TRADUCIR** ese contenido a una explicación dinámica y fluida.
+        Analiza la transcripción y genera una explicación "Modular" que combine profundidad técnica con utilidad práctica.
+        NO sigas una plantilla fija. Elige los módulos que mejor se adapten al contenido.
         
-        ESTRATEGIA DE RITMO (NO REPITAS ESTRUCTURAS):
-        Clasifica cada concepto en uno de estos 3 tipos para evitar la monotonía:
+        TUS 3 PERSONALIDADES (ÚSALAS SEGÚN EL BLOQUE):
+        1. 💼 EL ANALISTA: Va al grano. Resume el valor estratégico. (Estilo: Harvard Business Review).
+        2. 🎓 EL MENTOR: Explica la estructura y define conceptos. (Estilo: Libro de texto moderno).
+        3. 🕵🏻 EL INVESTIGADOR: Cuestiona, compara y advierte. (Estilo: Periodismo de datos).
+
+        CATÁLOGO DE MÓDULOS DISPONIBLES (Elige 3 a 5 según el contenido):
         
-        1. 🔑 **TIPO A (CLAVE)**: Conceptos difíciles o centrales.
-           - Requieren: Explicación simple + **ANALOGÍA POTENTE** + Por qué importa.
-           
-        2. 🧱 **TIPO B (APOYO)**: Conceptos que refuerzan o complementan.
-           - Requieren: Explicación clara + **EJEMPLO RÁPIDO**. (SIN analogía larga).
-           
-        3. 📌 **TIPO C (RECORDATORIO)**: Conceptos obvios intuitivos.
-           - Requieren: Solo una frase memorable o un "Tip". (SIN explicación larga).
+        A. 🎯 STRATEGIC_BRIEF (El Analista)
+           - Úsalo AL INICIO para la "Gran Idea".
+           - Contenido: "La Tesis Central" (1 frase) + "Por qué importa" (Impacto real).
         
-        CONTEXTO GLOBAL (BIBLIOTECA):
+        B. 🧠 DEEP_DIVE (El Mentor)
+           - Úsalo para CONCEPTOS COMPLEJOS.
+           - Contenido: Definición clara + Estructura/Pasos + Ejemplo técnico (SIN analogías infantiles).
+        
+        C. 🕵🏻 REALITY_CHECK (El Investigador)
+           - Úsalo para desmentir mitos, advertir errores o comparar pros/contras.
+           - Contenido: "¿Qué suelen hacer mal?" o "Verdad vs Mito".
+        
+        D. 🛠️ TOOLKIT (Acción)
+           - Úsalo para procesos, listas de verificación o pasos a seguir.
+           - Contenido: Lista de items accionables.
+
+        CONTEXTO GLOBAL:
         {global_context}
         
-        INSTRUCCIONES DE FORMATO (JSON ESTRICTO):
+        FORMATO JSON ESTRICTO:
         {{
-            "introduction": "Visión Global: Un párrafo único al inicio que explica el mapa mental de toda la clase. 'Primero entenderemos X, luego Y...'",
-            "blocks": [
+            "modules": [
                 {{
-                    "type": "KEY",  // o "SUPPORT" o "REMINDER"
-                    "concept_title": "Título del Concepto",
+                    "type": "STRATEGIC_BRIEF",
+                    "title": "Título de Impacto",
                     "content": {{
-                        "academic_def": "Solo si es KEY o SUPPORT. Si es REMINDER, null.",
-                        "explanation": "La traducción a lenguaje simple.",
-                        "analogy_or_example": "Si es KEY: Analogía. Si es SUPPORT: Ejemplo. Si es REMINDER: null.",
-                        "why_matters": "Solo si es KEY. Sino, null."
+                        "thesis": "La idea central en una frase potente.",
+                        "impact": "Cómo esto cambia el resultado o mejora el negocio/estudio."
                     }}
                 }},
-                ... (Mezcla los tipos para dar ritmo. Mínimo 3 bloques)
-            ],
-            "conclusion": "Cierre integrador que conecte todo."
+                {{
+                    "type": "DEEP_DIVE",
+                    "title": "Nombre del Concepto Técnico",
+                    "content": {{
+                        "definition": "Definición formal pero clara.",
+                        "explanation": "Explicación estructural del funcionamiento.",
+                        "example": "Un caso de uso real (profesional, no infantil)."
+                    }}
+                }},
+                {{
+                    "type": "REALITY_CHECK",
+                    "title": "Análisis Crítico / Advertencia",
+                    "content": {{
+                        "question": "¿Cuál es el error común o la duda frecuente?",
+                        "insight": "La respuesta contraintuitiva o la advertencia."
+                    }}
+                }},
+                {{
+                    "type": "TOOLKIT",
+                    "title": "Herramientas / Pasos",
+                    "content": {{
+                        "intro": "Para aplicar esto, sigue estos pasos:",
+                        "steps": ["Paso 1...", "Paso 2...", "Paso 3..."]
+                    }}
+                }}
+            ]
         }}
 
         TRANSCRIPCIÓN ORIGINAL:
@@ -206,9 +236,13 @@ Google ofrece una capa gratuita generosa, pero limitada.
             return json.loads(response.text)
         except Exception as e:
             return {
-                "introduction": "Hubo un error generando la explicación.",
-                "blocks": [],
-                "conclusion": str(e)
+                "modules": [
+                    {
+                        "type": "REALITY_CHECK",
+                        "title": "Error de Generación",
+                        "content": {"question": "¿Qué pasó?", "insight": str(e)}
+                    }
+                ]
             }
 
     def solve_quiz(self, images=None, question_text=None, global_context=""):
