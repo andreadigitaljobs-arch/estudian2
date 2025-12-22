@@ -1141,6 +1141,58 @@ CSS_STYLE = """
         flex: 0 0 280px !important;
     }
 
+    /* --- NUCLEAR SEPARATOR HIDER FOR SIDEBAR (ULTIMATE NUKE) --- */
+    /* Target every single element in sidebar to kill borders, shadows, and GAPS */
+    [data-testid="stSidebar"] *, 
+    [data-testid="stSidebar"] [data-testid="stVerticalBlock"] > div,
+    [data-testid="stSidebar"] [data-testid="element-container"],
+    [data-testid="stSidebar"] [data-testid="stExpander"],
+    [data-testid="stSidebar"] hr {
+        border: none !important;
+        border-bottom: none !important;
+        border-top: none !important;
+        box-shadow: none !important;
+    }
+    
+    /* KILL ALL LAYOUT GAPS (This is the key to removing that big space) */
+    [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
+        gap: 0px !important;
+    }
+    
+    [data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"] {
+        border: none !important;
+    }
+
+    /* Kill margins on element containers to prevent ghost spacing */
+    [data-testid="stSidebar"] [data-testid="element-container"] {
+        margin-bottom: 0px !important;
+        margin-top: 0px !important;
+    }
+    
+    /* Ensure no background or border on expanders in sidebar */
+    [data-testid="stSidebar"] [data-testid="stExpander"] {
+        border: none !important;
+        background-color: transparent !important;
+    }
+
+    /* Surgical Highlight Styles (Study Mode) */
+
+    /* Surgical Highlight Styles (Study Mode) */
+    .sc-base { background-color: #ffcccc !important; padding: 2px 5px !important; border-radius: 5px !important; font-weight: bold !important; color: #900 !important; border: 1px solid #ff9999 !important; display: inline; }
+    .sc-example { background-color: #cce5ff !important; padding: 2px 5px !important; border-radius: 5px !important; color: #004085 !important; border: 1px solid #b8daff !important; display: inline; }
+    .sc-note { background-color: #d4edda !important; padding: 2px 5px !important; border-radius: 5px !important; color: #155724 !important; border: 1px solid #c3e6cb !important; display: inline; }
+    .sc-data { background-color: #fff3cd !important; padding: 2px 5px !important; border-radius: 5px !important; color: #856404 !important; border: 1px solid #ffeeba !important; display: inline; }
+    .sc-key { background-color: #e2d9f3 !important; padding: 2px 5px !important; border-radius: 5px !important; color: #512da8 !important; border: 1px solid #d1c4e9 !important; display: inline; }
+
+    /* Hide highlighting classes when needed (if target is wrapped in them) */
+    .study-mode-off .sc-base, .study-mode-off .sc-example, .study-mode-off .sc-note, .study-mode-off .sc-data, .study-mode-off .sc-key {
+        background-color: transparent !important; 
+        padding: 0 !important; 
+        color: inherit !important; 
+        border: none !important; 
+        font-weight: inherit !important; 
+    }
+
     /* --- NUCLEAR UPLOADER HIDING --- */
     div[data-testid="stFileUploader"]:has(input[aria-label="KILL_ME_NOW"]),
     div[data-testid="stFileUploader"]:has(label:contains("KILL_ME_NOW")),
@@ -1280,9 +1332,6 @@ with st.sidebar:
         st.image(logo_img, width=180)
     else:
         st.markdown("### 🎓 E-Education")
-    
-    st.markdown('<div style="height: 20px;"></div>', unsafe_allow_html=True) # Spacer
-
     if st.session_state.get('user'):
         # User Info (Side-by-Side with Flexbox for tight control)
         st.markdown(f"""
@@ -1303,12 +1352,13 @@ with st.sidebar:
             import time
             time.sleep(0.5) # Allow cleanup time
             st.rerun()
-    # --- MODO ESTUDIO TOGGLE ---
-    study_mode = st.sidebar.toggle("Modo Estudio (Resaltadores) 🎨", value=True, help="Activa o desactiva los colores de estudio.")
+    # --- MODO ESTUDIO & LEYENDA ---
+    study_mode = st.toggle("Modo Estudio (Resaltadores) 🎨", value=True, help="Activa o desactiva los colores de estudio.", key="study_mode_toggle")
     
-    # Legend UI
-    with st.sidebar.expander("📚 Leyenda de Colores", expanded=study_mode):
-        st.markdown('''
+    # Combined block for toggle logic and legend to avoid multiple vertical slots
+    with st.expander("📚 Leyenda de Colores", expanded=study_mode):
+        st.markdown(f"""
+            <div style='display:none'><script>window.parent.document.body.classList.{'add' if not study_mode else 'remove'}('study-mode-off');</script></div>
             <div style="font-size: 0.8rem; line-height: 1.4;">
                 <div style="margin-bottom:8px;"><span style="background-color: #ffcccc; color: #900; border: 1px solid #ff9999; padding: 1px 4px; border-radius: 3px; font-weight: bold;">Rojo</span>: Definiciones y conceptos base.</div>
                 <div style="margin-bottom:8px;"><span style="background-color: #cce5ff; color: #004085; border: 1px solid #b8daff; padding: 1px 4px; border-radius: 3px; font-weight: bold;">Azul</span>: Ejemplos y casos prácticos.</div>
@@ -1316,43 +1366,10 @@ with st.sidebar:
                 <div style="margin-bottom:8px;"><span style="background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; padding: 1px 4px; border-radius: 3px; font-weight: bold;">Amarillo</span>: Datos, fechas y nombres.</div>
                 <div style="margin-bottom:8px;"><span style="background-color: #e2d9f3; color: #512da8; border: 1px solid #d1c4e9; padding: 1px 4px; border-radius: 3px; font-weight: bold;">Púrpura</span>: Ideas clave y conclusiones.</div>
             </div>
-        ''', unsafe_allow_html=True)
-    st.sidebar.divider()
-
-    # Dynamic CSS Injection for Study Mode
-    if study_mode:
-        highlight_css = """
-        <style>
-        .sc-base { background-color: #ffcccc !important; padding: 2px 5px !important; border-radius: 5px !important; font-weight: bold !important; color: #900 !important; border: 1px solid #ff9999 !important; display: inline; }
-        .sc-example { background-color: #cce5ff !important; padding: 2px 5px !important; border-radius: 5px !important; color: #004085 !important; border: 1px solid #b8daff !important; display: inline; }
-        .sc-note { background-color: #d4edda !important; padding: 2px 5px !important; border-radius: 5px !important; color: #155724 !important; border: 1px solid #c3e6cb !important; display: inline; }
-        .sc-data { background-color: #fff3cd !important; padding: 2px 5px !important; border-radius: 5px !important; color: #856404 !important; border: 1px solid #ffeeba !important; display: inline; }
-        .sc-key { background-color: #e2d9f3 !important; padding: 2px 5px !important; border-radius: 5px !important; color: #512da8 !important; border: 1px solid #d1c4e9 !important; display: inline; }
-        </style>
-        """
-    else:
-        highlight_css = """
-        <style>
-        .sc-base, .sc-example, .sc-note, .sc-data, .sc-key,
-        span[style*="#ffd9d9"], span[style*="#d1e9ff"], span[style*="#d4f2d2"], 
-        span[style*="#fff9c4"], span[style*="#f0e6ff"] { 
-            background-color: transparent !important; 
-            padding: 0 !important; 
-            color: inherit !important; 
-            border: none !important; 
-            font-weight: inherit !important; 
-        }
-        </style>
-        """
-    st.markdown(highlight_css, unsafe_allow_html=True)
-    st.sidebar.divider()
-    
-    # --- 1. HISTORIAL DE CHATS ---
-    # from database import ... (Moved to top)
-
+        """, unsafe_allow_html=True)
+    # --- 2. HISTORIAL DE CHATS ---
     if 'current_chat_session' not in st.session_state:
         st.session_state['current_chat_session'] = None
-
     with st.expander("🗂️ Historial de Chats", expanded=True):
         # Create New
         if st.button("➕ Nuevo chat", use_container_width=True):
@@ -1420,7 +1437,6 @@ with st.sidebar:
 
         # VIEW ALL BUTTON ALWAYS VISIBLE
         if True:
-            st.write("")
             if st.button("📂 Ver todo el historial...", help="Ir al panel de gestión completo", use_container_width=True):
                 st.session_state['redirect_target_name'] = "Inicio"
                 st.session_state['force_chat_tab'] = True
@@ -1430,11 +1446,6 @@ with st.sidebar:
         # Management for Active Session
         if st.session_state['current_chat_session']:
             st.caption("Gestionar Actual:")
-            c_edit, c_del = st.columns(2)
-            with c_edit:
-                # Rename popover or input? simpler to use text input below for now
-                 pass
-            
             new_name = st.text_input("Renombrar:", value=st.session_state['current_chat_session']['name'], key="rename_chat_input")
             if new_name != st.session_state['current_chat_session']['name']:
                 # Save immediately on change (Enter)
@@ -1458,7 +1469,6 @@ with st.sidebar:
                 st.rerun()
 
         # --- BULK DELETE (GESTIÓN MASIVA) ---
-        st.write("")
         with st.expander("🗑️ Gestión Masiva", expanded=False):
             # 1. Multi-Select with Invisible Uniqueness Hack
             # User wants clean names, but Streamlit merges duplicates.
@@ -1507,18 +1517,14 @@ with st.sidebar:
                         time.sleep(0.5)
                         st.rerun()
 
-    st.divider()
 
-    # --- 2. SPOTLIGHT ACADÉMICO ---
+    # --- 3. SPOTLIGHT ACADÉMICO ---
     st.markdown("#### 🔍 Búsqueda rápida")
     st.caption("¿Qué buscas hoy?")
-    
     # Styled Input defined in CSS
     search_query = st.text_input("Busqueda", placeholder="Ej: 'Concepto de Lead'...", label_visibility="collapsed")
-    
     # Radio with custom icons workaround via emoji
     search_mode = st.radio("Modo:", ["⚡ Concepto Rápido", "🕵🏻 Análisis Profundo"], horizontal=False, label_visibility="collapsed")
-    
     # Search Button (Purple Pill via CSS)
     if st.button("Buscar 🔍", key="btn_spotlight", use_container_width=True):
         if search_query:
@@ -1528,42 +1534,28 @@ with st.sidebar:
     
     # --- 3. CONFIGURACIÓN PERSONAL ---
     # (Removed per user request)
-    st.divider()
-    
+
     # --- 4. ESPACIO DE TRABAJO ---
     st.markdown("#### 📂 Espacio de Trabajo")
     st.caption("Diplomado Actual:")
-    
-    # DB Ops
-    # from database import ... (Moved to top)
-    
-    # GUARD: Ensure user is logged in before accessing ID
     if not st.session_state.get('user'):
         st.stop()
-        
     current_user_id = st.session_state['user'].id
     db_courses = get_user_courses(current_user_id)
     course_names = [c['name'] for c in db_courses]
     course_map = {c['name']: c['id'] for c in db_courses}
-    
     if not course_names: course_names = []
-    if not course_names: course_names = []
-    
     # RECOVERY LOGIC (Persistence)
     if 'current_course' not in st.session_state or (st.session_state['current_course'] not in course_names and st.session_state['current_course'] is not None):
-        # Try metadata first
         saved_course = st.session_state['user'].user_metadata.get('last_course_name')
         if saved_course and saved_course in course_names:
              st.session_state['current_course'] = saved_course
         else:
              st.session_state['current_course'] = course_names[0] if course_names else None
-
     options = course_names + ["➕ Crear nuevo..."]
     idx = 0
     if st.session_state['current_course'] in course_names: idx = course_names.index(st.session_state['current_course'])
-    
     selected_option = st.selectbox("Diplomado", options, index=idx, label_visibility="collapsed")
-
     if selected_option == "➕ Crear nuevo...":
         new_name = st.text_input("Nombre Nuevo:", placeholder="Ej: Curso IA")
         if st.button("Crear"):
@@ -1572,16 +1564,11 @@ with st.sidebar:
                 if nc: 
                     st.session_state['current_course'] = nc['name']
                     st.rerun()
-
     else:
         st.session_state['current_course'] = selected_option
         st.session_state['current_course_id'] = course_map[selected_option]
-        
-        # PERSIST SELECTION
         update_last_course(selected_option)
-        
-        # --- RESTORED ACTIONS (RENAME / DELETE) ---
-        st.write("") # Micro spacer
+        # --- ACTIONS (RENAME / DELETE) ---
         
         # RENAME
         with st.expander("✏️ Renombrar"):
@@ -1644,7 +1631,7 @@ with st.sidebar:
                                         success_count += 1
                             
                             if success_count > 0:
-                                st.success(f"Se eliminaron {success_count} diplomados.")
+                                st.success(f"¡{success_count} cursos borrados!")
                                 st.session_state['delete_confirmation_pending'] = False
                                 # Reset current course if it was deleted
                                 if st.session_state.get('current_course') in courses_to_delete:
@@ -2493,8 +2480,8 @@ with tab2:
                         st.success("¡Apuntes generados en 3 capas!")
 
                 # --- DISPLAY RESULTS ---
-                if st.session_state['notes_result']:
-                    res = st.session_state['notes_result']
+                res = st.session_state.get('notes_result')
+                if res:
                     
                     # Check if it's new dict format (Progressive) or old string (Legacy)
                     if isinstance(res, dict):
@@ -2609,7 +2596,8 @@ with tab3:
                         st.session_state['guide_result'] = guide # Save to session
             
             # --- PERSISTENT RESULTS DISPLAY ---
-            if st.session_state['guide_result']:
+            res_guide = st.session_state.get('guide_result')
+            if res_guide:
                 st.divider()
                 
                 # HEADER + COPY ICON
@@ -2618,12 +2606,17 @@ with tab3:
                     st.markdown("### 🗺️ Tu Guía de Estudio")
                 with c_copy:
                     if st.button("📄", key="cp_guide", help="Copiar Guía Limpia"):
-                        clean_txt = clean_markdown(st.session_state['guide_result'])
+                        clean_txt = clean_markdown(res_guide)
                         if copy_to_clipboard(clean_txt):
                             st.toast("¡Copiado!", icon='📋')
                 
+                with st.expander("🛠️ Acciones", expanded=False):
+                    if st.button("📥 Descargar Guía (.md)", key="dl_guide"):
+                        clean_txt = clean_markdown(res_guide)
+                        st.download_button("Click para descargar", clean_txt, file_name="guia_estudio.md")
+                
                 # Visual Display
-                st.markdown(st.session_state['guide_result'])
+                st.markdown(res_guide)
 
 # --- TAB 4: Quiz ---
 with tab4:
@@ -2851,7 +2844,8 @@ with tab4:
                 })
 
         # --- PERSISTENT RESULTS DISPLAY ---
-        if st.session_state['quiz_results']:
+        res_quiz = st.session_state.get('quiz_results')
+        if res_quiz:
             st.divider()
             
             # HEADER + COPY ICON
@@ -2861,10 +2855,10 @@ with tab4:
             with c_copy:
                 # Compile text for copying inside the button action
                 full_report_copy = "--- HOJA DE RESPUESTAS ---\n\n"
-                for i, res in enumerate(st.session_state['quiz_results']):
+                for i, res in enumerate(res_quiz):
                      full_report_copy += f"FOTO {i+1}: {res['short']}\n"
                 full_report_copy += "\n--- DETALLES ---\n"
-                for i, res in enumerate(st.session_state['quiz_results']):
+                for i, res in enumerate(res_quiz):
                      full_report_copy += f"\n[FOTO {i+1}]\n{res['full']}\n"
                      
                 if st.button("📄", key="cp_quiz", help="Copiar Resultados Limpios"):
@@ -2878,14 +2872,14 @@ with tab4:
             
             # Build a nice markdown list for visual display
             md_list = ""
-            for i, res in enumerate(st.session_state['quiz_results']):
+            for i, res in enumerate(res_quiz):
                 md_list += f"- **Foto {i+1}:** {res['short']}\n"
             st.markdown(md_list)
             
             st.divider()
             st.markdown("#### 🔍 Detalles por Pregunta")
             
-            for i, res in enumerate(st.session_state['quiz_results']):
+            for i, res in enumerate(res_quiz):
                 with st.expander(f"Ver detalle de Item {i+1}"):
                     if 'img_obj' in res:
                         try:
@@ -2913,9 +2907,9 @@ with tab4:
                  
                  # Prepare Context (Last Quiz Results)
                  ctx_quiz = "SIN DATOS DE QUIZ RECIENTE"
-                 if st.session_state['quiz_results']:
+                 if res_quiz:
                      ctx_quiz = "--- RESULTADOS DEL QUIZ --- \n"
-                     for res in st.session_state['quiz_results']:
+                     for res in res_quiz:
                          # Truncate text to avoid token explosion
                          short_full = (res['full'][:500] + '..') if len(res['full']) > 500 else res['full']
                          ctx_quiz += f"[Item: {res['name']}]\nAI Dice: {short_full}\n\n"
@@ -2926,8 +2920,8 @@ with tab4:
                           try:
                               # Gather Images for Context
                               images_ctx = []
-                              if st.session_state['quiz_results']:
-                                  for r in st.session_state['quiz_results']:
+                              if res_quiz:
+                                  for r in res_quiz:
                                       if r.get('img_obj'): images_ctx.append(r['img_obj'])
                               
                               reply = assistant.debate_quiz(
@@ -3076,9 +3070,9 @@ with tab5:
                         st.error(f"Error resolviendo tarea: {e}")
         
         # --- RESULT DISPLAY ---
-        if st.session_state['homework_result']:
-            st.divider()
-            res = st.session_state['homework_result']
+        res_hw = st.session_state.get('homework_result')
+        if res_hw:
+            res = res_hw
             
             # ARGUMENTATOR MODE DISPLAY (Dict/JSON)
             if isinstance(res, dict):
