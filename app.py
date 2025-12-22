@@ -1374,9 +1374,9 @@ with st.sidebar:
     else:
         st.markdown("### 🎓 E-Education")
     if st.session_state.get('user'):
-        # User Info (Side-by-Side with Flexbox for tight control)
+        # User Info (Added margin-top for breathing room from logo)
         st.markdown(f"""
-        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+        <div style="display: flex; align-items: center; gap: 10px; margin-top: 25px; margin-bottom: 20px;">
             <div style="font-size: 24px;">👤</div>
             <div style="font-size: 14px; color: #31333F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{st.session_state['user'].email}">
                 {st.session_state['user'].email}
