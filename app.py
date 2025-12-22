@@ -1352,7 +1352,6 @@ else:
         if (btn) btn.remove();
     </script>
     """, height=0)
-    """, height=0)
 
 # Sidebar
 with st.sidebar:
