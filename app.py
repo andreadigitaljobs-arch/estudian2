@@ -15,7 +15,8 @@ from database import (
     get_user_courses, create_course, delete_course, rename_course, 
     get_chat_sessions, create_chat_session, rename_chat_session, delete_chat_session, 
     get_dashboard_stats, update_user_nickname, get_recent_chats, check_and_update_streak, 
-    update_user_footprint, init_supabase, update_last_course
+    update_user_footprint, init_supabase, update_last_course, 
+    save_chat_message, get_chat_messages, get_file_content
 )
 
 
