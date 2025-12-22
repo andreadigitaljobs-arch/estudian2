@@ -6,7 +6,7 @@ import base64
 import pandas as pd
 from database import get_units, create_unit, upload_file_to_db, get_files, delete_file, rename_file, rename_unit, delete_unit, create_chat_session, save_chat_message, search_library, update_user_footprint, get_course_files
 
-@st.fragment
+
 def render_library(assistant):
     """
     Renders the dedicated "Digital Library" (Drive-style) tab.
