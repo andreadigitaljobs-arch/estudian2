@@ -1339,27 +1339,20 @@ if st.session_state.get('user'):
                     `;
                     
                     btn.onclick = function() {
-                        const scrollRecursive = (doc) => {
-                            const mains = doc.querySelectorAll('section.main, .main, [data-testid="stAppViewContainer"]');
-                            mains.forEach(m => {
-                                m.scrollTo({ top: m.scrollHeight + 10000, behavior: 'smooth' });
-                            });
-                            const all = doc.querySelectorAll('*');
-                            all.forEach(el => {
-                                if (el.scrollHeight > el.clientHeight) {
-                                    el.scrollTo({ top: el.scrollHeight + 10000, behavior: 'smooth' });
-                                }
-                            });
-                            const iframes = doc.querySelectorAll('iframe');
-                            for (let i = 0; i < iframes.length; i++) {
+                        const targets = [
+                            window.parent.document.documentElement, 
+                            window.parent.document.body,
+                            window.parent.document.querySelector('[data-testid="stAppViewContainer"]'),
+                            window.parent.document.querySelector('section.main')
+                        ];
+                        
+                        targets.forEach(t => {
+                            if (t) {
                                 try {
-                                    const idoc = iframes[i].contentDocument || iframes[i].contentWindow.document;
-                                    scrollRecursive(idoc);
+                                    t.scrollTo({ top: 100000, behavior: 'smooth' });
                                 } catch(e) {}
                             }
-                        };
-                        scrollRecursive(window.parent.document);
-                        window.parent.scrollTo({ top: 999999, behavior: 'smooth' });
+                        });
                     };
                     
                     btn.onmouseenter = () => btn.style.transform = 'scale(1.1)';
