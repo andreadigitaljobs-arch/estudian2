@@ -18,9 +18,36 @@ from database import (
     get_chat_sessions, create_chat_session, rename_chat_session, delete_chat_session, 
     get_dashboard_stats, update_user_nickname, get_recent_chats, check_and_update_streak, 
     update_user_footprint, init_supabase, update_last_course, 
-    save_chat_message, get_chat_messages, get_file_content, get_course_files, delete_file
+    save_chat_message, get_chat_messages, get_file_content, get_course_files, delete_file, get_course_full_context
 )
 
+
+
+# --- INSTANTIATE AI ENGINES (GLOBAL Fix) ---
+try:
+    # Use secrets key by default
+    _api_key = st.secrets.get("GEMINI_API_KEY")
+    if _api_key:
+         transcriber = Transcriber(api_key=_api_key)
+         assistant = StudyAssistant(api_key=_api_key)
+    else:
+         transcriber = None
+         assistant = None
+except Exception as e:
+    print(f"AI Init Error: {e}")
+    transcriber = None
+    assistant = None
+
+# --- GLOBAL CONTEXT HELPER ---
+def get_global_context():
+    try:
+        if not st.session_state.get('current_course'): return "", 0
+        cid = st.session_state['current_course']['id']
+        txt = get_course_full_context(cid)
+        fls = get_course_files(cid)
+        return txt, len(fls)
+    except:
+        return "", 0
 
 # --- GENERATE VALID ICO (FIX) ---
 try:
