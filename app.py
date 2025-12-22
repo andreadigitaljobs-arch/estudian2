@@ -1347,7 +1347,7 @@ if st.session_state.get('user'):
     """, height=0)
 else:
     # Cleanup if logged out (important for estetico)
-    st.components.v1.html("""
+    components.html("""
     <script>
         const root = window.parent.document;
         const btn = root.getElementById('estudian2_nuclear_scroller');
