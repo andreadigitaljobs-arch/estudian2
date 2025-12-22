@@ -2825,18 +2825,17 @@ with tab1:
         
         if uploaded_files:
             # --- MEMORY SAFETY CHECK (TRAFFIC CONTROL) ---
-            # --- MEMORY SAFETY CHECK (TRAFFIC CONTROL) ---
             total_size_bytes = sum(f.size for f in uploaded_files)
             total_size_mb = total_size_bytes / (1024 * 1024)
-            SAFE_RAM_LIMIT_MB = 500 # Reduced to 500MB to prevent "Over Capacity" crash
+            SAFE_RAM_LIMIT_MB = 400 # 400MB: The "Sweet Spot" for stability
             
             if total_size_mb > SAFE_RAM_LIMIT_MB:
                 st.error(
-                    f"💀 **¡ZONA DE CRASH! ({total_size_mb:.0f} MB / {SAFE_RAM_LIMIT_MB} MB)**\n\n"
-                    f"La pantalla de 'Over Capacity' que viste confirma que el servidor gratuito colapsa con más de 500MB.\n"
-                    f"He bajado el límite por tu seguridad para evitar que se rompa la app.\n\n"
-                    f"👉 **SOLUCIÓN:** Elimina archivos de la 'X' en la lista gris de arriba hasta bajar de 500MB.", 
-                    icon="☠️"
+                    f"🛡️ **LÍMITE DE ESTABILIDAD ({total_size_mb:.0f} MB / {SAFE_RAM_LIMIT_MB} MB)**\n\n"
+                    f"Para evitar que la app se rompa (Over Capacity), mantén tus subidas por debajo de **400 MB** en total.\n"
+                    f"Es mejor subir en tandas pequeñas que reiniciar el servidor a cada rato.\n\n"
+                    f"👉 **ACCIÓN:** Haz clic en la 'X' en la lista de arriba hasta que este mensaje desaparezca.", 
+                    icon="🚦"
                 )
                 st.stop() # Force execution stop
 
