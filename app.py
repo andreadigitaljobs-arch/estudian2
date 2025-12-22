@@ -1146,8 +1146,8 @@ if not st.session_state['user']:
         
         logo_html = ""
         if logo_b64:
-             # Height 280px. Adjusted margins: -60px Top (Lowered for centering), -50px Bottom (Separated)
-             logo_html = f'<img src="data:image/png;base64,{logo_b64}" style="height: 280px; width: auto; max-width: 100%; display: block; margin: -60px auto -50px auto;">'
+             # Height 280px. Adjusted margins: -85px Top (Raised slightly), -50px Bottom (Separated)
+             logo_html = f'<img src="data:image/png;base64,{logo_b64}" style="height: 280px; width: auto; max-width: 100%; display: block; margin: -85px auto -50px auto;">'
         
         # Title: "Vamos a estudiar" - Title lifted closer to logo, inputs compensated
         st.markdown(f'<div style="text-align: center; margin-bottom: 30px; margin-top: 0px;"><div style="display: flex; align-items: center; justify-content: center; margin-bottom: -20px;">{logo_html}</div><div class="messimo-title" style="margin-top: -30px; color: #4B22DD;">¡Vamos a estudiar!</div></div>', unsafe_allow_html=True)
