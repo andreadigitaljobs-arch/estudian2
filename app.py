@@ -1304,6 +1304,17 @@ components.html("""
                 display: none !important;
                 opacity: 0 !important;
             }
+            /* NUCLEAR SCROLLBAR HIDE (PARENT LEVEL) */
+            ::-webkit-scrollbar {
+                width: 0px !important;
+                background: transparent !important;
+                display: none !important;
+            }
+            html, body {
+                scrollbar-width: none !important;
+                -ms-overflow-style: none !important; 
+                overflow-y: auto !important; /* Keep scrolling, hide bar */
+            }
         `;
         if (!root.getElementById(style.id)) root.head.appendChild(style);
 
