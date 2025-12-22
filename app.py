@@ -1211,19 +1211,19 @@ CSS_STYLE = """
 """
 st.markdown(CSS_STYLE, unsafe_allow_html=True)
 
-# --- DEFINITIVE UNIVERSAL SCROLLER (PARENT-CONTEXT INJECTION) ---
+# --- DEFINITIVE UNIVERSAL SCROLLER (RELIABLE LOCAL FIX) ---
 import streamlit.components.v1 as components
 components.html("""
 <script>
     (function() {
-        const root = window.parent.document;
-        
-        const injectButton = () => {
+        const inject = () => {
             try {
-                if (root.getElementById('estudian2_ultimate_scroller')) return;
+                // We target window.parent to overlay the whole app
+                const root = window.parent.document;
+                if (root.getElementById('estudian2_scroller_v5')) return;
                 
                 const btn = root.createElement('button');
-                btn.id = 'estudian2_ultimate_scroller';
+                btn.id = 'estudian2_scroller_v5';
                 btn.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="pointer-events: none;"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>';
                 
                 btn.style.cssText = `
@@ -1245,36 +1245,40 @@ components.html("""
                     outline: none !important;
                 `;
                 
-                // SELF-CONTAINED LOGO (No dependencies)
-                btn.setAttribute('onclick', `(function(){
-                    const d = document;
-                    const containers = [
-                        d.querySelector('section.main'),
-                        d.querySelector('.main'),
-                        d.querySelector('div[data-testid="stAppViewContainer"]'),
-                        d.querySelector('.stApp'),
-                        d.documentElement,
-                        d.body
+                // Use a proper event listener
+                btn.addEventListener('click', function() {
+                    const doc = window.parent.document;
+                    const targets = [
+                        doc.querySelector('section.main'),
+                        doc.querySelector('.main'),
+                        doc.querySelector('[data-testid="stAppViewContainer"]'),
+                        doc.documentElement,
+                        doc.body,
+                        window.parent
                     ];
-                    containers.forEach(c => {
-                        if (c) {
-                            c.scrollTo({ top: c.scrollHeight + 10000, behavior: 'smooth' });
-                            // Hard jump fallback
-                            setTimeout(() => { c.scrollTop = c.scrollHeight + 10000; }, 500);
+                    
+                    targets.forEach(t => {
+                        if (t) {
+                            try {
+                                t.scrollTo({ top: 999999, behavior: 'smooth' });
+                                // Secondary check for instant scroll
+                                setTimeout(() => { t.scrollTop = 999999; }, 100);
+                            } catch(err) {}
                         }
                     });
-                    window.scrollTo({ top: 999999, behavior: 'smooth' });
-                })()`);
+                });
                 
+                // Hover effects
                 btn.onmouseenter = () => { btn.style.transform = 'scale(1.1)'; btn.style.backgroundColor = '#3b1aa3'; };
                 btn.onmouseleave = () => { btn.style.transform = 'scale(1.0)'; btn.style.backgroundColor = '#4B22DD'; };
                 
                 root.body.appendChild(btn);
-            } catch(e) { console.error("Injection Error:", e); }
+            } catch(e) { console.error("Scroller Error:", e); }
         };
 
-        setInterval(injectButton, 1000);
-        injectButton();
+        // Aggressive polling
+        setInterval(inject, 1000);
+        inject();
     })();
 </script>
 """, height=0)
