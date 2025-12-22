@@ -587,7 +587,7 @@ def get_course_files(course_id, type_filter=None):
         print(f"Error fetching course files: {e}")
         return []
 
-def upload_file_to_db(unit_id, filename, content, f_type="note"):
+def upload_file_v2(unit_id, filename, content, f_type="note"):
     """
     Saves a file to the database.
     Upsert: Update if exists, Insert if new.
