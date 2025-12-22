@@ -1177,6 +1177,11 @@ CSS_STYLE = """
         background-color: transparent !important;
     }
 
+    /* Small breathing room above the study mode toggle */
+    [data-testid="stSidebar"] [data-testid="stToggle"] {
+        margin-top: 15px !important;
+    }
+
     /* Surgical Highlight Styles (Study Mode) */
 
     /* Surgical Highlight Styles (Study Mode) */
