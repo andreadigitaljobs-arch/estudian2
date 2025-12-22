@@ -1266,8 +1266,11 @@ CSS_STYLE = """
         background-color: #2a1275 !important;
         transform: translateY(0);
     }
-    
-# CSS moved to top
+</style>
+"""
+st.markdown(CSS_STYLE, unsafe_allow_html=True)
+
+# CSS moved to top (Legacy cleanup)
 
 # --- NUCLEAR UNIVERSAL SCROLLER (DEFINITIVE) ---
 
