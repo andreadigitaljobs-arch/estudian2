@@ -147,12 +147,8 @@ if st.session_state.get('force_logout'):
         // Clear all storage to prevent ghost state
         window.localStorage.removeItem('st_tab_target');
         window.sessionStorage.clear();
-        // Force reload after short delay to ensure cookie is gone
-        setTimeout(() => { window.parent.location.reload(); }, 500);
     </script>
     """, height=0)
-    # Stop execution here to let JS take over
-    st.stop()
 
 
 # If not logged in, show Login Screen and STOP
