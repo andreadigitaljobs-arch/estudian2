@@ -1218,33 +1218,6 @@ components.html("""
     (function() {
         const root = window.parent.document;
         
-        // 1. Inject GLOBAL SCROLL FUNCTION into the parent window
-        // This ensures the parent window handles the scroll itself.
-        if (!window.parent.estudian2Scroll) {
-            window.parent.estudian2Scroll = function() {
-                try {
-                    const containers = [
-                        root.querySelector('section.main'),
-                        root.querySelector('.main'),
-                        root.querySelector('div[data-testid="stAppViewContainer"]'),
-                        root.querySelector('.stApp'),
-                        root.documentElement,
-                        root.body
-                    ];
-                    
-                    let done = false;
-                    for (const c of containers) {
-                        if (c && c.scrollHeight > c.clientHeight) {
-                            c.scrollTo({ top: c.scrollHeight + 10000, behavior: 'smooth' });
-                            done = true;
-                        }
-                    }
-                    if (!done) window.scrollTo({ top: 999999, behavior: 'smooth' });
-                } catch(e) { console.error("Scroll Logic Error:", e); }
-            };
-        }
-
-        // 2. Inject/Maintain the button in the parent body
         const injectButton = () => {
             try {
                 if (root.getElementById('estudian2_ultimate_scroller')) return;
@@ -1268,15 +1241,33 @@ components.html("""
                     cursor: pointer !important;
                     border: none !important;
                     box-shadow: 0 4px 15px rgba(0,0,0,0.4) !important;
-                    transition: transform 0.2s !important;
+                    transition: all 0.2s !important;
                     outline: none !important;
                 `;
                 
-                // CALL THE GLOBAL PARENT FUNCTION
-                btn.onclick = () => window.parent.estudian2Scroll();
+                // SELF-CONTAINED LOGO (No dependencies)
+                btn.setAttribute('onclick', `(function(){
+                    const d = document;
+                    const containers = [
+                        d.querySelector('section.main'),
+                        d.querySelector('.main'),
+                        d.querySelector('div[data-testid="stAppViewContainer"]'),
+                        d.querySelector('.stApp'),
+                        d.documentElement,
+                        d.body
+                    ];
+                    containers.forEach(c => {
+                        if (c) {
+                            c.scrollTo({ top: c.scrollHeight + 10000, behavior: 'smooth' });
+                            // Hard jump fallback
+                            setTimeout(() => { c.scrollTop = c.scrollHeight + 10000; }, 500);
+                        }
+                    });
+                    window.scrollTo({ top: 999999, behavior: 'smooth' });
+                })()`);
                 
-                btn.onmouseenter = () => btn.style.transform = 'scale(1.1)';
-                btn.onmouseleave = () => btn.style.transform = 'scale(1.0)';
+                btn.onmouseenter = () => { btn.style.transform = 'scale(1.1)'; btn.style.backgroundColor = '#3b1aa3'; };
+                btn.onmouseleave = () => { btn.style.transform = 'scale(1.0)'; btn.style.backgroundColor = '#4B22DD'; };
                 
                 root.body.appendChild(btn);
             } catch(e) { console.error("Injection Error:", e); }
