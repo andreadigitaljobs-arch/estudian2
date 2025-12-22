@@ -1287,6 +1287,9 @@ components.html("""
     })();
 </script>
 """, height=0)
+
+# Sidebar
+with st.sidebar:
     # st.caption("🚀 v3.3 (API Fix)") # Removed per user request
     # --- 1. LOGO & USER ---
     # Left Aligned ("RAS con el resto")
