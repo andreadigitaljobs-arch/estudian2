@@ -3209,6 +3209,7 @@ with tab_didactic:
                                          
                                      md_save += "---\n\n"
                              
+                             fname = f"Didactico_{selected_file.replace('.txt', '')[:50]}.md"
                              upload_file_v2(n_unit['id'], fname, md_save, "note")
                              st.success(f"Explicación guardada en '{target_folder}'")
 
