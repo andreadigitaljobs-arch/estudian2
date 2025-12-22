@@ -255,18 +255,18 @@ components.html("""
         style.id = styleId;
         style.innerHTML = `
             /* 1. Standard Webkit (Chrome/Edge/Safari) */
-            ::-webkit-scrollbar {
+            ::-webkit-scrollbar {{
                 width: 0px !important;
                 height: 0px !important;
                 background: transparent !important;
                 display: none !important;
-            }
+            }}
             
             /* 2. Firefox & Standard */
-            * {
+            * {{
                 scrollbar-width: none !important;
                 -ms-overflow-style: none !important;
-            }
+            }}
             
             /* 3. Streamlit Specific Containers */
             .stApp, section.main, .block-container, [data-testid="stAppViewContainer"] {{
