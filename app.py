@@ -1183,6 +1183,25 @@ CSS_STYLE = """
         background-color: transparent !important;
     }
 
+    /* INTERNAL TEXT SPACING (Breathing room for captions/headers) */
+    [data-testid="stSidebar"] h4 {
+        margin-top: 30px !important;
+        margin-bottom: 15px !important;
+        font-weight: 700 !important;
+    }
+    [data-testid="stSidebar"] [data-testid="stCaptionContainer"] {
+        margin-top: 15px !important;
+        margin-bottom: 10px !important;
+        line-height: 1.5 !important;
+    }
+    
+    /* Spacing for widget labels (like "Renombrar:") */
+    [data-testid="stSidebar"] [data-testid="stWidgetLabel"] {
+        margin-top: 15px !important;
+        margin-bottom: 8px !important;
+        font-weight: 600 !important;
+    }
+
     /* Surgical Highlight Styles (Study Mode) */
 
     /* Surgical Highlight Styles (Study Mode) */
