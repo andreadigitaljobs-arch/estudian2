@@ -23,6 +23,14 @@ from database import (
 
 
 
+# --- PAGE CONFIG MUST BE FIRST ---
+st.set_page_config(
+    page_title="E-Education",
+    page_icon="assets/favicon.jpg",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
 # --- INSTANTIATE AI ENGINES (GLOBAL Fix) ---
 try:
     # Use secrets key by default
@@ -62,13 +70,6 @@ except Exception as e:
     print(f"ICO GEN ERROR: {e}")
 # --------------------------------
 
-# --- PAGE CONFIG MUST BE FIRST ---
-st.set_page_config(
-    page_title="E-Education",
-    page_icon="assets/favicon.jpg",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
 
 if 'quiz_results' not in st.session_state: st.session_state['quiz_results'] = []
 if 'transcript_history' not in st.session_state: st.session_state['transcript_history'] = []
