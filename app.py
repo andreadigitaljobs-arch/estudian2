@@ -1166,8 +1166,8 @@ CSS_STYLE = """
     /* --- AESTHETIC SEPARATORS --- */
     .aesthetic-sep {
         height: 1px;
-        background: rgba(75, 34, 221, 0.15);
-        margin: 35px 0 20px 0 !important; /* More space above than below */
+        background: rgba(75, 34, 221, 0.1);
+        margin: 15px 0 10px 0 !important;
         width: 100%;
     }
 
@@ -1185,20 +1185,20 @@ CSS_STYLE = """
 
     /* INTERNAL TEXT SPACING (Breathing room for captions/headers) */
     [data-testid="stSidebar"] h4 {
-        margin-top: 35px !important;
-        margin-bottom: 12px !important;
+        margin-top: 15px !important;
+        margin-bottom: 5px !important;
         font-weight: 700 !important;
     }
     [data-testid="stSidebar"] [data-testid="stCaptionContainer"] {
-        margin-top: 18px !important;
-        margin-bottom: 8px !important;
-        line-height: 1.5 !important;
+        margin-top: 5px !important;
+        margin-bottom: 5px !important;
+        line-height: 1.4 !important;
     }
     
     /* Spacing for widget labels (like "Renombrar:") */
     [data-testid="stSidebar"] [data-testid="stWidgetLabel"] {
-        margin-top: 20px !important;
-        margin-bottom: 8px !important;
+        margin-top: 10px !important;
+        margin-bottom: 4px !important;
         font-weight: 600 !important;
     }
 
