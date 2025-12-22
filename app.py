@@ -2824,6 +2824,22 @@ with tab1:
         uploaded_files = st.file_uploader("Upload", type=['mp4', 'mov', 'avi', 'mkv', 'mp3', 'wav', 'm4a', 'flac', 'ogg', 'opus', 'waptt', 'aac', 'wma'], accept_multiple_files=True, key=st.session_state['transcriptor_key'], label_visibility="collapsed")
         
         if uploaded_files:
+            # --- MEMORY SAFETY CHECK (TRAFFIC CONTROL) ---
+            total_size_bytes = sum(f.size for f in uploaded_files)
+            total_size_mb = total_size_bytes / (1024 * 1024)
+            SAFE_RAM_LIMIT_MB = 800 # Safe Limit for 1GB Server
+            
+            if total_size_mb > SAFE_RAM_LIMIT_MB:
+                st.error(
+                    f"🛑 **¡ALTA SOBRECARGA DE CAMIÓN! (RAM ALERT)**\n\n"
+                    f"Has intentado subir **{total_size_mb:.1f} MB** de golpe.\n"
+                    f"El servidor gratuito solo tiene capacidad segura para **{SAFE_RAM_LIMIT_MB} MB** en memoria simultánea.\n\n"
+                    f"👮🏻‍♂️ **Acción Obligatoria:**\n"
+                    f"Elimina algunos archivos de la lista de arriba (cruz 'x') hasta bajar de 800MB. Procesa esos primero y luego sube el resto.", 
+                    icon="🚨"
+                )
+                st.stop() # Force execution stop
+
             # --- FOLDER SELECTION ---
             c_id = st.session_state.get('current_course_id')
             selected_unit_id = None
