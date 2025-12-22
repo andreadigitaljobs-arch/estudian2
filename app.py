@@ -3244,7 +3244,7 @@ with tab_didactic:
                                  'example': m.get('analogy'),
                              }
                         else:
-                             m_type = m.get('type', 'DEEP_DIVE')
+                             m_type = m.get('type', 'DEEP_DIVE').upper()
                              title = m.get('title', 'Módulo')
                              c = m.get('content', {})
                         
@@ -3311,6 +3311,11 @@ with tab_didactic:
                                     mime="text/csv"
                                 )
                             st.divider()
+                        
+                        else:
+                             # Debug Fallback
+                             with st.expander(f"⚠️ Módulo Desconocido: {m_type}"):
+                                 st.write(m)
 
 
 # --- TAB 4: Quiz ---
