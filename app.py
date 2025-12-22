@@ -1163,7 +1163,7 @@ CSS_STYLE = """
         border: none !important;
     }
 
-    /* --- AESTHETIC SEPARATORS --- */
+    /* --- SCROLLER STYLES --- */
     .aesthetic-sep {
         height: 1px;
         background: rgba(75, 34, 221, 0.1);
@@ -1178,17 +1178,13 @@ CSS_STYLE = """
     }
 
     /* Surgical Highlight Styles (Study Mode) */
-
-    /* Surgical Highlight Styles (Study Mode) */
-
-    /* Surgical Highlight Styles (Study Mode) */
     .sc-base { background-color: #ffcccc !important; padding: 2px 5px !important; border-radius: 5px !important; font-weight: bold !important; color: #900 !important; border: 1px solid #ff9999 !important; display: inline; }
     .sc-example { background-color: #cce5ff !important; padding: 2px 5px !important; border-radius: 5px !important; color: #004085 !important; border: 1px solid #b8daff !important; display: inline; }
     .sc-note { background-color: #d4edda !important; padding: 2px 5px !important; border-radius: 5px !important; color: #155724 !important; border: 1px solid #c3e6cb !important; display: inline; }
     .sc-data { background-color: #fff3cd !important; padding: 2px 5px !important; border-radius: 5px !important; color: #856404 !important; border: 1px solid #ffeeba !important; display: inline; }
     .sc-key { background-color: #e2d9f3 !important; padding: 2px 5px !important; border-radius: 5px !important; color: #512da8 !important; border: 1px solid #d1c4e9 !important; display: inline; }
 
-    /* Hide highlighting classes when needed (if target is wrapped in them) */
+    /* Hide highlighting classes when needed */
     .study-mode-off .sc-base, .study-mode-off .sc-example, .study-mode-off .sc-note, .study-mode-off .sc-data, .study-mode-off .sc-key {
         background-color: transparent !important; 
         padding: 0 !important; 
@@ -1206,65 +1202,70 @@ CSS_STYLE = """
         height: 0px !important;
         position: absolute !important;
     }
-    
-    /* --- ULTIMATE LOCAL SCROLLER --- */
-    #estudian2_local_scroller_btn {
-        position: fixed !important;
-        bottom: 120px !important;
-        right: 30px !important;
-        z-index: 2147483647 !important;
-        width: 55px !important;
-        height: 55px !important;
-        border-radius: 50% !important;
-        background-color: #4B22DD !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        cursor: pointer !important;
-        border: none !important;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.5) !important;
-        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        outline: none !important;
-    }
-    #estudian2_local_scroller_btn:hover {
-        transform: scale(1.15) !important;
-        background-color: #3b1aa3 !important;
-        box-shadow: 0 6px 25px rgba(0,0,0,0.6) !important;
-    }
-    #estudian2_local_scroller_btn svg {
-        width: 28px !important;
-        height: 28px !important;
-        pointer-events: none !important;
-    }
 </style>
-<button id="estudian2_local_scroller_btn" title="Ir al final" onclick="(function(){
-    const targets = [
-        window.parent.document.querySelector('section.main'),
-        window.parent.document.querySelector('.main'),
-        window.parent.document.querySelector('[data-testid=stAppViewContainer]'),
-        window.parent.document.body,
-        window.parent.document.documentElement,
-        document.querySelector('section.main'),
-        document.querySelector('.main'),
-        window
-    ];
-    targets.forEach(t => {
-        if(t) {
+
+<script>
+    (function() {
+        const root = window.parent.document;
+        const inject = () => {
             try {
-                t.scrollTo({top: t.scrollHeight + 10000, behavior: 'smooth'});
-                setTimeout(() => { t.scrollTop = t.scrollHeight + 10000; }, 200);
+                if (root.getElementById('universal_anchor_scroller')) return;
+                const btn = root.createElement('button');
+                btn.id = 'universal_anchor_scroller';
+                btn.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="pointer-events: none;"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>';
+                btn.style.cssText = `
+                    position: fixed !important;
+                    bottom: 120px !important;
+                    right: 30px !important;
+                    z-index: 2147483647 !important;
+                    width: 55px !important;
+                    height: 55px !important;
+                    border-radius: 50% !important;
+                    background-color: #4B22DD !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    cursor: pointer !important;
+                    border: none !important;
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.4) !important;
+                    transition: transform 0.2s !important;
+                `;
+                btn.onclick = () => {
+                    // Search for anchor in all iframes and parent
+                    const findAnchor = () => {
+                        // Check parent
+                        if (root.getElementById('global-bottom-anchor')) return root.getElementById('global-bottom-anchor');
+                        // Check all iframes
+                        const iframes = root.querySelectorAll('iframe');
+                        for (let i = 0; i < iframes.length; i++) {
+                            try {
+                                const doc = iframes[i].contentDocument || iframes[i].contentWindow.document;
+                                const a = doc.getElementById('global-bottom-anchor');
+                                if (a) return a;
+                            } catch(e) {}
+                        }
+                        return null;
+                    };
+                    
+                    const anchor = findAnchor();
+                    if (anchor) {
+                        anchor.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                    } else {
+                        // Last resort brute force
+                        const main = root.querySelector('section.main') || root.querySelector('.main') || root.documentElement;
+                        if (main) main.scrollTo({ top: 999999, behavior: 'smooth' });
+                        window.parent.scrollTo({ top: 999999, behavior: 'smooth' });
+                    }
+                };
+                btn.onmouseenter = () => btn.style.transform = 'scale(1.1)';
+                btn.onmouseleave = () => btn.style.transform = 'scale(1.0)';
+                root.body.appendChild(btn);
             } catch(e) {}
-        }
-    });
-    window.parent.scrollTo({top: 999999, behavior: 'smooth'});
-})()">
-    <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-        <line x1="12" y1="5" x2="12" y2="19"></line>
-        <polyline points="19 12 12 19 5 12"></polyline>
-    </svg>
-</button>
+        };
+        setInterval(inject, 1000);
+        inject();
+    })();
+</script>
 """
 st.markdown(CSS_STYLE, unsafe_allow_html=True)
 
@@ -3594,5 +3595,8 @@ with tab6:
             # 3. Trigger Response
             st.session_state['trigger_ai_response'] = True
             st.rerun()
+
+# --- DEFINITIVE SCROLL ANCHOR ---
+st.markdown("<div id='global-bottom-anchor' style='height: 10px; width: 10px; visibility: hidden;'></div>", unsafe_allow_html=True)
 
 # Force Reload Triggered
