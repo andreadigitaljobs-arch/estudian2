@@ -1205,19 +1205,21 @@ CSS_STYLE = """
     /* FIX: Protect Toggle alignment (reset internal label margins and force center) */
     [data-testid="stSidebar"] [data-testid="stToggle"] {
         display: flex !important;
-        align-items: center !important;
+        align-items: flex-start !important; /* Start at top to control offset manually */
         margin-bottom: 25px !important;
         gap: 15px !important;
     }
     
     [data-testid="stSidebar"] [data-testid="stToggle"] [data-testid="stWidgetLabel"] {
-        margin-top: 5px !important; /* Visual adjustment for the text */
+        margin-top: 0px !important;
         margin-bottom: 0px !important;
         flex: 1 !important;
+        line-height: 1.4 !important;
     }
 
     [data-testid="stSidebar"] [data-testid="stToggle"] div[role="switch"] {
-        margin-top: 8px !important; /* Force the switch down to line up with text center */
+        margin-top: 0px !important;
+        transform: translateY(12px) !important; /* Direct vertical centering nudge */
     }
 
     /* Surgical Highlight Styles (Study Mode) */
