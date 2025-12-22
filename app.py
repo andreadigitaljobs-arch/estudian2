@@ -1235,27 +1235,58 @@ CSS_STYLE = """
 
 <script>
     (function() {
-        const root = window.parent.document || document;
-        
+        const getRoot = () => {
+            try { return window.parent.document || document; } catch(e) { return document; }
+        };
+
         const manageScroll = () => {
+            const root = getRoot();
             if (root.getElementById('universal_scroll_btn')) return;
             
             const btn = root.createElement("button");
             btn.id = "universal_scroll_btn";
             btn.innerHTML = "⬇️";
-            btn.title = "Ir al final";
+            
+            // INLINE STYLES (Crucial for Parent Document Injection)
+            btn.style.position = 'fixed';
+            btn.style.bottom = '30px';
+            btn.style.right = '30px';
+            btn.style.zIndex = '2147483647';
+            btn.style.width = '50px';
+            btn.style.height = '50px';
+            btn.style.borderRadius = '50%';
+            btn.style.backgroundColor = '#4B22DD';
+            btn.style.color = 'white';
+            btn.style.boxShadow = '0 4px 15px rgba(0,0,0,0.4)';
+            btn.style.border = 'none';
+            btn.style.cursor = 'pointer';
+            btn.style.fontSize = '24px';
+            btn.style.display = 'flex';
+            btn.style.alignItems = 'center';
+            btn.style.justifyContent = 'center';
+            btn.style.transition = 'transform 0.2s';
+            
             btn.onclick = () => {
-                const main = root.querySelector('section.main') || root.querySelector('.main') || root.documentElement;
-                if (main) {
-                    main.scrollTo({ top: main.scrollHeight + 1000, behavior: 'smooth' });
+                // Try multiple scroll targets in both parent and local context
+                const findScrollable = (d) => d.querySelector('section.main') || d.querySelector('.main') || d.documentElement;
+                const target = findScrollable(root) || findScrollable(document);
+                
+                if (target) {
+                    target.scrollTo({ top: target.scrollHeight + 2000, behavior: 'smooth' });
                 }
+                
+                // Fallback for some browsers/Streamlit versions
                 window.scrollTo({ top: 999999, behavior: 'smooth' });
                 try { window.parent.scrollTo({ top: 999999, behavior: 'smooth' }); } catch(e) {}
             };
+
+            btn.onmouseenter = () => btn.style.transform = 'scale(1.1)';
+            btn.onmouseleave = () => btn.style.transform = 'scale(1.0)';
+            
             root.body.appendChild(btn);
         };
 
-        // Aggressive persistence
+        // Persistence and context retry
         setInterval(manageScroll, 1000);
         manageScroll();
     })();
