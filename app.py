@@ -77,6 +77,86 @@ if 'notes_result' not in st.session_state: st.session_state['notes_result'] = No
 if 'guide_result' not in st.session_state: st.session_state['guide_result'] = None
 
 if 'pasted_images' not in st.session_state: st.session_state['pasted_images'] = []
+# --- GLOBAL CSS (Prevents FOUC on Logout) ---
+st.markdown("""
+    <style>
+    /* TAB SCROLL ARROWS */
+    .stTabs [data-baseweb="tab-list"] button:not([role="tab"]) {
+        background-color: #4B22DD !important;
+        color: white !important;
+        border-radius: 50% !important;
+        width: 30px !important;
+        height: 30px !important;
+        border: none !important;
+        display: flex !important;
+    }
+
+    /* --- SIDEBAR WIDTH CONTROL --- */
+    section[data-testid="stSidebar"] {
+        width: 280px !important;
+        min-width: 280px !important;
+        max-width: 280px !important;
+        flex: 0 0 280px !important;
+    }
+
+    /* --- NUCLEAR SEPARATOR HIDER FOR SIDEBAR (ULTIMATE NUKE) --- */
+    /* Target every single element in sidebar to kill borders, shadows, and GAPS */
+    [data-testid="stSidebar"] *, 
+    [data-testid="stSidebar"] [data-testid="stVerticalBlock"] > div,
+    [data-testid="stSidebar"] [data-testid="element-container"],
+    [data-testid="stSidebar"] [data-testid="stExpander"],
+    [data-testid="stSidebar"] hr {
+        border: none !important;
+        border-bottom: none !important;
+        border-top: none !important;
+        box-shadow: none !important;
+    }
+    
+    /* KILL ALL LAYOUT GAPS */
+    [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
+        gap: 8px !important; /* Restore a small, natural gap */
+    }
+    
+    [data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"] {
+        border: none !important;
+    }
+
+    /* --- SCROLLER STYLES --- */
+    .aesthetic-sep {
+        height: 1px;
+        background: rgba(75, 34, 221, 0.1);
+        margin: 10px 0 !important;
+        width: 100%;
+    }
+
+    /* Ensure no background or border on expanders in sidebar */
+    [data-testid="stSidebar"] [data-testid="stExpander"] {
+        border: none !important;
+        background-color: transparent !important;
+    }
+
+    /* Highlight Styles */
+    .sc-base { background-color: #ffcccc !important; padding: 2px 5px !important; border-radius: 5px !important; font-weight: bold !important; color: #900 !important; border: 1px solid #ff9999 !important; display: inline; }
+    .sc-example { background-color: #cce5ff !important; padding: 2px 5px !important; border-radius: 5px !important; color: #004085 !important; border: 1px solid #b8daff !important; display: inline; }
+    .sc-note { background-color: #d4edda !important; padding: 2px 5px !important; border-radius: 5px !important; color: #155724 !important; border: 1px solid #c3e6cb !important; display: inline; }
+    .sc-data { background-color: #fff3cd !important; padding: 2px 5px !important; border-radius: 5px !important; color: #856404 !important; border: 1px solid #ffeeba !important; display: inline; }
+    .sc-key { background-color: #e2d9f3 !important; padding: 2px 5px !important; border-radius: 5px !important; color: #512da8 !important; border: 1px solid #d1c4e9 !important; display: inline; }
+    .study-mode-off .sc-base, .study-mode-off .sc-example, .study-mode-off .sc-note, .study-mode-off .sc-data, .study-mode-off .sc-key {
+        background-color: transparent !important; padding: 0 !important; color: inherit !important; border: none !important; font-weight: inherit !important; 
+    }
+
+    /* --- NUCLEAR UPLOADER HIDING --- */
+    div[data-testid="stFileUploader"]:has(input[aria-label="KILL_ME_NOW"]),
+    div[data-testid="stFileUploader"]:has(label:contains("KILL_ME_NOW")),
+    .paste-bin-hidden-wrapper {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0px !important;
+        position: absolute !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 if 'quiz_key' not in st.session_state: st.session_state['quiz_key'] = 0
 if 'tutor_chat_history' not in st.session_state: st.session_state['tutor_chat_history'] = []
 if 'current_course' not in st.session_state: st.session_state['current_course'] = None
@@ -1187,83 +1267,7 @@ CSS_STYLE = """
         transform: translateY(0);
     }
     
-    /* TAB SCROLL ARROWS */
-    .stTabs [data-baseweb="tab-list"] button:not([role="tab"]) {
-        background-color: #4B22DD !important;
-        color: white !important;
-        border-radius: 50% !important;
-        width: 30px !important;
-        height: 30px !important;
-        border: none !important;
-        display: flex !important;
-    }
-
-    /* --- SIDEBAR WIDTH CONTROL --- */
-    section[data-testid="stSidebar"] {
-        width: 280px !important;
-        min-width: 280px !important;
-        max-width: 280px !important;
-        flex: 0 0 280px !important;
-    }
-
-    /* --- NUCLEAR SEPARATOR HIDER FOR SIDEBAR (ULTIMATE NUKE) --- */
-    /* Target every single element in sidebar to kill borders, shadows, and GAPS */
-    [data-testid="stSidebar"] *, 
-    [data-testid="stSidebar"] [data-testid="stVerticalBlock"] > div,
-    [data-testid="stSidebar"] [data-testid="element-container"],
-    [data-testid="stSidebar"] [data-testid="stExpander"],
-    [data-testid="stSidebar"] hr {
-        border: none !important;
-        border-bottom: none !important;
-        border-top: none !important;
-        box-shadow: none !important;
-    }
-    
-    /* KILL ALL LAYOUT GAPS */
-    [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
-        gap: 8px !important; /* Restore a small, natural gap */
-    }
-    
-    [data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"] {
-        border: none !important;
-    }
-
-    /* --- SCROLLER STYLES --- */
-    .aesthetic-sep {
-        height: 1px;
-        background: rgba(75, 34, 221, 0.1);
-        margin: 10px 0 !important;
-        width: 100%;
-    }
-
-    /* Ensure no background or border on expanders in sidebar */
-    [data-testid="stSidebar"] [data-testid="stExpander"] {
-        border: none !important;
-        background-color: transparent !important;
-    }
-
-    /* Highlight Styles */
-    .sc-base { background-color: #ffcccc !important; padding: 2px 5px !important; border-radius: 5px !important; font-weight: bold !important; color: #900 !important; border: 1px solid #ff9999 !important; display: inline; }
-    .sc-example { background-color: #cce5ff !important; padding: 2px 5px !important; border-radius: 5px !important; color: #004085 !important; border: 1px solid #b8daff !important; display: inline; }
-    .sc-note { background-color: #d4edda !important; padding: 2px 5px !important; border-radius: 5px !important; color: #155724 !important; border: 1px solid #c3e6cb !important; display: inline; }
-    .sc-data { background-color: #fff3cd !important; padding: 2px 5px !important; border-radius: 5px !important; color: #856404 !important; border: 1px solid #ffeeba !important; display: inline; }
-    .sc-key { background-color: #e2d9f3 !important; padding: 2px 5px !important; border-radius: 5px !important; color: #512da8 !important; border: 1px solid #d1c4e9 !important; display: inline; }
-    .study-mode-off .sc-base, .study-mode-off .sc-example, .study-mode-off .sc-note, .study-mode-off .sc-data, .study-mode-off .sc-key {
-        background-color: transparent !important; padding: 0 !important; color: inherit !important; border: none !important; font-weight: inherit !important; 
-    }
-
-    /* --- NUCLEAR UPLOADER HIDING --- */
-    div[data-testid="stFileUploader"]:has(input[aria-label="KILL_ME_NOW"]),
-    div[data-testid="stFileUploader"]:has(label:contains("KILL_ME_NOW")),
-    .paste-bin-hidden-wrapper {
-        display: none !important;
-        visibility: hidden !important;
-        height: 0px !important;
-        position: absolute !important;
-    }
-</style>
-"""
-st.markdown(CSS_STYLE, unsafe_allow_html=True)
+# CSS moved to top
 
 # --- NUCLEAR UNIVERSAL SCROLLER (DEFINITIVE) ---
 
