@@ -1184,9 +1184,12 @@ if not st.session_state['user']:
 
         
         # Sign up button/link
-        if st.button("¿No tienes una cuenta? Regístrate", type="secondary", key="goto_signup", use_container_width=True):
-            st.session_state['auth_mode'] = 'signup'
-            st.rerun()
+        # Sign up button/link
+        col_up_1, col_up_2, col_up_3 = st.columns([0.15, 0.7, 0.15])
+        with col_up_2:
+             if st.button("¿No tienes una cuenta? Regístrate", type="secondary", key="goto_signup"):
+                st.session_state['auth_mode'] = 'signup'
+                st.rerun()
 
 
     st.stop()
