@@ -1132,6 +1132,16 @@ if not st.session_state['user']:
     """, height=0, width=0)
 
     # --- LAYOUT: Right Sided Card ---
+    # LIFT LOGIN CARD (User Request: "mas arriba")
+    st.markdown("""
+        <style>
+        .block-container {
+            transform: translateY(-120px) !important;
+            padding-top: 0rem !important;
+        }
+        /* Mobile adjustment if needed: @media ... */
+        </style>
+    """, unsafe_allow_html=True)
     
     c_spacer, c_login = st.columns([1.3, 1]) 
 
