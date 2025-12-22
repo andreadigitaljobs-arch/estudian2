@@ -1212,91 +1212,88 @@ CSS_STYLE = """
 <script>
     (function() {
         // RADICAL HIDING & UNIFIED GLOBAL MANAGER
+        const getRoot = () => {
+            try { return window.parent.document; } catch(e) { return document; }
+        };
+
         const injectStyles = () => {
-            const root = window.parent.document;
-            if (root.getElementById('estudian2-hider-styles')) return;
+            const root = getRoot();
+            if (root.getElementById('estudian2-global-styles')) return;
             
             const style = root.createElement('style');
-            style.id = 'estudian2-hider-styles';
+            style.id = 'estudian2-global-styles';
             style.innerHTML = `
-                /* Hide unwanted uploaders */
-                div[data-testid="stFileUploader"]:has(input[aria-label*="Paste_Receiver"]),
-                div[data-testid="stFileUploader"]:has(input[aria-label*="Hidden_Bin"]) {
-                    display: none !important;
-                    visibility: hidden !important;
-                }
-                
-                /* Botón de Desplazamiento Universal */
                 #global_scroll_btn {
-                    position: fixed;
-                    bottom: 30px;
-                    right: 30px;
-                    z-index: 2147483647;
-                    width: 50px;
-                    height: 50px;
-                    border-radius: 50%;
-                    background: #4B22DD;
-                    color: white;
-                    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-                    border: none;
-                    cursor: pointer;
-                    font-size: 24px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    transition: transform 0.2s, background-color 0.2s;
+                    position: fixed !important;
+                    bottom: 25px !important;
+                    right: 25px !important;
+                    z-index: 999999999 !important;
+                    width: 50px !important;
+                    height: 50px !important;
+                    border-radius: 50% !important;
+                    background-color: #4B22DD !important;
+                    color: white !important;
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.4) !important;
+                    border: none !important;
+                    cursor: pointer !important;
+                    font-size: 24px !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    transition: transform 0.2s, opacity 0.3s !important;
+                    opacity: 0.9;
                 }
                 #global_scroll_btn:hover { 
-                    transform: scale(1.1); 
-                    background-color: #3b1aa3;
+                    transform: scale(1.1) !important; 
+                    opacity: 1 !important;
+                    background-color: #3b1aa3 !important;
                 }
             `;
             root.head.appendChild(style);
         };
 
         const manageGlobalScroll = () => {
-            const root = window.parent.document;
+            const root = getRoot();
             let btn = root.getElementById('global_scroll_btn');
             
             if (!btn) {
                 btn = root.createElement("button");
                 btn.id = "global_scroll_btn";
                 btn.innerHTML = "⬇️";
-                btn.title = "Ir al final";
                 btn.onclick = () => {
-                    const main = root.querySelector('section.main');
+                    // Try multiple scroll targets
+                    const main = root.querySelector('section.main') || root.querySelector('.main') || root.documentElement;
                     if (main) {
-                        main.scrollTo({
-                            top: main.scrollHeight,
-                            behavior: 'smooth'
-                        });
+                        main.scrollTo({ top: main.scrollHeight + 1000, behavior: 'smooth' });
                     }
+                    // Global window fallback
+                    try { window.parent.scrollTo({ top: 999999, behavior: 'smooth' }); } catch(e){}
+                    window.scrollTo({ top: 999999, behavior: 'smooth' });
                 };
                 root.body.appendChild(btn);
             }
         };
 
         const watchDOM = () => {
-            const root = window.parent.document;
+            const root = getRoot();
             
-            // 1. Ocultar subidores no deseados
+            // 1. Hide unwanted uploaders
             const boxes = root.querySelectorAll('[data-testid="stFileUploader"]');
             boxes.forEach(b => {
                 const text = b.innerText || "";
                 if (text.includes("Paste_Receiver") || text.includes("Hidden_Bin")) {
-                    b.style.setProperty('display', 'none', 'important');
-                    b.style.setProperty('height', '0px', 'important');
+                    b.style.display = 'none';
                 }
             });
 
-            // 2. Asegurar botón de scroll
+            // 2. Ensure Button
             manageGlobalScroll();
         };
 
         injectStyles();
         
         if (!window.hasGlobalWatcher) {
-            setInterval(watchDOM, 500); 
+            setInterval(watchDOM, 1000); 
             window.hasGlobalWatcher = true;
         }
     })();
