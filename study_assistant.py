@@ -228,22 +228,43 @@ Google ofrece una capa gratuita generosa, pero limitada.
         {transcript_text}
         """
         
-        try:
-            response = self.model.generate_content(
-                prompt,
-                generation_config={"response_mime_type": "application/json"}
-            )
-            return json.loads(response.text)
-        except Exception as e:
-            return {
-                "modules": [
-                    {
+        import json
+        import time
+        from google.api_core.exceptions import ResourceExhausted
+
+        # ... (Prompt is unchanged) ...
+
+        max_retries = 3
+        
+        for attempt in range(max_retries):
+            try:
+                response = self.model.generate_content(
+                    prompt,
+                    generation_config={"response_mime_type": "application/json"}
+                )
+                return json.loads(response.text)
+            
+            except ResourceExhausted:
+                if attempt < max_retries - 1:
+                    time.sleep(2 ** (attempt + 1)) # Backoff: 2s, 4s, 8s
+                    continue
+                else:
+                    return {
+                        "modules": [{
+                            "type": "REALITY_CHECK",
+                            "title": "Tráfico Alto (Error 429)",
+                            "content": {"question": "¿Qué pasó?", "insight": "Los servidores de IA están saturados. Intenta de nuevo en 30 segundos."}
+                        }]
+                    }
+                    
+            except Exception as e:
+                return {
+                    "modules": [{
                         "type": "REALITY_CHECK",
                         "title": "Error de Generación",
                         "content": {"question": "¿Qué pasó?", "insight": str(e)}
-                    }
-                ]
-            }
+                    }]
+                }
 
     def solve_quiz(self, images=None, question_text=None, global_context=""):
         """Solves a quiz question from images (list) or text."""
