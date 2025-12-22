@@ -1131,16 +1131,7 @@ if not st.session_state['user']:
     """, height=0, width=0)
 
     # --- LAYOUT: Right Sided Card ---
-    # LIFT LOGIN CARD (User Request: "mas arriba")
-    st.markdown("""
-        <style>
-        .block-container {
-            transform: translateY(-120px) !important;
-            padding-top: 0rem !important;
-        }
-        /* Mobile adjustment if needed: @media ... */
-        </style>
-    """, unsafe_allow_html=True)
+    # LIFT LOGIN CARD (User Request: "mas arriba" - RIGHT SIDE ONLY via Logo Margin)
     
     c_spacer, c_login = st.columns([1.3, 1]) 
 
@@ -1155,8 +1146,8 @@ if not st.session_state['user']:
         
         logo_html = ""
         if logo_b64:
-             # Height 280px. Adjusted margins: -110px Top (Lifted), -50px Bottom (Separated)
-             logo_html = f'<img src="data:image/png;base64,{logo_b64}" style="height: 280px; width: auto; max-width: 100%; display: block; margin: -110px auto -50px auto;">'
+             # Height 280px. Adjusted margins: -180px Top (Lifted more per user), -50px Bottom (Separated)
+             logo_html = f'<img src="data:image/png;base64,{logo_b64}" style="height: 280px; width: auto; max-width: 100%; display: block; margin: -180px auto -50px auto;">'
         
         # Title: "Vamos a estudiar" - Title lifted closer to logo, inputs compensated
         st.markdown(f'<div style="text-align: center; margin-bottom: 30px; margin-top: 0px;"><div style="display: flex; align-items: center; justify-content: center; margin-bottom: -20px;">{logo_html}</div><div class="messimo-title" style="margin-top: -30px; color: #4B22DD;">¡Vamos a estudiar!</div></div>', unsafe_allow_html=True)
