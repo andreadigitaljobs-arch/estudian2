@@ -1347,6 +1347,8 @@ if st.session_state.get('user'):
             const root = window.parent.document;
             const inject = () => {
                 try {
+                    // Check if we are still meant to be here (Security check)
+                    // But simpler: just check if button exists
                     if (root.getElementById('estudian2_nuclear_scroller')) return;
                     
                     const btn = root.createElement('button');
@@ -1377,7 +1379,6 @@ if st.session_state.get('user'):
                         if (marker) {
                             marker.scrollIntoView({ behavior: 'smooth', block: 'end' });
                         } else {
-                            // Backup: Scroll Main Container
                             const main = window.parent.document.querySelector('.main');
                             if (main) main.scrollTo({ top: 100000, behavior: 'smooth' });
                         }
@@ -1389,7 +1390,12 @@ if st.session_state.get('user'):
                     root.body.appendChild(btn);
                 } catch(e) {}
             };
-            setInterval(inject, 2000);
+            
+            // KILL PREVIOUS INTERVALS
+            if (window.parent.estudian2_scroller_interval) clearInterval(window.parent.estudian2_scroller_interval);
+            
+            // START NEW
+            window.parent.estudian2_scroller_interval = setInterval(inject, 2000);
             inject();
         })();
     </script>
@@ -1399,6 +1405,9 @@ else:
     components.html("""
     <script>
         const root = window.parent.document;
+        // KILL ZOMBIE INTERVAL
+        if (window.parent.estudian2_scroller_interval) clearInterval(window.parent.estudian2_scroller_interval);
+        
         const btn = root.getElementById('estudian2_nuclear_scroller');
         if (btn) btn.remove();
     </script>
