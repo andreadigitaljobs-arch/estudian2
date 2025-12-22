@@ -1211,91 +1211,29 @@ CSS_STYLE = """
 
 <script>
     (function() {
-        // RADICAL HIDING & UNIFIED GLOBAL MANAGER
-        const getRoot = () => {
-            try { return window.parent.document; } catch(e) { return document; }
-        };
-
-        const injectStyles = () => {
-            const root = getRoot();
-            if (root.getElementById('estudian2-global-styles')) return;
-            
-            const style = root.createElement('style');
-            style.id = 'estudian2-global-styles';
-            style.innerHTML = `
-                #global_scroll_btn {
-                    position: fixed !important;
-                    bottom: 25px !important;
-                    right: 25px !important;
-                    z-index: 999999999 !important;
-                    width: 50px !important;
-                    height: 50px !important;
-                    border-radius: 50% !important;
-                    background-color: #4B22DD !important;
-                    color: white !important;
-                    box-shadow: 0 4px 15px rgba(0,0,0,0.4) !important;
-                    border: none !important;
-                    cursor: pointer !important;
-                    font-size: 24px !important;
-                    display: flex !important;
-                    align-items: center !important;
-                    justify-content: center !important;
-                    transition: transform 0.2s, opacity 0.3s !important;
-                    opacity: 0.9;
-                }
-                #global_scroll_btn:hover { 
-                    transform: scale(1.1) !important; 
-                    opacity: 1 !important;
-                    background-color: #3b1aa3 !important;
-                }
-            `;
-            root.head.appendChild(style);
-        };
-
-        const manageGlobalScroll = () => {
-            const root = getRoot();
-            let btn = root.getElementById('global_scroll_btn');
-            
-            if (!btn) {
-                btn = root.createElement("button");
-                btn.id = "global_scroll_btn";
-                btn.innerHTML = "⬇️";
-                btn.onclick = () => {
-                    // Try multiple scroll targets
-                    const main = root.querySelector('section.main') || root.querySelector('.main') || root.documentElement;
-                    if (main) {
-                        main.scrollTo({ top: main.scrollHeight + 1000, behavior: 'smooth' });
-                    }
-                    // Global window fallback
-                    try { window.parent.scrollTo({ top: 999999, behavior: 'smooth' }); } catch(e){}
-                    window.scrollTo({ top: 999999, behavior: 'smooth' });
-                };
-                root.body.appendChild(btn);
-            }
-        };
-
-        const watchDOM = () => {
-            const root = getRoot();
-            
-            // 1. Hide unwanted uploaders
-            const boxes = root.querySelectorAll('[data-testid="stFileUploader"]');
-            boxes.forEach(b => {
-                const text = b.innerText || "";
-                if (text.includes("Paste_Receiver") || text.includes("Hidden_Bin")) {
-                    b.style.display = 'none';
-                }
-            });
-
-            // 2. Ensure Button
-            manageGlobalScroll();
-        };
-
-        injectStyles();
+        const root = window.parent.document || document;
         
-        if (!window.hasGlobalWatcher) {
-            setInterval(watchDOM, 1000); 
-            window.hasGlobalWatcher = true;
-        }
+        const manageScroll = () => {
+            if (root.getElementById('universal_scroll_btn')) return;
+            
+            const btn = root.createElement("button");
+            btn.id = "universal_scroll_btn";
+            btn.innerHTML = "⬇️";
+            btn.title = "Ir al final";
+            btn.onclick = () => {
+                const main = root.querySelector('section.main') || root.querySelector('.main') || root.documentElement;
+                if (main) {
+                    main.scrollTo({ top: main.scrollHeight + 1000, behavior: 'smooth' });
+                }
+                window.scrollTo({ top: 999999, behavior: 'smooth' });
+                try { window.parent.scrollTo({ top: 999999, behavior: 'smooth' }); } catch(e) {}
+            };
+            root.body.appendChild(btn);
+        };
+
+        // Aggressive persistence
+        setInterval(manageScroll, 1000);
+        manageScroll();
     })();
 </script>
 """
