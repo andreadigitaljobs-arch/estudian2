@@ -1230,6 +1230,37 @@ components.html("""
 <script>
     (function() {
         const root = window.parent.document;
+        
+        // 1. INJECT NUCLEAR CSS INTO PARENT
+        const style = root.createElement('style');
+        style.innerHTML = `
+            /* Kill transparency on ALL containers in both inner and outer worlds */
+            [data-testid="stAppViewBlockContainer"],
+            [data-testid="stAppViewContainer"],
+            [data-testid="stMainViewContainer"],
+            [data-test-script-state="running"] [data-testid="stAppViewBlockContainer"],
+            [data-test-script-state="running"] [data-testid="stAppViewContainer"],
+            [data-test-script-state="running"] iframe,
+            [data-test-script-state="running"] .stApp,
+            iframe, .stApp, section.main, .block-container {
+                opacity: 1 !important;
+                filter: none !important;
+                transition: none !important;
+                background-color: transparent !important;
+            }
+            
+            /* Kill any covering pseudo-elements or loading layers */
+            .stApp::before, .stApp::after, 
+            [data-testid="stAppViewContainer"]::before,
+            [data-testid="stAppViewContainer"]::after,
+            div[class*="st-"]::before,
+            div[class*="st-"]::after {
+                display: none !important;
+                opacity: 0 !important;
+            }
+        `;
+        root.head.appendChild(style);
+
         const inject = () => {
             try {
                 if (root.getElementById('estudian2_nuclear_scroller')) return;
