@@ -3225,9 +3225,27 @@ with tab_didactic:
                              st.warning("⚠️ Formato antiguo detectado. Por favor regenera la explicación.")
                     
                     for m in modules:
-                        m_type = m.get('type', 'DEEP_DIVE')
-                        title = m.get('title', 'Módulo')
-                        c = m.get('content', {})
+                        # --- SMART ADAPTER FOR LEGACY/MALFORMED BLOCKS ---
+                        # If the AI returns a flat object (Old Schema) instead of nested 'content'
+                        if 'content' not in m and 'simplified_explanation' in m:
+                             m_type = 'DEEP_DIVE'
+                             title = m.get('concept_title', 'Concepto')
+                             c = {
+                                 'definition': m.get('academic_definition'),
+                                 'explanation': m.get('simplified_explanation'),
+                                 'example': m.get('analogy'),
+                             }
+                        else:
+                             m_type = m.get('type', 'DEEP_DIVE')
+                             title = m.get('title', 'Módulo')
+                             c = m.get('content', {})
+                        
+                        # Fallback for completely empty content
+                        if not c and not m_type == 'STRATEGIC_BRIEF': 
+                             # Try to salvage anything
+                             c = {'explanation': str(m), 'definition': 'N/A'}
+
+                        # 1. 🎯 STRATEGIC BRIEF (Hero Section)
                         
                         # 1. 🎯 STRATEGIC BRIEF (Hero Section)
                         if m_type == 'STRATEGIC_BRIEF':
