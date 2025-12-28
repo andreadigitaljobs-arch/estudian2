@@ -81,18 +81,28 @@ class Transcriber:
         TRANSCRIPCIÓN EDITORIAL EXPERTA (OBLIGATORIO: SOLAMENTE ESPAÑOL):
         Tu tarea es transcribir el audio a ESPAÑOL con ortografía PERFECTA (tildes, signos ¿ ¡, puntuación). Está PROHIBIDO generar texto en Inglés.
 
-        SISTEMA DE RESALTADO QUIRÚRGICO (MODO ESTUDIO V6.0):
-        REGLA DE ORO: NO subrayes oraciones completas ni párrafos. Debes identificar solo las PALABRAS O FRASES CLAVE según su categoría:
-        - <span class="sc-base">Palabra</span> : Solo la definición técnica o término base. (ROJO)
-        - <span class="sc-example">Analogía</span> : Solo el corazón del ejemplo práctico. (AZUL)
-        - <span class="sc-note">Tip</span> : Solo el consejo o aclaración específica del profesor. (VERDE)
-        - <span class="sc-data">2024 / Juan Pérez / 15%</span> : Solo el dato, nombre, fecha o cifra. (AMARILLO)
-        - <span class="sc-key">Frase Clave</span> : Solo la conclusión o idea más potente. (PÚRPURA)
+        SISTEMA DE RESALTADO JERÁRQUICO COGNITIVO (MODO ESTUDIO V8.0):
+        REGLA DE ORO: UN COLOR = UNA FUNCIÓN MENTAL. NO a la saturación.
+        
+        🔴 ROJO (<span class="sc-base">...</span>) -> SOLO DEFINICIONES PURAS:
+           - Úsalo para responder "¿Qué es?". Máximo 1-2 por bloque.
+        
+        🟣 PÚRPURA (<span class="sc-key">...</span>) -> IDEAS CLAVE / CONCLUSIONES:
+           - El "Resumen Mental". Lo que se debe recordar sí o sí.
+        
+        🔵 AZUL (<span class="sc-example">...</span>) -> EJEMPLOS Y APLICACIONES:
+           - Lo que permite imaginar/aplicar.
+        
+        🟢 VERDE (<span class="sc-note">...</span>) -> ADVERTENCIAS Y MATICES:
+           - "Ojo con esto", errores comunes.
+        
+        🟡 AMARILLO (<span class="sc-data">...</span>) -> DATOS FRÍOS:
+           - Listas, nombres, pasos numerados, fechas.
+        
+        TEST DE CALIDAD:
+        1. ¿Si leo solo ROJO + PÚRPURA, entiendo el tema central? (Debe ser SI).
+        2. NO resaltes oraciones completas. Solo Sustantivos Clave, Conceptos Núcleo y Verbos Estratégicos.
 
-        ESTÉTICA: Busca resaltar palabras sueltas o frases cortas. PROHIBIDO bloques largos de color. Muchos resaltados pequeños dan una sensación de estudio profundo.
-
-        EJEMPLO DE PRECISIÓN: 
-        "En la <span class="sc-base">clase de hoy</span>, el <span class="sc-note">profesor enfatizó</span> que el <span class="sc-key">ROI digital</span> es la métrica reina."
 
         [ETIQUETA DE CONTROL: (Lógica Semántica V6.0)]
 

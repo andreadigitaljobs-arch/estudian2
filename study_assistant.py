@@ -39,20 +39,30 @@ class StudyAssistant:
         2. "intermedio": 10-12 bullets con los conceptos clave explicados brevemente.
         3. "profundo": Un resumen detallado (aprox 1 página).
         
-        SISTEMA DE RESALTADO SEMÁNTICO (MODO ESTUDIO V7.0):
-        REGLA DE ORO: Resalta CONCEPTOS COMPLETOS y FRASES CLAVE que aporten el sentido principal. Evita resaltar palabras sueltas aisladas (como "el", "es", "para") a menos que sean críticas.
+        SISTEMA DE RESALTADO JERÁRQUICO COGNITIVO (MODO ESTUDIO V8.0):
+        REGLA DE ORO: UN COLOR = UNA FUNCIÓN MENTAL. NO a la saturación.
         
-        CATEGORÍAS DE RESALTADO:
-        - <span class="sc-base">Concepto Técnico</span> : El término técnico completo o la definición esencial. (ROJO)
-        - <span class="sc-example">Ejemplo Práctico</span> : La frase que describe el ejemplo o analogía. (AZUL)
-        - <span class="sc-note">Insight/Tip</span> : La frase clave del consejo o aclaración. (VERDE)
-        - <span class="sc-data">Dato Duro</span> : Cifras, fechas, nombres propios importantes. (AMARILLO)
-        - <span class="sc-key">Idea Fuerza</span> : La conclusión o sentencia más importante del párrafo. (PÚRPURA)
+        🔴 ROJO (<span class="sc-base">...</span>) -> SOLO DEFINICIONES PURAS:
+           - Úsalo para responder "¿Qué es?". Máximo 1-2 por bloque.
+           - Ejemplo: "El <span class="sc-base">marketing digital</span> es la estrategia online..."
         
-        CRÍTICO: Busca que el texto sea legible y que los resaltados guíen la lectura rápida. Prefiere "la economía circular es rentable" (Frase) antes que solo "economía" (Palabra).
+        🟣 PÚRPURA (<span class="sc-key">...</span>) -> IDEAS CLAVE / CONCLUSIONES:
+           - El "Resumen Mental". Lo que se debe recordar sí o sí.
+           - Úsalo al final de las secciones.
         
-        EJEMPLO DE PRECISIÓN:
-        "<span class="sc-base">La economía circular busca reducir desperdicios</span> mediante el diseño. Por ejemplo, <span class="sc-example">al reciclar el agua de lluvia para riego industrial</span>. Según la ONU, esto logra un <span class="sc-data">ahorro del 40% anual</span>, lo cual es <span class="sc-key">crítico para la sostenibilidad futura</span>."
+        🔵 AZUL (<span class="sc-example">...</span>) -> EJEMPLOS Y APLICACIONES:
+           - Lo que permite imaginar/aplicar.
+           - Ejemplo: "Como <span class="sc-example">el ahorro de costos o captación</span>..."
+        
+        🟢 VERDE (<span class="sc-note">...</span>) -> ADVERTENCIAS Y MATICES:
+           - "Ojo con esto", errores comunes. Tono de acompañamiento.
+        
+        🟡 AMARILLO (<span class="sc-data">...</span>) -> DATOS FRÍOS:
+           - Listas, nombres, pasos numerados, fechas.
+        
+        TEST DE CALIDAD:
+        1. ¿Si leo solo ROJO + PÚRPURA, entiendo el tema central? (Debe ser SI).
+        2. NO resaltes oraciones completas. Solo Sustantivos Clave, Conceptos Núcleo y Verbos Estratégicos.
         
         FORMATO DE SALIDA (JSON ÚNICAMENTE):
         {
