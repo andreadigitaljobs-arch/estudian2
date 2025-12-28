@@ -81,27 +81,24 @@ class Transcriber:
         TRANSCRIPCIÓN EDITORIAL EXPERTA (OBLIGATORIO: SOLAMENTE ESPAÑOL):
         Tu tarea es transcribir el audio a ESPAÑOL con ortografía PERFECTA (tildes, signos ¿ ¡, puntuación). Está PROHIBIDO generar texto en Inglés.
 
-        SISTEMA DE RESALTADO JERÁRQUICO COGNITIVO (MODO ESTUDIO V8.0):
-        REGLA DE ORO: UN COLOR = UNA FUNCIÓN MENTAL. NO a la saturación.
-        
-        🔴 ROJO (<span class="sc-base">...</span>) -> SOLO DEFINICIONES PURAS:
-           - Úsalo para responder "¿Qué es?". Máximo 1-2 por bloque.
-        
-        🟣 PÚRPURA (<span class="sc-key">...</span>) -> IDEAS CLAVE / CONCLUSIONES:
-           - El "Resumen Mental". Lo que se debe recordar sí o sí.
-        
-        🔵 AZUL (<span class="sc-example">...</span>) -> EJEMPLOS Y APLICACIONES:
-           - Lo que permite imaginar/aplicar.
-        
-        🟢 VERDE (<span class="sc-note">...</span>) -> ADVERTENCIAS Y MATICES:
-           - "Ojo con esto", errores comunes.
-        
-        🟡 AMARILLO (<span class="sc-data">...</span>) -> DATOS FRÍOS:
-           - Listas, nombres, pasos numerados, fechas.
-        
-        TEST DE CALIDAD:
-        1. ¿Si leo solo ROJO + PÚRPURA, entiendo el tema central? (Debe ser SI).
-        2. NO resaltes oraciones completas. Solo Sustantivos Clave, Conceptos Núcleo y Verbos Estratégicos.
+        SISTEMA DE RESALTADO DE UNIDADES MENTALES (MODO ESTUDIO V9.0):
+        REGLA PLATINO: NO GRITES VISUALMENTE.
+
+        🧠 1. CONCEPTO DE "UNIDAD MENTAL" (Mental Units):
+           - PROHIBIDO resaltar palabras huérfanas ("estrategia", "online").
+           - Resalta bloques de significado: "<span class="sc-key">estrategia enfocada a resultados</span>".
+
+        🎨 2. JERARQUÍA ESTRICTA:
+        🔴 ROJO (<span class="sc-base">...</span>) -> SOLO DEFINICIONES TIPO EXAMEN ("¿Qué es?").
+        🟣 PÚRPURA (<span class="sc-key">...</span>) -> IDEA ANCLA / CONCLUSIÓN (Resumen mental).
+        🟡 AMARILLO (<span class="sc-data">...</span>) -> ESTRUCTURA (Paso 1, Fase 2) y DATOS.
+        🔵 AZUL (<span class="sc-example">...</span>) -> EJEMPLOS (Marcas, casos).
+        🟢 VERDE (<span class="sc-note">...</span>) -> MATICES (Ojo con...).
+
+        TEST DE CALIDAD V9:
+        - ¿Hay rojos que no son definiciones? -> BÓRRALOS.
+        - ¿Está "Paso 1" en Amarillo? -> SI NO, CORRIGE.
+
 
 
         [ETIQUETA DE CONTROL: (Lógica Semántica V6.0)]

@@ -39,30 +39,37 @@ class StudyAssistant:
         2. "intermedio": 10-12 bullets con los conceptos clave explicados brevemente.
         3. "profundo": Un resumen detallado (aprox 1 página).
         
-        SISTEMA DE RESALTADO JERÁRQUICO COGNITIVO (MODO ESTUDIO V8.0):
-        REGLA DE ORO: UN COLOR = UNA FUNCIÓN MENTAL. NO a la saturación.
+        SISTEMA DE RESALTADO DE UNIDADES MENTALES (MODO ESTUDIO V9.0):
+        REGLA PLATINO: NO GRITES VISUALMENTE. Un buen apunte es elegante, no un árbol de navidad.
+
+        🧠 1. CONCEPTO DE "UNIDAD MENTAL" (Mental Units):
+           - PROHIBIDO resaltar palabras huérfanas como "estrategia", "online", "marca", "digital" (ruido visual).
+           - DEBES resaltar el bloque de significado completo:
+             ❌ Mal: "<span class="sc-key">estrategia</span> enfocada a resultados"
+             ✅ Bien: "<span class="sc-key">estrategia enfocada a resultados</span>"
+
+        🎨 2. JERARQUÍA ESTRICTA DE COLORES:
         
-        🔴 ROJO (<span class="sc-base">...</span>) -> SOLO DEFINICIONES PURAS:
-           - Úsalo para responder "¿Qué es?". Máximo 1-2 por bloque.
-           - Ejemplo: "El <span class="sc-base">marketing digital</span> es la estrategia online..."
+        🔴 ROJO (<span class="sc-base">...</span>) -> SOLO DEFINICIONES TIPO EXAMEN:
+           - Úsalo SOLO si responde a "¿Qué es X?".
+           - RESTRICCIÓN: Si es una mención contextual (ej: "usaremos la marca"), NO uses rojo.
         
-        🟣 PÚRPURA (<span class="sc-key">...</span>) -> IDEAS CLAVE / CONCLUSIONES:
-           - El "Resumen Mental". Lo que se debe recordar sí o sí.
-           - Úsalo al final de las secciones.
+        🟣 PÚRPURA (<span class="sc-key">...</span>) -> IDEA ANCLA / CONCLUSIÓN:
+           - La frase que resume todo el párrafo. Lo que subrayarías para estudiar rápido.
         
-        🔵 AZUL (<span class="sc-example">...</span>) -> EJEMPLOS Y APLICACIONES:
-           - Lo que permite imaginar/aplicar.
-           - Ejemplo: "Como <span class="sc-example">el ahorro de costos o captación</span>..."
+        🟡 AMARILLO (<span class="sc-data">...</span>) -> ESTRUCTURA Y DATOS (GPS):
+           - OBLIGATORIO para: "Paso 1", "Fase 2", "Primero", "Segundo", "A", "B".
+           - También para: Fechas, Nombres propios, Cifras.
         
-        🟢 VERDE (<span class="sc-note">...</span>) -> ADVERTENCIAS Y MATICES:
-           - "Ojo con esto", errores comunes. Tono de acompañamiento.
+        🔵 AZUL (<span class="sc-example">...</span>) -> ATERRIZAJE A TIERRA:
+           - Ejemplos concretos: "Nike", "Cocacola", "ahorro de dinero".
         
-        🟡 AMARILLO (<span class="sc-data">...</span>) -> DATOS FRÍOS:
-           - Listas, nombres, pasos numerados, fechas.
+        🟢 VERDE (<span class="sc-note">...</span>) -> MATICES:
+           - "No confundir con...", "Importante:".
         
-        TEST DE CALIDAD:
-        1. ¿Si leo solo ROJO + PÚRPURA, entiendo el tema central? (Debe ser SI).
-        2. NO resaltes oraciones completas. Solo Sustantivos Clave, Conceptos Núcleo y Verbos Estratégicos.
+        TEST DE CALIDAD V9:
+        - ¿Hay palabras rojas sueltas que no son definiciones? -> ELIMÍNALAS.
+        - ¿He resaltado "Paso 1" en amarillo? -> SI NO, ERROR.
         
         FORMATO DE SALIDA (JSON ÚNICAMENTE):
         {
