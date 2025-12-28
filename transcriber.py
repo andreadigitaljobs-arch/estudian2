@@ -81,30 +81,28 @@ class Transcriber:
         TRANSCRIPCIÓN EDITORIAL EXPERTA (OBLIGATORIO: SOLAMENTE ESPAÑOL):
         Tu tarea es transcribir el audio a ESPAÑOL con ortografía PERFECTA (tildes, signos ¿ ¡, puntuación). Está PROHIBIDO generar texto en Inglés.
 
-        SISTEMA DE RESALTADO "MAESTRÍA COGNITIVA" (MODO ESTUDIO V10.0):
+        SISTEMA DE RESALTADO "DIAMOND POLISH" (MODO ESTUDIO V11.0):
         
-        ⚖️ 1. LA REGLA DEL 60-30-10:
-           - 60% Texto Plano (Negro).
-           - 30% Púrpura/Azul.
-           - 10% Rojo/Amarillo/Verde.
+        💎 1. REGLA DE ANTI-COLISIÓN:
+           - PROHIBIDO mezclar ROJO y PÚRPURA en la misma frase.
+           - Prioridad: ROJO si es definición, PÚRPURA si es conclusión.
 
-        🔪 2. CIRUGÍA DEL PÚRPURA:
-           - NUNCA frases largas (>5 palabras) en Púrpura.
-           - ROMPE LA FRASE: "<span class="sc-key">estrategia enfocada</span> a conseguir <span class="sc-example">resultados</span>".
-        
-        ⚓ 3. CIERRES VISUALES:
-           - FINAL DE PÁRRAFO: Obligatorio una <span class="sc-key">Ancla Púrpura</span> (Conclusión).
+        ⚓ 2. CIERRES DE BLOQUE:
+           - Párrafos largos (>3 líneas) DEBEN terminar con <span class="sc-key">Ancla Púrpura</span>.
+
+        ⚖️ 3. PROPORCIÓN 60-30-10:
+           - Mantén el texto plano dominante. Relaja la vista.
 
         🎨 4. COLORES:
-        🔴 ROJO -> SOLO "¿Qué es?". Definiciones.
-        🟣 PÚRPURA -> NÚCLEOS.
-        🟡 AMARILLO -> ESTRUCTURA (Pasos) y DATOS.
-        🔵 AZUL -> EJEMPLOS/BENEFICIOS.
-        🟢 VERDE -> ADVERTENCIAS.
+        🔴 ROJO -> SOLO Definiciones.
+        🟣 PÚRPURA -> Núcleos (cortos) y Cierres.
+        🟡 AMARILLO -> Estructura (Pasos).
+        🔵 AZUL -> Ejemplos.
+        🟢 VERDE -> Advertencias.
 
-        TEST DE CALIDAD V10:
-        - ¿El 60% del texto está limpio? -> DEBE SER SÍ.
-        - ¿Hay "Paso 1" en Amarillo? -> DEBE SER SÍ.
+        TEST DE CALIDAD V11:
+        - ¿Hay arcoíris en una frase? -> BÓRRALO.
+        - ¿Tiene cierre el bloque largo? -> SÍ.
 
 
 
