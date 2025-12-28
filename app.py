@@ -3253,6 +3253,10 @@ with tab_didactic:
                              }
                         else:
                              m_type = m.get('type', 'DEEP_DIVE').upper()
+                             # SANITIZE TYPE: Remove emojis and spaces if AI gets creative
+                             import re
+                             m_type = re.sub(r'[^A-Z_]', '', m_type) 
+                             
                              title = m.get('title', 'Módulo')
                              c = m.get('content', {})
                         
