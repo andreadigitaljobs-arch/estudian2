@@ -1990,29 +1990,22 @@ with st.sidebar:
     with st.expander("📚 Leyenda de Colores", expanded=study_mode):
         st.markdown("**Rojo:** Definiciones.\n**Azul:** Ejemplos.\n**Verde:** Notas.\n**Amarillo:** Datos.\n**Púrpura:** Claves.")
 
-    # LOGIC MOVED OUTSIDE EXPANDER TO ENSURE IT APPLIES
-    if not study_mode:
-        st.markdown("""
-            <style>
-            html body .sc-base, html body .sc-example, html body .sc-note, html body .sc-data, html body .sc-key {
-                background-color: transparent !important;
-                padding: 0 !important;
-                color: inherit !important;
-                border: none !important;
-                font-weight: inherit !important;
-            }
-            </style>
-        """, unsafe_allow_html=True)
-
-        st.markdown(f"""
-            <div style="font-size: 0.8rem; line-height: 1.4;">
-                <div style="margin-bottom:12px;"><span style="background-color: #ffcccc; color: #900; border: 1px solid #ff9999; padding: 1px 4px; border-radius: 3px; font-weight: bold;">Rojo</span>: Definiciones y conceptos base.</div>
-                <div style="margin-bottom:12px;"><span style="background-color: #cce5ff; color: #004085; border: 1px solid #b8daff; padding: 1px 4px; border-radius: 3px; font-weight: bold;">Azul</span>: Ejemplos y casos prácticos.</div>
-                <div style="margin-bottom:12px;"><span style="background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; padding: 1px 4px; border-radius: 3px; font-weight: bold;">Verde</span>: Notas, tips y aclaraciones.</div>
-                <div style="margin-bottom:12px;"><span style="background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; padding: 1px 4px; border-radius: 3px; font-weight: bold;">Amarillo</span>: Datos, fechas y nombres.</div>
-                <div style="margin-bottom:12px;"><span style="background-color: #e2d9f3; color: #512da8; border: 1px solid #d1c4e9; padding: 1px 4px; border-radius: 3px; font-weight: bold;">Púrpura</span>: Ideas clave y conclusiones.</div>
-            </div>
-        """, unsafe_allow_html=True)
+    # LOGIC: JS-Based Toggle for robust styling
+    # We add/remove 'study-mode-off' class on the body, leveraging the global CSS rules.
+    js_toggle = f"""
+    <script>
+        (function() {{
+            const body = window.parent.document.body;
+            const mode = {str(study_mode).lower()}; // true or false
+            if (!mode) {{
+                body.classList.add('study-mode-off');
+            }} else {{
+                body.classList.remove('study-mode-off');
+            }}
+        }})();
+    </script>
+    """
+    components.html(js_toggle, height=0)
 
     st.markdown('<div class="aesthetic-sep"></div>', unsafe_allow_html=True)
 
