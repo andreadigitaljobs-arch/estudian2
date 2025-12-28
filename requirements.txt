@@ -6,4 +6,4 @@ Pillow
 streamlit-paste-button
 python-docx
 markdown
-# TRIGGER_REBUILD_FINAL_CLEAN_SLATE
+# TRIGGER_REBUILD_LEGEND_FINAL_V3
