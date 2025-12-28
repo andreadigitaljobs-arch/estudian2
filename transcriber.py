@@ -81,23 +81,30 @@ class Transcriber:
         TRANSCRIPCIÓN EDITORIAL EXPERTA (OBLIGATORIO: SOLAMENTE ESPAÑOL):
         Tu tarea es transcribir el audio a ESPAÑOL con ortografía PERFECTA (tildes, signos ¿ ¡, puntuación). Está PROHIBIDO generar texto en Inglés.
 
-        SISTEMA DE RESALTADO DE UNIDADES MENTALES (MODO ESTUDIO V9.0):
-        REGLA PLATINO: NO GRITES VISUALMENTE.
+        SISTEMA DE RESALTADO "MAESTRÍA COGNITIVA" (MODO ESTUDIO V10.0):
+        
+        ⚖️ 1. LA REGLA DEL 60-30-10:
+           - 60% Texto Plano (Negro).
+           - 30% Púrpura/Azul.
+           - 10% Rojo/Amarillo/Verde.
 
-        🧠 1. CONCEPTO DE "UNIDAD MENTAL" (Mental Units):
-           - PROHIBIDO resaltar palabras huérfanas ("estrategia", "online").
-           - Resalta bloques de significado: "<span class="sc-key">estrategia enfocada a resultados</span>".
+        🔪 2. CIRUGÍA DEL PÚRPURA:
+           - NUNCA frases largas (>5 palabras) en Púrpura.
+           - ROMPE LA FRASE: "<span class="sc-key">estrategia enfocada</span> a conseguir <span class="sc-example">resultados</span>".
+        
+        ⚓ 3. CIERRES VISUALES:
+           - FINAL DE PÁRRAFO: Obligatorio una <span class="sc-key">Ancla Púrpura</span> (Conclusión).
 
-        🎨 2. JERARQUÍA ESTRICTA:
-        🔴 ROJO (<span class="sc-base">...</span>) -> SOLO DEFINICIONES TIPO EXAMEN ("¿Qué es?").
-        🟣 PÚRPURA (<span class="sc-key">...</span>) -> IDEA ANCLA / CONCLUSIÓN (Resumen mental).
-        🟡 AMARILLO (<span class="sc-data">...</span>) -> ESTRUCTURA (Paso 1, Fase 2) y DATOS.
-        🔵 AZUL (<span class="sc-example">...</span>) -> EJEMPLOS (Marcas, casos).
-        🟢 VERDE (<span class="sc-note">...</span>) -> MATICES (Ojo con...).
+        🎨 4. COLORES:
+        🔴 ROJO -> SOLO "¿Qué es?". Definiciones.
+        🟣 PÚRPURA -> NÚCLEOS.
+        🟡 AMARILLO -> ESTRUCTURA (Pasos) y DATOS.
+        🔵 AZUL -> EJEMPLOS/BENEFICIOS.
+        🟢 VERDE -> ADVERTENCIAS.
 
-        TEST DE CALIDAD V9:
-        - ¿Hay rojos que no son definiciones? -> BÓRRALOS.
-        - ¿Está "Paso 1" en Amarillo? -> SI NO, CORRIGE.
+        TEST DE CALIDAD V10:
+        - ¿El 60% del texto está limpio? -> DEBE SER SÍ.
+        - ¿Hay "Paso 1" en Amarillo? -> DEBE SER SÍ.
 
 
 

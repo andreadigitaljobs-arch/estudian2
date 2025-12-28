@@ -1331,7 +1331,7 @@ def get_transcriber_engine(key, model_choice="gemini-2.0-flash", breaker="V6"):
     return Transcriber(key, model_name=model_choice, cache_breaker=breaker)
 
 @st.cache_resource
-def get_assistant_engine(key, model_choice="gemini-2.0-flash", breaker="V15"):
+def get_assistant_engine(key, model_choice="gemini-2.0-flash", breaker="V16"):
     return StudyAssistant(key, model_name=model_choice, cache_breaker=breaker)
 
 api_key = saved_key
@@ -1341,15 +1341,15 @@ assistant = None
 if api_key:
     try:
         # Force fresh engines with explicit model choice
-        transcriber = get_transcriber_engine(api_key, model_choice="gemini-2.0-flash", breaker="V9") # Transcriber V9 (Mental Units)
-        assistant = get_assistant_engine(api_key, model_choice="gemini-2.0-flash", breaker="V15")
+        transcriber = get_transcriber_engine(api_key, model_choice="gemini-2.0-flash", breaker="V10") # Transcriber V10 (Pro Mastery)
+        assistant = get_assistant_engine(api_key, model_choice="gemini-2.0-flash", breaker="V16")
     except Exception as e:
         st.error(f"Error al iniciar IA: {e}")
 
     # DEBUG: Confirm Version to User
-    if 'v9_toast_shown' not in st.session_state:
-        st.toast("🧠 Sistema IA: V9.0 (Unidades Mentales) Cargado", icon="✅")
-        st.session_state['v9_toast_shown'] = True
+    if 'v10_toast_shown' not in st.session_state:
+        st.toast("🧠 Sistema IA: V10.0 (Maestría Cognitiva) Cargado", icon="✅")
+        st.session_state['v10_toast_shown'] = True
 
 
 # --- SPOTLIGHT RESULT DISPLAY ---

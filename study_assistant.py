@@ -39,37 +39,36 @@ class StudyAssistant:
         2. "intermedio": 10-12 bullets con los conceptos clave explicados brevemente.
         3. "profundo": Un resumen detallado (aprox 1 página).
         
-        SISTEMA DE RESALTADO DE UNIDADES MENTALES (MODO ESTUDIO V9.0):
-        REGLA PLATINO: NO GRITES VISUALMENTE. Un buen apunte es elegante, no un árbol de navidad.
+        SISTEMA DE RESALTADO "MAESTRÍA COGNITIVA" (MODO ESTUDIO V10.0):
+        FILOSOFÍA: Menos ruido = Más memoria. Elegancia visual.
+        
+        ⚖️ 1. LA REGLA DEL 60-30-10 (Saturación Visual):
+           - 60% Texto Plano (Negro): Descanso cognitivo.
+           - 30% Púrpura/Azul: Conceptos y Ejemplos.
+           - 10% Rojo/Amarillo/Verde: Señales de alerta/estructura.
+           - *Si todo está coloreado, nada es importante.*
 
-        🧠 1. CONCEPTO DE "UNIDAD MENTAL" (Mental Units):
-           - PROHIBIDO resaltar palabras huérfanas como "estrategia", "online", "marca", "digital" (ruido visual).
-           - DEBES resaltar el bloque de significado completo:
-             ❌ Mal: "<span class="sc-key">estrategia</span> enfocada a resultados"
-             ✅ Bien: "<span class="sc-key">estrategia enfocada a resultados</span>"
+        🔪 2. CIRUGÍA DEL PÚRPURA (El cambio más importante):
+           - PROHIBIDO frases largas en Púrpura (>5 palabras).
+           - TÉCNICA DE DESGLOSE: Rompe la frase.
+             ❌ Mal: "<span class="sc-key">estrategia enfocada a conseguir resultados en el canal</span>"
+             ✅ Bien: "<span class="sc-key">estrategia enfocada</span> a conseguir <span class="sc-example">resultados</span> en el canal"
+             (Púrpura solo en el Núcleo. El resto en plano o azul).
+        
+        ⚓ 3. CIERRES VISUALES (Visual Closures):
+           - OBLIGATORIO: Al final de cada sección, pon una frase corta en PÚRPURA.
+           - Funciona como "micro-conclusión" o ancla de memoria.
 
-        🎨 2. JERARQUÍA ESTRICTA DE COLORES:
-        
-        🔴 ROJO (<span class="sc-base">...</span>) -> SOLO DEFINICIONES TIPO EXAMEN:
-           - Úsalo SOLO si responde a "¿Qué es X?".
-           - RESTRICCIÓN: Si es una mención contextual (ej: "usaremos la marca"), NO uses rojo.
-        
-        🟣 PÚRPURA (<span class="sc-key">...</span>) -> IDEA ANCLA / CONCLUSIÓN:
-           - La frase que resume todo el párrafo. Lo que subrayarías para estudiar rápido.
-        
-        🟡 AMARILLO (<span class="sc-data">...</span>) -> ESTRUCTURA Y DATOS (GPS):
-           - OBLIGATORIO para: "Paso 1", "Fase 2", "Primero", "Segundo", "A", "B".
-           - También para: Fechas, Nombres propios, Cifras.
-        
-        🔵 AZUL (<span class="sc-example">...</span>) -> ATERRIZAJE A TIERRA:
-           - Ejemplos concretos: "Nike", "Cocacola", "ahorro de dinero".
-        
-        🟢 VERDE (<span class="sc-note">...</span>) -> MATICES:
-           - "No confundir con...", "Importante:".
-        
-        TEST DE CALIDAD V9:
-        - ¿Hay palabras rojas sueltas que no son definiciones? -> ELIMÍNALAS.
-        - ¿He resaltado "Paso 1" en amarillo? -> SI NO, ERROR.
+        🎨 4. JERARQUÍA REFINADA:
+        🔴 ROJO -> SOLO DEFINICIONES ("¿Qué es?"). Jamás para contexto.
+        🟣 PÚRPURA -> NÚCLEOS CONCEPTUALES y CIERRES. (No frases enteras).
+        🟡 AMARILLO -> ESTRUCTURA (Pasos 1, 2, 3...) y DATOS (Fechas, $$).
+        🔵 AZUL -> ATERRIZAJE (Ejemplos, marcas, beneficios tangibles).
+        🟢 VERDE -> ADVERTENCIAS (Errores comunes, "Ojo con...").
+
+        TEST DE CALIDAD V10:
+        - ¿Hay una línea con Rojo y Púrpura juntos? -> SEPARA (Máx 1 color fuerte por línea).
+        - ¿Hay un bloque morado de 2 líneas? -> ROMPELO.
         
         FORMATO DE SALIDA (JSON ÚNICAMENTE):
         {
