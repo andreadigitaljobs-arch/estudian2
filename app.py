@@ -1988,19 +1988,21 @@ with st.sidebar:
     
     # Combined block for toggle logic and legend
     with st.expander("📚 Leyenda de Colores", expanded=study_mode):
-        # LOGIC: If mode is OFF, we inject a Style Block to Override colors
-        if not study_mode:
-            st.markdown("""
-                <style>
-                .sc-base, .sc-example, .sc-note, .sc-data, .sc-key {
-                    background-color: transparent !important;
-                    padding: 0 !important;
-                    color: inherit !important;
-                    border: none !important;
-                    font-weight: inherit !important;
-                }
-                </style>
-            """, unsafe_allow_html=True)
+        st.markdown("**Rojo:** Definiciones.\n**Azul:** Ejemplos.\n**Verde:** Notas.\n**Amarillo:** Datos.\n**Púrpura:** Claves.")
+
+    # LOGIC MOVED OUTSIDE EXPANDER TO ENSURE IT APPLIES
+    if not study_mode:
+        st.markdown("""
+            <style>
+            html body .sc-base, html body .sc-example, html body .sc-note, html body .sc-data, html body .sc-key {
+                background-color: transparent !important;
+                padding: 0 !important;
+                color: inherit !important;
+                border: none !important;
+                font-weight: inherit !important;
+            }
+            </style>
+        """, unsafe_allow_html=True)
 
         st.markdown(f"""
             <div style="font-size: 0.8rem; line-height: 1.4;">
