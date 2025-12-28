@@ -1989,7 +1989,15 @@ with st.sidebar:
     
     # Combined block for toggle logic and legend
     with st.expander("📚 Leyenda de Colores", expanded=study_mode):
-        st.markdown("**Rojo:** Definiciones.\n**Azul:** Ejemplos.\n**Verde:** Notas.\n**Amarillo:** Datos.\n**Púrpura:** Claves.")
+        st.markdown("""
+            <div style="font-size: 0.8rem; line-height: 1.4;">
+                <div style="margin-bottom:6px;"><span style="background-color: #ffcccc; color: #900; border: 1px solid #ff9999; padding: 1px 4px; border-radius: 3px; font-weight: bold;">Rojo</span>: Definiciones.</div>
+                <div style="margin-bottom:6px;"><span style="background-color: #cce5ff; color: #004085; border: 1px solid #b8daff; padding: 1px 4px; border-radius: 3px; font-weight: bold;">Azul</span>: Ejemplos.</div>
+                <div style="margin-bottom:6px;"><span style="background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; padding: 1px 4px; border-radius: 3px; font-weight: bold;">Verde</span>: Notas.</div>
+                <div style="margin-bottom:6px;"><span style="background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; padding: 1px 4px; border-radius: 3px; font-weight: bold;">Amarillo</span>: Datos.</div>
+                <div style="margin-bottom:6px;"><span style="background-color: #e2d9f3; color: #512da8; border: 1px solid #d1c4e9; padding: 1px 4px; border-radius: 3px; font-weight: bold;">Púrpura</span>: Claves.</div>
+            </div>
+        """, unsafe_allow_html=True)
 
     # LOGIC: Python-Based Toggle (Clean & Synchronous)
     # When toggle is changed, script reruns. We simply inject the hiding CSS if needed.
