@@ -185,7 +185,8 @@ st.markdown("""
     .sc-note { background-color: #d4edda !important; padding: 2px 5px !important; border-radius: 5px !important; color: #155724 !important; border: 1px solid #c3e6cb !important; display: inline; }
     .sc-data { background-color: #fff3cd !important; padding: 2px 5px !important; border-radius: 5px !important; color: #856404 !important; border: 1px solid #ffeeba !important; display: inline; }
     .sc-key { background-color: #e2d9f3 !important; padding: 2px 5px !important; border-radius: 5px !important; color: #512da8 !important; border: 1px solid #d1c4e9 !important; display: inline; }
-    .study-mode-off .sc-base, .study-mode-off .sc-example, .study-mode-off .sc-note, .study-mode-off .sc-data, .study-mode-off .sc-key {
+    .study-mode-off .sc-base, .study-mode-off .sc-example, .study-mode-off .sc-note, .study-mode-off .sc-data, .study-mode-off .sc-key,
+    .stApp.study-mode-off .sc-base, .stApp.study-mode-off .sc-example, .stApp.study-mode-off .sc-note, .stApp.study-mode-off .sc-data, .stApp.study-mode-off .sc-key {
         background-color: transparent !important; padding: 0 !important; color: inherit !important; border: none !important; font-weight: inherit !important; 
     }
 
@@ -1990,17 +1991,19 @@ with st.sidebar:
     with st.expander("📚 Leyenda de Colores", expanded=study_mode):
         st.markdown("**Rojo:** Definiciones.\n**Azul:** Ejemplos.\n**Verde:** Notas.\n**Amarillo:** Datos.\n**Púrpura:** Claves.")
 
-    # LOGIC: JS-Based Toggle for robust styling
-    # We add/remove 'study-mode-off' class on the body, leveraging the global CSS rules.
+    # LOGIC: JS-Based Toggle for robust styling (Targeting .stApp)
+    # We use querySelector('.stApp') to be more specific than body
     js_toggle = f"""
     <script>
         (function() {{
-            const body = window.parent.document.body;
-            const mode = {str(study_mode).lower()}; // true or false
-            if (!mode) {{
-                body.classList.add('study-mode-off');
-            }} else {{
-                body.classList.remove('study-mode-off');
+            const stApp = window.parent.document.querySelector('.stApp');
+            if (stApp) {{
+                const mode = {str(study_mode).lower()}; // true or false
+                if (!mode) {{
+                    stApp.classList.add('study-mode-off');
+                }} else {{
+                    stApp.classList.remove('study-mode-off');
+                }}
             }}
         }})();
     </script>
