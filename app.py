@@ -1346,6 +1346,11 @@ if api_key:
     except Exception as e:
         st.error(f"Error al iniciar IA: {e}")
 
+    # DEBUG: Confirm Version to User
+    if 'v9_toast_shown' not in st.session_state:
+        st.toast("🧠 Sistema IA: V9.0 (Unidades Mentales) Cargado", icon="✅")
+        st.session_state['v9_toast_shown'] = True
+
 
 # --- SPOTLIGHT RESULT DISPLAY ---
 if 'spotlight_query' in st.session_state and st.session_state['spotlight_query']:
