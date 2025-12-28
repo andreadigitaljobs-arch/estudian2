@@ -1331,7 +1331,7 @@ def get_transcriber_engine(key, model_choice="gemini-2.0-flash", breaker="V6"):
     return Transcriber(key, model_name=model_choice, cache_breaker=breaker)
 
 @st.cache_resource
-def get_assistant_engine(key, model_choice="gemini-2.0-flash", breaker="V11"):
+def get_assistant_engine(key, model_choice="gemini-2.0-flash", breaker="V13"):
     return StudyAssistant(key, model_name=model_choice, cache_breaker=breaker)
 
 api_key = saved_key
@@ -1342,7 +1342,7 @@ if api_key:
     try:
         # Force fresh engines with explicit model choice
         transcriber = get_transcriber_engine(api_key, model_choice="gemini-2.0-flash", breaker="V7") # Transcriber can stay
-        assistant = get_assistant_engine(api_key, model_choice="gemini-2.0-flash", breaker="V11")
+        assistant = get_assistant_engine(api_key, model_choice="gemini-2.0-flash", breaker="V13")
     except Exception as e:
         st.error(f"Error al iniciar IA: {e}")
 
@@ -2909,7 +2909,7 @@ with tab1:
                          new_n = st.text_input(f"Nombre para {uf.name}:", value=base, key=f"ren_{i}")
                          file_renames[uf.name] = new_n
             
-            if st.button("▶️ Iniciar Transcripción Inteligente (Auto-Lotes)", type="primary", key="btn_start_transcription", use_container_width=True, disabled=(not selected_unit_id)):
+            if st.button("▶️ Iniciar Transcripción Inteligente", type="primary", key="btn_start_transcription", use_container_width=True, disabled=(not selected_unit_id)):
                 if not selected_unit_id:
                     st.error("Error: Carpeta no seleccionada.")
                 else:
@@ -2945,10 +2945,12 @@ with tab1:
                             
                             while attempt < max_retries and not success:
                                 try:
-                                    status_text.markdown(f"**⚡ Transcribiendo: {file.name}... (Intento {attempt + 1})**")
+                                    status_text.markdown(f"**⚡ Transcribiendo: {file.name}...**")
                                     
                                     def update_ui(msg, prog):
-                                        pass # Keep main progress bar for TOTAL batches, not individual file chunks
+                                        # Update both text and bar
+                                        status_text.markdown(f"**⚡ {msg}**")
+                                        progress_bar.progress(prog)
                                     
                                     # Process
                                     txt_path = transcriber.process_video(temp_path, progress_callback=update_ui, chunk_length_sec=600)

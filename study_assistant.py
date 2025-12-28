@@ -39,26 +39,28 @@ class StudyAssistant:
         2. "intermedio": 10-12 bullets con los conceptos clave explicados brevemente.
         3. "profundo": Un resumen detallado (aprox 1 página).
         
-        SISTEMA DE RESALTADO QUIRÚRGICO (MODO ESTUDIO V6.0):
-        REGLA DE ORO: NO subrayes oraciones completas ni párrafos. Debes identificar solo las PALABRAS CLAVE según su categoría:
-        - <span class="sc-base">Palabra</span> : Solo la definición técnica o término base. (ROJO)
-        - <span class="sc-example">Analogía</span> : Solo el corazón del ejemplo práctico. (AZUL)
-        - <span class="sc-note">Tip</span> : Solo el consejo o aclaración específica del profesor. (VERDE)
-        - <span class="sc-data">2024 / Juan Pérez / 15%</span> : Solo el dato, nombre, fecha o cifra. (AMARILLO)
-        - <span class="sc-key">Frase Clave</span> : Solo la conclusión o idea más potente. (PÚRPURA)
+        SISTEMA DE RESALTADO SEMÁNTICO (MODO ESTUDIO V7.0):
+        REGLA DE ORO: Resalta CONCEPTOS COMPLETOS y FRASES CLAVE que aporten el sentido principal. Evita resaltar palabras sueltas aisladas (como "el", "es", "para") a menos que sean críticas.
         
-        CRÍTICO: Busca la estética de un libro de medicina o leyes. Muchos resaltados pequeños y precisos en lugar de bloques grandes de color.
+        CATEGORÍAS DE RESALTADO:
+        - <span class="sc-base">Concepto Técnico</span> : El término técnico completo o la definición esencial. (ROJO)
+        - <span class="sc-example">Ejemplo Práctico</span> : La frase que describe el ejemplo o analogía. (AZUL)
+        - <span class="sc-note">Insight/Tip</span> : La frase clave del consejo o aclaración. (VERDE)
+        - <span class="sc-data">Dato Duro</span> : Cifras, fechas, nombres propios importantes. (AMARILLO)
+        - <span class="sc-key">Idea Fuerza</span> : La conclusión o sentencia más importante del párrafo. (PÚRPURA)
+        
+        CRÍTICO: Busca que el texto sea legible y que los resaltados guíen la lectura rápida. Prefiere "la economía circular es rentable" (Frase) antes que solo "economía" (Palabra).
         
         EJEMPLO DE PRECISIÓN:
-        "La <span class="sc-base">economía circular</span> busca el <span class="sc-key">residuo cero</span>. Por <span class="sc-example">ejemplo, reciclando plásticos</span>, se logra un ahorro del <span class="sc-data">30%</span> según el <span class="sc-note">estudio de la ONU</span>."
+        "<span class="sc-base">La economía circular busca reducir desperdicios</span> mediante el diseño. Por ejemplo, <span class="sc-example">al reciclar el agua de lluvia para riego industrial</span>. Según la ONU, esto logra un <span class="sc-data">ahorro del 40% anual</span>, lo cual es <span class="sc-key">crítico para la sostenibilidad futura</span>."
         
         FORMATO DE SALIDA (JSON ÚNICAMENTE):
-        {{
+        {
             "ultracorto": "Texto breve con resaltados...",
             "intermedio": "Texto medio con resaltados...",
             "profundo": "Texto largo con resaltados..."
-        }}
-        (IMPORTANTE: Usa comillas dobles para las claves y valores. Escapa las comillas internas con \\". NO uses triple comilla \"\"\")
+        }
+        (IMPORTANTE: Usa comillas dobles para las claves y valores. Escapa las comillas internas con \". NO uses triple comilla \"\"\")
 
         TRANSCRIPCIÓN:
         {transcript_text} 
