@@ -1991,24 +1991,21 @@ with st.sidebar:
     with st.expander("📚 Leyenda de Colores", expanded=study_mode):
         st.markdown("**Rojo:** Definiciones.\n**Azul:** Ejemplos.\n**Verde:** Notas.\n**Amarillo:** Datos.\n**Púrpura:** Claves.")
 
-    # LOGIC: JS-Based Toggle for robust styling (Targeting .stApp)
-    # We use querySelector('.stApp') to be more specific than body
-    js_toggle = f"""
-    <script>
-        (function() {{
-            const stApp = window.parent.document.querySelector('.stApp');
-            if (stApp) {{
-                const mode = {str(study_mode).lower()}; // true or false
-                if (!mode) {{
-                    stApp.classList.add('study-mode-off');
-                }} else {{
-                    stApp.classList.remove('study-mode-off');
-                }}
-            }}
-        }})();
-    </script>
-    """
-    components.html(js_toggle, height=0)
+    # LOGIC: Python-Based Toggle (Clean & Synchronous)
+    # When toggle is changed, script reruns. We simply inject the hiding CSS if needed.
+    if not study_mode:
+        st.markdown("""
+            <style>
+            .sc-base, .sc-example, .sc-note, .sc-data, .sc-key,
+            .stApp .sc-base, .stApp .sc-example, .stApp .sc-note, .stApp .sc-data, .stApp .sc-key {
+                background-color: transparent !important;
+                padding: 0 !important;
+                color: inherit !important;
+                border: none !important;
+                font-weight: inherit !important;
+            }
+            </style>
+        """, unsafe_allow_html=True)
 
     st.markdown('<div class="aesthetic-sep"></div>', unsafe_allow_html=True)
 
