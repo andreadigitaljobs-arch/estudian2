@@ -59,16 +59,17 @@ def get_global_context():
         return "", 0
 
 # --- GENERATE VALID ICO (FIX) ---
-try:
-    import os
-    from PIL import Image
-    # Always regenerate to ensure validity
-    if os.path.exists("assets/favicon.jpg"):
-        img = Image.open("assets/favicon.jpg")
-        img.save("assets/windows_icon.ico", format='ICO', sizes=[(256, 256)])
-        print("VALID ICO GENERATED: assets/windows_icon.ico")
-except Exception as e:
-    print(f"ICO GEN ERROR: {e}")
+# --- VALID ICO GENERATOR (Optimized: Check only once) ---
+@st.cache_resource
+def ensure_favicon():
+    try:
+        if os.path.exists("assets/favicon.jpg") and not os.path.exists("assets/windows_icon.ico"):
+            from PIL import Image
+            img = Image.open("assets/favicon.jpg")
+            img.save("assets/windows_icon.ico", format='ICO', sizes=[(256, 256)])
+    except: pass
+
+ensure_favicon()
 # --------------------------------
 
 
