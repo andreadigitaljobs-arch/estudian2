@@ -81,6 +81,10 @@ def render_library(assistant):
 
     # --- SEARCH BAR ---
     # ADDED KEY for clearing
+    # Callback to clear
+    def clear_search():
+        st.session_state['lib_search_box'] = ""
+            
     search_query = st.text_input("Busca tu archivo específico aquí", placeholder="Escribe el nombre del archivo...", key="lib_search_box")
 
     if search_query:
@@ -88,9 +92,9 @@ def render_library(assistant):
         c_head_1, c_head_2 = st.columns([0.8, 0.2])
         c_head_1.markdown(f"#### 🔎 Resultados para: *'{search_query}'*")
         
-        if c_head_2.button("✖️ Cerrar", use_container_width=True):
-             st.session_state['lib_search_box'] = ""
-             st.rerun()
+        # Use on_click to avoid "Set Key while rendering" error
+        c_head_2.button("✖️ Cerrar", use_container_width=True, on_click=clear_search)
+             # No need for manual rerun, on_click triggers it automatically
 
         results = search_library(current_course_id, search_query)
         
