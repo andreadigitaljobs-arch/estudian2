@@ -1348,10 +1348,10 @@ if api_key:
     except Exception as e:
         st.error(f"Error al iniciar IA: {e}")
 
-    # DEBUG: Confirm Version to User
-    if 'v9_classic_toast_shown' not in st.session_state:
-        st.toast("🦄 Sistema IA: V9.0 (Clásico) Restaurado", icon="✅")
-        st.session_state['v9_classic_toast_shown'] = True
+    # DEBUG: Confirm Version to User (DISABLED BY REQUEST)
+    # if 'v9_classic_toast_shown' not in st.session_state:
+    #     st.toast("🦄 Sistema IA: V9.0 (Clásico) Restaurado", icon="✅")
+    #     st.session_state['v9_classic_toast_shown'] = True
 
 
 # --- SPOTLIGHT RESULT DISPLAY ---
