@@ -80,13 +80,18 @@ def render_library(assistant):
     if 'lib_breadcrumbs' not in st.session_state: st.session_state['lib_breadcrumbs'] = []
 
     # --- SEARCH BAR ---
-    search_query = st.text_input("Busca tu archivo específico aquí", placeholder="Escribe el nombre del archivo...")
-
-    # Define helper callback if needed (using global one)
+    # ADDED KEY for clearing
+    search_query = st.text_input("Busca tu archivo específico aquí", placeholder="Escribe el nombre del archivo...", key="lib_search_box")
 
     if search_query:
         # --- SEARCH RESULTS VIEW ---
-        st.markdown(f"#### 🔎 Resultados para: *'{search_query}'*")
+        c_head_1, c_head_2 = st.columns([0.8, 0.2])
+        c_head_1.markdown(f"#### 🔎 Resultados para: *'{search_query}'*")
+        
+        if c_head_2.button("✖️ Cerrar", use_container_width=True):
+             st.session_state['lib_search_box'] = ""
+             st.rerun()
+
         results = search_library(current_course_id, search_query)
         
         if not results:
