@@ -280,21 +280,16 @@ def search_library(course_id, search_term):
         return []
 
 # --- FILES (ARCHIVOS) ---
-@st.cache_data(ttl=2, show_spinner=False)
+@st.cache_data(ttl=5, show_spinner=False)
 def get_files(unit_id):
     supabase = init_supabase()
-    import time
-    for attempt in range(3):
-        try:
-            # RPC Bypass for API Cache issues
-            res = supabase.rpc("get_unit_files", {"p_unit_id": unit_id}).execute()
-            return res.data
-        except Exception as e:
-            if attempt < 2:
-                time.sleep(0.5) # Short backoff
-                continue
-            print(f"Error fetching files (RPC) after retries: {e}")
-            return []
+    try:
+        # RPC Bypass for API Cache issues
+        res = supabase.rpc("get_unit_files", {"p_unit_id": unit_id}).execute()
+        return res.data
+    except Exception as e:
+        # print(f"Error fetching files (RPC): {e}") # Log silently
+        return []
 
 def upload_file_to_db(unit_id, name, content_text, file_type):
     # SANITIZE: Remove asterisks and quotes from filename globally
