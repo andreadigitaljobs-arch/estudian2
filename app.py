@@ -3373,6 +3373,12 @@ with tab_quiz:
              if st.button("🗑️", key="reset_quiz", help="Borrar todo para empezar de cero"):
                  st.session_state['quiz_results'] = []
                  st.session_state['pasted_images'] = []
+                 q_k = st.session_state['quiz_key']
+                 
+                 # Explicit Nuke of Component Keys
+                 if f"q_txt_{q_k}" in st.session_state: del st.session_state[f"q_txt_{q_k}"]
+                 if f"up4_{q_k}" in st.session_state: del st.session_state[f"up4_{q_k}"]
+                 
                  st.session_state['quiz_key'] += 1
                  st.rerun()
                  
@@ -3488,22 +3494,33 @@ with tab_quiz:
                 items_to_process = []
                 
                 if use_ctx_mode:
-                    # LINKED MODE: One Request
+                    # LINKED MODE (Improved): Iterate but pass context to EACH
+                    # This ensures we get 11 answers for 11 photos, but all see the text instruction.
                     if not all_pil_images and not has_text:
                         st.warning("Nada que analizar.")
                     else:
-                        items_to_process.append({
-                            "type": "linked", 
-                            "text": input_text_quiz, 
-                            "images": all_pil_images, 
-                            "name": "Análisis Contextual Integrado"
-                        })
+                        # 1. Text Context Handling
+                        # We treat the text as "Global Instruction" for the images
+                        
+                        # Process Images Individually (with text as context)
+                        for i, img_obj in enumerate(all_pil_images):
+                             items_to_process.append({
+                                 "type": "linked_single", 
+                                 "text": input_text_quiz, # The text instruction applies to this image
+                                 "image": img_obj, 
+                                 "name": f"Pregunta {i+1} (Con Contexto)"
+                             })
+                        
+                        # If there are NO images but there IS text, just process text
+                        if not all_pil_images and has_text:
+                             items_to_process.append({"type": "text", "obj": input_text_quiz, "name": "Consulta de Texto"})
+
                 else:
                     # SEPARATE MODE (Legacy)
                     if has_text:
                         items_to_process.append({"type": "text", "obj": input_text_quiz, "name": "Pregunta de Texto"})
                     
-                    # Add Images separately
+                    # Add Images separately (No text context)
                     for i, img_obj in enumerate(all_pil_images):
                          items_to_process.append({"type": "image_obj", "obj": img_obj, "name": f"Imagen {i+1}"})
 
@@ -3521,8 +3538,14 @@ with tab_quiz:
                              # Text Only
                              full_answer = assistant.solve_quiz(question_text=item["obj"], global_context=gl_ctx)
                              
+                        elif item["type"] == "linked_single":
+                             # Linked Single Mode
+                             # Pass ONE image + Text Context
+                             full_answer = assistant.solve_quiz(images=[item["image"]], question_text=item["text"], global_context=gl_ctx)
+                             disp_img = item["image"]
+                             
                         elif item["type"] == "linked":
-                             # Linked Mode
+                             # (Deprecated but safely kept for fallback)
                              # Pass list of images
                              full_answer = assistant.solve_quiz(images=item["images"], question_text=item["text"], global_context=gl_ctx)
                              # Display first image as thumbnail?
