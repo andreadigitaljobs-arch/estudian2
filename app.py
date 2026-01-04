@@ -47,8 +47,9 @@ except Exception as e:
     transcriber = None
     assistant = None
 
-# --- GLOBAL CONTEXT HELPER ---
+# --- GLOBAL CONTEXT HELPERS ---
 def get_global_context():
+    # Only fetches content if really needed (Heavy)
     try:
         if not st.session_state.get('current_course'): return "", 0
         cid = st.session_state['current_course']['id']
@@ -57,6 +58,17 @@ def get_global_context():
         return txt, len(fls)
     except:
         return "", 0
+
+def get_global_file_count_only():
+    # Lightweight count fetch (Optimized for Render)
+    try:
+        if not st.session_state.get('current_course'): return 0
+        cid = st.session_state['current_course']['id']
+        # Use get_dashboard_stats or similar fast query
+        stats = get_dashboard_stats(cid, st.session_state['user'].id)
+        return stats['files']
+    except:
+        return 0
 
 # --- GENERATE VALID ICO (FIX) ---
 # --- VALID ICO GENERATOR (Optimized: Check only once) ---
@@ -3363,7 +3375,10 @@ with tab_quiz:
         st.markdown(tab4_html, unsafe_allow_html=True)
         
         # Check Global Memory
-        gl_ctx, gl_count = get_global_context()
+        # Check Global Memory (Optimized: Count Only)
+        gl_count = get_global_file_count_only() # Fast
+        # gl_ctx content is now fetched JUST-IN-TIME inside the solver trigger
+        
         if gl_count > 0:
             st.success(f"✅ **Memoria Global Activa:** Usando {gl_count} archivos para mayor precisión.")
         
@@ -3502,6 +3517,11 @@ with tab_quiz:
                     else:
                         # 1. Text Context Handling
                         # We treat the text as "Global Instruction" for the images
+                        
+                        # HYDRATE GLOBAL CONTEXT HERE (JUST-IN-TIME)
+                        # We only fetch the heavy text when we are actually about to process
+                        if not gl_ctx:
+                             gl_ctx, _ = get_global_context()
                         
                         # Process Images Individually (with text as context)
                         for i, img_obj in enumerate(all_pil_images):
