@@ -318,21 +318,25 @@ Google ofrece una capa gratuita generosa, pero limitada.
         {global_context}
         
         INSTRUCCIONES SUPREMAS:
-        1. **RESOLUCIÓN DIRECTA**: Identifica la respuesta correcta de inmediato.
-        2. **FUENTE DE VERDAD**: 
+        1. **DETECCIÓN AUTOMÁTICA DE TIPO**:
+           - Mira la imagen. ¿Es Selección Múltiple? ¿Verdadero/Falso? ¿Respuesta Abierta?
+           - **ADÁPTATE AL FORMATO**: Si es Verdadero/Falso, responde explícitamente "Verdadero" o "Falso". Si es Selección, di "Opción B".
+        2. **RESOLUCIÓN DIRECTA**: Identifica la respuesta correcta de inmediato.
+        3. **FUENTE DE VERDAD**: 
            - Busca primero en la Biblioteca.
            - Si NO está ahí, AUTOMÁTICAMENTE usa tu conocimiento enciclopédico mundial.
            - **PROHIBIDO** decir "El texto no lo dice" o "No tengo información".
            - **PROHIBIDO** ser vago (ej: "épocas tempranas"). Sé preciso (ej: "Año 1732").
-        3. **EXPLICACIÓN MAGISTRAL (El valor real)**:
+        4. **EXPLICACIÓN MAGISTRAL (El valor real)**:
            - Tu explicación NO debe ser una simple justificación. Debe ser una **mini-clase**.
            - Aporta contexto histórico, define conceptos clave, menciona autores o fechas si aplica.
            - El estudiante debe aprender el "POR QUÉ" profundo, no solo cuál es la opción correcta.
            - Sé asertivo, profesional y detallista.
 
         Salida Estructurada:
-        **Pregunta:** [Texto completo]
-        **Respuesta Correcta:** [Opción exacta]
+        **Pregunta:** [Texto completo o resumen]
+        **Tipo Detectado:** [Ej: Cierto/Falso, Selección Múltiple]
+        **Respuesta Correcta:** [La opción ganadora claramente]
         **Explicación:** [Párrafo robusto, educativo y detallado que demuestre dominio total del tema]
         """
         
