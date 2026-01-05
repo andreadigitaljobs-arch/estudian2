@@ -3802,7 +3802,8 @@ with tab_quiz:
                                   quiz_context=ctx_quiz,
                                   images=images_ctx
                               )
-                               # Check for Auto-Learning Tag
+                              
+                              # Check for Auto-Learning Tag
                               import re
                               match = re.search(r"\|\|APRENDIZAJE: (.*?)\|\|", reply)
                               if match:
@@ -3814,8 +3815,8 @@ with tab_quiz:
                               st.markdown(reply)
                               st.session_state['quiz_chat'].append({"role": "assistant", "content": reply})
                               st.rerun() 
-                        except Exception as e:
-                            st.error(f"Error en chat: {e}")
+                          except Exception as e:
+                              st.error(f"Error en chat: {e}")
 
             # --- TEACHING / MEMORY UI ---
             # Show if last message was AI
