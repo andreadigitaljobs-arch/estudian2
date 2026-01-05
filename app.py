@@ -3733,19 +3733,15 @@ with tab_quiz:
 
         # --- PERSISTENT RESULTS DISPLAY ---
         res_quiz = st.session_state.get('quiz_results')
+        
         if res_quiz:
             st.divider()
             
             # HEADER + COPY ICON
             c_head, c_copy = st.columns([0.9, 0.1])
             with c_head:
-                st.markdown("### 📋 Resultados de Quiz")
+                st.subheader("📝 Hoja de Respuestas (IA)")
             with c_copy:
-                # Compile text for copying inside the button action
-                full_report_copy = "--- HOJA DE RESPUESTAS ---\n\n"
-                for i, res in enumerate(res_quiz):
-                     full_report_copy += f"FOTO {i+1}: {res['short']}\n"
-                full_report_copy += "\n--- DETALLES ---\n"
                 for i, res in enumerate(res_quiz):
                      full_report_copy += f"\n[FOTO {i+1}]\n{res['full']}\n"
                      
