@@ -3773,49 +3773,49 @@ with tab_quiz:
                  
             # Input
             if prompt := st.chat_input("Escribe tu duda o corrección...", key="quiz_chat_input"):
-                 # Add User Msg
-                 st.session_state['quiz_chat'].append({"role": "user", "content": prompt})
-                 with st.chat_message("user"): st.markdown(prompt)
-                 
-                 # Prepare Context (Last Quiz Results)
-                 ctx_quiz = "SIN DATOS DE QUIZ RECIENTE"
-                 if res_quiz:
-                     ctx_quiz = "--- RESULTADOS DEL QUIZ --- \n"
-                     for res in res_quiz:
-                         # Truncate text to avoid token explosion
-                         short_full = (res['full'][:500] + '..') if len(res['full']) > 500 else res['full']
-                         ctx_quiz += f"[Item: {res['name']}]\nAI Dice: {short_full}\n\n"
-                 
-                 # Call AI
-                 with st.chat_message("assistant"):
-                     with st.spinner("El profesor está re-analizando las imágenes y tu argumento..."):
-                         try:
-                             # Gather Images for Context
-                             images_ctx = []
-                             if res_quiz:
-                                 for r in res_quiz:
-                                     if r.get('img_obj'): images_ctx.append(r['img_obj'])
-                             
-                             reply = assistant.debate_quiz(
-                                 history=st.session_state['quiz_chat'][:-1], 
-                                 latest_input=prompt, 
-                                 quiz_context=ctx_quiz,
-                                 images=images_ctx
-                             )
-                             
-                             # Check for Auto-Learning Tag
-                             import re
-                             match = re.search(r"\|\|APRENDIZAJE: (.*?)\|\|", reply)
-                             if match:
-                                 rule = match.group(1).strip()
-                                 st.session_state['pending_learning_rule'] = rule
-                                 reply = reply.replace(match.group(0), "")
-                             
-                             st.markdown(reply)
-                             st.session_state['quiz_chat'].append({"role": "assistant", "content": reply})
-                             st.rerun()
-                         except Exception as e:
-                             st.error(f"Error en chat: {e}")
+                # Add User Msg
+                st.session_state['quiz_chat'].append({"role": "user", "content": prompt})
+                with st.chat_message("user"): st.markdown(prompt)
+                
+                # Prepare Context (Last Quiz Results)
+                ctx_quiz = "SIN DATOS DE QUIZ RECIENTE"
+                if res_quiz:
+                    ctx_quiz = "--- RESULTADOS DEL QUIZ --- \n"
+                    for res in res_quiz:
+                        # Truncate text to avoid token explosion
+                        short_full = (res['full'][:500] + '..') if len(res['full']) > 500 else res['full']
+                        ctx_quiz += f"[Item: {res['name']}]\nAI Dice: {short_full}\n\n"
+                
+                # Call AI
+                with st.chat_message("assistant"):
+                    with st.spinner("El profesor está re-analizando las imágenes y tu argumento..."):
+                        try:
+                            # Gather Images for Context
+                            images_ctx = []
+                            if res_quiz:
+                                for r in res_quiz:
+                                    if r.get('img_obj'): images_ctx.append(r['img_obj'])
+                            
+                            reply = assistant.debate_quiz(
+                                history=st.session_state['quiz_chat'][:-1], 
+                                latest_input=prompt, 
+                                quiz_context=ctx_quiz,
+                                images=images_ctx
+                            )
+                            
+                            # Check for Auto-Learning Tag
+                            import re
+                            match = re.search(r"\|\|APRENDIZAJE: (.*?)\|\|", reply)
+                            if match:
+                                rule = match.group(1).strip()
+                                st.session_state['pending_learning_rule'] = rule
+                                reply = reply.replace(match.group(0), "")
+                            
+                            st.markdown(reply)
+                            st.session_state['quiz_chat'].append({"role": "assistant", "content": reply})
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Error en chat: {e}")
 
             # --- TEACHING / MEMORY UI ---
             # Show if last message was AI
