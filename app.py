@@ -4587,121 +4587,120 @@ st.markdown("<div id='end_marker' style='height: 1px; width: 1px; visibility: hi
 
 # Force Reload Triggered
 
- 
- #   - - -   F L O A T I N G   S C R O L L   D A E M O N   ( R o b u s t   V 2 )   - - - 
- 
- #   I n j e c t s   a   p e r m a n e n t   f l o a t i n g   b u t t o n   t h a t   h a n d l e s   s c r o l l i n g   e n t i r e l y   v i a   J S 
- 
- i m p o r t   s t r e a m l i t . c o m p o n e n t s . v 1   a s   c o m p o n e n t s 
- 
- c o m p o n e n t s . h t m l ( " " " 
- 
- < l i n k   r e l = " s t y l e s h e e t "   h r e f = " h t t p s : / / c d n j s . c l o u d f l a r e . c o m / a j a x / l i b s / f o n t - a w e s o m e / 6 . 0 . 0 / c s s / a l l . m i n . c s s " > 
- 
- < s t y l e > 
- 
-         . f l o a t - s c r o l l - b t n   { 
- 
-                 p o s i t i o n :   f i x e d ; 
- 
-                 b o t t o m :   9 0 p x ; 
- 
-                 r i g h t :   2 5 p x ; 
- 
-                 w i d t h :   4 5 p x ; 
- 
-                 h e i g h t :   4 5 p x ; 
- 
-                 b a c k g r o u n d - c o l o r :   # 4 F 4 6 E 5 ;   / *   P r i m a r y   P u r p l e   * / 
- 
-                 c o l o r :   w h i t e ; 
- 
-                 b o r d e r - r a d i u s :   5 0 % ; 
- 
-                 b o x - s h a d o w :   0   4 p x   6 p x   r g b a ( 0 , 0 , 0 , 0 . 2 ) ; 
- 
-                 d i s p l a y :   f l e x ; 
- 
-                 a l i g n - i t e m s :   c e n t e r ; 
- 
-                 j u s t i f y - c o n t e n t :   c e n t e r ; 
- 
-                 f o n t - s i z e :   2 0 p x ; 
- 
-                 c u r s o r :   p o i n t e r ; 
- 
-                 z - i n d e x :   9 9 9 9 9 9 ; 
- 
-                 t r a n s i t i o n :   t r a n s f o r m   0 . 2 s ,   b a c k g r o u n d - c o l o r   0 . 2 s ; 
- 
-                 b o r d e r :   n o n e ; 
- 
-                 o u t l i n e :   n o n e ; 
- 
-         } 
- 
-         . f l o a t - s c r o l l - b t n : h o v e r   { 
- 
-                 t r a n s f o r m :   s c a l e ( 1 . 1 ) ; 
- 
-                 b a c k g r o u n d - c o l o r :   # 4 3 3 8 c a ; 
- 
-         } 
- 
-         . f l o a t - s c r o l l - b t n : a c t i v e   { 
- 
-                 t r a n s f o r m :   s c a l e ( 0 . 9 ) ; 
- 
-         } 
- 
- < / s t y l e > 
- 
- 
- 
- < b u t t o n   i d = " s c r o l l B t n "   c l a s s = " f l o a t - s c r o l l - b t n "   t i t l e = " I r   a l   f i n a l " > 
- 
-         < i   c l a s s = " f a s   f a - a r r o w - d o w n " > < / i > 
- 
- < / b u t t o n > 
- 
- 
- 
- < s c r i p t > 
- 
-         c o n s t   b t n   =   d o c u m e n t . g e t E l e m e n t B y I d ( ' s c r o l l B t n ' ) ; 
- 
-         
- 
-         / /   L o g i c :   S c r o l l   t o   b o t t o m   o f   m a i n   c o n t a i n e r 
- 
-         b t n . o n c l i c k   =   ( )   = >   { 
- 
-                 / /   S t r e a m l i t ' s   m a i n   c o n t a i n e r   u s u a l l y   h a s   c l a s s   ' s t M a i n '   o r   w e   j u s t   s c r o l l   w i n d o w 
- 
-                 w i n d o w . s c r o l l T o ( { 
- 
-                         t o p :   d o c u m e n t . b o d y . s c r o l l H e i g h t , 
- 
-                         b e h a v i o r :   ' s m o o t h ' 
- 
-                 } ) ; 
- 
-                 
- 
-                 / /   A l s o   t r y   t o   f i n d   t h e   c h a t   i n p u t   a n d   f o c u s   i t 
- 
-                 c o n s t   c h a t I n p u t   =   w i n d o w . p a r e n t . d o c u m e n t . q u e r y S e l e c t o r ( ' [ d a t a - t e s t i d = " s t C h a t I n p u t " ]   t e x t a r e a ' ) ; 
- 
-                 i f   ( c h a t I n p u t )   c h a t I n p u t . f o c u s ( ) ; 
- 
-         } ; 
- 
-         
- 
-         / /   O p t i o n a l :   H i d e   i f   a l r e a d y   a t   b o t t o m ?   ( K e e p   s i m p l e   f o r   n o w ) 
- 
- < / s c r i p t > 
- 
- " " " ,   h e i g h t = 0 ) 
- 
- 
+
+# --- FLOATING SCROLL DAEMON (Robust V2) ---
+
+# Injects a permanent floating button that handles scrolling entirely via JS
+
+import streamlit.components.v1 as components
+
+components.html("""
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+<style>
+
+    .float-scroll-btn {
+
+        position: fixed;
+
+        bottom: 90px;
+
+        right: 25px;
+
+        width: 45px;
+
+        height: 45px;
+
+        background-color: #4F46E5; /* Primary Purple */
+
+        color: white;
+
+        border-radius: 50%;
+
+        box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+
+        display: flex;
+
+        align-items: center;
+
+        justify-content: center;
+
+        font-size: 20px;
+
+        cursor: pointer;
+
+        z-index: 999999;
+
+        transition: transform 0.2s, background-color 0.2s;
+
+        border: none;
+
+        outline: none;
+
+    }
+
+    .float-scroll-btn:hover {
+
+        transform: scale(1.1);
+
+        background-color: #4338ca;
+
+    }
+
+    .float-scroll-btn:active {
+
+        transform: scale(0.9);
+
+    }
+
+</style>
+
+
+
+<button id="scrollBtn" class="float-scroll-btn" title="Ir al final">
+
+    <i class="fas fa-arrow-down"></i>
+
+</button>
+
+
+
+<script>
+
+    const btn = document.getElementById('scrollBtn');
+
+    
+
+    // Logic: Scroll to bottom of main container
+
+    btn.onclick = () => {
+
+        // Streamlit's main container usually has class 'stMain' or we just scroll window
+
+        window.scrollTo({
+
+            top: document.body.scrollHeight,
+
+            behavior: 'smooth'
+
+        });
+
+        
+
+        // Also try to find the chat input and focus it
+
+        const chatInput = window.parent.document.querySelector('[data-testid="stChatInput"] textarea');
+
+        if (chatInput) chatInput.focus();
+
+    };
+
+    
+
+    // Optional: Hide if already at bottom? (Keep simple for now)
+
+</script>
+
+""", height=0)
+
