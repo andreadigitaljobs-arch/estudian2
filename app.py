@@ -3817,7 +3817,7 @@ with tab_quiz:
             for msg in st.session_state['quiz_chat']:
                 with st.chat_message(msg["role"]):
                     st.markdown(msg["content"])
-                 
+            
             # Input
             # Input
             # (Native Streamlit Input - Reverted custom JS)
@@ -3825,7 +3825,8 @@ with tab_quiz:
             if prompt := st.chat_input("Escribe tu duda o corrección...", key="quiz_chat_input"):
                 # Add User Msg
                 st.session_state['quiz_chat'].append({"role": "user", "content": prompt})
-                with st.chat_message("user"): st.markdown(prompt)
+                with st.chat_message("user"):
+                    st.markdown(prompt)
                 
                 # Prepare Context (Last Quiz Results)
                 ctx_quiz = "SIN DATOS DE QUIZ RECIENTE"
