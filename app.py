@@ -304,8 +304,8 @@ if is_login_view:
 else:
     # DASHBOARD: Native Scrolling (No Kill Rules)
     scroll_rules = "/* Dashboard: Scrollbars Enabled */"
-    overflow_mode = "auto"
-    height_mode = "100%" # Fixes sticky footer (chat_input) behavior
+    overflow_mode = "hidden" # Default Streamlit: Body hidden, Container scrolls
+    height_mode = "100%" 
 
 components.html(f"""
 <script>
@@ -324,10 +324,15 @@ components.html(f"""
         style.innerHTML = `
             {scroll_rules}
             
-            /* Root Config */
+            /* Root Config (Streamlit Standard) */
             html, body {{
                 overflow-y: {overflow_mode} !important;
                 height: {height_mode} !important;
+            }}
+            
+            /* Force Scroll on App Container for Dashboard */
+            [data-testid="stAppViewContainer"] {{
+                overflow-y: {'auto' if overflow_mode == 'hidden' and not is_login_view else 'hidden'} !important;
             }}
             
             /* Clean Layout (Always Active) */
