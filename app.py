@@ -3680,19 +3680,10 @@ with tab_quiz:
                             disp_img = item["obj"]
                             full_answer = assistant.solve_quiz(images=[disp_img], global_context=gl_ctx, force_type=ftype)
 
-                        # Robust Regex Parsing for Short Answer
-                        import re
-                        short_answer = "Respuesta no detectada (Ver detalle)"
-                        # IMPROVED REGEX: Captures until double newline or next Header (##, **)
-                        # \s* (.*?) (?=\n\n|\n[#*]|$) -> Matches content lazily until double newline, next header, or end of string.
-                        # re.DOTALL is NOT used because we want to stop at structure breaks, so manually matching lines is safer.
-                        
-                        match = re.search(r"\*\*Respuesta Correcta:?\*\*?\s*([\s\S]*?)(?=\n\n|\n\*\*|\Z)", full_answer, re.IGNORECASE)
-                        if match:
-                             short_answer = match.group(1).strip()
-                             # If it's too long (> 200 chars), truncate cleanly
-                             if len(short_answer) > 200: 
-                                 short_answer = short_answer[:200] + "..."
+                        # Skip Short Answer Parsing (User Preference: Full Detail)
+                        short_answer = "Ver abajo"
+                    
+                        results.append({"name": item["name"], "full": full_answer, "short": short_answer, "img_obj": disp_img})
                     
                         results.append({"name": item["name"], "full": full_answer, "short": short_answer, "img_obj": disp_img})
                 
@@ -3736,26 +3727,22 @@ with tab_quiz:
                         st.toast("¡Copiado!", icon='📋')
             
             # --- RESULTS DISPLAY ---
-            # Visual Display (Markdown instead of Code Block)
-            st.markdown("#### 📝 Hoja de Respuestas Rápida")
-            
-            # Build a nice markdown list for visual display
-            md_list = ""
-            for i, res in enumerate(res_quiz):
-                md_list += f"- **Foto {i+1}:** {res['short']}\n"
-            st.markdown(md_list)
-            
-            st.divider()
-            st.markdown("#### 🔍 Detalles por Pregunta")
+            # Visual Display (Simplified: Direct Explanations)
             
             for i, res in enumerate(res_quiz):
-                with st.expander(f"Ver detalle de Item {i+1}"):
-                    if 'img_obj' in res:
-                        try:
-                            st.image(res['img_obj'], width=300)
-                        except:
-                            st.warning("Imagen no disponible tras recarga")
-                    st.markdown(res['full'])
+                # Using container or expanded expander for "Immediate View"
+                with st.expander(f"📝 Resultado: {res['name']}", expanded=True):
+                    if 'img_obj' in res and res['img_obj']:
+                        c_i, c_t = st.columns([0.3, 0.7])
+                        with c_i:
+                             try:
+                                 st.image(res['img_obj'], use_container_width=True)
+                             except:
+                                 st.caption("Imagen original")
+                        with c_t:
+                             st.markdown(res['full'])
+                    else:
+                        st.markdown(res['full'])
 
             # --- DEBATE CHAT ---
             st.divider()
