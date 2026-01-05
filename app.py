@@ -1,6 +1,7 @@
-
+```python
 import streamlit as st
 import os
+print("DEBUG: LOADING V71 - INDENT FIX APPLIED")
 import glob
 import uuid
 from transcriber import Transcriber
@@ -3808,7 +3809,7 @@ with tab_quiz:
                              st.error(f"Error: {e}")
 
             # Spacer
-             st.write("")
+            st.write("")
             
             if 'quiz_chat' not in st.session_state:
                 st.session_state['quiz_chat'] = []
