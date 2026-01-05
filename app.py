@@ -139,10 +139,6 @@ st.markdown("""
         overflow: hidden !important;
     }
     """ if not st.session_state.get('user') else "") + """
-    [data-testid="stSidebar"] {
-        display: none !important;
-    }
-    """ if not st.session_state.get('user') else "") + """
     
     /* TAB SCROLL ARROWS */
     .stTabs [data-baseweb="tab-list"] button:not([role="tab"]) {
