@@ -341,17 +341,28 @@ def upload_file_to_db(unit_id, name, content_text, file_type):
     """
     supabase = init_supabase()
     try:
-        # Use RPC to ensure content_text is passed correctly even if API schema is stale
-        params = {
-            "p_unit_id": unit_id,
-            "p_name": name,
-            "p_content": content_text,
-            "p_type": file_type
+        data = {
+            "unit_id": unit_id,
+            "name": name,
+            "content_text": content_text,
+            "type": file_type
         }
-        res = supabase.rpc("create_library_file", params).execute()
+        res = supabase.table("library_files").insert(data).execute()
         return True
     except Exception as e:
-        st.error(f"Error uploading file (RPC): {e}")
+        print(f"Error uploading file: {e}")
+        return False
+
+def move_file(file_id, new_unit_id):
+    """
+    Moves a file to a different unit (Update unit_id).
+    """
+    supabase = init_supabase()
+    try:
+        supabase.table("library_files").update({"unit_id": new_unit_id}).eq("id", file_id).execute()
+        return True
+    except Exception as e:
+        print(f"Error moving file: {e}")
         return False
 
 def get_file_content(file_id):

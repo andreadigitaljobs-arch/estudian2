@@ -4,7 +4,7 @@ import time
 import os
 import base64
 import pandas as pd
-from database import get_units, create_unit, upload_file_to_db, get_files, delete_file, rename_file, rename_unit, delete_unit, create_chat_session, save_chat_message, search_library, update_user_footprint, get_course_files
+from database import get_units, create_unit, upload_file_to_db, get_files, delete_file, rename_file, rename_unit, delete_unit, create_chat_session, save_chat_message, search_library, update_user_footprint, get_course_files, move_file
 
 
 def render_library(assistant):
@@ -495,11 +495,34 @@ def render_library(assistant):
                             st.session_state[f"ren_file_{f['id']}"] = True
                             st.rerun()
 
-                        if st.button("🤖 Resolver Tarea", key=f"btn_task_{f['id']}_{token}", use_container_width=True):
-                            st.session_state['chat_context_file'] = f
-                            st.session_state['redirect_target_name'] = "Ayudante de Tareas"
                             st.session_state['force_chat_tab'] = True
                             st.rerun()
+
+                        # --- MOVER ARCHIVO ---
+                        move_key_mode = f"mov_mode_{f['id']}_{token}"
+                        
+                        if st.button("➡️ Mover a...", key=f"btn_move_{f['id']}_{token}", use_container_width=True):
+                             st.session_state[move_key_mode] = not st.session_state.get(move_key_mode, False)
+                             
+                        if st.session_state.get(move_key_mode):
+                             # Fetch available units (Optimized: we already have subfolders, but we might want ALL units)
+                             # Getting all units for the course to allow moving out of subfolders too
+                             all_units = get_units(current_course_id, fetch_all=True)
+                             
+                             # Filter out current unit
+                             target_opts = {u['name']: u['id'] for u in all_units if u['id'] != current_unit_id}
+                             
+                             if not target_opts:
+                                 st.caption("No hay otras carpetas.")
+                             else:
+                                 sel_target = st.selectbox("Destino:", list(target_opts.keys()), key=f"sel_mov_{f['id']}_{token}")
+                                 if st.button("Confirmar Mover", key=f"conf_mov_{f['id']}_{token}"):
+                                     target_id = target_opts[sel_target]
+                                     if move_file(f['id'], target_id):
+                                         st.toast(f"Archivo movido a '{sel_target}'")
+                                         st.rerun()
+                                     else:
+                                         st.error("Error al mover.")
                             
                         if st.button("👨🏻‍🏫 Hablar con Profe", key=f"btn_tutor_{f['id']}_{token}", use_container_width=True):
                             st.session_state['chat_context_file'] = f
