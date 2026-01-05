@@ -3466,6 +3466,54 @@ with tab_quiz:
                 use_context = st.checkbox("🔗 Vincular imágenes con el texto (Contexto)", value=False, key=f"chk_ctx_{q_key}", help="Si activas esto, el texto y las imágenes se enviarán JUNTOS para responder. Si no, se analizan por separado.")
 
                 if total_items > 0:
+                    # --- MANUAL CONFIG TABLE ---
+                    st.markdown("##### ⚙️ Configuración de Preguntas (Opcional)")
+                    st.caption("Si la IA se confunde, ayúdale seleccionando el tipo exacto de cada imagen.")
+                    
+                    # 1. Build Data List
+                    current_files = []
+                    # Pasted
+                    for i, p_img in enumerate(st.session_state['pasted_images']):
+                         # Assuming we don't have filenames for pasted, generate IDs
+                         current_files.append({"Archivo": f"Imagen Pegada {i+1}", "Tipo": "🤖 Auto (Detectar)", "id": f"paste_{i}"})
+                    
+                    # Uploaded
+                    if files_val:
+                        for f in files_val:
+                             current_files.append({"Archivo": f.name, "Tipo": "🤖 Auto (Detectar)", "id": f.name})
+                    
+                    if current_files:
+                        import pandas as pd
+                        df = pd.DataFrame(current_files)
+                        
+                        # Config Options
+                        type_options = ["🤖 Auto (Detectar)", "☑️ Selección Múltiple", "✅❌ Cierto/Falso", "✍🏻 Respuesta Abierta"]
+                        
+                        edited_df = st.data_editor(
+                            df,
+                            column_config={
+                                "Archivo": st.column_config.TextColumn("Archivo", disabled=True),
+                                "Tipo": st.column_config.SelectboxColumn(
+                                    "Tipo de Pregunta",
+                                    help="Selecciona el formato para mejorar la precisión",
+                                    width="medium",
+                                    options=type_options,
+                                    required=True
+                                ),
+                                "id": None # Hide ID
+                            },
+                            hide_index=True,
+                            use_container_width=True,
+                            key=f"editor_{q_key}" 
+                        )
+                        
+                        # Store Config Mapping (ID -> Type)
+                        # We use ID because filenames might be dupe or generic
+                        config_map = {row['id']: row['Tipo'] for row in edited_df.to_dict('records')}
+                        st.session_state['quiz_file_config'] = config_map
+                        
+                    
+                    st.write("") # Spacer
                     if st.button("Resolver Preguntas", key="btn4_frag", type="primary"):
                         st.session_state['trigger_quiz_solve'] = True
                         st.session_state['quiz_use_context'] = use_context # Pass preference
@@ -3491,59 +3539,67 @@ with tab_quiz:
                 # 1. Process Queue
                 # 1. Process Queue
                 use_ctx_mode = st.session_state.get('quiz_use_context', False)
+                config_map = st.session_state.get('quiz_file_config', {})
                 
                 # Collect ALL Images
                 all_pil_images = []
+                # MAP images to their IDs to retrieve config later
+                # We need a parallel list or an object wrapper. 
+                # Let's use a list of tuples: (image, id)
                 
+                image_entries = [] # List of {"img": pil, "id": id, "name": name}
+
+                # From Paste
+                for i, img in enumerate(st.session_state['pasted_images']):
+                     image_entries.append({"img": img, "id": f"paste_{i}", "name": f"Imagen Pegada {i+1}"})
+
                 # From Upload
+                # Re-open or use cached? 
+                # st.file_uploader objects can be re-read.
                 if img_files:
                     for f in img_files:
                         try:
                             pil_i = Image.open(f)
                             if pil_i.mode == 'RGBA': pil_i = pil_i.convert('RGB')
-                            all_pil_images.append(pil_i)
+                            image_entries.append({"img": pil_i, "id": f.name, "name": f.name})
                         except: pass
-                        
-                # From Paste
-                all_pil_images.extend(st.session_state['pasted_images'])
                 
                 items_to_process = []
                 
                 if use_ctx_mode:
                     # LINKED MODE (Improved): Iterate but pass context to EACH
-                    # This ensures we get 11 answers for 11 photos, but all see the text instruction.
-                    if not all_pil_images and not has_text:
-                        st.warning("Nada que analizar.")
-                    else:
-                        # 1. Text Context Handling
-                        # We treat the text as "Global Instruction" for the images
+                    # 1. Text Context Handling
+                    
+                    # HYDRATE GLOBAL CONTEXT HERE (JUST-IN-TIME)
+                    if not gl_ctx:
+                            gl_ctx, _ = get_global_context()
+                    
+                    # Process Images Individually (with text as context)
+                    for i, entry in enumerate(image_entries):
+                            # Get Manual Type
+                            manual_type = config_map.get(entry['id'], "🤖 Auto (Detectar)")
+                            
+                            items_to_process.append({
+                                "type": "linked_single", 
+                                "text": input_text_quiz, 
+                                "image": entry["img"], 
+                                "name": entry["name"],
+                                "force_type": manual_type 
+                            })
                         
-                        # HYDRATE GLOBAL CONTEXT HERE (JUST-IN-TIME)
-                        # We only fetch the heavy text when we are actually about to process
-                        if not gl_ctx:
-                             gl_ctx, _ = get_global_context()
-                        
-                        # Process Images Individually (with text as context)
-                        for i, img_obj in enumerate(all_pil_images):
-                             items_to_process.append({
-                                 "type": "linked_single", 
-                                 "text": input_text_quiz, # The text instruction applies to this image
-                                 "image": img_obj, 
-                                 "name": f"Pregunta {i+1} (Con Contexto)"
-                             })
-                        
-                        # If there are NO images but there IS text, just process text
-                        if not all_pil_images and has_text:
-                             items_to_process.append({"type": "text", "obj": input_text_quiz, "name": "Consulta de Texto"})
+                    # If there are NO images but there IS text, just process text
+                    if not image_entries and has_text:
+                            items_to_process.append({"type": "text", "obj": input_text_quiz, "name": "Consulta de Texto", "force_type": "Auto"})
 
                 else:
                     # SEPARATE MODE (Legacy)
                     if has_text:
-                        items_to_process.append({"type": "text", "obj": input_text_quiz, "name": "Pregunta de Texto"})
+                        items_to_process.append({"type": "text", "obj": input_text_quiz, "name": "Pregunta de Texto", "force_type": "Auto"})
                     
-                    # Add Images separately (No text context)
-                    for i, img_obj in enumerate(all_pil_images):
-                         items_to_process.append({"type": "image_obj", "obj": img_obj, "name": f"Imagen {i+1}"})
+                    # Add Images separately
+                    for i, entry in enumerate(image_entries):
+                            manual_type = config_map.get(entry['id'], "🤖 Auto (Detectar)")
+                            items_to_process.append({"type": "image_obj", "obj": entry["img"], "name": entry["name"], "force_type": manual_type})
 
                 for i, item in enumerate(items_to_process):
                     # Calculate percentages
@@ -3554,28 +3610,35 @@ with tab_quiz:
                     try:
                         full_answer = ""
                         disp_img = None
+                        
+                        # Extract Force Type (Clean string)
+                        raw_type = item.get("force_type", "Auto")
+                        # Clean logic: "☑️ Selección Múltiple" -> "Selección Múltiple"
+                        ftype = "Auto"
+                        if "Selección Múltiple" in raw_type: ftype = "Selección Múltiple"
+                        elif "Cierto/Falso" in raw_type: ftype = "Cierto/Falso"
+                        elif "Respuesta Abierta" in raw_type: ftype = "Respuesta Abierta"
                     
                         if item["type"] == "text":
-                             # Text Only
-                             full_answer = assistant.solve_quiz(question_text=item["obj"], global_context=gl_ctx)
-                             
+                                # Text Only
+                                full_answer = assistant.solve_quiz(question_text=item["obj"], global_context=gl_ctx, force_type=ftype)
+                                
                         elif item["type"] == "linked_single":
-                             # Linked Single Mode
-                             # Pass ONE image + Text Context
-                             full_answer = assistant.solve_quiz(images=[item["image"]], question_text=item["text"], global_context=gl_ctx)
-                             disp_img = item["image"]
+                                # Linked Single Mode
+                                full_answer = assistant.solve_quiz(images=[item["image"]], question_text=item["text"], global_context=gl_ctx, force_type=ftype)
+                                disp_img = item["image"]
                              
                         elif item["type"] == "linked":
                              # (Deprecated but safely kept for fallback)
                              # Pass list of images
-                             full_answer = assistant.solve_quiz(images=item["images"], question_text=item["text"], global_context=gl_ctx)
+                             full_answer = assistant.solve_quiz(images=item["images"], question_text=item["text"], global_context=gl_ctx, force_type=ftype)
                              # Display first image as thumbnail?
                              disp_img = item["images"][0] if item["images"] else None
                              
                         elif item["type"] == "image_obj":
                             # Image Only
                             disp_img = item["obj"]
-                            full_answer = assistant.solve_quiz(images=[disp_img], global_context=gl_ctx)
+                            full_answer = assistant.solve_quiz(images=[disp_img], global_context=gl_ctx, force_type=ftype)
 
                         # Robust Regex Parsing for Short Answer
                         import re

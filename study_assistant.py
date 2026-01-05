@@ -308,9 +308,21 @@ Google ofrece una capa gratuita generosa, pero limitada.
         except Exception:
             return "No pude generar la guía en este momento. Inténtalo de nuevo."
 
-    def solve_quiz(self, images=None, question_text=None, global_context=""):
+    def solve_quiz(self, images=None, question_text=None, global_context="", force_type="Auto"):
         """Solves a quiz question from images (list) or text."""
         
+        # MANUAL OVERRIDE INSTRUCTION
+        override_instr = ""
+        if force_type and force_type != "Auto":
+            override_instr = f"""
+            🚨 **INSTRUCCIÓN MANUAL CRÍTICA**: 
+            El usuario ha clasificado esta pregunta como: **{force_type.upper()}**.
+            - IGNORA tu detección automática de formato.
+            - Si es **SELECCIÓN MÚLTIPLE**: ¡OBLIGATORIO! Busca si hay MÁS DE UNA respuesta correcta. No te conformes con una.
+            - Si es **CIERTO/FALSO**: Tu respuesta final debe ser explícitamente "Verdadero" o "Falso".
+            - **CUMPLE ESTA ORDEN POR ENCIMA DE TODO.**
+            """
+
         prompt = f"""
         Analiza esta pregunta de examen con el rigor de un CATEDRÁTICO UNIVERSITARIO.
         
@@ -318,6 +330,7 @@ Google ofrece una capa gratuita generosa, pero limitada.
         {global_context}
         
         INSTRUCCIONES SUPREMAS:
+        {override_instr}
         1. **DETECCIÓN AUTOMÁTICA DE TIPO**:
            - Mira la imagen. ¿Es Selección Múltiple? ¿Verdadero/Falso? ¿Respuesta Abierta?
            - **ADÁPTATE AL FORMATO**: Si es Verdadero/Falso, responde explícitamente "Verdadero" o "Falso". Si es Selección, di "Opción B".
