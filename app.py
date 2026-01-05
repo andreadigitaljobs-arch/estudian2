@@ -318,16 +318,16 @@ components.html(f"""
             {scroll_rules}
             
             /* Root Config (Streamlit Standard) */
-            html, body, .stApp {
+            html, body, .stApp {{
                 overflow-y: {overflow_mode} !important;
                 height: {height_mode} !important;
-            }
+            }}
             
             /* Force Scroll on App Container for Dashboard */
-            [data-testid="stAppViewContainer"] {
+            [data-testid="stAppViewContainer"] {{
                 overflow-y: {'auto' if overflow_mode == 'hidden' and not is_login_view else 'hidden'} !important;
                 height: 100% !important;
-            }
+            }}
             
             /* Clean Layout (Always Active) */
             .block-container {{
