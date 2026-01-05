@@ -333,7 +333,7 @@ Google ofrece una capa gratuita generosa, pero limitada.
         1. **DIRECTO AL GRANO**: No saludes, no analices, no concluyas.
         2. **ESTRUCTURA OBLIGATORIA** (Usa exactamente este formato):
         
-        ### ✅ RESPUESTA: [La opción correcta, ej: "B) 1945" o "Verdadero"]
+        **✅ RESPUESTA:** [La opción correcta, ej: "B) 1945" o "Verdadero"]
         
         **💡 POR QUÉ:** [1 o 2 frases MÁXIMO explicando el motivo clave. Sé quirúrgico.]
         
