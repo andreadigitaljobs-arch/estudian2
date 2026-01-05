@@ -3689,8 +3689,6 @@ with tab_quiz:
                         short_answer = "Ver abajo"
                     
                         results.append({"name": item["name"], "full": full_answer, "short": short_answer, "img_obj": disp_img})
-                    
-                        results.append({"name": item["name"], "full": full_answer, "short": short_answer, "img_obj": disp_img})
                 
                     except Exception as e:
                         print(e)
@@ -3737,8 +3735,8 @@ with tab_quiz:
             for i, res in enumerate(res_quiz):
                 # PERMANENT VIEW (No Expanders)
                 with st.container(border=True):
-                    # Header
-                    st.markdown(f"#### 🔹 Pregunta {i+1}")
+                    # Header (Smaller Font)
+                    st.markdown(f"**🔹 Pregunta {i+1}**")
                     
                     if 'img_obj' in res and res['img_obj']:
                         c_img, c_ans = st.columns([0.35, 0.65], gap="medium")
