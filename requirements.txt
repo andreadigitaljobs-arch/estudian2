@@ -6,4 +6,4 @@ Pillow
 streamlit-paste-button
 python-docx
 markdown
-# TRIGGER_REBUILD_QUIZ_MEMORY_V52_FINAL_CLEAN
+# TRIGGER_REBUILD_QUIZ_MEMORY_V65
