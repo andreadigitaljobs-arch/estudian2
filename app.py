@@ -3826,7 +3826,7 @@ with tab_quiz:
                          st.info(f"🤖 **La IA admitió el error y propone aprender esto:**\n\n> *{pending}*")
                          if st.button("✅ Confirmar y Guardar esta Regla", key="btn_conf_auto_learn", type="primary"):
                               cid = st.session_state.get('current_course_id')
-                              if save_user_memory(cid, f"- {pending}", None):
+                              if database.save_user_memory(cid, f"- {pending}", None):
                                   st.success("¡Guardado! La IA no volverá a cometer este error.")
                                   st.session_state['pending_learning_rule'] = None # Clear
                                   time.sleep(1.5)
