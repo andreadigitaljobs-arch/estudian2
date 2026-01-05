@@ -3751,109 +3751,62 @@ with tab_quiz:
                         st.toast("¡Copiado!", icon='📋')
             
             # --- RESULTS DISPLAY ---
-            # Visual Display (Simplified: Direct Explanations)
-            
-            for i, res in enumerate(res_quiz):
-                # PERMANENT VIEW (No Expanders)
-                with st.container(border=True):
-                    # Header (Smaller Font)
-                    st.markdown(f"**🔹 Pregunta {i+1}**")
-                    
-                    if 'img_obj' in res and res['img_obj']:
-                        c_img, c_ans = st.columns([0.35, 0.65], gap="medium")
-                        with c_img:
-                             try:
-                                 st.image(res['img_obj'], use_container_width=True, caption=res['name'])
-                             except:
-                                 st.caption("Imagen no disponible")
-                        with c_ans:
-                             # Clean up newlines for compact view if needed, but Markdown usually handles it
-                             st.markdown(res['full'])
-                    else:
-                         st.markdown(res['full'])
+                st.caption("📋")
 
-            # --- DEBATE CHAT ---
+            # Display Data
+            for i, res in enumerate(res_quiz):
+                with st.expander(f"{res['name']} - {res['short']}", expanded=(i < 2)):
+                    c_img, c_txt = st.columns([0.3, 0.7])
+                    with c_img:
+                        if res.get('img_obj'):
+                            st.image(res['img_obj'], use_container_width=True)
+                        else:
+                            st.info("Sin Imagen")
+                    with c_txt:
+                        st.markdown(res['full'])
+            
             st.divider()
             
-            # Header + Action
-            c_chat_title, c_chat_act = st.columns([0.6, 0.4])
-            with c_chat_title:
-                st.markdown("### 💬 Debatir Resultados")
-                st.caption("¿Dudas? Habla con el Profesor.")
-            
-            with c_chat_act:
-                 # BUTTON MOVED HERE
-                 pass 
-        else:
-            st.info("👆 **Sube una imagen o pregunta para ver la Zona de Análisis.**")
-            st.caption("Versión V52 - Esperando datos...")
-
-        # MOVED OUTSIDE THE IF to be visible if we want? No, logic requires results.
-        # But we keep indentation logic.
-        
-        if res_quiz:
+            # --- DEBATE SECTION (INSIDE IF) ---
+            st.markdown("### 💬 Debatir Resultados")
             if st.button("🔄 ACTUALIZAR RESULTADOS (Corrección de IA)", use_container_width=True, type="primary"):
-                with st.spinner("Consolidando cambios..."):
-                    try:
-                        new_res = assistant.refine_quiz_results(st.session_state['quiz_results'], st.session_state['quiz_chat'])
-                        st.session_state['quiz_results'] = new_res
-                        st.success("¡Hecho!")
-                        time.sleep(0.5)
-                        st.rerun()
-                    except Exception as e:
-                        st.error(f"Error: {e}")
+                 with st.spinner("Consolidando cambios..."):
+                     try:
+                         # Ensure we pass the list
+                         new_res = assistant.refine_quiz_results(st.session_state['quiz_results'], st.session_state.get('quiz_chat', []))
+                         st.session_state['quiz_results'] = new_res
+                         st.success("¡Actualizado!")
+                         time.sleep(0.5)
+                         st.rerun()
+                     except Exception as e:
+                         st.error(f"Error: {e}")
 
-            # Spacer
             st.write("")
             
+            # Chat Init
             if 'quiz_chat' not in st.session_state:
                 st.session_state['quiz_chat'] = []
             
-            # Display History
+            # History
             for msg in st.session_state['quiz_chat']:
                 with st.chat_message(msg["role"]):
                     st.markdown(msg["content"])
             
             # Input
             if prompt := st.chat_input("Escribe tu duda o corrección...", key="quiz_chat_input"):
-                # Add User Msg
                 st.session_state['quiz_chat'].append({"role": "user", "content": prompt})
                 with st.chat_message("user"):
                     st.markdown(prompt)
                 
-                # Prepare Context (Last Quiz Results)
-                ctx_quiz = "SIN DATOS DE QUIZ RECIENTE"
-                if res_quiz:
-                    ctx_quiz = "--- RESULTADOS DEL QUIZ --- \n"
-                    for res in res_quiz:
-                        # Truncate text to avoid token explosion
-                        short_full = (res['full'][:500] + '..') if len(res['full']) > 500 else res['full']
-                        ctx_quiz += f"[Item: {res['name']}]\nAI Dice: {short_full}\n\n"
+                # Context
+                ctx_quiz = "--- RESULTADOS --- \n"
+                for res in res_quiz:
+                     ctx_quiz += f"{res['name']}: {res['full'][:200]}\n"
                 
-                # Call AI
+                # Images
+                images_ctx = [r['img_obj'] for r in res_quiz if r.get('img_obj')]
+
                 with st.chat_message("assistant"):
-                    with st.spinner("El profesor está re-analizando las imágenes y tu argumento..."):
-                        # Gather Images for Context
-                        images_ctx = []
-                        if res_quiz:
-                            for r in res_quiz:
-                                if r.get('img_obj'): images_ctx.append(r['img_obj'])
-                        
-                        reply = assistant.debate_quiz(
-                            history=st.session_state['quiz_chat'][:-1], 
-                            latest_input=prompt, 
-                            quiz_context=ctx_quiz,
-                            images=images_ctx
-                        )
-                        
-                        # Check for Auto-Learning Tag
-                        import re
-                        match = re.search(r"\|\|APRENDIZAJE: (.*?)\|\|", reply)
-                        if match:
-                            rule = match.group(1).strip()
-                            st.session_state['pending_learning_rule'] = rule
-                            reply = reply.replace(match.group(0), "")
-                        
                         st.markdown(reply)
                         st.session_state['quiz_chat'].append({"role": "assistant", "content": reply})
                         st.rerun()
