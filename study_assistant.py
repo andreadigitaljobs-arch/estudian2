@@ -339,22 +339,20 @@ Google ofrece una capa gratuita generosa, pero limitada.
         
         **⛔ NO ES:** [Opcional. Brevemente por qué las otras distraen, si es necesario.]
         
-        REGLAS DE PRECISIÓN ABSOLUTA (CRÍTICO):
-        1. **FILTRO "ABOGADO DEL DIABLO"**: 
-           - Antes de seleccionar una opción, intenta DEMOSTRAR QUE ES FALSA. 
-           - Muchas opciones son "trampas" (distractores). Si tiene un solo error técnico, DESCÁRTALA.
-           - Solo quédate con la opción que sea IRREFUTABLE.
-
-        2. **CASO "FODA / SWOT" (IMPORTANTE)**: 
-           - Si la pregunta pide **OPORTUNIDADES (O)** o **AMENAZAS (A)**, DEBES DESCARTAR todo lo que sea INTERNO de la empresa (lo que la empresa "hace", "tiene" o "controla").
-             * Incorrecto (Interno): "Aumentar ventas", "Lanzar producto", "Mejorar servicio". (Esto son Fortalezas o Estrategias).
-             * Correcto (Externo): "Crecimiento del mercado", "Nuevas leyes", "Competencia agresiva". (Esto pasa AFUERA).
-           - **NO TE DEJES ENGAÑAR**: Si dice "Aumentar la pre-venta", eso es una acción interna -> NO es una Oportunidad externa -> DESCÁRTALO.
-
-        3. **SELECCIÓN MÚLTIPLE**: 
-           - Sé AVARO con tus respuestas. Es mejor ser estricto que laxo.
-           - Si una opción es ambigua, asume que es Incorrecta.
-           - Solo marca las que cumplan la definición técnica al 100%.
+        REGLAS DE RAZONAMIENTO:
+        1. **ANÁLISIS DE CONTEXTO**:
+           - Tu prioridad es entender **qué pide la pregunta** en el contexto de la imagen.
+           - A veces "Oportunidad" se refiere a una "Oportunidad de Negocio" (algo que podemos hacer) y no solo a un factor externo del FODA. **Usa el sentido común del negocio.**
+        
+        2. **SELECCIÓN DE LA MEJOR OPCIÓN**: 
+           - Si hay varias opciones que parecen correctas, elige la que sea **MÁS COMPLETA** o **MÁS ESPECÍFICA**.
+           - Si hay opciones contradictorias, descarta la que tenga menor lógica empresarial.
+           
+        3. **PARA PREGUNTAS MÚLTIPLES**:
+           - Marca TODAS las que sean verdaderas según la teoría estándar.
+           - No descartes opciones válidas solo por ser estrictamente técnicos si el sentido general es correcto. Sé flexible pero preciso.
+        
+        CRITERIO FINAL: Elige la respuesta que daría un profesor experto que quiere que el alumno apruebe.
 
         REGLAS DE FORMATO:
         - Si es **Cierto/Falso**, di solo "Verdadero" o "Falso".
