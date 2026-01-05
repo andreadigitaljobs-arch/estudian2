@@ -1,7 +1,6 @@
-```python
 import streamlit as st
 import os
-print("DEBUG: LOADING V71 - INDENT FIX APPLIED")
+print("DEBUG: LOADING V72 - SYNTAX FIXED")
 import glob
 import uuid
 from transcriber import Transcriber
