@@ -305,7 +305,7 @@ else:
     # DASHBOARD: Native Scrolling (No Kill Rules)
     scroll_rules = "/* Dashboard: Scrollbars Enabled */"
     overflow_mode = "auto"
-    height_mode = "auto" 
+    height_mode = "100%" # Fixes sticky footer (chat_input) behavior
 
 components.html(f"""
 <script>
