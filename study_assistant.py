@@ -326,7 +326,8 @@ Google ofrece una capa gratuita generosa, pero limitada.
         prompt = f"""
         Actúa como una hoja de respuestas profesional y directa. TU OBJETIVO ES LA VELOCIDAD Y LA CLARIDAD.
         
-        CONTEXTO DE LA BIBLIOTECA (Úsalo solo si es vital):
+        CONTEXTO DE LA BIBLIOTECA (FUENTE DE VERDAD SUPREMA):
+        Use la siguiente información para responder. SI LA INFORMACIÓN ESTÁ AQUÍ, ES LA ÚNICA QUE VALE.
         {global_context}
         
         INSTRUCCIONES DE FORMATO ({override_instr}):
