@@ -3152,90 +3152,130 @@ with tab_didactic:
              if gl_count > 0:
                 st.success(f"✅ **Memoria Global Activa:** {gl_count} archivos base detectados.")
             
-             if not transcript_files:
-                st.info("No hay transcripciones disponibles. Sube videos en la Pestaña 1.")
-             else:
-                options = [f['name'] for f in transcript_files]
-                file_map = {f['name']: f['id'] for f in transcript_files}
-                
-                selected_file = st.selectbox("Selecciona la clase a traducir:", options, key="sel_didactic")
-                
-                if selected_file and st.button("🔍 Traducir a Lenguaje Simple", key="btn_didactic", type="primary"):
-                    from database import get_file_content, upload_file_to_db, get_units, create_unit # Re-import to ensure scope safety
-                    f_id = file_map[selected_file]
-                    text = get_file_content(f_id)
+                if not transcript_files:
+                    st.info("No hay transcripciones disponibles. Sube videos en la Pestaña 1.")
+                else:
+                    options = [f['name'] for f in transcript_files]
+                    file_map = {f['name']: f['id'] for f in transcript_files}
                     
-                    with st.spinner("Traduciendo conceptos complejos a lenguaje humano..."):
-                        # CALL NEW AI FUNCTION
-                        didactic_data = assistant.generate_didactic_explanation(text, global_context=gl_ctx)
-                        
-                        st.session_state['didactic_result'] = didactic_data
-                        
-                        # Save result to DB (Optional, maybe under "Apuntes Didacticos"?)
-                        # We won't auto-save to DB yet unless requested, to keep it as an exploration tool.
-                        # Or we save it to the "Apuntes Simples" folder but with a prefix.
-                        
-                        # Let's save it for persistence!
-                        units = get_units(c_id)
-                        target_folder = "Apuntes Didácticos"
-                        n_unit = next((u for u in units if u['name'] == target_folder), None)
-                        if not n_unit:
-                             n_unit = create_unit(c_id, target_folder)
-                        
-                        if n_unit:
-                             # Create a Markdown representation for saving
-                             md_save = f"# 🧠 Explicación Didáctica: {selected_file}\n\n"
+                    c1_sel, c2_fold = st.columns([1, 1], gap="small")
+                    
+                    with c1_sel:
+                         selected_file = st.selectbox("Selecciona la clase a traducir:", options, key="sel_didactic")
+                    
+                    with c2_fold:
+                         # --- FOLDER SELECTOR (Reused Logic) ---
+                         # Fetch all units
+                         u_all = get_units(c_id, fetch_all=True)
+                         if u_all:
+                             id_to_u = {u['id']: u for u in u_all}
+                             def get_p(u):
+                                  parts = [u['name']]
+                                  curr = u
+                                  depth = 0
+                                  while curr.get('parent_id') and depth < 5:
+                                      pid = curr['parent_id']
+                                      parent = id_to_u.get(pid)
+                                      if parent:
+                                          parts.insert(0, parent['name'])
+                                          curr = parent
+                                          depth += 1
+                                      else: break
+                                  return " / ".join(parts)
                              
-                             modules = []
-                             if isinstance(didactic_data, list):
-                                 # Unpack wrapper if present
-                                 if len(didactic_data) > 0 and isinstance(didactic_data[0], dict) and 'modules' in didactic_data[0]:
-                                     modules = didactic_data[0]['modules']
+                             map_u = {get_p(u): u['id'] for u in u_all}
+                             keys_u = sorted(list(map_u.keys()))
+                             
+                             # Default to "Apuntes Didácticos" if exists
+                             idx_def = 0
+                             for i, k in enumerate(keys_u):
+                                 if "Didácticos" in k or "Apuntes" in k:
+                                     idx_def = i
+                                     break
+                                     
+                             sel_fold_name = st.selectbox("Guardar en:", keys_u, index=idx_def, key="sel_fold_didactic")
+                             target_unit_id = map_u[sel_fold_name]
+                             target_unit_name = sel_fold_name # Display name path
+                         else:
+                             st.warning("Sin carpetas. Se creará una por defecto.")
+                             target_unit_id = None
+                    
+                    
+                    if selected_file and st.button("🔍 Traducir a Lenguaje Simple", key="btn_didactic", type="primary"):
+                        from database import get_file_content, upload_file_to_db, get_units, create_unit 
+                        f_id = file_map[selected_file]
+                        text = get_file_content(f_id)
+                        
+                        with st.spinner("Traduciendo conceptos complejos a lenguaje humano..."):
+                            # CALL NEW AI FUNCTION
+                            didactic_data = assistant.generate_didactic_explanation(text, global_context=gl_ctx)
+                            
+                            st.session_state['didactic_result'] = didactic_data
+                            
+                            # SAVE LOGIC
+                            if not target_unit_id:
+                                 # Fallback create
+                                 target_folder = "Apuntes Didácticos"
+                                 n_unit = create_unit(c_id, target_folder)
+                                 n_unit_to_use = n_unit['id']
+                                 t_folder_name = target_folder
+                            else:
+                                 n_unit_to_use = target_unit_id
+                                 t_folder_name = target_unit_name
+                            
+                            if n_unit_to_use:
+                                 # Create a Markdown representation for saving
+                                 md_save = f"# 🧠 Explicación Didáctica: {selected_file}\n\n"
+                                 
+                                 modules = []
+                                 if isinstance(didactic_data, list):
+                                     if len(didactic_data) > 0 and isinstance(didactic_data[0], dict) and 'modules' in didactic_data[0]:
+                                         modules = didactic_data[0]['modules']
+                                     else:
+                                         modules = didactic_data
+                                 elif isinstance(didactic_data, dict):
+                                     modules = didactic_data.get('modules', [])
+                                 
+                                 if not modules:
+                                     md_save += f"_{didactic_data.get('introduction', '')}_\n\n"
+                                     for b in didactic_data.get('blocks', []):
+                                         md_save += f"### {b.get('concept_title', 'Concepto')}\n"
+                                         md_save += f"{b.get('simplified_explanation', '')}\n\n"
+                                     md_save += f"\n{didactic_data.get('conclusion', '')}"
                                  else:
-                                     modules = didactic_data
-                             elif isinstance(didactic_data, dict):
-                                 modules = didactic_data.get('modules', [])
-                             
-                             if not modules:
-                                 # Fallback for error/old format
-                                 md_save += f"_{didactic_data.get('introduction', '')}_\n\n"
-                                 for b in didactic_data.get('blocks', []):
-                                     md_save += f"### {b.get('concept_title', 'Concepto')}\n"
-                                     md_save += f"{b.get('simplified_explanation', '')}\n\n"
-                                 md_save += f"\n{didactic_data.get('conclusion', '')}"
-                             else:
-                                 for m in modules:
-                                     m_type = m.get('type', 'DEEP_DIVE')
-                                     title = m.get('title', 'Módulo')
-                                     c = m.get('content', {})
-                                     
-                                     md_save += f"## {title}\n"
-                                     
-                                     if m_type == 'STRATEGIC_BRIEF':
-                                         md_save += f"**Tesis:** {c.get('thesis')}\n\n"
-                                         md_save += f"**Impacto:** {c.get('impact')}\n\n"
+                                     for m in modules:
+                                         m_type = m.get('type', 'DEEP_DIVE')
+                                         title = m.get('title', 'Módulo')
+                                         c = m.get('content', {})
                                          
-                                     elif m_type == 'DEEP_DIVE':
-                                         md_save += f"**Definición:** {c.get('definition')}\n\n"
-                                         md_save += f"**Explicación:** {c.get('explanation')}\n\n"
-                                         if c.get('example'):
-                                            md_save += f"> **Ejemplo:** {c.get('example')}\n\n"
-                                     
-                                     elif m_type == 'REALITY_CHECK':
-                                         md_save += f"❓ **{c.get('question')}**\n\n"
-                                         md_save += f"✅ {c.get('insight')}\n\n"
+                                         md_save += f"## {title}\n"
                                          
-                                     elif m_type == 'TOOLKIT':
-                                         md_save += f"{c.get('intro')}\n"
-                                         for s in c.get('steps', []):
-                                             md_save += f"- [ ] {s}\n"
-                                         md_save += "\n"
+                                         if m_type == 'STRATEGIC_BRIEF':
+                                             md_save += f"**Tesis:** {c.get('thesis')}\n\n"
+                                             md_save += f"**Impacto:** {c.get('impact')}\n\n"
+                                             
+                                         elif m_type == 'DEEP_DIVE':
+                                             md_save += f"**Definición:** {c.get('definition')}\n\n"
+                                             md_save += f"**Explicación:** {c.get('explanation')}\n\n"
+                                             if c.get('example'):
+                                                md_save += f"> **Ejemplo:** {c.get('example')}\n\n"
                                          
-                                     md_save += "---\n\n"
-                             
-                             fname = f"Didactico_{selected_file.replace('.txt', '')[:50]}.md"
-                             upload_file_v2(n_unit['id'], fname, md_save, "note")
-                             st.success(f"Explicación guardada en '{target_folder}'")
+                                         elif m_type == 'REALITY_CHECK':
+                                             md_save += f"❓ **{c.get('question')}**\n\n"
+                                             md_save += f"✅ {c.get('insight')}\n\n"
+                                             
+                                         elif m_type == 'TOOLKIT':
+                                             md_save += f"{c.get('intro')}\n"
+                                             for s in c.get('steps', []):
+                                                 md_save += f"- [ ] {s}\n"
+                                             md_save += "\n"
+                                             
+                                         md_save += "---\n\n"
+                                 
+                                 fname = f"Didactico_{selected_file.replace('.txt', '')[:50]}.md"
+                                 # Using upload_file_to_db (not upload_file_v2 which looked like a typo in previous code)
+                                 upload_file_to_db(n_unit_to_use, fname, md_save, "note")
+                                 st.success(f"Explicación guardada en '{t_folder_name}'")
 
                 # --- RENDER RESULT ---
                 res = st.session_state.get('didactic_result')

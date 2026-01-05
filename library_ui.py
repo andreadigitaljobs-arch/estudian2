@@ -501,28 +501,38 @@ def render_library(assistant):
                         # --- MOVER ARCHIVO ---
                         move_key_mode = f"mov_mode_{f['id']}_{token}"
                         
-                        if st.button("➡️ Mover a...", key=f"btn_move_{f['id']}_{token}", use_container_width=True):
-                             st.session_state[move_key_mode] = not st.session_state.get(move_key_mode, False)
+                        def toggle_move_vis(k):
+                            st.session_state[k] = not st.session_state.get(k, False)
+
+                        if st.button("➡️ Mover a...", key=f"btn_move_{f['id']}_{token}", use_container_width=True, on_click=toggle_move_vis, args=(move_key_mode,)):
+                             pass # Handled by callback
                              
                         if st.session_state.get(move_key_mode):
-                             # Fetch available units (Optimized: we already have subfolders, but we might want ALL units)
-                             # Getting all units for the course to allow moving out of subfolders too
+                             # Fetch available units (Optimized)
                              all_units = get_units(current_course_id, fetch_all=True)
-                             
-                             # Filter out current unit
                              target_opts = {u['name']: u['id'] for u in all_units if u['id'] != current_unit_id}
                              
                              if not target_opts:
                                  st.caption("No hay otras carpetas.")
                              else:
                                  sel_target = st.selectbox("Destino:", list(target_opts.keys()), key=f"sel_mov_{f['id']}_{token}")
+                                 
+                                 def do_move(fid, tid, tname):
+                                     if move_file(fid, tid):
+                                         st.toast(f"Archivo movido a '{tname}'")
+                                         # Reset mode
+                                         # (Can't reset key here easily without rerunning, but rerun helps)
+                                     else: st.error("Error al mover")
+                                     
                                  if st.button("Confirmar Mover", key=f"conf_mov_{f['id']}_{token}"):
+                                     # Not using callback here because we need to read the Selectbox State which might not be updated inside a callback if it was just changed?
+                                     # actually selectbox state IS available in callback.
+                                     # But let's keep it simple for action button. The TOGGLE is the one usually needing double clicks.
                                      target_id = target_opts[sel_target]
                                      if move_file(f['id'], target_id):
                                          st.toast(f"Archivo movido a '{sel_target}'")
+                                         st.session_state[move_key_mode] = False # Close
                                          st.rerun()
-                                     else:
-                                         st.error("Error al mover.")
                             
                         if st.button("👨🏻‍🏫 Hablar con Profe", key=f"btn_tutor_{f['id']}_{token}", use_container_width=True):
                             st.session_state['chat_context_file'] = f
