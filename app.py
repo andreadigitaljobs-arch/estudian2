@@ -3788,27 +3788,37 @@ with tab_quiz:
                  with st.chat_message(msg["role"]): st.markdown(msg["content"])
                  
             # Input
-            # INJECT JS ENFORCER (Borrowed from Tutor Chat for consistency)
+            # INJECT JS ENFORCER (Refined for Sidebar Awareness)
             components.html("""
             <script>
             const doc = window.parent.document;
             const enforceChatLayout = () => {
                 const chatInput = doc.querySelector('[data-testid="stChatInput"]');
+                const sidebar = doc.querySelector('[data-testid="stSidebar"]');
+                
                 if (chatInput) {
-                    // Force width and alignment
-                    const ta = chatInput.querySelector('textarea');
-                    if (ta) {
-                        ta.style.setProperty('width', '100%', 'important'); 
+                    let sidebarWidth = 0;
+                    if (sidebar && sidebar.getAttribute('aria-expanded') !== 'false') {
+                        // Get actual width or assume standard
+                        sidebarWidth = sidebar.offsetWidth || 280; 
                     }
-                    // Fix container constraint
-                    chatInput.style.setProperty('width', '100%', 'important');
+                    
+                    // Force width to be Viewport - Sidebar
+                    // We use 'calc' to be safe
+                    chatInput.style.setProperty('width', `calc(100% - ${sidebarWidth}px)`, 'important');
                     chatInput.style.setProperty('position', 'fixed', 'important');
                     chatInput.style.setProperty('bottom', '0px', 'important');
+                    chatInput.style.setProperty('right', '0px', 'important'); // Anchor right
+                    chatInput.style.setProperty('left', 'auto', 'important'); // Let width handle left
                     chatInput.style.setProperty('z-index', '99999', 'important');
+                    
+                    // Visual Fixes
+                    const ta = chatInput.querySelector('textarea');
+                    if (ta) ta.style.setProperty('width', '100%', 'important');
                 }
             };
-            // Run periodically to fight Streamlit's redraws
-            setInterval(enforceChatLayout, 500);
+            // Run periodically
+            setInterval(enforceChatLayout, 100);
             </script>
             """, height=0)
 
