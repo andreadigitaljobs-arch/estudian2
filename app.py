@@ -134,10 +134,22 @@ st.markdown("""
     }
     
     /* DYNAMIC: FREEZE SCROLL & HIDE SIDEBAR ON LOGIN */
+    /* DYNAMIC: FREEZE SCROLL & HIDE SIDEBAR ON LOGIN */
     """ + ("""
     .stApp, section.main, .block-container, [data-testid="stAppViewContainer"], html, body {
         overflow: hidden !important;
     }
+    """ if not st.session_state.get('user') else """
+    /* DASHBOARD STABLE LAYOUT (Sync) */
+    html, body, .stApp {
+        height: 100% !important;
+        overflow-y: hidden !important;
+    }
+    [data-testid="stAppViewContainer"] {
+        height: 100% !important;
+        overflow-y: scroll !important; /* Force scroll here */
+    }
+    """) + """
     [data-testid="stSidebar"] {
         display: none !important;
     }
