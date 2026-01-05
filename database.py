@@ -238,6 +238,47 @@ def delete_unit(unit_id):
         print(f"Error deleting unit: {e}")
         return False
 
+def get_full_course_backup(course_id):
+    """
+    Fetches ALL files with content for valid export.
+    Returns list of dicts: [{'name': '...', 'content': '...', 'unit_name': '...'}]
+    """
+    supabase = init_supabase()
+    try:
+        # 1. Get Units to map names
+        units = supabase.table("units").select("id, name").eq("course_id", course_id).execute().data
+        if not units: return []
+        
+        unit_map = {u['id']: u['name'] for u in units}
+        unit_ids = list(unit_map.keys())
+        
+        # 2. Get Files with Content (Heavy Fetch)
+        # We need content_text
+        all_files = []
+        
+        # Pagination might be needed if HUGE, but for now assuming < 500 files.
+        # Supabase default limit is 1000.
+        res = supabase.table("library_files") \
+            .select("unit_id, name, content_text, type") \
+            .in_("unit_id", unit_ids) \
+            .execute()
+            
+        for f in res.data:
+            # Only export TEXT files or MARKDOWN
+            # If type is 'text' or it has content
+            if f.get('content_text'):
+                uname = unit_map.get(f['unit_id'], "Sin Unidad")
+                all_files.append({
+                    "name": f['name'],
+                    "content": f['content_text'],
+                    "unit": uname
+                })
+                
+        return all_files
+    except Exception as e:
+        print(f"Backup Error: {e}")
+        return []
+
 def rename_unit(unit_id, new_name):
     supabase = init_supabase()
     try:

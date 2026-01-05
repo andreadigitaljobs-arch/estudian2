@@ -72,6 +72,48 @@ def render_library(assistant):
              if count_ren == 0:
                  st.toast("Todo limpio. No se encontraron archivos para corregir.")
 
+    # --- EXPORT / BACKUP SECTION ---
+    with st.expander("📦 Exportar Todo (Para ChatGPT/Backup)"):
+        st.info("Descarga toda tu biblioteca organizada por carpetas para subirla a otra IA.")
+        
+        if st.button("Generar Backup .ZIP", key="btn_gen_backup"):
+            with st.spinner("Empaquetando conocimientos... 🧠📦"):
+                 from database import get_full_course_backup
+                 import io
+                 import zipfile
+                 
+                 files_data = get_full_course_backup(current_course_id)
+                 
+                 if not files_data:
+                     st.error("No hay archivos para exportar.")
+                 else:
+                     # Create ZIP in Memory
+                     zip_buffer = io.BytesIO()
+                     with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zf:
+                         for item in files_data:
+                             # Clean names
+                             safe_unit = "".join([c for c in item['unit'] if c.isalnum() or c in (' ', '_', '-')]).strip()
+                             safe_file = "".join([c for c in item['name'] if c.isalnum() or c in (' ', '_', '-', '.')]).strip()
+                             if not safe_file.lower().endswith(('.txt', '.md')):
+                                 safe_file += ".txt"
+                                 
+                             # Path inside zip: Unit/File
+                             zip_path = f"{safe_unit}/{safe_file}"
+                             
+                             # Write
+                             zf.writestr(zip_path, item['content'])
+                     
+                     zip_buffer.seek(0)
+                     
+                     st.success(f"¡Listo! {len(files_data)} archivos empaquetados.")
+                     st.download_button(
+                         label="⬇️ Descargar Archivo ZIP",
+                         data=zip_buffer,
+                         file_name="Bibliotec_Completa_Estudian2.zip",
+                         mime="application/zip",
+                         key="btn_down_zip"
+                     )
+
     # --- STATE MANAGEMENT ---
     if 'lib_current_unit_id' not in st.session_state: st.session_state['lib_current_unit_id'] = None
     if 'lib_current_unit_name' not in st.session_state: st.session_state['lib_current_unit_name'] = None
