@@ -3788,29 +3788,8 @@ with tab_quiz:
                  with st.chat_message(msg["role"]): st.markdown(msg["content"])
                  
             # Input
-            # INJECT JS ENFORCER (Borrowed from Tutor Chat for consistency)
-            components.html("""
-            <script>
-            const doc = window.parent.document;
-            const enforceChatLayout = () => {
-                const chatInput = doc.querySelector('[data-testid="stChatInput"]');
-                if (chatInput) {
-                    // Force width and alignment on TEXTAREA only
-                    const ta = chatInput.querySelector('textarea');
-                    if (ta) {
-                        ta.style.setProperty('width', '100%', 'important'); 
-                    }
-                    // Fix container constraint - DO NOT FORCE WIDTH (Let Streamlit handle it)
-                    // Only force sticky bottom
-                    chatInput.style.setProperty('position', 'fixed', 'important');
-                    chatInput.style.setProperty('bottom', '0px', 'important');
-                    chatInput.style.setProperty('z-index', '99999', 'important');
-                }
-            };
-            // Run periodically to fight Streamlit's redraws
-            setInterval(enforceChatLayout, 500);
-            </script>
-            """, height=0)
+            # Input
+            # (Native Streamlit Input - Reverted custom JS)
 
             if prompt := st.chat_input("Escribe tu duda o corrección...", key="quiz_chat_input"):
                 # Add User Msg
