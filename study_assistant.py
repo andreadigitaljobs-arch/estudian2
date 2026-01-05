@@ -877,42 +877,3 @@ Google ofrece una capa gratuita generosa, pero limitada.
                          p r i n t ( f " E r r o r   r e f i n i n g   r e s u l t s :   { e } " )  
                          r e t u r n   o r i g i n a l _ r e s u l t s  
  
-
-    def refine_quiz_results(self, original_results, chat_history):
-        try:
-            import json
-            # Sanitize inputs
-            results_str = json.dumps([{k:v for k,v in r.items() if k!='img_obj'} for r in original_results], ensure_ascii=False, indent=2)
-            history_str = json.dumps(chat_history, ensure_ascii=False, indent=2)
-            
-            prompt = f"""
-            ACTUA COMO AUDITOR DE EXAMENES.
-            Actualiza la Hoja de Respuestas.
-            
-            ORIGINAL:
-            {results_str}
-            
-            DEBATE:
-            {history_str}
-            
-            INSTRUCCIONES:
-            1. Si el Profesor admitio error, CORRIGE.
-            2. Si no, MANTEN.
-            3. Devuelve JSON puro.
-            """
-            
-            response = self.model.generate_content(prompt)
-            txt = response.text.replace("```json", "").replace("```", "").strip()
-            new_res = json.loads(txt)
-            
-            # Merge images back
-            final = []
-            for i, nr in enumerate(new_res):
-                merged = nr.copy()
-                if i < len(original_results) and 'img_obj' in original_results[i]:
-                    merged['img_obj'] = original_results[i]['img_obj']
-                final.append(merged)
-            return final
-        except Exception as e:
-            print(f"Refine Error: {e}")
-            return original_results

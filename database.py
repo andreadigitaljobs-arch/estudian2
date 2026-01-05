@@ -741,29 +741,3 @@ def save_user_memory(course_id, new_memory_text, unit_id_fallback):
     except Exception as e:
         print(f"Error saving memory: {e}")
         return False
-
-def get_course_file_counts(course_id):
-    """
-    Returns a dict {unit_id: count} for all units in the course.
-    """
-    supabase = init_supabase()
-    try:
-        # 1. Get all unit IDs for this course first to scope the query
-        units = supabase.table("units").select("id").eq("course_id", course_id).execute().data
-        if not units: return {}
-        
-        unit_ids = [u['id'] for u in units]
-        
-        # 2. Get all files (only unit_id needed) meaning minimal data transfer
-        # This is reasonably efficient for < 5000 files.
-        res = supabase.table("library_files").select("unit_id").in_("unit_id", unit_ids).execute()
-        
-        counts = {}
-        for f in res.data:
-            uid = f['unit_id']
-            counts[uid] = counts.get(uid, 0) + 1
-            
-        return counts
-    except Exception as e:
-        print(f"Error fetching counts: {e}")
-        return {}

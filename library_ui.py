@@ -4,7 +4,7 @@ import time
 import os
 import base64
 import pandas as pd
-from database import get_units, create_unit, upload_file_to_db, get_files, delete_file, rename_file, rename_unit, delete_unit, create_chat_session, save_chat_message, search_library, update_user_footprint, get_course_files, move_file, get_course_file_counts
+from database import get_units, create_unit, upload_file_to_db, get_files, delete_file, rename_file, rename_unit, delete_unit, create_chat_session, save_chat_message, search_library, update_user_footprint, get_course_files, move_file
 
 
 def render_library(assistant):
@@ -40,9 +40,6 @@ def render_library(assistant):
     if not current_course_id:
         st.info("👈 Selecciona un Diplomado en la barra lateral para ver su Biblioteca.")
         return
-
-    # DEBUG TOAST
-    st.toast("Cargando Biblioteca V54... (Contadores Activos)", icon="📂")
 
     # --- MAINTENANCE TOOLS ---
     with st.expander("🔧 Mantenimiento de Archivos"):
@@ -253,21 +250,12 @@ def render_library(assistant):
     # --- FOLDER VIEW ---
     subfolders = get_units(current_course_id, parent_id=current_unit_id)
     
-    # FETCH COUNTS
-    try:
-        f_counts = get_course_file_counts(current_course_id)
-    except: f_counts = {}
-
     if subfolders:
         st.markdown("##### 📁 Carpetas")
         cols = st.columns(3)
         for i, unit in enumerate(subfolders):
-            # Format Label with Count
-            cnt = f_counts.get(unit['id'], 0)
-            lbl = f"📁 {unit['name']} ({cnt})"
-            
             with cols[i % 3]:
-                if st.button(lbl, key=f"btn_unit_{unit['id']}", use_container_width=True):
+                if st.button(f"📁 {unit['name']}", key=f"btn_unit_{unit['id']}", use_container_width=True):
                     st.session_state['lib_current_unit_id'] = unit['id']
                     st.session_state['lib_current_unit_name'] = unit['name']
                     st.session_state['lib_breadcrumbs'].append({'id': unit['id'], 'name': unit['name']})
