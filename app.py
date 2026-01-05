@@ -3643,9 +3643,16 @@ with tab_quiz:
                         # Robust Regex Parsing for Short Answer
                         import re
                         short_answer = "Respuesta no detectada (Ver detalle)"
-                        match = re.search(r"\*\*Respuesta Correcta:?\*\*?\s*(.*)", full_answer, re.IGNORECASE)
+                        # IMPROVED REGEX: Captures until double newline or next Header (##, **)
+                        # \s* (.*?) (?=\n\n|\n[#*]|$) -> Matches content lazily until double newline, next header, or end of string.
+                        # re.DOTALL is NOT used because we want to stop at structure breaks, so manually matching lines is safer.
+                        
+                        match = re.search(r"\*\*Respuesta Correcta:?\*\*?\s*([\s\S]*?)(?=\n\n|\n\*\*|\Z)", full_answer, re.IGNORECASE)
                         if match:
                              short_answer = match.group(1).strip()
+                             # If it's too long (> 200 chars), truncate cleanly
+                             if len(short_answer) > 200: 
+                                 short_answer = short_answer[:200] + "..."
                     
                         results.append({"name": item["name"], "full": full_answer, "short": short_answer, "img_obj": disp_img})
                 
