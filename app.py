@@ -285,6 +285,10 @@ if not st.session_state['user'] and not st.session_state.get('force_logout'):
 is_login_view = st.session_state.get('user') is None
 
 # Rules Config
+scroll_rules = ""
+overflow_mode = "hidden"
+height_mode = "100%"
+
 if is_login_view:
     # LOGIN: Scorched Earth (No Scroll, Fixed Height)
     scroll_rules = """
