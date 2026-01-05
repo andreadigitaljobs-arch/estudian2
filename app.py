@@ -54,6 +54,15 @@ def get_global_context():
         if not st.session_state.get('current_course'): return "", 0
         cid = st.session_state['current_course']['id']
         txt = get_course_full_context(cid)
+        
+        # --- CONSULTANT: INJECT USER MEMORY (OVERRIDES) ---
+        user_mem = get_user_memory(cid)
+        if user_mem:
+            txt += "\n\n=== 🧠 CORRECCIONES Y APRENDIZAJES DEL USUARIO (PRIORIDAD MÁXIMA) ===\n"
+            txt += "Estas son correcciones explícitas que el usuario te ha enseñado. Tienen prioridad sobre cualquier otra información:\n" 
+            txt += user_mem
+            txt += "\n=========================================================================\n"
+
         fls = get_course_files(cid)
         return txt, len(fls)
     except:
@@ -3794,9 +3803,29 @@ with tab_quiz:
                                   images=images_ctx
                               )
                               st.markdown(reply)
-                              st.session_state['quiz_chat'].append({"role": "assistant", "content": reply})
-                          except Exception as e:
-                              st.error(f"Error en chat: {e}")
+                            st.session_state['quiz_chat'].append({"role": "assistant", "content": reply})
+                            st.rerun() # Rerun to show the new message and the "Teach" button
+                        except Exception as e:
+                            st.error(f"Error en chat: {e}")
+
+            # --- TEACHING / MEMORY UI ---
+            # Show if last message was AI
+            if st.session_state['quiz_chat'] and st.session_state['quiz_chat'][-1]['role'] == 'assistant':
+                 with st.expander("🧠 ¿El Profesor se equivocó? Guardar Corrección (Memoria)", expanded=False):
+                     st.caption("Si la IA admitió un error, escribe aquí la regla correcta para que no lo olvide.")
+                     mem_input = st.text_area("Regla a aprender:", placeholder="Ej: La pregunta 7 sobre 'Pre-venta' se considera 'Estrategia', NO Oportunidad.", key="mem_learn_in")
+                     
+                     if st.button("💾 Guardar en Memoria", key="btn_save_mem"):
+                         if mem_input.strip():
+                              cid = st.session_state.get('current_course_id')
+                              if save_user_memory(cid, f"- {mem_input.strip()}", None):
+                                  st.success("¡Aprendido! 🧠 Esta corrección se aplicará en futuros quizzes.")
+                                  time.sleep(2)
+                                  st.rerun()
+                              else:
+                                  st.error("Error al guardar.")
+                         else:
+                              st.warning("Escribe algo primero.")
 
 # --- TAB 5: Ayudante de Tareas ---
 with tab_tasks:

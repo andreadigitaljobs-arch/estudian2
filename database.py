@@ -673,3 +673,71 @@ def upload_file_v2(unit_id, filename, content, f_type="note"):
         print(f"Error saving file {filename}: {e}")
         st.error(f"Error guardando archivo: {e}")
         return False
+
+def get_user_memory(course_id):
+    """
+    Retrieves the content of the 'MEMORY_OVERRIDE.md' file which acts as the 'Long Term Memory' 
+    of user corrections.
+    """
+    supabase = init_supabase()
+    try:
+        # Search for file named 'MEMORY_OVERRIDE.md' in this course
+        res = supabase.table("library_files") \
+            .select("content_text") \
+            .eq("name", "MEMORY_OVERRIDE.md") \
+            .eq("type", "text") \
+            .limit(1) \
+            .execute()
+            
+        if res.data:
+            return res.data[0]['content_text']
+        else:
+            return ""
+    except Exception as e:
+        print(f"Error fetching memory: {e}")
+        return ""
+
+def save_user_memory(course_id, new_memory_text, unit_id_fallback):
+    """
+    Appends or creates the MEMORY_OVERRIDE.md file with the new correction.
+    """
+    supabase = init_supabase()
+    try:
+        # 1. Get existing content
+        current_mem = get_user_memory(course_id)
+        
+        # 2. Append new text
+        updated_content = (current_mem + "\n" + new_memory_text).strip()
+        
+        # 3. Check if file exists to Update or Insert
+        res = supabase.table("library_files") \
+            .select("id") \
+            .eq("name", "MEMORY_OVERRIDE.md") \
+            .limit(1) \
+            .execute()
+            
+        if res.data:
+            # Update
+            fid = res.data[0]['id']
+            supabase.table("library_files").update({"content_text": updated_content}).eq("id", fid).execute()
+        else:
+            # Insert (Create in fallback unit)
+            # Find a valid unit if fallback is None
+            final_unit = unit_id_fallback
+            if not final_unit:
+                # Get first unit
+                u_res = supabase.table("units").select("id").eq("course_id", course_id).limit(1).execute()
+                if u_res.data:
+                    final_unit = u_res.data[0]['id']
+            
+            if final_unit:
+                supabase.table("library_files").insert({
+                    "unit_id": final_unit,
+                    "name": "MEMORY_OVERRIDE.md",
+                    "type": "text",
+                    "content_text": updated_content
+                }).execute()
+        return True
+    except Exception as e:
+        print(f"Error saving memory: {e}")
+        return False
