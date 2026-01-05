@@ -3833,40 +3833,25 @@ with tab_quiz:
                         st.session_state['quiz_chat'].append({"role": "assistant", "content": reply})
                         st.rerun()
 
-            # --- TEACHING / MEMORY UI ---
-            # Show if last message was AI
-            if st.session_state['quiz_chat'] and st.session_state['quiz_chat'][-1]['role'] == 'assistant':
-                 with st.expander("🧠 Gestión de Memoria / Aprendizaje", expanded=True):
-                     
-                     # AUTO-DETECTED RULE
-                     pending = st.session_state.get('pending_learning_rule')
-                     if pending:
-                         st.info(f"🤖 **La IA admitió el error y propone aprender esto:**\n\n> *{pending}*")
-                         if st.button("✅ Confirmar y Guardar esta Regla", key="btn_conf_auto_learn", type="primary"):
-                              cid = st.session_state.get('current_course_id')
-                              if database.save_user_memory(cid, f"- {pending}", None):
-                                  st.success("¡Guardado! La IA no volverá a cometer este error.")
-                                  st.session_state['pending_learning_rule'] = None # Clear
-                                  time.sleep(1.5)
-                                  st.rerun()
-                         
-                         st.markdown("---")
-                         st.caption("O escribe tu propia regla manualmente:")
-
-                     mem_input = st.text_area("Regla manual:", placeholder="Escribe aquí si quieres ajustar la regla...", key="mem_learn_in")
-                     
-                     if st.button("💾 Guardar Manualmente", key="btn_save_mem"):
-                         if mem_input.strip():
-                              cid = st.session_state.get('current_course_id')
-                              if save_user_memory(cid, f"- {mem_input.strip()}", None):
-                                  st.success("¡Aprendido! 🧠 Esta corrección se aplicará en futuros quizzes.")
-                                  time.sleep(2)
-                                  st.rerun()
-                              else:
-                                  st.error("Error al guardar.")
-                         else:
-                              st.warning("Escribe algo primero.")
-
+            # --- TEACHING / MEMORY UI (SIMPLIFIED) ---
+            pending = st.session_state.get('pending_learning_rule')
+            # Show ONLY if AI suggests a rule
+            if pending and st.session_state.get('quiz_chat') and st.session_state['quiz_chat'][-1]['role'] == 'assistant':
+                with st.container(border=True):
+                    st.info(f'🤖 **La IA propone aprender:**\n>{pending}')
+                    c1, c2 = st.columns([0.3, 0.7])
+                    with c1:
+                        if st.button('✅ Confirmar', key='btn_conf_auto', type='primary'):
+                            cid = st.session_state.get('current_course_id')
+                            if database.save_user_memory(cid, f'- {pending}', None):
+                                st.toast('¡Aprendido! 🧠')
+                                st.session_state['pending_learning_rule'] = None
+                                time.sleep(1)
+                                st.rerun()
+                    with c2:
+                        if st.button('❌ Descartar', key='btn_deny_auto'):
+                            st.session_state['pending_learning_rule'] = None
+                            st.rerun()
 # --- TAB 5: Ayudante de Tareas ---
 with tab_tasks:
     tab5_html = (
