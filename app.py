@@ -338,7 +338,21 @@ components.html(f"""
                 padding-top: 0px !important;
                 margin-top: 0px !important;
                 max-width: 100% !important;
+                padding-bottom: 60px !important; /* Space for fixed chat input */
             }}
+            
+            /* FORCE CHAT INPUT TO BOTTOM (The "WhatsApp" Fix) */
+            [data-testid="stChatInput"] {{
+                position: fixed !important;
+                bottom: 0px !important;
+                left: 0px !important;
+                right: 0px !important;
+                background: white !important;
+                z-index: 99999 !important;
+                padding: 10px 20px !important;
+                box-shadow: 0px -2px 10px rgba(0,0,0,0.1) !important;
+            }}
+            
             header {{
                 visibility: hidden !important;
                 display: none !important;
