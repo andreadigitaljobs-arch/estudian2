@@ -3810,19 +3810,20 @@ with tab_quiz:
             # Spacer
             st.write("")
             
-            if 'quiz_chat' not in st.session_state: st.session_state['quiz_chat'] = []
+            if 'quiz_chat' not in st.session_state:
+                st.session_state['quiz_chat'] = []
             
             # Display History
             for msg in st.session_state['quiz_chat']:
-                with st.chat_message(msg["role"]): st.markdown(msg["content"])
+                with st.chat_message(msg["role"]):
+                    st.markdown(msg["content"])
             
             # Input
-            # (Native Streamlit Input - Reverted custom JS)
-
             if prompt := st.chat_input("Escribe tu duda o corrección...", key="quiz_chat_input"):
                 # Add User Msg
                 st.session_state['quiz_chat'].append({"role": "user", "content": prompt})
-                with st.chat_message("user"): st.markdown(prompt)
+                with st.chat_message("user"):
+                    st.markdown(prompt)
                 
                 # Prepare Context (Last Quiz Results)
                 ctx_quiz = "SIN DATOS DE QUIZ RECIENTE"
