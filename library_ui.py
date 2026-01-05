@@ -376,10 +376,66 @@ def render_library(assistant):
         if not files:
             st.caption("Carpeta vacía.")
         else:
+            # --- BULK ACTIONS BAR ---
+            # Initialize Selection State
+            if 'lib_multi_select' not in st.session_state: st.session_state['lib_multi_select'] = []
+            
+            # Filter valid IDs (clean up deleted files)
+            valid_ids = {f['id'] for f in files}
+            st.session_state['lib_multi_select'] = [fid for fid in st.session_state['lib_multi_select'] if fid in valid_ids]
+            
+            num_selected = len(st.session_state['lib_multi_select'])
+            
+            if num_selected > 0:
+                with st.container(border=True):
+                    st.markdown(f"**✨ {num_selected} seleccionados**")
+                    
+                    b_c1, b_c2 = st.columns([2, 1])
+                    with b_c1:
+                         # Bulk Move Selector
+                         # Only show if not moving to same folder (redundant check but good UI)
+                         all_units = get_units(current_course_id, fetch_all=True)
+                         target_b_opts = {u['name']: u['id'] for u in all_units if u['id'] != current_unit_id}
+                         
+                         if target_b_opts:
+                             sel_b_target = st.selectbox("Mover todo a:", list(target_b_opts.keys()), key="bulk_mov_sel", label_visibility="collapsed")
+                             target_b_id = target_b_opts[sel_b_target]
+                         else:
+                             target_b_id = None
+                             st.caption("No hay destinos.")
+
+                    with b_c2:
+                         if target_b_id and st.button("🚀 Mover", key="btn_bulk_move", type="primary", use_container_width=True):
+                             success_cnt = 0
+                             for fid in st.session_state['lib_multi_select']:
+                                 if move_file(fid, target_b_id):
+                                     success_cnt += 1
+                             
+                             if success_cnt > 0:
+                                 st.toast(f"✅ {success_cnt} archivos movidos a '{sel_b_target}'!")
+                                 st.session_state['lib_multi_select'] = [] # Clear selection
+                                 st.rerun()
+                             else:
+                                 st.error("Error al mover archivos.")
+
+            # --- FILE LIST ---
             for f in files:
-                # COMPACT LAYOUT
-                c1, c2, c3, c4 = st.columns([0.1, 0.7, 0.1, 0.1], vertical_alignment="bottom")
+                # COMPACT LAYOUT with Checkbox
+                # c0: Check, c1: Icon, c2: Link, c3: Menu, c4: Del
+                c0, c1, c2, c3, c4 = st.columns([0.05, 0.1, 0.65, 0.1, 0.1], vertical_alignment="bottom")
                 
+                with c0:
+                     # Checkbox for Multi Select
+                     is_sel = f['id'] in st.session_state['lib_multi_select']
+                     
+                     def toggle_sel(fid=f['id']):
+                         if fid in st.session_state['lib_multi_select']:
+                             st.session_state['lib_multi_select'].remove(fid)
+                         else:
+                             st.session_state['lib_multi_select'].append(fid)
+                             
+                     st.checkbox("Select", value=is_sel, key=f"chk_{f['id']}", on_change=toggle_sel, label_visibility="collapsed")
+
                 with c1:
                     icon = "📄" if f['type'] == "text" else "📕"
                     st.write(f"## {icon}")
