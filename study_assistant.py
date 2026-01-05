@@ -339,9 +339,18 @@ Google ofrece una capa gratuita generosa, pero limitada.
         
         **⛔ NO ES:** [Opcional. Brevemente por qué las otras distraen, si es necesario.]
         
-        REGLAS:
+        REGLAS DE PRECISIÓN (CRÍTICO):
+        1. **FODA/SWOT**: Distingue RIGUROSAMENTE entre INTERNO (Fortalezas/Debilidades) y EXTERNO (Oportunidades/Amenazas).
+           - Ej: "Diversificación" a veces es Fortaleza (si ya existe) u Oportunidad (si es futuro). LEE BIEN EL MATIZ.
+        2. **SELECCIÓN MÚLTIPLE**: 
+           - Analiza CADA opción.
+           - Si una opción parece "mas o menos" correcta pero tiene un fallo técnico, ES FALSA.
+           - Solo marca las que sean **100% CORRECTAS**. Ante la duda de si es una "distracción", descártala.
+        3. **TEXTO DE LA IMAGEN**: Tu prioridad es lo que dice LITERALMENTE la imagen o el contexto. No inventes.
+
+        REGLAS DE FORMATO:
         - Si es **Cierto/Falso**, di solo "Verdadero" o "Falso".
-        - Si es **Selección Múltiple**, lista TODAS las correctas si hay varias.
+        - Si es **Selección Múltiple**, lista TODAS las correctas.
         - **PROHIBIDO** decir "Basado en la imagen" o "El texto dice". Simplemente afirma el hecho.
         - **PROHIBIDO** dar introducciones ("La respuesta correcta es..."). Empieza directo con la respuesta.
         """
