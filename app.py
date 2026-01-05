@@ -3789,33 +3789,30 @@ with tab_quiz:
                 # Call AI
                 with st.chat_message("assistant"):
                     with st.spinner("El profesor está re-analizando las imágenes y tu argumento..."):
-                        try:
-                            # Gather Images for Context
-                            images_ctx = []
-                            if res_quiz:
-                                for r in res_quiz:
-                                    if r.get('img_obj'): images_ctx.append(r['img_obj'])
-                            
-                            reply = assistant.debate_quiz(
-                                history=st.session_state['quiz_chat'][:-1], 
-                                latest_input=prompt, 
-                                quiz_context=ctx_quiz,
-                                images=images_ctx
-                            )
-                            
-                            # Check for Auto-Learning Tag
-                            import re
-                            match = re.search(r"\|\|APRENDIZAJE: (.*?)\|\|", reply)
-                            if match:
-                                rule = match.group(1).strip()
-                                st.session_state['pending_learning_rule'] = rule
-                                reply = reply.replace(match.group(0), "")
-                            
-                            st.markdown(reply)
-                            st.session_state['quiz_chat'].append({"role": "assistant", "content": reply})
-                            st.rerun()
-                        except Exception as e:
-                            st.error(f"Error en chat: {e}")
+                        # Gather Images for Context
+                        images_ctx = []
+                        if res_quiz:
+                            for r in res_quiz:
+                                if r.get('img_obj'): images_ctx.append(r['img_obj'])
+                        
+                        reply = assistant.debate_quiz(
+                            history=st.session_state['quiz_chat'][:-1], 
+                            latest_input=prompt, 
+                            quiz_context=ctx_quiz,
+                            images=images_ctx
+                        )
+                        
+                        # Check for Auto-Learning Tag
+                        import re
+                        match = re.search(r"\|\|APRENDIZAJE: (.*?)\|\|", reply)
+                        if match:
+                            rule = match.group(1).strip()
+                            st.session_state['pending_learning_rule'] = rule
+                            reply = reply.replace(match.group(0), "")
+                        
+                        st.markdown(reply)
+                        st.session_state['quiz_chat'].append({"role": "assistant", "content": reply})
+                        st.rerun()
 
             # --- TEACHING / MEMORY UI ---
             # Show if last message was AI
