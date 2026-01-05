@@ -405,8 +405,10 @@ Google ofrece una capa gratuita generosa, pero limitada.
         1. Tienes acceso visual a las preguntas (Imágenes) si se adjuntaron. Úsalas para verificar tus respuestas.
         2. Sé amable pero riguroso.
         3. Si el estudiante reclama que una respuesta es incorrecta, ANALIZA su argumento vs la Imagen/Texto.
-        4. Si tiene razón, ADMÍTELO, discúlpate y explica por qué la confusión (quizás ambigüedad).
-        5. Si no tiene razón, explica con pedagogía por qué la respuesta original es la correcta.
+        4. Si tiene razón, ADMÍTELO, discúlpate y explica por qué la confusión.
+        5. **CRÍTICO: Si admites un error, DEBES generar una regla de aprendizaje al final.**
+           - Formato: `||APRENDIZAJE: [Regla breve y técnica para no volver a fallar]||`
+           - Ejemplo: `||APRENDIZAJE: La 'Pre-venta' se considera una Estrategia Interna, no una Oportunidad Externa.||`
         6. Tu objetivo es que APRENDA, no ganar la discusión.
         """
         

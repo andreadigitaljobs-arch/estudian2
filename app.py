@@ -3802,20 +3802,44 @@ with tab_quiz:
                                   quiz_context=ctx_quiz,
                                   images=images_ctx
                               )
+                               # Check for Auto-Learning Tag
+                              import re
+                              match = re.search(r"\|\|APRENDIZAJE: (.*?)\|\|", reply)
+                              if match:
+                                  rule = match.group(1).strip()
+                                  st.session_state['pending_learning_rule'] = rule
+                                  # Clean the tag from display? Optional. Let's keep it clean.
+                                  reply = reply.replace(match.group(0), "")
+                              
                               st.markdown(reply)
-                            st.session_state['quiz_chat'].append({"role": "assistant", "content": reply})
-                            st.rerun() # Rerun to show the new message and the "Teach" button
+                              st.session_state['quiz_chat'].append({"role": "assistant", "content": reply})
+                              st.rerun() 
                         except Exception as e:
                             st.error(f"Error en chat: {e}")
 
             # --- TEACHING / MEMORY UI ---
             # Show if last message was AI
             if st.session_state['quiz_chat'] and st.session_state['quiz_chat'][-1]['role'] == 'assistant':
-                 with st.expander("🧠 ¿El Profesor se equivocó? Guardar Corrección (Memoria)", expanded=False):
-                     st.caption("Si la IA admitió un error, escribe aquí la regla correcta para que no lo olvide.")
-                     mem_input = st.text_area("Regla a aprender:", placeholder="Ej: La pregunta 7 sobre 'Pre-venta' se considera 'Estrategia', NO Oportunidad.", key="mem_learn_in")
+                 with st.expander("🧠 Gestión de Memoria / Aprendizaje", expanded=True):
                      
-                     if st.button("💾 Guardar en Memoria", key="btn_save_mem"):
+                     # AUTO-DETECTED RULE
+                     pending = st.session_state.get('pending_learning_rule')
+                     if pending:
+                         st.info(f"🤖 **La IA admitió el error y propone aprender esto:**\n\n> *{pending}*")
+                         if st.button("✅ Confirmar y Guardar esta Regla", key="btn_conf_auto_learn", type="primary"):
+                              cid = st.session_state.get('current_course_id')
+                              if save_user_memory(cid, f"- {pending}", None):
+                                  st.success("¡Guardado! La IA no volverá a cometer este error.")
+                                  st.session_state['pending_learning_rule'] = None # Clear
+                                  time.sleep(1.5)
+                                  st.rerun()
+                         
+                         st.markdown("---")
+                         st.caption("O escribe tu propia regla manualmente:")
+
+                     mem_input = st.text_area("Regla manual:", placeholder="Escribe aquí si quieres ajustar la regla...", key="mem_learn_in")
+                     
+                     if st.button("💾 Guardar Manualmente", key="btn_save_mem"):
                          if mem_input.strip():
                               cid = st.session_state.get('current_course_id')
                               if save_user_memory(cid, f"- {mem_input.strip()}", None):
