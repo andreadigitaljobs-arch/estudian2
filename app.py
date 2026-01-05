@@ -3786,16 +3786,29 @@ with tab_quiz:
                 st.caption("¿Dudas? Habla con el Profesor.")
             
             with c_chat_act:
-                 if st.button("🔄 Actualizar Resultados (Consolidar)", help="Si la IA admitió un error en el chat, pulsa aquí para corregir la tabla oficial arriba.", type="primary"):
-                     with st.spinner("Reescribiendo Hoja de Respuestas..."):
+                 # BUTTON MOVED HERE
+                 pass 
+        else:
+            st.info("👆 **Sube una imagen o pregunta para ver la Zona de Análisis.**")
+            st.caption("Versión V52 - Esperando datos...")
+
+        # MOVED OUTSIDE THE IF to be visible if we want? No, logic requires results.
+        # But we keep indentation logic.
+        
+        if res_quiz:
+             if st.button("🔄 ACTUALIZAR RESULTADOS (Corrección de IA)", use_container_width=True, type="primary"):
+                     with st.spinner("Consolidando cambios..."):
                          try:
                              new_res = assistant.refine_quiz_results(st.session_state['quiz_results'], st.session_state['quiz_chat'])
                              st.session_state['quiz_results'] = new_res
-                             st.success("¡Tabla Actualizada!")
-                             time.sleep(1)
+                             st.success("¡Hecho!")
+                             time.sleep(0.5)
                              st.rerun()
                          except Exception as e:
                              st.error(f"Error: {e}")
+
+            # Spacer
+             st.write("")
             
             if 'quiz_chat' not in st.session_state: st.session_state['quiz_chat'] = []
             
