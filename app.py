@@ -3795,13 +3795,13 @@ with tab_quiz:
             const enforceChatLayout = () => {
                 const chatInput = doc.querySelector('[data-testid="stChatInput"]');
                 if (chatInput) {
-                    // Force width and alignment
+                    // Force width and alignment on TEXTAREA only
                     const ta = chatInput.querySelector('textarea');
                     if (ta) {
                         ta.style.setProperty('width', '100%', 'important'); 
                     }
-                    // Fix container constraint - Simple width 100% like Tutor
-                    chatInput.style.setProperty('width', '100%', 'important');
+                    // Fix container constraint - DO NOT FORCE WIDTH (Let Streamlit handle it)
+                    // Only force sticky bottom
                     chatInput.style.setProperty('position', 'fixed', 'important');
                     chatInput.style.setProperty('bottom', '0px', 'important');
                     chatInput.style.setProperty('z-index', '99999', 'important');
