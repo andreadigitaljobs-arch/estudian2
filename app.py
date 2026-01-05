@@ -1,4706 +1,4709 @@
-
-import streamlit as st
-import os
-import glob
-import uuid
-from transcriber import Transcriber
-from study_assistant import StudyAssistant
-from PIL import Image, ImageGrab
-import shutil
-import time
-import datetime
-import markdown
-import streamlit.components.v1 as components
-import extra_streamlit_components as stx  # --- PERSISTENCE ---
-from library_ui import render_library # --- LIBRARY UI ---
-import database
-from database import (
-    get_user_courses, create_course, delete_course, rename_course, 
-    get_chat_sessions, create_chat_session, rename_chat_session, delete_chat_session, 
-    get_dashboard_stats, update_user_nickname, get_recent_chats, check_and_update_streak, 
-    update_user_footprint, init_supabase, update_last_course, 
-    save_chat_message, get_chat_messages, get_file_content, get_course_files, delete_file, get_course_full_context, upload_file_v2,
-    get_user_memory, save_user_memory
-)
-
-
-
-# --- PAGE CONFIG MUST BE FIRST ---
-st.set_page_config(
-    page_title="E-Education",
-    page_icon="assets/favicon.jpg",
-    layout="wide",
-    initial_sidebar_state="expanded" if st.session_state.get('user') else "collapsed"
-)
-
-# --- INSTANTIATE AI ENGINES (GLOBAL Fix) ---
-try:
-    # Use secrets key by default
-    _api_key = st.secrets.get("GEMINI_API_KEY")
-    if _api_key:
-         transcriber = Transcriber(api_key=_api_key)
-         assistant = StudyAssistant(api_key=_api_key)
-    else:
-         transcriber = None
-         assistant = None
-except Exception as e:
-    print(f"AI Init Error: {e}")
-    transcriber = None
-    assistant = None
-
-# --- GLOBAL CONTEXT HELPERS ---
-def get_global_context():
-    # Only fetches content if really needed (Heavy)
-    try:
-        if not st.session_state.get('current_course'): return "", 0
-        cid = st.session_state['current_course']['id']
-        txt = get_course_full_context(cid)
-        
-        # --- CONSULTANT: INJECT USER MEMORY (OVERRIDES) ---
-        user_mem = get_user_memory(cid)
-        if user_mem:
-            txt += "\n\n=== 🧠 CORRECCIONES Y APRENDIZAJES DEL USUARIO (PRIORIDAD MÁXIMA) ===\n"
-            txt += "Estas son correcciones explícitas que el usuario te ha enseñado. Tienen prioridad sobre cualquier otra información:\n" 
-            txt += user_mem
-            txt += "\n=========================================================================\n"
-
-        fls = get_course_files(cid)
-        return txt, len(fls)
-    except:
-        return "", 0
-
-def get_global_file_count_only():
-    # Lightweight count fetch (Optimized for Render)
-    try:
-        if not st.session_state.get('current_course'): return 0
-        cid = st.session_state['current_course']['id']
-        # Use get_dashboard_stats or similar fast query
-        stats = get_dashboard_stats(cid, st.session_state['user'].id)
-        return stats['files']
-    except:
-        return 0
-
-# --- GENERATE VALID ICO (FIX) ---
-# --- VALID ICO GENERATOR (Optimized: Check only once) ---
-@st.cache_resource
-def ensure_favicon():
-    try:
-        if os.path.exists("assets/favicon.jpg") and not os.path.exists("assets/windows_icon.ico"):
-            from PIL import Image
-            img = Image.open("assets/favicon.jpg")
-            img.save("assets/windows_icon.ico", format='ICO', sizes=[(256, 256)])
-    except: pass
-
-ensure_favicon()
-# --------------------------------
-
-
-if 'quiz_results' not in st.session_state: st.session_state['quiz_results'] = []
-if 'transcript_history' not in st.session_state: st.session_state['transcript_history'] = []
-if 'notes_result' not in st.session_state: st.session_state['notes_result'] = None
-if 'guide_result' not in st.session_state: st.session_state['guide_result'] = None
-
-if 'pasted_images' not in st.session_state: st.session_state['pasted_images'] = []
-# --- GLOBAL CSS (Prevents FOUC on Logout) ---
-st.markdown("""
-    <style>
-    /* HIDE SCROLLBAR GLOBALLY */
-    ::-webkit-scrollbar {
-        width: 0px;
-        background: transparent;
-    }
-
-    /* --- GLOBAL VARIABLES (Theme Persistence) --- */
-    :root {
-        --primary-purple: #4B22DD;
-        --accent-green: #6CC04A;
-        --bg-color: #F8F9FE;
-        --card-bg: #FFFFFF;
-        --text-color: #1A1A1A;
-        --border-color: #E3E4EA;
-    }
-    
-    /* --- SYNC LAYOUT STABILITY (Prevent FOUC) --- */
-    /* Remove padding immediately for cleaner load */
-    .block-container {
-        padding-top: 0px !important;
-        padding-bottom: 2rem !important;
-        margin-top: 0px !important;
-        max-width: 100% !important;
-    }
-    header {
-        visibility: hidden !important;
-        display: none !important;
-    }
-    
-    /* DYNAMIC: FREEZE SCROLL & HIDE SIDEBAR ON LOGIN */
-    """ + ("""
-    .stApp, section.main, .block-container, [data-testid="stAppViewContainer"], html, body {
-        overflow: hidden !important;
-    }
-    """ if not st.session_state.get('user') else "") + """
-    
-    /* TAB SCROLL ARROWS */
-    .stTabs [data-baseweb="tab-list"] button:not([role="tab"]) {
-        background-color: #4B22DD !important;
-        color: white !important;
-        border-radius: 50% !important;
-        width: 30px !important;
-        height: 30px !important;
-        border: none !important;
-        display: flex !important;
-    }
-
-    /* --- SIDEBAR WIDTH CONTROL --- */
-    section[data-testid="stSidebar"] {
-        width: 280px !important;
-        min-width: 280px !important;
-        max-width: 280px !important;
-        flex: 0 0 280px !important;
-    }
-
-    /* --- NUCLEAR SEPARATOR HIDER FOR SIDEBAR (ULTIMATE NUKE) --- */
-    /* Target every single element in sidebar to kill borders, shadows, and GAPS */
-    [data-testid="stSidebar"] *, 
-    [data-testid="stSidebar"] [data-testid="stVerticalBlock"] > div,
-    [data-testid="stSidebar"] [data-testid="element-container"],
-    [data-testid="stSidebar"] [data-testid="stExpander"],
-    [data-testid="stSidebar"] hr {
-        border: none !important;
-        border-bottom: none !important;
-        border-top: none !important;
-        box-shadow: none !important;
-    }
-    
-    /* KILL ALL LAYOUT GAPS */
-    [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
-        gap: 8px !important; /* Restore a small, natural gap */
-    }
-    
-    [data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"] {
-        border: none !important;
-    }
-
-    /* --- SCROLLER STYLES --- */
-    .aesthetic-sep {
-        height: 1px;
-        background: rgba(75, 34, 221, 0.1);
-        margin: 10px 0 !important;
-        width: 100%;
-    }
-
-    /* Ensure no background or border on expanders in sidebar */
-    [data-testid="stSidebar"] [data-testid="stExpander"] {
-        border: none !important;
-        background-color: transparent !important;
-    }
-
-    /* Highlight Styles */
-    .sc-base { background-color: #ffcccc !important; padding: 2px 5px !important; border-radius: 5px !important; font-weight: bold !important; color: #900 !important; border: 1px solid #ff9999 !important; display: inline; }
-    .sc-example { background-color: #cce5ff !important; padding: 2px 5px !important; border-radius: 5px !important; color: #004085 !important; border: 1px solid #b8daff !important; display: inline; }
-    .sc-note { background-color: #d4edda !important; padding: 2px 5px !important; border-radius: 5px !important; color: #155724 !important; border: 1px solid #c3e6cb !important; display: inline; }
-    .sc-data { background-color: #fff3cd !important; padding: 2px 5px !important; border-radius: 5px !important; color: #856404 !important; border: 1px solid #ffeeba !important; display: inline; }
-    .sc-key { background-color: #e2d9f3 !important; padding: 2px 5px !important; border-radius: 5px !important; color: #512da8 !important; border: 1px solid #d1c4e9 !important; display: inline; }
-    .study-mode-off .sc-base, .study-mode-off .sc-example, .study-mode-off .sc-note, .study-mode-off .sc-data, .study-mode-off .sc-key,
-    .stApp.study-mode-off .sc-base, .stApp.study-mode-off .sc-example, .stApp.study-mode-off .sc-note, .stApp.study-mode-off .sc-data, .stApp.study-mode-off .sc-key {
-        background-color: transparent !important; padding: 0 !important; color: inherit !important; border: none !important; font-weight: inherit !important; 
-    }
-
-    /* --- NUCLEAR UPLOADER HIDING --- */
-    div[data-testid="stFileUploader"]:has(input[aria-label="KILL_ME_NOW"]),
-    div[data-testid="stFileUploader"]:has(label:contains("KILL_ME_NOW")),
-    .paste-bin-hidden-wrapper {
-        display: none !important;
-        visibility: hidden !important;
-        height: 0px !important;
-        position: absolute !important;
-    }
-    </style>
-""", unsafe_allow_html=True)
-
-if 'quiz_key' not in st.session_state: st.session_state['quiz_key'] = 0
-if 'tutor_chat_history' not in st.session_state: st.session_state['tutor_chat_history'] = []
-if 'current_course' not in st.session_state: st.session_state['current_course'] = None
-if 'homework_result' not in st.session_state: st.session_state['homework_result'] = ""
-if 'spotlight_query' not in st.session_state: st.session_state['spotlight_query'] = ""
-if 'spotlight_mode' not in st.session_state: st.session_state['spotlight_mode'] = "⚡ Concepto Rápido"
-if 'custom_api_key' not in st.session_state: st.session_state['custom_api_key'] = None
-
-# --- TAB RESTORATION LOGIC (Removed - Switched to JS LocalStorage) ---
-if 'has_restored_tab' not in st.session_state:
-    st.session_state['has_restored_tab'] = True
-
-# --- CHAT SESSION RESTORATION (URL PARAMS) ---
-# This runs once on startup or reload
-if 'has_restored_chat' not in st.session_state and st.session_state.get('user'):
-    try:
-        qp = st.query_params if hasattr(st, 'query_params') else st.experimental_get_query_params()
-        target_chat_id = qp.get('chat_id') if hasattr(st, 'query_params') else (qp.get('chat_id')[0] if qp.get('chat_id') else None)
-        
-        if target_chat_id:
-            # Validate ownership
-            from database import get_chat_sessions
-            user_chats = get_chat_sessions(st.session_state['user'].id)
-            found_chat = next((c for c in user_chats if str(c['id']) == str(target_chat_id)), None)
-            
-            if found_chat:
-                st.session_state['current_chat_session'] = found_chat
-                st.session_state['tutor_chat_history'] = [] # Force reload messages
-                # st.toast(f"📂 Chat restaurado: {found_chat['name']}")
-    except Exception as e:
-        print(f"Chat restore error: {e}")
-    st.session_state['has_restored_chat'] = True
-
-# --- AUTHENTICATION CHECK ---
-if 'user' not in st.session_state:
-    st.session_state['user'] = None
-
-# --- COOKIE MANAGER (PERSISTENCE) ---
-cookie_manager = stx.CookieManager()
-
-# --- AUTO-LOGIN CHECK ---
-if not st.session_state['user'] and not st.session_state.get('force_logout'):
-    # Try to get token from cookie
-    # We use REFERSH TOKEN for long-term persistence (simpler than session reconstruction)
-    try:
-        time.sleep(0.1)
-        refresh_token = cookie_manager.get("supabase_refresh_token")
-        if refresh_token:
-             from database import init_supabase
-             client = init_supabase()
-             res = client.auth.refresh_session(refresh_token)
-             if res.session:
-                 st.session_state['user'] = res.user
-                 st.session_state['supabase_session'] = res.session
-                 # CRITICAL FIX: Update cookie with NEW refresh token to keep chain alive
-                 cookie_manager.set("supabase_refresh_token", res.session.refresh_token, expires_at=datetime.datetime.now() + datetime.timedelta(days=30))
-                 st.success("⚡ Sesión restaurada. Actualizando...")
-                 time.sleep(2) # Allow cookie to set
-                 st.rerun()
-                 
-    except Exception as e:
-        print(f"Auto-login failed: {e}")
-
-# --- SCROLLBAR & OVERFLOW CONTROL (Conditional) ---
-is_login_view = st.session_state.get('user') is None
-
-# Rules Config
-scroll_rules = ""
-overflow_mode = "hidden"
-height_mode = "100%"
-
-if is_login_view:
-    # LOGIN: Scorched Earth (No Scroll, Fixed Height)
-    scroll_rules = """
-            /* HIDE SCROLLBARS (Login) */
-            ::-webkit-scrollbar { width: 0px !important; height: 0px !important; background: transparent !important; display: none !important; }
-            * { scrollbar-width: none !important; -ms-overflow-style: none !important; }
-    """
-    overflow_mode = "hidden"
-    height_mode = "100vh"
-else:
-    # DASHBOARD: Native Scrolling (No Kill Rules)
-    scroll_rules = "/* Dashboard: Scrollbars Enabled */"
-    overflow_mode = "hidden" # Default Streamlit: Body hidden, Container scrolls
-    height_mode = "100%" 
-
-components.html(f"""
-<script>
-    (function() {{
-        const root = window.parent.document;
-        const styleId = 'estudian2_scrollbar_manager';
-        
-        // Cleanup Old Tags
-        const old = root.getElementById(styleId);
-        if (old) old.remove();
-        const oldLegacy = root.getElementById('estudian2_scrollbar_kill_V3_FINAL');
-        if (oldLegacy) oldLegacy.remove();
-        
-        const style = root.createElement('style');
-        style.id = styleId;
-        style.innerHTML = `
-            {scroll_rules}
-            
-            /* Root Config (Streamlit Standard) */
-            html, body, .stApp {{
-                overflow-y: {overflow_mode} !important;
-                height: {height_mode} !important;
-            }}
-            
-            /* Force Scroll on App Container for Dashboard */
-            [data-testid="stAppViewContainer"] {{
-                overflow-y: {'auto' if overflow_mode == 'hidden' and not is_login_view else 'hidden'} !important;
-                height: 100% !important;
-            }}
-            
-            /* Clean Layout (Always Active) */
-            .block-container {{
-                padding-top: 0px !important;
-                margin-top: 0px !important;
-                max-width: 100% !important;
-                padding-bottom: 100px !important; /* Ensure space for chat input */
-            }}
-            
-            /* TARGET ST_BOTTOM (The Container of Chat Input) */
-            .stBottom {{
-                position: fixed !important;
-                bottom: 0px !important;
-                left: 0px !important;
-                right: 0px !important;
-                background: transparent !important;
-                z-index: 99999 !important;
-            }}
-            
-            header {{
-                visibility: hidden !important;
-                display: none !important;
-            }}
-        `;
-        root.head.appendChild(style);
-    }})();
-</script>
-""", height=0)
-
-# --- GLOBAL THEME CSS (Moved to Top to Prevent Logout Flash) ---
-THEME_CSS = """
-<style>
-/* Import Google Fonts */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-
-    /* HIDE STREAMLIT STATUS WIDGET & DECORATION */
-    div[data-testid="stStatusWidget"] { visibility: hidden !important; }
-    div[data-testid="stDecoration"] { visibility: hidden !important; }
-
-    /* --- ULTIMATE KILL TO LOADING OVERLAY (NO MORE WHITE TRANSPARENCY) --- */
-    /* Target every possible container Streamlit uses for the "dimming" effect */
-    [data-testid="stAppViewBlockContainer"],
-    [data-testid="stAppViewContainer"],
-    [data-testid="stMainViewContainer"],
-    [data-test-script-state="running"] [data-testid="stAppViewBlockContainer"],
-    [data-test-script-state="running"] [data-testid="stAppViewContainer"],
-    [data-test-script-state="running"] .stApp,
-    section.main,
-    div.block-container,
-    .stApp > div {
-        opacity: 1 !important;
-        filter: none !important;
-        transition: none !important;
-    }
-    
-    /* Force background to stay solid and kill any covering pseudo-elements */
-    .stApp::before, .stApp::after, 
-    [data-testid="stAppViewContainer"]::before,
-    [data-testid="stAppViewContainer"]::after {
-        display: none !important;
-        opacity: 0 !important;
-    }
-
-    /* --- GLOBAL VARIABLES (Moved to Top) --- */
-    /* :root variables are now prevalent globally to prevent FOUC */
-
-    html, body, [class*="css"] {
-        font-family: 'Inter', sans-serif;
-        color: var(--text-color);
-        background-color: var(--bg-color);
-    }
-
-    /* 1. APP BACKGROUND (Light) */
-    .stApp {
-        background-color: var(--bg-color);
-        background-image: none;
-    }
-    
-    /* 2. TOP HEADER BAR - PURPLE */
-    header[data-testid="stHeader"] {
-        background-color: var(--primary-purple);
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    }
-
-    /* 3. THE CENTER CARD (Content) */
-    .main .block-container {
-        background-color: #ffffff;
-        border-radius: 30px;
-        padding: 3rem 4rem !important;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.08);
-        margin-top: 20px;
-        max-width: 95%;
-    }
-    div[data-testid="block-container"] {
-        background-color: #ffffff;
-        border-radius: 30px;
-        padding: 3rem !important;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.08);
-        margin: 20px auto;
-        max-width: 95%;
-    }
-
-    /* SIDEBAR CONTAINER */
-    section[data-testid="stSidebar"], div[data-testid="stSidebar"] {
-        background-color: #FFFFFF;
-        border-right: 1px solid var(--border-color);
-    }
-    
-    /* HEADERS */
-    h1, h2, h3, h4 {
-        color: var(--primary-purple);
-        font-weight: 700;
-        letter-spacing: -0.5px;
-    }
-    h1 { font-size: 2.5rem; }
-
-    /* --- SIDEBAR SPECIFIC STYLES (MATCH REF IMAGE) --- */
-    
-    /* Custom "Logout" Button -> Purple Block */
-    div[data-testid="stSidebar"] div.stButton button {
-        background-color: var(--primary-purple) !important;
-        color: white !important;
-        border-radius: 30px !important; /* Pill shape like reference */
-        text-align: center !important;
-        justify-content: center !important;
-        font-weight: 600 !important;
-        border: none !important;
-        padding: 0.5rem 1rem !important;
-        margin-top: 10px;
-    }
-    div[data-testid="stSidebar"] div.stButton button:hover {
-        background-color: #3b1aa3 !important;
-        color: white !important;
-    }
-
-    /* Sidebar Inputs -> Light Lilac BG */
-    [data-testid="stSidebar"] div.stTextInput input, 
-    [data-testid="stSidebar"] div[data-baseweb="select"] > div {
-        background-color: #F4F1FF !important; /* Very light purple */
-        border: 1px solid #E0D4FC !important;
-        border-radius: 12px !important;
-        color: #4B22DD !important;
-    }
-
-    /* "Clave del Sistema Activa" Box */
-    .system-key-box {
-        background-color: #E6F4EA;
-        color: #1E4620;
-        padding: 10px;
-        border-radius: 8px;
-        font-size: 0.9rem;
-        font-weight: 500;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        border: 1px solid #CEEAD6;
-    }
-
-    /* TABS */
-
-
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 10px;
-        background-color: transparent;
-        padding: 0px;
-        margin-bottom: 20px;
-        border-bottom: 2px solid #F0F0F0;
-    }
-    .stTabs [data-baseweb="tab"] {
-        background-color: #F5F6FA;
-        border-radius: 8px 8px 0 0;
-        color: #64748b;
-        font-weight: 600;
-        padding: 10px 20px;
-        border: none;
-    }
-    
-    /* UPDATED TAB STYLES: GREEN BOTTOM LINE */
-    .stTabs [aria-selected="true"] {
-        background-color: var(--primary-purple) !important;
-        color: white !important;
-        border-radius: 8px 8px 0 0 !important;
-        border-bottom: 4px solid #6CC04A !important; /* THE GREEN LINE */
-    }
-    
-    /* Remove default Streamlit tab highlight if present */
-    .stTabs [data-baseweb="tab-highlight"] {
-        background-color: #6CC04A !important;
-    }
-
-    
-
-    /* REMOVE SIDEBAR TOP PADDING */
-    /* Target the container inside the sidebar */
-    section[data-testid="stSidebar"] > div > div:first-child {
-        padding-top: 0rem !important; /* LIFT LOGO (removed padding) */
-    }
-    
-    [data-testid="stSidebar"] input {
-        background-color: #F4F1FF !important;
-        color: #4B22DD !important;
-        font-weight: 500 !important;
-        border-radius: 8px !important;
-        border: 1px solid #D8CCF6 !important;
-    }
-    /* Target the container background for Selectbox */
-    [data-testid="stSidebar"] [data-baseweb="select"] > div {
-        background-color: #F4F1FF !important;
-        border-color: #D8CCF6 !important;
-        color: #4B22DD !important;
-    }
-    
-    /* 3. Sidebar Buttons (Pill Shape, Purple) */
-    /* We target the button element specifically inside sidebar */
-    [data-testid="stSidebar"] button[kind="secondary"] {
-        background-color: #4B22DD !important;
-        color: white !important;
-        border: none !important;
-        border-radius: 20px !important; /* Pill */
-        margin-top: 10px !important;
-        box-shadow: 0 4px 6px rgba(75, 34, 221, 0.2) !important;
-    }
-    [data-testid="stSidebar"] button[kind="secondary"]:hover {
-        background-color: #3b1aa3 !important;
-        transform: translateY(-1px);
-    }
-    
-    /* 4. "System Key" Box Tweaks */
-    .system-key-box {
-        background-color: #E6F4EA !important;
-        border: 1px solid #CEEAD6 !important;
-        color: #1E4620 !important;
-        font-weight: 600 !important;
-    }
-    
-    /* 5. Radio Buttons -> Custom Coloring if possible (Streamlit limits this) */
-    [data-testid="stSidebar"] [role="radiogroup"] label {
-        color: #1A1A1A !important;
-        font-weight: 500 !important;
-    }
-
-    /* FORCE ALL SIDEBAR BUTTONS TO BE ROUNDED */
-    [data-testid="stSidebar"] button {
-        border-radius: 25px !important; /* High value for Pill shape */
-        border: none !important;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
-        transition: transform 0.1s, box-shadow 0.1s !important;
-    }
-    
-    [data-testid="stSidebar"] button:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 6px 8px rgba(0,0,0,0.15) !important;
-    }
-    
-    /* Ensure Multiselect tags are also rounded if possible (Optional polish) */
-    [data-testid="stSidebar"] span[data-baseweb="tag"] {
-        border-radius: 15px !important;
-    }
-
-    /* --- TAB 1 REBRAND CSS --- */
-    
-    /* File Uploader Container */
-    div[data-testid="stFileUploader"] section[data-testid="stFileUploaderDropzone"] {
-        background-color: #F8F9FE;
-        border: 2px dashed #B8B9E0 !important;
-        border-radius: 20px !important;
-        padding: 30px !important;
-    }
-    
-    /* "Browse files" Button -> Bright Green */
-    div[data-testid="stFileUploader"] button[kind="secondary"] {
-        background-color: #6CC04A !important;
-        color: white !important;
-        border-radius: 10px !important;
-        border: none !important;
-        font-weight: 700 !important;
-        padding: 0.6rem 1.8rem !important;
-        text-transform: none !important;
-        box-shadow: 0 4px 10px rgba(108, 192, 74, 0.4) !important;
-    }
-    div[data-testid="stFileUploader"] button[kind="secondary"]:hover {
-        background-color: #5ab03a !important;
-        color: white !important;
-        transform: translateY(-1px);
-    }
-    
-    /* Titles */
-    h2.transcriptor-title {
-        color: #4B22DD !important; /* Authentic Ref Purple */
-        font-family: 'Inter', sans-serif !important;
-        font-weight: 800 !important;
-        font-size: 2.2rem !important;
-        letter-spacing: -1px !important;
-        margin-bottom: 1.5rem !important;
-        margin-top: 1rem !important;
-    }
-    
-    p.transcriptor-subtitle {
-        color: #4A4A4A !important;
-        font-size: 1.05rem !important;
-        margin-bottom: 30px !important;
-        line-height: 1.6;
-    }
-    
-    /* Green Placeholder Frame */
-    .green-frame {
-        background-color: #6CC04A;
-        border-radius: 30px;
-        padding: 20px;
-        box-shadow: 0 15px 30px rgba(108, 192, 74, 0.25);
-        width: 350px !important;
-        min-width: 350px !important;
-        max-width: 350px !important;
-        flex: 0 0 350px !important; /* Strict Flex locking */
-        aspect-ratio: 1 / 1.1; /* Maintain exact proportion */
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin: 0 auto; /* Center in column */
-        overflow: hidden;
-    }
-    
-    .green-frame img {
-        width: 100% !important;
-        height: 100% !important;
-        object-fit: cover !important;
-        max-width: 100% !important;
-        border-radius: 20px;
-    }
-    .green-frame-inner {
-        background-color: #E2E8F0;
-        border-radius: 20px;
-        width: 100%;
-        height: 100%;
-        min-height: 360px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-        color: #64748b;
-        font-weight: 600;
-    }
-    
-    /* Exact replica of green-frame but Purple */
-    .purple-frame {
-        background-color: #4B22DD;
-        border-radius: 30px;
-        padding: 20px;
-        box-shadow: 0 15px 30px rgba(75, 34, 221, 0.25);
-        width: 350px !important;
-        min-width: 350px !important;
-        max-width: 350px !important;
-        flex: 0 0 350px !important; /* Strict Flex locking */
-        aspect-ratio: 1 / 1.1; /* Maintain exact proportion */
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin: 0 auto; /* Center in column */
-        overflow: hidden;
-    }
-    
-    .purple-frame img {
-        width: 100% !important;
-        height: 100% !important;
-        object-fit: cover !important;
-        max-width: 100% !important;
-        border-radius: 20px;
-    }
-
-    /* --- GLOBAL BUTTON STYLING (Universal Consistency) --- */
-    
-    /* Target ALL standard buttons in the main app area */
-    div.stButton > button {
-        background-color: #4B22DD !important; /* Brand Purple */
-        color: white !important;
-        border-radius: 30px !important; /* Full Pill Shape */
-        border: none !important;
-        padding: 0.6rem 2rem !important;
-        font-weight: 600 !important;
-        box-shadow: 0 4px 6px rgba(75, 34, 221, 0.2) !important;
-        transition: all 0.2s ease !important;
-    }
-    
-    div.stButton > button:hover {
-        background-color: #3b1aa3 !important; /* Darker Purple */
-        color: white !important;
-        transform: translateY(-2px);
-        box-shadow: 0 6px 12px rgba(75, 34, 221, 0.3) !important;
-    }
-    
-    /* Target Primary Buttons (if any are used, e.g. Delete, ensuring they are also round) */
-    div.stButton > button[kind="primary"] {
-        border-radius: 30px !important;
-    }
-
-    /* LOGIN FORM BUTTON - GREEN FORCE (Submit Only - No SVGs) */
-    [data-testid="stForm"] button:not(:has(svg)) {
-        background-color: #6CC04A !important;
-        border: none !important;
-        color: white !important;
-    }
-    [data-testid="stForm"] button:not(:has(svg)):hover {
-        background-color: #5ab03a !important;
-    }
-
-    /* --- GLOBAL HEADERS (BRANDING) --- */
-    h1, h2, h3, h4, h5, h6 {
-        color: #4B22DD !important;
-        font-family: 'Inter', sans-serif !important;
-        font-weight: 700 !important;
-    }
-    
-    /* Specific Streamlit markdown headers */
-    /* Specific Streamlit markdown headers */
-    .stMarkdown h1, .stMarkdown h2, .stMarkdown h3 {
-        color: #4B22DD !important;
-    } 
-
-    div.stButton > button:active {
-        background-color: #2a1275 !important;
-        transform: translateY(0);
-    }
-</style>
-"""
-st.markdown(THEME_CSS, unsafe_allow_html=True)
-
-if st.session_state.get('force_logout'):
-    components.html("""
-    <script>
-        // Clear all storage to prevent ghost state
-        window.localStorage.removeItem('st_tab_target');
-        window.sessionStorage.clear();
-    </script>
-    """, height=0)
-
-
-# If not logged in, show Login Screen and STOP
-
-# If not logged in, show Login Screen and STOP
-
-# If not logged in, show Login Screen and STOP
-
-# If not logged in, show Login Screen and STOP
-
-# If not logged in, show Login Screen and STOP
-
-# If not logged in, show Login Screen and STOP
-
-# If not logged in, show Login Screen and STOP
-
-# If not logged in, show Login Screen and STOP
-
-# If not logged in, show Login Screen and STOP
-
-# If not logged in, show Login Screen and STOP
-
-# If not logged in, show Login Screen and STOP
-
-# If not logged in, show Login Screen and STOP
-
-# If not logged in, show Login Screen and STOP
-
-# If not logged in, show Login Screen and STOP
-
-# If not logged in, show Login Screen and STOP
-
-# If not logged in, show Login Screen and STOP
-
-# If not logged in, show Login Screen and STOP
-
-# If not logged in, show Login Screen and STOP
-
-# If not logged in, show Login Screen and STOP
-
-# If not logged in, show Login Screen and STOP
-
-# If not logged in, show Login Screen and STOP
-
-# If not logged in, show Login Screen and STOP
-
-# If not logged in, show Login Screen and STOP
-if not st.session_state['user']:
-    import datetime
-    import base64
-    
-    # --- HUNTER-KILLER: FORCE REMOVE SCROLLER ON LOGIN SCREEN ---
-    components.html("""
-    <script>
-        const root = window.parent.document;
-        // 1. Clear Interval
-        if (window.parent.estudian2_scroller_interval) clearInterval(window.parent.estudian2_scroller_interval);
-        
-        // 2. Kill Button Immediately
-        const btn = root.getElementById('estudian2_nuclear_scroller');
-        if (btn) btn.remove();
-        
-        // 3. Watch and Kill (Extra Security for 5 seconds)
-        const killer = setInterval(() => {
-             const b = root.getElementById('estudian2_nuclear_scroller');
-             if (b) b.remove();
-        }, 50);
-        setTimeout(() => clearInterval(killer), 5000);
-    </script>
-    """, height=0)
-
-    # --- HELPER: ASSETS ---
-    @st.cache_data
-    def get_b64_image(image_path):
-        try:
-            if os.path.exists(image_path):
-                with open(image_path, "rb") as f:
-                    return base64.b64encode(f.read()).decode()
-        except:
-            return "" # Return empty string on error to prevent crash
-        return ""
-
-    logo_b64 = get_b64_image("assets/logo_main.png")
-    hero_b64 = get_b64_image("assets/messimo_hero_new.png") # Updated to user provided PNG
-
-    # --- CUSTOM CSS FOR FULL BACKGROUND MESSIMO STYLE ---
-    
-    # 1. STATIC STYLES (WhatsApp Chat & Layout) - No f-string risk
-    st.markdown("""
-        <style>
-        /* WHATSAPP CHAT STYLES */
-        .chat-container {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            padding-bottom: 50px;
-        }
-        .chat-row {
-            display: flex;
-            width: 100%;
-            margin-bottom: 5px;
-        }
-        .row-reverse {
-            flex-direction: row-reverse;
-        }
-        .chat-bubble {
-            padding: 10px 14px;
-            border-radius: 10px;
-            max-width: 75%;
-            word-wrap: break-word;
-            font-size: 16px;
-            line-height: 1.5;
-            position: relative;
-            box-shadow: 0 1px 1px rgba(0,0,0,0.1);
-            font-family: inherit;
-        }
-        .chat-bubble p {
-            margin: 0;
-        }
-        .user-bubble {
-            background-color: #d9fdd3; /* WhatsApp Light Green */
-            color: #111;
-            border-top-right-radius: 0;
-        }
-        .assistant-bubble {
-            background-color: #ffffff;
-            color: #111;
-            border-top-left-radius: 0;
-            border: 1px solid #eee;
-        }
-        /* Code blocks in bubbles */
-        .chat-bubble pre {
-            background: #f0f0f0;
-            padding: 5px;
-            border-radius: 5px;
-            overflow-x: auto;
-        }
-        
-        /* HIDE SCROLLBAR */
-        ::-webkit-scrollbar {
-            width: 0px;
-            background: transparent;
-        }
-        
-        /* RESTORE SCROLL ON CONTAINERS */
-        section[data-testid="stAppViewContainer"] {
-            overflow-y: auto !important;
-        }
-        
-        /* LOGIN CARD & ALIGNMENT */
-        .main .block-container {
-            padding-top: 0rem !important; 
-            transform: translateY(-50px) !important;
-            padding-bottom: 0vh !important;
-            max_width: 1200px !important;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-start;
-            min-height: 10vh;
-        }
-        .login-card {
-            background-color: var(--secondary-background-color);
-            color: var(--text-color);
-            padding: 50px 40px; 
-            border-radius: 40px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            text-align: center;
-            margin-bottom: 0px !important; 
-            height: auto;
-            border: 1px solid rgba(0,0,0,0.05);
-        }
-        .stTextInput > div > div > input {
-            border-radius: 20px;
-        }
-        </style>
-    """, unsafe_allow_html=True)
-
-    # 2. DYNAMIC STYLES (Hero Background) - Using f-string for variable
-    st.markdown(f'''
-        <style>
-        .stApp {{
-            background-image: url("data:image/png;base64,{hero_b64}");
-            background-size: cover; /* Changed to cover for better fit */
-            background-position: center;
-            background-repeat: no-repeat;
-        }}
-
-        
-        /* HIDE SCROLLBAR (Optional, keeping getting rid of ugly bars but allowing scroll) */
-        ::-webkit-scrollbar {{
-            width: 0px;
-            background: transparent;
-        }}
-        
-        /* LOCK MAIN STREAMLIT CONTAINER REMOVED */
-        section[data-testid="stAppViewContainer"] {{
-            overflow-y: auto !important; /* ALLOW SCROLL */
-        }}
-        
-        /* 2. ALIGNMENT CONTAINER */
-        .main .block-container {{
-            padding-top: 0rem !important; /* Reduced to lift card */
-            transform: translateY(-50px) !important; /* LIFT GRANDFATHER SUPREME forceful */
-            padding-bottom: 0vh !important;
-            max_width: 1200px !important;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-start; /* Align to top instead of center */
-            min-height: 10vh;
-        }}
-
-        /* GLOBAL SCROLL KILLER REMOVED */
-        
-        /* 3. LOGIN CARD CONTAINER (Theme Aware) */
-        .login-card {{
-            background-color: var(--secondary-background-color);
-            color: var(--text-color);
-            padding: 50px 40px; 
-            border-radius: 40px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            text-align: center;
-            margin-bottom: 0px !important; 
-            height: auto;
-            border: 1px solid rgba(0,0,0,0.05); /* Subtle border for better definition */
-        }}
-
-        /* 4. PILL INPUTS (Theme Aware) */
-        .stTextInput > div > div > input {{
-            border-radius: 50px !important;
-            border: 1px solid var(--secondary-background-color); 
-            padding: 0px 25px; 
-            background-color: var(--background-color);
-            color: var(--text-color);
-            height: 55px; 
-            font-size: 1rem;
-            transition: all 0.2s;
-        }}
-        .stTextInput > div > div > input:focus {{
-            border-color: #3500D3;
-            box-shadow: 0 0 0 4px rgba(53, 0, 211, 0.1);
-            outline: none;
-        }}
-
-        /* 5. PRIMARY BUTTON (Reference Shape) */
-        div[data-testid="stButton"] > button[kind="primary"] {{
-            width: 100%;
-            background-color: #4625b8 !important; /* Brand Purple */
-            color: white !important;
-            border: none;
-            border-radius: 50px !important;
-            height: 55px; /* Tall button */
-            font-weight: 700;
-            font-size: 1.1rem;
-            margin-top: 10px;
-            box-shadow: none !important; /* Clean shape, no shadow */
-            transition: transform 0.2s;
-        }}
-        div[data-testid="stButton"] > button[kind="primary"]:hover {{
-            background-color: #2900A5 !important;
-            transform: translateY(-2px);
-            box-shadow: none !important;
-        }}
-        
-        /* 6. SECONDARY/LINK BUTTONS */
-        div[data-testid="stButton"] > button[kind="secondary"] {{
-            background: transparent !important;
-            border: none !important;
-            color: #9CA3AF !important; /* Gray for "Have an account?" links check */
-            font-weight: 600;
-            font-size: 0.9rem;
-        }}
-        div[data-testid="stButton"] > button[kind="secondary"]:hover {{
-            color: #3500D3 !important;
-        }}
-
-        /* 7. TYPOGRAPHY */
-        .messimo-title {{
-            font-family: 'Manrope', sans-serif;
-            font-weight: 600; 
-            font-size: 2.5rem; /* Large Title */
-            color: #7fb74e;
-            margin-bottom: 10px;
-            letter-spacing: -1px;
-        }}
-        .messimo-subtitle {{
-            color: #6B7280;
-            margin-bottom: 30px;
-            font-size: 1rem;
-            font-weight: 500;
-        }}
-        
-        /* 9. FORM CONTAINER OVERRIDE (INPUTS REPLICA FIX) */
-        div[data-testid="stVerticalBlock"]:has(div#login_anchor):not(:has(div[data-testid="stVerticalBlock"])) {{
-            background-color: #FFFFFF !important;
-            padding: 50px 50px !important; /* Balanced padding */
-            border-radius: 40px !important;
-            box-shadow: none !important; /* Clean flat card */
-            gap: 1rem !important; /* Increased gap for better spacing */
-            display: flex;
-            flex-direction: column;
-            margin-top: 0px !important; /* Force card container UP */
-            margin-bottom: 0px !important;
-        }}
-
-        /* 4. PILL INPUTS (V41 RESTORED) */
-        
-        /* Phase 1: Parent Layout - Force Full Width and No Clipping */
-        div[data-testid="stTextInput"] {{
-            width: 100% !important;
-            min-width: 100% !important;
-            height: auto !important;
-            overflow: visible !important; /* Fix bottom border clipping */
-        }}
-        
-        div[data-testid="stTextInput"] > div {{
-            width: 100% !important;
-            background-color: transparent !important;
-            border: none !important;
-        }}
-
-        /* Phase 2: The Pill Wrapper - Force Full Width */
-        /* Using a robust selector that catches both Standard and Password (with Eye) inputs */
-        div[data-testid="stTextInput"] div:has(input) {{
-            background-color: #FFFFFF !important;
-            border-radius: 50px !important;
-            border: 2px solid #D1D5DB !important;
-            height: 55px !important; /* Slightly taller to prevent clipping */
-            padding: 0px 15px !important;
-            box-shadow: none !important;
-            width: 100% !important; /* Crucial for Password field */
-            box-sizing: border-box !important;
-            display: flex !important;
-            align-items: center !important; 
-        }}
-        
-        /* Remove inner divs bordering if any (Ghost line prev) */
-        div[data-testid="stTextInput"] div:has(input) > div {{
-             border: none !important;
-        }}
-
-        /* AUTOFILL HACK: Remove ugly blue background from browser autofill */
-        input:-webkit-autofill,
-        input:-webkit-autofill:hover, 
-        input:-webkit-autofill:focus, 
-        input:-webkit-autofill:active {{
-            -webkit-box-shadow: 0 0 0 30px white inset !important;
-            -webkit-text-fill-color: #374151 !important;
-            transition: background-color 5000s ease-in-out 0s; /* Delay default bg */
-        }}
-
-        /* Phase 3: The Input Element Itself */
-        div[data-testid="stTextInput"] input {{
-             background-color: transparent !important;
-             border: none !important;
-             outline: none !important;
-             box-shadow: none !important;
-             color: #374151 !important;
-             width: 100% !important;
-        }}
-
-        /* Phase 4: Focus State */
-        div[data-testid="stTextInput"] div:has(input):focus-within {{
-            border-color: #3500D3 !important;
-            box-shadow: none !important; /* Removed glow/double border */
-        }}
-        
-        /* HIDE UI */
-        #MainMenu, header, footer {{ display: none !important; }}
-        
-        /* HIDE SIDEBAR ON LOGIN PAGE */
-        [data-testid="stSidebar"] {{ display: none !important; }}
-        [data-testid="stSidebarCollapsedControl"] {{ display: none !important; }}
-        </style>
-    ''', unsafe_allow_html=True)
-
-
-
-
-    # --- JS: NUCLEAR SCROLL LOCK ---
-    import streamlit.components.v1 as components
-    components.html("""
-        <script>
-            function lockScroll() {
-                try {
-                    const doc = window.parent.document;
-                    // Lock Body and HTML
-                    doc.body.style.overflow = "hidden";
-                    doc.documentElement.style.overflow = "hidden";
-                    
-                    // Lock Streamlit Containers
-                    const scrollContainers = doc.querySelectorAll('section[data-testid="stAppViewContainer"], section.main, .stApp');
-                    scrollContainers.forEach(el => {
-                        el.style.overflow = "hidden";
-                    });
-                } catch(e) {}
-            }
-            
-            // Run immediately and then every 100ms to fight re-renders
-            lockScroll();
-            setInterval(lockScroll, 100);
-        </script>
-    """, height=0, width=0)
-
-    # --- LAYOUT: Right Sided Card ---
-    # LIFT LOGIN CARD (User Request: "mas arriba" - RIGHT SIDE ONLY via Logo Margin)
-    
-    c_spacer, c_login = st.columns([1.3, 1]) 
-
-    with c_spacer:
-        st.write("") 
-
-    with c_login:
-        # ANCHOR FOR CSS TARGETING
-        st.markdown('<div id="login_anchor"></div>', unsafe_allow_html=True)
-        
-        # LOGO HEADER
-        
-        logo_html = ""
-        if logo_b64:
-             # Height 280px. Adjusted margins: -85px Top (Raised slightly), -50px Bottom (Separated)
-             logo_html = f'<img src="data:image/png;base64,{logo_b64}" style="height: 280px; width: auto; max-width: 100%; display: block; margin: -85px auto -50px auto;">'
-        
-        # Title: "Vamos a estudiar" - Title lifted closer to logo, inputs compensated
-        st.markdown(f'<div style="text-align: center; margin-bottom: 30px; margin-top: 0px;"><div style="display: flex; align-items: center; justify-content: center; margin-bottom: -20px;">{logo_html}</div><div class="messimo-title" style="margin-top: -30px; color: #4B22DD;">¡Vamos a estudiar!</div></div>', unsafe_allow_html=True)
-
-        # FORM INPUTS (Wrapped in st.form to prevent jitter/refresh while typing)
-        with st.form("login_form", clear_on_submit=False, border=False):
-            # Hack to remove default form padding if needed, but border=False helps.
-            email = st.text_input("Correo electrónico", key="login_email", placeholder="Correo electrónico", label_visibility="collapsed")
-            password = st.text_input("Contraseña", type="password", key="login_pass", placeholder="Contraseña", label_visibility="collapsed")
-            
-            # Submit Button (Primary)
-            submitted = st.form_submit_button("Iniciar sesión", type="primary", use_container_width=True)
-            
-            if submitted:
-                if email and password:
-                    from database import sign_in
-                    user = sign_in(email, password)
-                    if user:
-                        st.session_state['user'] = user
-                        
-                        # Try to set cookie
-                        if 'supabase_session' in st.session_state:
-                             try:
-                                 sess = st.session_state['supabase_session']
-                                 # Calculate expiry (e.g. 7 days)
-                                 exp_date = datetime.datetime.now() + datetime.timedelta(days=7)
-                                 # Set Keep Logged In
-                                 cookie_manager.set("supabase_refresh_token", sess.refresh_token, expires_at=exp_date)
-                                 print(f"Cookie set for user: {user.email}")
-                                 time.sleep(2) # CRITICAL: Wait for frontend to set cookie
-                             except Exception as e:
-                                 print(f"Cookie set error: {e}")
-                                 
-                        st.rerun()
-                    else:
-                        st.error("Credenciales incorrectas.")
-                else:
-                    st.warning("Por favor ingresa correo y contraseña.")
-
-
-        
-        # TERMS & FOOTER
-        # Keeping Terms in English for now or translating? "ponerlo en español todo lo inglés" -> Translate everything.
-
-        
-        # Sign up button/link
-        st.markdown('<div style="text-align: center; color: #6b7280; font-size: 0.9rem; margin-top: 15px;">¿No tienes una cuenta? <span style="color: #4B22DD; font-weight: 600;">Regístrate</span></div>', unsafe_allow_html=True)
-
-
-    st.stop()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# --- CONFIGURATION & MIGRATION ---
-CORE_OUTPUT_ROOT = "output"
-
-def run_migration_check():
-    """Moves legacy 'output' folders into a default course folder."""
-    default_course = "Diplomado_Marketing_Inicial"
-    search_paths = ["transcripts", "notes", "guides", "library"]
-    
-    # Check if any legacy folder exists directly in root 'output'
-    needs_migration = False
-    for p in search_paths:
-        if os.path.exists(os.path.join(CORE_OUTPUT_ROOT, p)):
-            needs_migration = True
-            break
-            
-    if needs_migration:
-        target_root = os.path.join(CORE_OUTPUT_ROOT, default_course)
-        os.makedirs(target_root, exist_ok=True)
-        
-        for p in search_paths:
-            src = os.path.join(CORE_OUTPUT_ROOT, p)
-            dst = os.path.join(target_root, p)
-            if os.path.exists(src):
-                # Move content 
-                try:
-                    shutil.move(src, dst)
-                except Exception as e:
-                    print(f"Migration error for {p}: {e}")
-                    
-run_migration_check() # Run once on startup
-
-# Helper for dynamic paths
-def get_out_dir(sub_folder=""):
-    course = st.session_state.get('current_course', 'Diplomado_Marketing_Inicial')
-    # Sanitize
-    safe_course = "".join([c for c in course if c.isalnum() or c in (' ', '-', '_')]).strip()
-    if not safe_course: safe_course = "General"
-    
-    path = os.path.join(CORE_OUTPUT_ROOT, safe_course, sub_folder)
-    os.makedirs(path, exist_ok=True)
-    return path
-
-# --- HELPER FUNCTIONS (MOVED TO TOP FOR SCOPE) ---
-def clean_markdown(text):
-    """Removes basic markdown syntax for clean copying."""
-    import re
-    text = re.sub(r'^#+\s*', '', text, flags=re.MULTILINE) # Headers
-    text = re.sub(r'\*\*|__', '', text) # Bold
-    text = re.sub(r'\*|_', '', text) # Italics
-    text = re.sub(r'^[\*\-]\s+', '', text, flags=re.MULTILINE) # Bullets
-    return text.strip()
-
-def copy_to_clipboard(text):
-    """Copies text to Windows clipboard using clip command."""
-    import subprocess
-    try:
-        # Use UTF-16LE for Windows clipboard to handle special chars/emojis correctly
-        subprocess.run(['clip'], input=text.encode('utf-16le'), check=True)
-        return True
-    except Exception as e:
-        print(f"Clipboard error: {e}")
-        return False
-
-def get_global_context():
-    """
-    Fetches all text content from the current course's files in DB.
-    Returns: (full_text_context, file_count)
-    """
-    from database import get_course_full_context
-    c_id = st.session_state.get('current_course_id')
-    if not c_id: return "", 0
-    
-    full_text = get_course_full_context(c_id)
-    # Count how many files are in there (approx based on our separator)
-    file_count = full_text.count("--- ARCHIVO:")
-    return full_text, file_count
-
-# --- API KEY MANAGEMENT ---
-def load_api_key():
-    # 1. User Custom Key (Session) - Highest Priority
-    if 'custom_api_key' in st.session_state and st.session_state['custom_api_key']:
-        return st.session_state['custom_api_key']
-
-    # 2. Try Streamlit Secrets (Best for Cloud)
-    try:
-        if "GEMINI_API_KEY" in st.secrets:
-            return st.secrets["GEMINI_API_KEY"]
-    except:
-        pass
-
-    # 3. Try Local File (Best for Local)
-    if os.path.exists("api_key.txt"):
-        with open("api_key.txt", "r") as f:
-            return f.read().strip()
-    return ""
-
-def save_api_key(key):
-    with open("api_key.txt", "w") as f:
-        f.write(key)
-
-# --- INITIALIZATION & API CHECK ---
-saved_key = load_api_key()
-
-if not saved_key and 'api_key_input' not in st.session_state:
-     # We can't init assistants yet if no key.
-     # But Spotlight code runs immediately.
-     # We handle this by checking if 'assistant' exists in Spotlight block.
-     pass
-
-# To avoid complexity, we'll initialize with empty key if needed, or handle it gracefully.
-# Better: Load key, if exists init.
-# --- INITIALIZATION UTILS (Cached) ---
-@st.cache_resource
-def get_transcriber_engine(key, model_choice="gemini-2.0-flash", breaker="V6"):
-    return Transcriber(key, model_name=model_choice, cache_breaker=breaker)
-
-@st.cache_resource
-def get_assistant_engine(key, model_choice="gemini-2.0-flash", breaker="V19"):
-    return StudyAssistant(key, model_name=model_choice, cache_breaker=breaker)
-
-api_key = saved_key
-transcriber = None
-assistant = None
-
-if api_key:
-    try:
-        # Force fresh engines with explicit model choice
-        # REVERTING TO CLASSIC V9 LOGIC
-        transcriber = get_transcriber_engine(api_key, model_choice="gemini-2.0-flash", breaker="V13_Classic") 
-        assistant = get_assistant_engine(api_key, model_choice="gemini-2.0-flash", breaker="V19")
-    except Exception as e:
-        st.error(f"Error al iniciar IA: {e}")
-
-    # DEBUG: Confirm Version to User (DISABLED BY REQUEST)
-    # if 'v9_classic_toast_shown' not in st.session_state:
-    #     st.toast("🦄 Sistema IA: V9.0 (Clásico) Restaurado", icon="✅")
-    #     st.session_state['v9_classic_toast_shown'] = True
-
-
-# --- SPOTLIGHT RESULT DISPLAY ---
-if 'spotlight_query' in st.session_state and st.session_state['spotlight_query']:
-    query = st.session_state['spotlight_query']
-    mode = st.session_state.get('spotlight_mode', "⚡ Concepto Rápido")
-    
-    # Visual Container
-    st.markdown(f"#### 🔍 Resultados de Búsqueda rápida: *{query}*")
-    
-    with st.spinner(f"Investigando en tu bibliografía ({mode})..."):
-        if not assistant:
-             st.error("⚠️ Configura tu API Key en la barra lateral primero.")
-        else:
-            # 1. Get Context (Efficiency: Only load if we search)
-            gl_ctx, gl_count = get_global_context()
-            
-            if gl_count == 0:
-                st.warning("⚠️ Tu cerebro digital está vacío. Sube videos o archivos a la Biblioteca primero.")
-            else:
-                # 2. Search
-                try:
-                    # Check if we already have this result cached to avoid re-run on every interaction? 
-                    # For simplicity, we run fresh or user can rely on session state if we move it there.
-                    # Let's simple-cache to session state to prevent refresh loops.
-                    search_key = f"search_{query}_{mode}"
-                    if search_key not in st.session_state:
-                        search_res = assistant.search_knowledge_base(query, gl_ctx, mode=mode)
-                        st.session_state[search_key] = search_res
-                    
-                    final_res = st.session_state[search_key]
-                    
-                    # Display
-                    if "Rápido" in mode:
-                        st.info(final_res, icon="⚡")
-                    else:
-                        st.success(final_res, icon="🕵🏻")
-                        
-                except Exception as e:
-                    st.error(f"Error en Spotlight: {e}")
-            
-    if st.button("Cerrar búsqueda", key="close_spot"):
-        st.session_state['spotlight_query'] = ""
-        st.rerun()
-
-    st.divider()
-
-# --- Custom CSS for "Estudian2" Elegant Theme ---
-# --- GLOBAL CSS ---
-CSS_STYLE = """
-<style>
-/* Import Google Fonts */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-
-    /* HIDE STREAMLIT STATUS WIDGET & DECORATION */
-    div[data-testid="stStatusWidget"] { visibility: hidden !important; }
-    div[data-testid="stDecoration"] { visibility: hidden !important; }
-
-    /* --- ULTIMATE KILL TO LOADING OVERLAY (NO MORE WHITE TRANSPARENCY) --- */
-    /* Target every possible container Streamlit uses for the "dimming" effect */
-    [data-testid="stAppViewBlockContainer"],
-    [data-testid="stAppViewContainer"],
-    [data-testid="stMainViewContainer"],
-    [data-test-script-state="running"] [data-testid="stAppViewBlockContainer"],
-    [data-test-script-state="running"] [data-testid="stAppViewContainer"],
-    [data-test-script-state="running"] .stApp,
-    section.main,
-    div.block-container,
-    .stApp > div {
-        opacity: 1 !important;
-        filter: none !important;
-        transition: none !important;
-    }
-    
-    /* Force background to stay solid and kill any covering pseudo-elements */
-    .stApp::before, .stApp::after, 
-    [data-testid="stAppViewContainer"]::before,
-    [data-testid="stAppViewContainer"]::after {
-        display: none !important;
-        opacity: 0 !important;
-    }
-
-    /* --- GLOBAL VARIABLES (Moved to Top) --- */
-    /* :root variables are now prevalent globally to prevent FOUC */
-
-    html, body, [class*="css"] {
-        font-family: 'Inter', sans-serif;
-        color: var(--text-color);
-        background-color: var(--bg-color);
-    }
-
-    /* 1. APP BACKGROUND (Light) */
-    .stApp {
-        background-color: var(--bg-color);
-        background-image: none;
-    }
-    
-    /* 2. TOP HEADER BAR - PURPLE */
-    header[data-testid="stHeader"] {
-        background-color: var(--primary-purple);
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    }
-
-    /* 3. THE CENTER CARD (Content) */
-    .main .block-container {
-        background-color: #ffffff;
-        border-radius: 30px;
-        padding: 3rem 4rem !important;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.08);
-        margin-top: 20px;
-        max-width: 95%;
-    }
-    div[data-testid="block-container"] {
-        background-color: #ffffff;
-        border-radius: 30px;
-        padding: 3rem !important;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.08);
-        margin: 20px auto;
-        max-width: 95%;
-    }
-
-    /* SIDEBAR CONTAINER */
-    section[data-testid="stSidebar"], div[data-testid="stSidebar"] {
-        background-color: #FFFFFF;
-        border-right: 1px solid var(--border-color);
-    }
-    
-    /* HEADERS */
-    h1, h2, h3, h4 {
-        color: var(--primary-purple);
-        font-weight: 700;
-        letter-spacing: -0.5px;
-    }
-    h1 { font-size: 2.5rem; }
-
-    /* --- SIDEBAR SPECIFIC STYLES (MATCH REF IMAGE) --- */
-    
-    /* Custom "Logout" Button -> Purple Block */
-    div[data-testid="stSidebar"] div.stButton button {
-        background-color: var(--primary-purple) !important;
-        color: white !important;
-        border-radius: 30px !important; /* Pill shape like reference */
-        text-align: center !important;
-        justify-content: center !important;
-        font-weight: 600 !important;
-        border: none !important;
-        padding: 0.5rem 1rem !important;
-        margin-top: 10px;
-    }
-    div[data-testid="stSidebar"] div.stButton button:hover {
-        background-color: #3b1aa3 !important;
-        color: white !important;
-    }
-
-    /* Sidebar Inputs -> Light Lilac BG */
-    [data-testid="stSidebar"] div.stTextInput input, 
-    [data-testid="stSidebar"] div[data-baseweb="select"] > div {
-        background-color: #F4F1FF !important; /* Very light purple */
-        border: 1px solid #E0D4FC !important;
-        border-radius: 12px !important;
-        color: #4B22DD !important;
-    }
-
-    /* "Clave del Sistema Activa" Box */
-    .system-key-box {
-        background-color: #E6F4EA;
-        color: #1E4620;
-        padding: 10px;
-        border-radius: 8px;
-        font-size: 0.9rem;
-        font-weight: 500;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        border: 1px solid #CEEAD6;
-    }
-
-    /* TABS */
-
-
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 10px;
-        background-color: transparent;
-        padding: 0px;
-        margin-bottom: 20px;
-        border-bottom: 2px solid #F0F0F0;
-    }
-    .stTabs [data-baseweb="tab"] {
-        background-color: #F5F6FA;
-        border-radius: 8px 8px 0 0;
-        color: #64748b;
-        font-weight: 600;
-        padding: 10px 20px;
-        border: none;
-    }
-    
-    /* UPDATED TAB STYLES: GREEN BOTTOM LINE */
-    .stTabs [aria-selected="true"] {
-        background-color: var(--primary-purple) !important;
-        color: white !important;
-        border-radius: 8px 8px 0 0 !important;
-        border-bottom: 4px solid #6CC04A !important; /* THE GREEN LINE */
-    }
-    
-    /* Remove default Streamlit tab highlight if present */
-    .stTabs [data-baseweb="tab-highlight"] {
-        background-color: #6CC04A !important;
-    }
-
-    
-
-    /* REMOVE SIDEBAR TOP PADDING */
-    /* Target the container inside the sidebar */
-    section[data-testid="stSidebar"] > div > div:first-child {
-        padding-top: 0rem !important; /* LIFT LOGO (removed padding) */
-    }
-    
-    [data-testid="stSidebar"] input {
-        background-color: #F4F1FF !important;
-        color: #4B22DD !important;
-        font-weight: 500 !important;
-        border-radius: 8px !important;
-        border: 1px solid #D8CCF6 !important;
-    }
-    /* Target the container background for Selectbox */
-    [data-testid="stSidebar"] [data-baseweb="select"] > div {
-        background-color: #F4F1FF !important;
-        border-color: #D8CCF6 !important;
-        color: #4B22DD !important;
-    }
-    
-    /* 3. Sidebar Buttons (Pill Shape, Purple) */
-    /* We target the button element specifically inside sidebar */
-    [data-testid="stSidebar"] button[kind="secondary"] {
-        background-color: #4B22DD !important;
-        color: white !important;
-        border: none !important;
-        border-radius: 20px !important; /* Pill */
-        margin-top: 10px !important;
-        box-shadow: 0 4px 6px rgba(75, 34, 221, 0.2) !important;
-    }
-    [data-testid="stSidebar"] button[kind="secondary"]:hover {
-        background-color: #3b1aa3 !important;
-        transform: translateY(-1px);
-    }
-    
-    /* 4. "System Key" Box Tweaks */
-    .system-key-box {
-        background-color: #E6F4EA !important;
-        border: 1px solid #CEEAD6 !important;
-        color: #1E4620 !important;
-        font-weight: 600 !important;
-    }
-    
-    /* 5. Radio Buttons -> Custom Coloring if possible (Streamlit limits this) */
-    [data-testid="stSidebar"] [role="radiogroup"] label {
-        color: #1A1A1A !important;
-        font-weight: 500 !important;
-    }
-
-    /* FORCE ALL SIDEBAR BUTTONS TO BE ROUNDED */
-    [data-testid="stSidebar"] button {
-        border-radius: 25px !important; /* High value for Pill shape */
-        border: none !important;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
-        transition: transform 0.1s, box-shadow 0.1s !important;
-    }
-    
-    [data-testid="stSidebar"] button:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 6px 8px rgba(0,0,0,0.15) !important;
-    }
-    
-    /* Ensure Multiselect tags are also rounded if possible (Optional polish) */
-    [data-testid="stSidebar"] span[data-baseweb="tag"] {
-        border-radius: 15px !important;
-    }
-
-    /* --- TAB 1 REBRAND CSS --- */
-    
-    /* File Uploader Container */
-    div[data-testid="stFileUploader"] section[data-testid="stFileUploaderDropzone"] {
-        background-color: #F8F9FE;
-        border: 2px dashed #B8B9E0 !important;
-        border-radius: 20px !important;
-        padding: 30px !important;
-    }
-    
-    /* "Browse files" Button -> Bright Green */
-    div[data-testid="stFileUploader"] button[kind="secondary"] {
-        background-color: #6CC04A !important;
-        color: white !important;
-        border-radius: 10px !important;
-        border: none !important;
-        font-weight: 700 !important;
-        padding: 0.6rem 1.8rem !important;
-        text-transform: none !important;
-        box-shadow: 0 4px 10px rgba(108, 192, 74, 0.4) !important;
-    }
-    div[data-testid="stFileUploader"] button[kind="secondary"]:hover {
-        background-color: #5ab03a !important;
-        color: white !important;
-        transform: translateY(-1px);
-    }
-    
-    /* Titles */
-    h2.transcriptor-title {
-        color: #4B22DD !important; /* Authentic Ref Purple */
-        font-family: 'Inter', sans-serif !important;
-        font-weight: 800 !important;
-        font-size: 2.2rem !important;
-        letter-spacing: -1px !important;
-        margin-bottom: 1.5rem !important;
-        margin-top: 1rem !important;
-    }
-    
-    p.transcriptor-subtitle {
-        color: #4A4A4A !important;
-        font-size: 1.05rem !important;
-        margin-bottom: 30px !important;
-        line-height: 1.6;
-    }
-    
-    /* Green Placeholder Frame */
-    .green-frame {
-        background-color: #6CC04A;
-        border-radius: 30px;
-        padding: 20px;
-        box-shadow: 0 15px 30px rgba(108, 192, 74, 0.25);
-        width: 350px !important;
-        min-width: 350px !important;
-        max-width: 350px !important;
-        flex: 0 0 350px !important; /* Strict Flex locking */
-        aspect-ratio: 1 / 1.1; /* Maintain exact proportion */
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin: 0 auto; /* Center in column */
-        overflow: hidden;
-    }
-    
-    .green-frame img {
-        width: 100% !important;
-        height: 100% !important;
-        object-fit: cover !important;
-        max-width: 100% !important;
-        border-radius: 20px;
-    }
-    .green-frame-inner {
-        background-color: #E2E8F0;
-        border-radius: 20px;
-        width: 100%;
-        height: 100%;
-        min-height: 360px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-        color: #64748b;
-        font-weight: 600;
-    }
-    
-    /* Exact replica of green-frame but Purple */
-    .purple-frame {
-        background-color: #4B22DD;
-        border-radius: 30px;
-        padding: 20px;
-        box-shadow: 0 15px 30px rgba(75, 34, 221, 0.25);
-        width: 350px !important;
-        min-width: 350px !important;
-        max-width: 350px !important;
-        flex: 0 0 350px !important; /* Strict Flex locking */
-        aspect-ratio: 1 / 1.1; /* Maintain exact proportion */
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin: 0 auto; /* Center in column */
-        overflow: hidden;
-    }
-    
-    .purple-frame img {
-        width: 100% !important;
-        height: 100% !important;
-        object-fit: cover !important;
-        max-width: 100% !important;
-        border-radius: 20px;
-    }
-
-    /* --- GLOBAL BUTTON STYLING (Universal Consistency) --- */
-    
-    /* Target ALL standard buttons in the main app area */
-    div.stButton > button {
-        background-color: #4B22DD !important; /* Brand Purple */
-        color: white !important;
-        border-radius: 30px !important; /* Full Pill Shape */
-        border: none !important;
-        padding: 0.6rem 2rem !important;
-        font-weight: 600 !important;
-        box-shadow: 0 4px 6px rgba(75, 34, 221, 0.2) !important;
-        transition: all 0.2s ease !important;
-    }
-    
-    div.stButton > button:hover {
-        background-color: #3b1aa3 !important; /* Darker Purple */
-        color: white !important;
-        transform: translateY(-2px);
-        box-shadow: 0 6px 12px rgba(75, 34, 221, 0.3) !important;
-    }
-    
-    /* Target Primary Buttons (if any are used, e.g. Delete, ensuring they are also round) */
-    div.stButton > button[kind="primary"] {
-        border-radius: 30px !important;
-    }
-
-    /* LOGIN FORM BUTTON - GREEN FORCE (Submit Only - No SVGs) */
-    [data-testid="stForm"] button:not(:has(svg)) {
-        background-color: #6CC04A !important;
-        border: none !important;
-        color: white !important;
-    }
-    [data-testid="stForm"] button:not(:has(svg)):hover {
-        background-color: #5ab03a !important;
-    }
-
-    /* --- GLOBAL HEADERS (BRANDING) --- */
-    h1, h2, h3, h4, h5, h6 {
-        color: #4B22DD !important;
-        font-family: 'Inter', sans-serif !important;
-        font-weight: 700 !important;
-    }
-    
-    /* Specific Streamlit markdown headers */
-    /* Specific Streamlit markdown headers */
-    .stMarkdown h1, .stMarkdown h2, .stMarkdown h3 {
-        color: #4B22DD !important;
-    } 
-
-    div.stButton > button:active {
-        background-color: #2a1275 !important;
-        transform: translateY(0);
-    }
-</style>
-"""
-st.markdown(CSS_STYLE, unsafe_allow_html=True)
-
-# CSS moved to top (Legacy cleanup)
-
-# --- NUCLEAR UNIVERSAL SCROLLER (DEFINITIVE) ---
-
-# 1. GLOBAL LOADING FIX (Always running)
-components.html("""
-<script>
-    (function() {
-        const root = window.parent.document;
-        
-        // Inject Base CSS
-        const style = root.createElement('style');
-        style.id = 'estudian2_nuclear_overlay_kill';
-        style.innerHTML = `
-            [data-testid="stAppViewBlockContainer"],
-            [data-testid="stAppViewContainer"],
-            [data-testid="stMainViewContainer"],
-            iframe, .stApp, section.main, .block-container {
-                opacity: 1 !important;
-                filter: none !important;
-                transition: none !important;
-            }
-            .stApp::before, .stApp::after, 
-            [data-testid="stAppViewContainer"]::before,
-            [data-testid="stAppViewContainer"]::after {
-                display: none !important;
-                opacity: 0 !important;
-            }
-            /* NUCLEAR SCROLLBAR HIDE (PARENT LEVEL) */
-            ::-webkit-scrollbar {
-                width: 0px !important;
-                background: transparent !important;
-                display: none !important;
-            }
-            html, body {
-                scrollbar-width: none !important;
-                -ms-overflow-style: none !important; 
-                overflow-y: auto !important; /* Keep scrolling, hide bar */
-            }
-        `;
-        if (!root.getElementById(style.id)) root.head.appendChild(style);
-
-        // REAL-TIME VIGILANTE OBSERVER
-        const observer = new MutationObserver(() => {
-            const state = root.querySelector('.stApp')?.getAttribute('data-test-script-state');
-            if (state === 'running') {
-                const iframes = root.querySelectorAll('iframe');
-                iframes.forEach(i => {
-                    i.style.opacity = '1';
-                    i.style.filter = 'none';
-                });
-                const containers = root.querySelectorAll('[data-testid*="Container"]');
-                containers.forEach(c => {
-                    c.style.opacity = '1';
-                    c.style.filter = 'none';
-                });
-            }
-        });
-        observer.observe(root.body, { attributes: true, subtree: true, attributeFilter: ['style', 'data-test-script-state'] });
-    })();
-</script>
-""", height=0)
-
-# 2. LOGGED-IN SCROLLER (Only after login)
-if st.session_state.get('user'):
-    components.html("""
-    <script>
-        (function() {
-            const root = window.parent.document;
-            const inject = () => {
-                try {
-                    // Check if we are still meant to be here (Security check)
-                    // But simpler: just check if button exists
-                    if (root.getElementById('estudian2_nuclear_scroller')) return;
-                    
-                    const btn = root.createElement('button');
-                    btn.id = 'estudian2_nuclear_scroller';
-                    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px; pointer-events: none;"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>';
-                    
-                    btn.style.cssText = `
-                        position: fixed !important;
-                        bottom: 120px !important;
-                        right: 30px !important;
-                        z-index: 2147483647 !important;
-                        width: 40px !important;
-                        height: 40px !important;
-                        border-radius: 50% !important;
-                        background-color: #4B22DD !important;
-                        display: flex !important;
-                        align-items: center !important;
-                        justify-content: center !important;
-                        cursor: pointer !important;
-                        border: none !important;
-                        box-shadow: 0 4px 15px rgba(0,0,0,0.4) !important;
-                        transition: transform 0.2s !important;
-                        outline: none !important;
-                    `;
-                    
-                    btn.onclick = function() {
-                        const marker = window.parent.document.getElementById('end_marker');
-                        if (marker) {
-                            marker.scrollIntoView({ behavior: 'smooth', block: 'end' });
-                        } else {
-                            const main = window.parent.document.querySelector('.main');
-                            if (main) main.scrollTo({ top: 100000, behavior: 'smooth' });
-                        }
-                    };
-                    
-                    btn.onmouseenter = () => btn.style.transform = 'scale(1.1)';
-                    btn.onmouseleave = () => btn.style.transform = 'scale(1.0)';
-                    
-                    root.body.appendChild(btn);
-                } catch(e) {}
-            };
-            
-            // KILL PREVIOUS INTERVALS
-            if (window.parent.estudian2_scroller_interval) clearInterval(window.parent.estudian2_scroller_interval);
-            
-            // START NEW
-            window.parent.estudian2_scroller_interval = setInterval(inject, 2000);
-            inject();
-        })();
-    </script>
-    """, height=0)
-else:
-    # Cleanup if logged out (important for estetico)
-    components.html("""
-    <script>
-        const root = window.parent.document;
-        
-        // 1. KILL KNOWN INTERVALS
-        if (window.parent.estudian2_scroller_interval) clearInterval(window.parent.estudian2_scroller_interval);
-        
-        // 2. ACTIVE DEFENSE (Anti-Zombie Shield)
-        // Since we can't kill anonymous intervals from old versions, we constantly delete their work.
-        const killerInfo = setInterval(() => {
-            const btn = root.getElementById('estudian2_nuclear_scroller');
-            if (btn) btn.remove();
-        }, 50); // Run faster than the creator (which is 2000ms)
-        
-        // Store this killer so we can stop it if we login later (though page reload handles that)
-        window.parent.estudian2_killer_interval = killerInfo;
-    </script>
-    """, height=0)
-
-# Sidebar
-with st.sidebar:
-    # st.caption("🚀 v3.3 (API Fix)") # Removed per user request
-    # --- 1. LOGO & USER ---
-    # Left Aligned ("RAS con el resto")
-    @st.cache_data
-    def load_logo_cached():
-        if os.path.exists("assets/logo_sidebar.png"):
-            return Image.open("assets/logo_sidebar.png")
-        return None
-
-    logo_img = load_logo_cached()
-    if logo_img:
-        st.image(logo_img, width=180)
-    else:
-        st.markdown("### 🎓 E-Education")
-    if st.session_state.get('user'):
-        # User Info (Consistent spacing)
-        st.markdown(f"""
-        <div style="display: flex; align-items: center; gap: 10px; margin-top: 30px; margin-bottom: 20px;">
-            <div style="font-size: 24px;">👤</div>
-            <div style="font-size: 14px; color: #31333F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{st.session_state['user'].email}">
-                {st.session_state['user'].email}
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-        if st.button("Cerrar sesión", key="logout_btn", use_container_width=True):
-            st.session_state['force_logout'] = True 
-            st.session_state['user'] = None
-            if 'supabase_session' in st.session_state: del st.session_state['supabase_session']
-            try:
-                # Force delete multiple times to be sure
-                cookie_manager.delete("supabase_refresh_token")
-            except: pass
-            
-            # Double Rerun strategy for specific stx components issues
-            st.rerun()
-
-    st.markdown('<div class="aesthetic-sep"></div>', unsafe_allow_html=True)
-    st.markdown('<div style="height:15px;"></div>', unsafe_allow_html=True)
-
-    # --- MODO ESTUDIO & LEYENDA ---
-    study_mode = st.toggle("Modo Estudio (Resaltadores) 🎨", value=True, help="Activa o desactiva los colores de estudio.", key="study_mode_toggle")
-    
-    # Combined block for toggle logic and legend
-    with st.expander("📚 Leyenda de Colores", expanded=study_mode):
-        st.markdown("""
-            <div style="font-size: 0.8rem; line-height: 1.4;">
-                <div style="margin-bottom:6px;"><span style="background-color: #ffcccc; color: #900; border: 1px solid #ff9999; padding: 1px 4px; border-radius: 3px; font-weight: bold;">Rojo</span>: Definiciones.</div>
-                <div style="margin-bottom:6px;"><span style="background-color: #cce5ff; color: #004085; border: 1px solid #b8daff; padding: 1px 4px; border-radius: 3px; font-weight: bold;">Azul</span>: Ejemplos.</div>
-                <div style="margin-bottom:6px;"><span style="background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; padding: 1px 4px; border-radius: 3px; font-weight: bold;">Verde</span>: Notas.</div>
-                <div style="margin-bottom:6px;"><span style="background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; padding: 1px 4px; border-radius: 3px; font-weight: bold;">Amarillo</span>: Datos.</div>
-                <div style="margin-bottom:6px;"><span style="background-color: #e2d9f3; color: #512da8; border: 1px solid #d1c4e9; padding: 1px 4px; border-radius: 3px; font-weight: bold;">Púrpura</span>: Claves.</div>
-            </div>
-        """, unsafe_allow_html=True)
-
-    # LOGIC: Python-Based Toggle (Clean & Synchronous)
-    # When toggle is changed, script reruns. We simply inject the hiding CSS if needed.
-    if not study_mode:
-        st.markdown("""
-            <style>
-            .sc-base, .sc-example, .sc-note, .sc-data, .sc-key,
-            .stApp .sc-base, .stApp .sc-example, .stApp .sc-note, .stApp .sc-data, .stApp .sc-key {
-                background-color: transparent !important;
-                padding: 0 !important;
-                color: inherit !important;
-                border: none !important;
-                font-weight: inherit !important;
-            }
-            </style>
-        """, unsafe_allow_html=True)
-
-    st.markdown('<div class="aesthetic-sep"></div>', unsafe_allow_html=True)
-
-    # --- 2. HISTORIAL DE CHATS ---
-    if 'current_chat_session' not in st.session_state:
-        st.session_state['current_chat_session'] = None
-    with st.expander("🗂️ Historial de Chats", expanded=True):
-        # Create New
-        if st.button("➕ Nuevo chat", use_container_width=True):
-            new_sess = create_chat_session(st.session_state['user'].id, "Nuevo chat")
-            if new_sess:
-                st.session_state['current_chat_session'] = new_sess
-                st.session_state['tutor_chat_history'] = [] # Reset for new chat
-                st.session_state['redirect_target_name'] = "Tutoría 1 a 1" # Explicit Redirect
-                st.session_state['force_chat_tab'] = True # Force switch
-                
-                # UPDATE URL
-                try:
-                    if hasattr(st, 'query_params'):
-                        st.query_params['chat_id'] = str(new_sess['id'])
-                    else:
-                        st.experimental_set_query_params(chat_id=str(new_sess['id']))
-                except: pass
-                
-                st.rerun()
-
-        # List Sessions
-        sessions = get_chat_sessions(st.session_state['user'].id)
-        
-        # Determine active ID for highlighting
-        active_id = st.session_state['current_chat_session']['id'] if st.session_state['current_chat_session'] else None
-
-        # LIMIT TO TOP 1 (Minimalist)
-        visible_sessions = sessions[:1]
-        
-        for sess in visible_sessions:
-            # Highlight active session button style could be done via key or custom CSS, 
-            # for now standard buttons.
-            # Truncate name to prevent fat buttons
-            display_name = sess['name']
-            if len(display_name) > 28:
-                display_name = display_name[:25] + "..."
-                
-            label = f"📝 {display_name}"
-            if active_id == sess['id']:
-                label = f"🟢 {display_name}"
-            
-            if st.button(label, key=f"sess_{sess['id']}", use_container_width=True):
-                st.session_state['current_chat_session'] = sess
-                st.session_state['tutor_chat_history'] = [] # Force reload
-                st.session_state['redirect_target_name'] = "Tutoría 1 a 1" # Explicit Redirect
-                st.session_state['force_chat_tab'] = True # Force switch
-                
-                # TRACK FOOTPRINT
-                update_user_footprint(st.session_state['user'].id, {
-                    "type": "chat",
-                    "title": sess['name'],
-                    "target_id": sess['id'],
-                    "subtitle": "Continuar conversación"
-                })
-                
-                # UPDATE URL
-                try:
-                    if hasattr(st, 'query_params'):
-                        st.query_params['chat_id'] = str(sess['id'])
-                    else:
-                        st.experimental_set_query_params(chat_id=str(sess['id']))
-                except: pass
-                
-                st.rerun()
-
-        # VIEW ALL BUTTON ALWAYS VISIBLE
-        if True:
-            if st.button("📂 Ver todo el historial...", help="Ir al panel de gestión completo", use_container_width=True):
-                st.session_state['redirect_target_name'] = "Inicio"
-                st.session_state['force_chat_tab'] = True
-                st.session_state['dashboard_mode'] = 'history' # Activate History View in Dashboard
-                st.rerun()
-
-        # Management for Active Session
-        if st.session_state['current_chat_session']:
-            st.caption("Gestionar Actual:")
-            new_name = st.text_input("Renombrar:", value=st.session_state['current_chat_session']['name'], key="rename_chat_input")
-            if new_name != st.session_state['current_chat_session']['name']:
-                # Save immediately on change (Enter)
-                rename_chat_session(st.session_state['current_chat_session']['id'], new_name)
-                st.session_state['current_chat_session']['name'] = new_name # Valid local update
-                st.rerun()
-            
-            if st.button("🗑️ Borrar chat", key="del_chat_btn"):
-                delete_chat_session(st.session_state['current_chat_session']['id'])
-                st.session_state['current_chat_session'] = None
-                st.session_state['tutor_chat_history'] = []
-                
-                # CLEAR URL
-                try:
-                    if hasattr(st, 'query_params'):
-                        if 'chat_id' in st.query_params: del st.query_params['chat_id']
-                    else:
-                        st.experimental_set_query_params()
-                except: pass
-                
-                st.rerun()
-
-        # --- BULK DELETE (GESTIÓN MASIVA) ---
-        with st.expander("🗑️ Gestión Masiva", expanded=False):
-            # 1. Multi-Select with Invisible Uniqueness Hack
-            # User wants clean names, but Streamlit merges duplicates.
-            # Solution: Append zero-width spaces to duplicates.
-            
-            valid_sessions = [s for s in sessions if s and 'name' in s]
-            
-            # Pre-calc unique labels
-            name_counts = {}
-            processed_sessions = []
-            for s in valid_sessions:
-                original_name = s['name']
-                count = name_counts.get(original_name, 0)
-                # Append invisible characters equal to the count count
-                invisible_suffix = "\u200b" * count
-                s['unique_label'] = f"{original_name}{invisible_suffix}"
-                processed_sessions.append(s)
-                name_counts[original_name] = count + 1
-
-            sel_sessions = st.multiselect(
-                "Seleccionar chats:", 
-                options=processed_sessions,
-                format_func=lambda x: x['unique_label'],
-                key="bulk_chat_select",
-                placeholder="Elige para borrar..."
-            )
-            
-            if sel_sessions:
-                if st.button(f"Eliminar {len(sel_sessions)} chats", type="primary", use_container_width=True):
-                    success_count = 0
-                    deleted_ids = []
-                    for s in sel_sessions:
-                        if delete_chat_session(s['id']):
-                            success_count += 1
-                            deleted_ids.append(s['id'])
-                    
-                    if success_count > 0:
-                        st.success(f"¡{success_count} chats borrados!")
-                        
-                        # Reset current if deleted
-                        curr = st.session_state.get('current_chat_session')
-                        if curr and curr['id'] in deleted_ids:
-                             st.session_state['current_chat_session'] = None
-                             st.session_state['tutor_chat_history'] = []
-                        
-                        time.sleep(0.5)
-                        st.rerun()
-
-    st.markdown('<div class="aesthetic-sep"></div>', unsafe_allow_html=True)
-
-    # --- 3. SPOTLIGHT ACADÉMICO ---
-    st.markdown("#### 🔍 Búsqueda rápida")
-    st.caption("¿Qué buscas hoy?")
-    # Styled Input defined in CSS
-    search_query = st.text_input("Busqueda", placeholder="Ej: 'Concepto de Lead'...", label_visibility="collapsed")
-    # Radio with custom icons workaround via emoji
-    search_mode = st.radio("Modo:", ["⚡ Concepto Rápido", "🕵🏻 Análisis Profundo"], horizontal=False, label_visibility="collapsed")
-    # Search Button (Purple Pill via CSS)
-    if st.button("Buscar 🔍", key="btn_spotlight", use_container_width=True):
-        if search_query:
-            st.session_state['spotlight_query'] = search_query
-            st.session_state['spotlight_mode'] = search_mode
-            st.rerun()
-
-    st.markdown('<div class="aesthetic-sep"></div>', unsafe_allow_html=True)
-
-    # --- 4. ESPACIO DE TRABAJO ---
-    st.markdown("#### 📂 Espacio de Trabajo")
-    st.caption("Diplomado Actual:")
-    if not st.session_state.get('user'):
-        st.stop()
-    current_user_id = st.session_state['user'].id
-    db_courses = get_user_courses(current_user_id)
-    course_names = [c['name'] for c in db_courses]
-    course_map = {c['name']: c['id'] for c in db_courses}
-    if not course_names: course_names = []
-    # RECOVERY LOGIC (Persistence)
-    if 'current_course' not in st.session_state or (st.session_state['current_course'] not in course_names and st.session_state['current_course'] is not None):
-        saved_course = st.session_state['user'].user_metadata.get('last_course_name')
-        if saved_course and saved_course in course_names:
-             st.session_state['current_course'] = saved_course
-        else:
-             st.session_state['current_course'] = course_names[0] if course_names else None
-    options = course_names + ["➕ Crear nuevo..."]
-    idx = 0
-    if st.session_state['current_course'] in course_names: idx = course_names.index(st.session_state['current_course'])
-    selected_option = st.selectbox("Diplomado", options, index=idx, label_visibility="collapsed")
-    if selected_option == "➕ Crear nuevo...":
-        new_name = st.text_input("Nombre Nuevo:", placeholder="Ej: Curso IA")
-        if st.button("Crear"):
-            if new_name:
-                nc = create_course(current_user_id, new_name)
-                if nc: 
-                    st.session_state['current_course'] = nc['name']
-                    st.rerun()
-    else:
-        st.session_state['current_course'] = selected_option
-        st.session_state['current_course_id'] = course_map[selected_option]
-        update_last_course(selected_option)
-        # --- ACTIONS (RENAME / DELETE) ---
-        
-        # RENAME
-        with st.expander("✏️ Renombrar"):
-            rename_input = st.text_input("Nuevo nombre:", value=st.session_state['current_course'], key="rename_input_sb")
-            if rename_input and rename_input != st.session_state['current_course']:
-                # Simple sanitize
-                safe_rename = "".join([c for c in rename_input if c.isalnum() or c in (' ', '-', '_')]).strip()
-                
-                # DB Update
-                from database import rename_course
-                c_id = st.session_state.get('current_course_id')
-                if c_id and rename_course(c_id, safe_rename):
-                    st.session_state['current_course'] = safe_rename
-                    st.success("Renombrado!")
-                    st.rerun()
-                else:
-                    st.error("Error al renombrar.")
-
-        # DELETE
-        
-        # DELETE (Safe & Multi)
-        with st.expander("🗑️ Borrar"):
-            st.caption("Selecciona uno o varios diplomados para borrar.")
-            
-            # 1. Multi-Select (Exclude 'Crear Nuevo' logic implies just listing course names)
-            # We already have course_names and course_map available from above scope
-            
-            courses_to_delete = st.multiselect(
-                "Seleccionar Diplomados:", 
-                options=course_names,
-                format_func=lambda x: f"🗑️ {x}",
-                key="multi_delete_select"
-            )
-            
-            if courses_to_delete:
-                st.write("")
-                # 2. First Trigger Button
-                if st.button("Solicitar eliminación", type="primary", key="btn_req_del"):
-                    st.session_state['delete_confirmation_pending'] = True
-                
-                # 3. Safety Confirmation (Only if requested)
-                if st.session_state.get('delete_confirmation_pending'):
-                    st.warning(f"⚠️ ¿Estás seguro? Vas a eliminar {len(courses_to_delete)} diplomado(s). Esta acción NO se puede deshacer.")
-                    
-                    col_confirm_a, col_confirm_b = st.columns(2)
-                    with col_confirm_a:
-                        if st.button("❌ Cancelar", key="btn_cancel_del"):
-                            st.session_state['delete_confirmation_pending'] = False
-                            st.rerun()
-                    
-                    with col_confirm_b:
-                        if st.button("✅ Sí, confirmar", type="primary", key="btn_confirm_del"):
-                            from database import delete_course
-                            success_count = 0
-                            
-                            for c_name in courses_to_delete:
-                                c_id_del = course_map.get(c_name)
-                                if c_id_del:
-                                    if delete_course(c_id_del):
-                                        success_count += 1
-                            
-                            if success_count > 0:
-                                st.success(f"¡{success_count} cursos borrados!")
-                                st.session_state['delete_confirmation_pending'] = False
-                                # Reset current course if it was deleted
-                                if st.session_state.get('current_course') in courses_to_delete:
-                                    st.session_state['current_course'] = None
-                                st.rerun()
-                            else:
-                                st.error("No se pudo completar la eliminación.")
-            else:
-                # Reset confirmation if selection is cleared
-                if st.session_state.get('delete_confirmation_pending'):
-                    st.session_state['delete_confirmation_pending'] = False
-
-
-# --- INJECT CUSTOM TAB SCROLL BUTTONS (JS) ---
-    components.html("""
-    <script>
-    function lockSidebar() {
-        const doc = window.parent.document;
-        
-        // 1. Force Sidebar Width
-        const sidebar = doc.querySelector('section[data-testid="stSidebar"]');
-        if (sidebar) {
-            sidebar.style.minWidth = '280px';
-            sidebar.style.maxWidth = '280px';
-            sidebar.style.width = '280px';
-            sidebar.style.flex = '0 0 280px';
-        }
-        
-        // 2. Hide specific resize handle if present (safer selector)
-        const resizeHandle = doc.querySelector('div[class*="stSidebarResizeHandle"]');
-        if (resizeHandle) {
-            resizeHandle.style.display = 'none';
-        }
-    }
-
-    function addTabScrollButtons() {
-        const doc = window.parent.document;
-        const tabList = doc.querySelector('div[role="tablist"]');
-        
-        if (tabList && !doc.getElementById('tab-scroll-left')) {
-            // Style the tabList for scroll - FORCE OVERRIDE GLOBAL CSS
-            tabList.style.setProperty('overflow-x', 'auto', 'important');
-            tabList.style.setProperty('overflow-y', 'hidden', 'important');
-            tabList.style.setProperty('white-space', 'nowrap', 'important');
-            tabList.style.scrollBehavior = 'smooth';
-            tabList.style.scrollbarWidth = 'none'; // Hide scrollbar
-            
-            // Create Left Button
-            const btnLeft = doc.createElement('button');
-            btnLeft.id = 'tab-scroll-left';
-            btnLeft.innerHTML = '◀';
-            btnLeft.onclick = (e) => {
-                e.preventDefault();
-                tabList.scrollBy({left: -200, behavior: 'smooth'});
-            };
-            
-            // Create Right Button
-            const btnRight = doc.createElement('button');
-            btnRight.id = 'tab-scroll-right';
-            btnRight.innerHTML = '▶';
-            btnRight.onclick = (e) => {
-                 e.preventDefault();
-                 tabList.scrollBy({left: 200, behavior: 'smooth'});
-            };
-            
-            // Shared Styles
-            const btnStyle = `
-                position: absolute;
-                top: 50%;
-                transform: translateY(-50%);
-                background-color: #4B22DD;
-                color: white;
-                border: none;
-                border-radius: 50%;
-                width: 30px;
-                height: 30px;
-                cursor: pointer;
-                z-index: 100;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 12px;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-            `;
-            
-            btnLeft.style.cssText = btnStyle + 'left: 0px;';
-            btnRight.style.cssText = btnStyle + 'right: 0px;';
-            
-            // Find container to attach relative positioning
-            const parent = tabList.parentElement;
-            parent.style.position = 'relative';
-            parent.style.padding = '0 35px'; // Make space for buttons
-            
-            parent.appendChild(btnLeft);
-            parent.appendChild(btnRight);
-        }
-    }
-    
-    // Aggressive Loop to fight React Re-renders
-    setInterval(lockSidebar, 100);
-    setTimeout(lockSidebar, 500);
-    
-    // Run Tab Buttons
-    setTimeout(addTabScrollButtons, 500);
-    setTimeout(addTabScrollButtons, 1500); // Retry
-    
-    // --- CONSULTANT FIX: LOCAL STORAGE PERSISTENCE (Option B) ---
-    function setupTabPersistence() {
-        const tabs = window.parent.document.querySelectorAll('button[data-testid="stTab"]');
-        
-        // 1. ADD LISTENERS (Save on click)
-        tabs.forEach(tab => {
-            tab.onclick = () => {
-                localStorage.setItem("my_active_tab", tab.innerText);
-            };
-        });
-
-        // 2. RESTORE (Click saved tab)
-        const savedTab = localStorage.getItem("my_active_tab");
-        if (savedTab) {
-             for (const tab of tabs) {
-                 if (tab.innerText === savedTab && tab.getAttribute('aria-selected') !== 'true') {
-                     tab.click();
-                     break;
-                 }
-             }
-        }
-    }
-    
-    // Run periodically to catch re-renders
-    setTimeout(setupTabPersistence, 1000);
-    setInterval(setupTabPersistence, 3000); 
-    
-    </script>
-    """, height=0)
-
-    # --- TABS DEFINITION ---
-# --- TABS DEFINITION ---
-# NEW: "Inicio" is the Dashboard Tab
-# NEW: "Explorador Didáctico" replaces Apuntes/Guide
-tab_home, tab1, tab_didactic, tab_quiz, tab_lib, tab_tasks, tab_tutor = st.tabs([
-    "🏠 Inicio",
-    "📹 Transcriptor", 
-    "🧠 Explorador Didáctico", 
-    "🧩 Zona Quiz",
-    "📂 Biblioteca",
-    "👩🏻‍🏫 Ayudante de Tareas",
-    "📚 Tutoría 1 a 1"
-])
-
-import pandas as pd # FIX: Missing import for charts
-
-# --- DASHBOARD TAB (HOME) ---
-with tab_home:
-    # Load Stats
-    current_c_id = st.session_state.get('current_course_id')
-    current_c_name = st.session_state.get('current_course', 'General')
-    
-    # --- NICKNAME LOGIC ---
-    # 1. Try to load from User Metadata (Persistent)
-    current_user = st.session_state['user']
-    meta_nick = current_user.user_metadata.get('nickname') if current_user.user_metadata else None
-    
-    if 'user_nickname' not in st.session_state:
-        # Priority: Metadata > Email
-        if meta_nick:
-            st.session_state['user_nickname'] = meta_nick
-        else:
-            st.session_state['user_nickname'] = current_user.email.split('@')[0].capitalize()
-        
-    # Header with Edit Button
-    h_col1, h_col2 = st.columns([0.8, 0.2], vertical_alignment="center")
-    with h_col1:
-        st.markdown(f"## ¡Hola, {st.session_state['user_nickname']}! 👋🏻")
-    with h_col2:
-        with st.popover("✏️", help="Editar tu apodo"):
-            new_nick = st.text_input("¿Cómo quieres que te llame?", value=st.session_state['user_nickname'])
-            if new_nick != st.session_state['user_nickname']:
-                 # SAVE TO DB
-                 updated_user = update_user_nickname(new_nick)
-                 if updated_user:
-                     st.session_state['user'] = updated_user # Update session user to keep metadata fresh
-                     st.session_state['user_nickname'] = new_nick
-                     st.rerun()
-
-    st.markdown(f"Estás estudiando: **{current_c_name.strip()}**")
-    
-    # --- DAILY QUOTE ---
-    import random
-    from datetime import datetime
-    today_str = datetime.utcnow().strftime("%Y-%m-%d")
-    random.seed(today_str) # Seed with date for consistency
-    quotes = [
-        "“La educación es el arma más poderosa que puedes usar para cambiar el mundo.” – Nelson Mandela",
-        "“Cree en ti mismo y en lo que eres.” – Christian D. Larson",
-        "“El éxito es la suma de pequeños esfuerzos repetidos día tras día.” – Robert Collier",
-        "“No cuentes los días, haz que los días cuenten.” – Muhammad Ali",
-        "“Lo único imposible es aquello que no intentas.”",
-        "“La disciplina es el puente entre metas y logros.” – Jim Rohn",
-        "“Aprender es como remar contra corriente: en cuanto se deja, se retrocede.” – Edward Benjamin Britten",
-        "“Tu actitud, no tu aptitud, determinará tu altitud.” – Zig Ziglar",
-        "“Si puedes soñarlo, puedes hacerlo.” – Walt Disney",
-        "“El futuro pertenece a aquellos que creen en la belleza de sus sueños.” – Eleanor Roosevelt"
-    ]
-    daily_quote = random.choice(quotes)
-    st.info(f"💡 **Frase del Día:** {daily_quote}")
-    
-    st.write("")
-    
-    st.write("")
-    
-    # --- DASHBOARD MODE CONTROLLER ---
-    dash_mode = st.session_state.get('dashboard_mode', 'standard')
-    
-    if dash_mode == 'history':
-        # --- FULL HISTORY VIEW ---
-        c_h1, c_h2 = st.columns([0.8, 0.2])
-        c_h1.markdown("### 📚 Historial Completo")
-        if c_h2.button("🔙 Volver"):
-            st.session_state['dashboard_mode'] = 'standard'
-            st.rerun()
-            
-        # Search
-        q_hist = st.text_input("🔍 Buscar en historial...", placeholder="Nombre del chat...")
-        
-        # Get All Chats
-        all_chats = get_chat_sessions(st.session_state['user'].id)
-        if q_hist:
-            all_chats = [c for c in all_chats if q_hist.lower() in c['name'].lower()]
-            
-        # --- BULK DELETE IN DASHBOARD ---
-        if all_chats:
-            with st.expander("🗑️ Gestión Masiva (Eliminar)", expanded=False):
-                # Unique Keys Logic
-                sess_opts = []
-                name_map = {}
-                for s in all_chats:
-                    raw_n = s['name']
-                    count = name_map.get(raw_n, 0)
-                    suffix = "\u200b" * count
-                    label = f"{raw_n}{suffix}"
-                    s['_label'] = label
-                    sess_opts.append(s)
-                    name_map[raw_n] = count + 1
-                
-                sel_del = st.multiselect("Seleccionar para borrar:", sess_opts, format_func=lambda x: x['_label'], key="dash_bulk_del")
-                if sel_del:
-                    st.warning(f"¿Estás seguro de borrar {len(sel_del)} conversaciones?")
-                    if st.button("Sí, borrar definitivamente", key="btn_conf_dash_del"):
-                        succ = 0
-                        ids_del = []
-                        for d in sel_del:
-                            if delete_chat_session(d['id']):
-                                succ += 1
-                                ids_del.append(d['id'])
-                        
-                        if succ > 0:
-                            st.success(f"Se eliminaron {succ} chats.")
-                            # Check active
-                            curr_s = st.session_state.get('current_chat_session')
-                            if curr_s and curr_s['id'] in ids_del:
-                                st.session_state['current_chat_session'] = None
-                                st.session_state['tutor_chat_history'] = []
-                            time.sleep(1)
-                            st.rerun()
-            
-        if all_chats:
-            h_cols = st.columns(3)
-            for i, chat in enumerate(all_chats):
-                with h_cols[i % 3]:
-                    date_str = chat['created_at'].split('T')[0]
-                    if st.button(f"📝 {chat['name']}\n\n📅 {date_str}", key=f"hist_all_{chat['id']}", use_container_width=True):
-                        st.session_state['current_chat_session'] = chat
-                        st.session_state['tutor_chat_history'] = [] 
-                        st.session_state['redirect_target_name'] = "Tutoría 1 a 1"
-                        st.session_state['force_chat_tab'] = True
-                        
-                        # UPDATE URL
-                        try:
-                            if hasattr(st, 'query_params'):
-                                st.query_params['chat_id'] = str(chat['id'])
-                            else:
-                                st.experimental_set_query_params(chat_id=str(chat['id']))
-                        except: pass
-
-                        st.rerun()
-        else:
-            st.warning("No se encontraron chats.")
-            
-    elif current_c_id:
-        # --- STANDARD DASHBOARD VIEW ---
-        stats = get_dashboard_stats(current_c_id, st.session_state['user'].id)
-        
-        # Calculate Real Streak
-        streak = check_and_update_streak(st.session_state['user'])
-        
-        # Gamification Messages
-        streak_msg = "¡Sigue así!"
-        if streak >= 3: streak_msg = "🔥 ¡Estás en llamas!"
-        if streak >= 7: streak_msg = "👑 ¡Leyenda!"
-        
-        # Metrics Row
-        m1, m2, m3 = st.columns(3)
-        m1.metric("📚 Archivos", stats['files'], delta="Recursos totales")
-        m2.metric("💬 Sesiones", stats['chats'], delta="Conversaciones")
-        m3.metric("🔥 Racha", f"{streak} Día{'s' if streak != 1 else ''}", delta=streak_msg)
-        
-        st.divider()
-        
-        # Visuals Row
-        d1, d2 = st.columns([0.6, 0.4])
-        
-        with d1:
-            st.markdown("##### 📊 Tu Biblioteca")
-            # Simple Bar Chart of File Types
-            chart_data = pd.DataFrame.from_dict(stats['file_types'], orient='index', columns=['Cantidad'])
-            st.bar_chart(chart_data)
-            
-        with d2:
-            st.markdown("##### 🚀 Acciones Rápidas")
-            st.write("")
-            if st.button("📂 Ir a Biblioteca", use_container_width=True):
-                st.session_state['redirect_target_name'] = "Biblioteca"
-                st.session_state['force_chat_tab'] = True 
-                st.rerun()
-            
-            st.write("")
-            if st.button("➕ Subir Archivo Nuevo", use_container_width=True):
-                st.session_state['redirect_target_name'] = "Biblioteca"
-                st.session_state['force_chat_tab'] = True
-                st.session_state['lib_auto_open_upload'] = True
-                st.rerun()
-        
-        st.divider()
-        
-        st.divider()
-        
-        # --- SMART CONTINUITY CARD ---
-        st.markdown("##### 🕰️ Continuar donde lo dejaste")
-        
-        # Load Footprint
-        curr_user = st.session_state['user']
-        footprint = curr_user.user_metadata.get('smart_footprint') if curr_user.user_metadata else None
-        
-        # Helper to render the card
-        def render_smart_card(icon, title, subtitle, btn_label, on_click_fn):
-             # Styled Container
-             with st.container(border=True):
-                 c_icon, c_info, c_btn = st.columns([0.15, 0.65, 0.2])
-                 with c_icon:
-                     st.markdown(f"<div style='font-size: 30px; text-align: center;'>{icon}</div>", unsafe_allow_html=True)
-                 with c_info:
-                     st.markdown(f"**{title}**")
-                     st.caption(subtitle)
-                 with c_btn:
-                     st.write("") # Spacer
-                     if st.button(btn_label, use_container_width=True, type="primary"):
-                         on_click_fn()
-                         st.rerun()
-
-        if footprint:
-             ftype = footprint.get('type')
-             ftitle = footprint.get('title', 'Actividad Reciente')
-             fsub = footprint.get('subtitle', 'Retomar actividad')
-             ftarget = footprint.get('target_id')
-             
-             if ftype == 'chat':
-                 def go_chat():
-                     # Re-fetch session data (mock object minimal)
-                     st.session_state['current_chat_session'] = {'id': ftarget, 'name': ftitle}
-                     st.session_state['tutor_chat_history'] = []
-                     st.session_state['redirect_target_name'] = "Tutoría 1 a 1"
-                     st.session_state['force_chat_tab'] = True
-                     
-                     # UPDATE URL
-                     try:
-                         if hasattr(st, 'query_params'):
-                             st.query_params['chat_id'] = str(ftarget)
-                         else:
-                             st.experimental_set_query_params(chat_id=str(ftarget))
-                     except: pass
-                 
-                 render_smart_card("💬", f"Chat: {ftitle}", "Estabas conversando con tu asistente", "Retomar Chat", go_chat)
-                 
-             elif ftype == 'unit':
-                 def go_unit():
-                     st.session_state['redirect_target_name'] = "Biblioteca"
-                     st.session_state['force_chat_tab'] = True
-                     st.session_state['lib_current_unit_id'] = ftarget
-                     st.session_state['lib_current_unit_name'] = ftitle
-                     # Breadcrumbs might be tricky to reconstruct perfectly without query, 
-                     # but we can set simple path
-                     st.session_state['lib_breadcrumbs'] = [{'id': ftarget, 'name': ftitle}]
-                     
-                 render_smart_card("📂", f"Carpeta: {ftitle}", "Estabas explorando archivos aquí", "Ir a Carpeta", go_unit)
-                 
-             else:
-                 # Fallback for unknown types
-                 st.info(f"Última actividad: {ftitle}")
-                 
-        else:
-             # Fallback to Recents if no footprint (First run)
-             st.info("Explora la app para generar tu tarjeta de viaje. 🚀")
-             recent_chats = get_recent_chats(st.session_state['user'].id, limit=3) # Keep fallback just in case
-             if recent_chats:
-                chat = recent_chats[0]
-                if st.button(f"📝 Último chat: {chat['name']}", key="fallback_rec"):
-                        st.session_state['current_chat_session'] = chat
-                        st.session_state['tutor_chat_history'] = [] 
-                        st.session_state['redirect_target_name'] = "Tutoría 1 a 1"
-                        st.session_state['force_chat_tab'] = True
-                        st.rerun()
-
-    else:
-        st.info("Selecciona o crea un Diplomado en la barra lateral para ver tus estadísticas.")
-
-# --- AUTO-SWITCH TAB LOGIC ---
-if st.session_state.get('force_chat_tab'):
-    # Inject JS to click the tab
-    # timestamp ensures the component sends a new message to frontend even if target is same
-    import time
-    ts = time.time()
-    components.html(f"""
-    <script>
-        setTimeout(() => {{
-            try {{
-                const tabs = window.parent.document.querySelectorAll('button[data-testid="stTab"]');
-                const targetName = "{st.session_state.get('redirect_target_name', 'Ayudante de Tareas')}"; 
-                for (const tab of tabs) {{
-                    if (tab.innerText.includes(targetName)) {{
-                        tab.click();
-                        // Also sync URL immediately to be sure
-                        const newUrl = new URL(window.parent.location);
-                        newUrl.searchParams.set('tab', tab.innerText);
-                        window.parent.history.pushState({{}}, '', newUrl);
-                        break;
-                    }}
-                }}
-            }} catch(e) {{ console.log(e); }}
-        }}, 500);
-        // Retry logic for slow loaders
-        setTimeout(() => {{ 
-             const tabs = window.parent.document.querySelectorAll('button[data-testid="stTab"]');
-             const targetName = "{st.session_state.get('redirect_target_name', 'Ayudante de Tareas')}"; 
-             for (const tab of tabs) {{ if (tab.innerText.includes(targetName)) tab.click(); }}
-        }}, 2000);
-        setTimeout(() => {{ 
-             const tabs = window.parent.document.querySelectorAll('button[data-testid="stTab"]');
-             const targetName = "{st.session_state.get('redirect_target_name', 'Ayudante de Tareas')}"; 
-             for (const tab of tabs) {{ if (tab.innerText.includes(targetName)) tab.click(); }}
-        }}, 5000); 
-        // {ts}
-    </script>
-    """, height=0)
-    # Reset flag so it doesn't keep clicking
-    st.session_state['force_chat_tab'] = False
-
-# --- Helper for ECharts Visualization ---
-
-
-# --- Helper for styled image container ---
-# --- Helper for styled image container ---
-def render_image_card(img_path):
-    import base64
-    if os.path.exists(img_path):
-        with open(img_path, "rb") as f:
-            img_data = f.read()
-        b64_img = base64.b64encode(img_data).decode()
-        
-        card_html = (
-            f'<div style="'
-            f'    background-color: #f3e8ff;'
-            f'    border-radius: 20px;'
-            f'    padding: 40px;'
-            f'    display: flex;'
-            f'    align-items: center;'
-            f'    justify-content: center;'
-            f'    height: 100%;'
-            f'">'
-            f'    <img src="data:image/png;base64,{b64_img}" style="'
-            f'        width: 100%; '
-            f'        max-width: 400px;'
-            f'        height: auto; '
-            f'        filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));'
-            f'    ">'
-            f'</div>'
-        )
-        st.markdown(card_html, unsafe_allow_html=True)
-    else:
-        st.error(f"Image not found: {img_path}")
-
-# --- TAB LIBRARY ---
-with tab_lib:
-    if 'assistant' in locals() and assistant:
-         render_library(assistant)
-    else:
-         st.info("⚠️ Configura tu API Key en la barra lateral para activar la Biblioteca IA.")
-
-# --- BATCH SYSTEM FOLDER CHECK (Prevention of "Popping" folders) ---
-if st.session_state.get('current_course_id'):
-    c_id_check = st.session_state['current_course_id']
-    from database import get_units, create_unit
-    
-    # Check what exists BEFORE rendering tabs
-    existing_units = get_units(c_id_check)
-    existing_names = [u['name'] for u in existing_units]
-    
-    
-    # CONSULTANT FIX: ONLY CREATE DEFAULTS IF COURSE IS EMPTY
-    # If the user has deleted specific folders, we should NOT recreate them ("Zombie Folders").
-    # But if the course is BRAND NEW (no units), we initialize the structure.
-    required_folders = ["Transcriptor - Videos", "Transcriptor - Audios", "Apuntes Simples", "Guía de Estudio"]
-    created_any_batch = False
-    
-    if not existing_units: # Only runs if 0 folders exist
-        for req in required_folders:
-             create_unit(c_id_check, req)
-             created_any_batch = True
-    
-    # If we created anything new, RERUN ONCE to refresh all subsequent 'get_units' calls
-    if created_any_batch:
-        st.session_state['force_rerun_batch'] = True # Optional flag if needed
-        st.rerun()
-
-# --- TAB 1: Transcriptor ---
-with tab1:
-    # LAYOUT: Image Left (1) | Text Right (1.4)
-    col_img, col_text = st.columns([1, 1.4], gap="large")
-    
-    with col_img:
-        # Green Frame Placeholder
-        # Image Display
-        # Image Display (Dynamic Update)
-        import base64
-        img_path = "assets/transcriptor_header_v2.jpg"
-        img_b64 = ""
-        if os.path.exists(img_path):
-            with open(img_path, "rb") as image_file:
-                img_b64 = base64.b64encode(image_file.read()).decode()
-        
-        st.markdown(f'''
-            <div class="green-frame" style="padding: 20px;">
-                <img src="data:image/jpeg;base64,{img_b64}" style="width: 100%; border-radius: 15px; object-fit: cover;">
-            </div>
-        ''', unsafe_allow_html=True)
-
-    with col_text:
-        # Styled Title & Subtitle via HTML
-        st.markdown('''
-            <h2 class="transcriptor-title">1. Transcriptor de Audio y Video</h2>
-            <p class="transcriptor-subtitle">
-                Sube videos o audios para procesarlos y clasificarlos automáticamente.<br>
-                <span style="font-size: 0.9rem; color: #888; font-weight: 500;">Soporta: MP4, MOV, MP3, WAV, M4A</span>
-            </p>
-        ''', unsafe_allow_html=True)
-        
-        # Dynamic Key for Uploader Reset
-        if 'transcriptor_key' not in st.session_state: st.session_state['transcriptor_key'] = "up1"
-        
-        # File Uploader
-        # Added .waptt (WhatsApp), .opus, .aac, .wma
-        uploaded_files = st.file_uploader("Upload", type=['mp4', 'mov', 'avi', 'mkv', 'mp3', 'wav', 'm4a', 'flac', 'ogg', 'opus', 'waptt', 'aac', 'wma'], accept_multiple_files=True, key=st.session_state['transcriptor_key'], label_visibility="collapsed")
-        
-        if uploaded_files:
-            # --- MEMORY SAFETY CHECK (TRAFFIC CONTROL) ---
-            total_size_bytes = sum(f.size for f in uploaded_files)
-            total_size_mb = total_size_bytes / (1024 * 1024)
-            SAFE_RAM_LIMIT_MB = 400 # 400MB: The "Sweet Spot" for stability
-            
-            if total_size_mb > SAFE_RAM_LIMIT_MB:
-                st.error(
-                    f"🛡️ **LÍMITE DE ESTABILIDAD ({total_size_mb:.0f} MB / {SAFE_RAM_LIMIT_MB} MB)**\n\n"
-                    f"Para evitar que la app se rompa (Over Capacity), mantén tus subidas por debajo de **400 MB** en total.\n"
-                    f"Es mejor subir en tandas pequeñas que reiniciar el servidor a cada rato.\n\n"
-                    f"👉 **ACCIÓN:** Haz clic en la 'X' en la lista de arriba hasta que este mensaje desaparezca.", 
-                    icon="🚦"
-                )
-                st.stop() # Force execution stop
-
-            # --- FOLDER SELECTION ---
-            c_id = st.session_state.get('current_course_id')
-            selected_unit_id = None
-            
-            if c_id:
-                from database import get_units, create_unit, upload_file_to_db, get_files
-                # RECURSIVE UNITS FETCH
-                units = get_units(c_id, fetch_all=True) # Fetch ALL folders
-                if units:
-                    # Build Path Map
-                    id_to_unit = {u['id']: u for u in units}
-                    
-                    def get_path(u):
-                         parts = [u['name']]
-                         curr = u
-                         # Safety limit for depth
-                         depth = 0
-                         while curr.get('parent_id') and depth < 10:
-                             pid = curr['parent_id']
-                             parent = id_to_unit.get(pid)
-                             if parent:
-                                 parts.insert(0, parent['name'])
-                                 curr = parent
-                                 depth += 1
-                             else:
-                                 break
-                         return " / ".join(parts)
-                    
-                    # Create Map: Path String -> ID
-                    u_map = {get_path(u): u['id'] for u in units}
-                    keys = sorted(list(u_map.keys()))
-                    
-                    # Default
-                    def_idx = 0
-                    for i, k in enumerate(keys):
-                         if "Transcriptor" in k:
-                             def_idx = i
-                             break
-                    
-                    sel_name = st.selectbox("📂 ¿Dónde guardar la transcripción?", keys, index=def_idx, help="Elige cualquier carpeta o subcarpeta")
-                    selected_unit_id = u_map[sel_name]
-                else:
-                    st.warning("⚠️ Tu diplomado no tiene carpetas. Se crearán automáticamente.")
-            else:
-                st.warning("⚠️ Por favor selecciona un diplomado en la barra lateral.")
-
-            st.info(f"📂 {len(uploaded_files)} archivo(s) cargado(s).")
-            
-            # --- RENAME FEATURE ---
-            file_renames = {}
-            if uploaded_files:
-                with st.expander("✍🏻 Renombrar archivos (Opcional)", expanded=True):
-                    for i, uf in enumerate(uploaded_files):
-                         base = os.path.splitext(uf.name)[0]
-                         new_n = st.text_input(f"Nombre para {uf.name}:", value=base, key=f"ren_{i}")
-                         file_renames[uf.name] = new_n
-            
-            if st.button("▶️ Iniciar Transcripción Inteligente", type="primary", key="btn_start_transcription", use_container_width=True, disabled=(not selected_unit_id)):
-                if not selected_unit_id:
-                    st.error("Error: Carpeta no seleccionada.")
-                else:
-                    progress_bar = st.progress(0)
-                    status_text = st.empty()
-                    import time
-                    from google.api_core.exceptions import ResourceExhausted, ServiceUnavailable
-                    
-                    # --- SMART BATCH LOGIC ---
-                    # User Request: "Procesar 40 videos de 3 en 3 automáticamente"
-                    all_files = uploaded_files
-                    total_files = len(all_files)
-                    BATCH_SIZE = 3
-                    
-                    for start_idx in range(0, total_files, BATCH_SIZE):
-                        batch = all_files[start_idx : start_idx + BATCH_SIZE]
-                        batch_num = (start_idx // BATCH_SIZE) + 1
-                        total_batches = (total_files + BATCH_SIZE - 1) // BATCH_SIZE
-                        
-                        # Update Status for Lote
-                        status_text.markdown(f"**🚀 Procesando Lote {batch_num} de {total_batches}** (Archivos {start_idx+1} al {min(start_idx+BATCH_SIZE, total_files)})")
-                        
-                        for file in batch:
-                            t_unit_id = selected_unit_id 
-                            
-                            temp_path = file.name
-                            with open(temp_path, "wb") as f: f.write(file.getbuffer())
-                            
-                            # RETRY LOGIC (Quota Protection)
-                            max_retries = 3
-                            success = False
-                            attempt = 0
-                            
-                            while attempt < max_retries and not success:
-                                try:
-                                    status_text.markdown(f"**⚡ Transcribiendo: {file.name}...**")
-                                    
-                                    def update_ui(msg, prog):
-                                        # Update both text and bar
-                                        status_text.markdown(f"**⚡ {msg}**")
-                                        progress_bar.progress(prog)
-                                    
-                                    # Process
-                                    txt_path = transcriber.process_video(temp_path, progress_callback=update_ui, chunk_length_sec=600)
-                                    
-                                    # Save
-                                    with open(txt_path, "r", encoding="utf-8") as f: 
-                                        trans_text = f.read()
-                                    
-                                    custom_n = file_renames.get(file.name, os.path.splitext(file.name)[0])
-                                    final_name = f"{custom_n}.txt"
-                                    
-                                    upload_file_to_db(t_unit_id, final_name, trans_text, "transcript")
-                                    st.toast(f"✅ Listo: {final_name}") 
-                                    st.session_state['transcript_history'].append({"name": custom_n, "text": trans_text})
-                                    
-                                    if os.path.exists(txt_path): os.remove(txt_path)
-                                    success = True
-                                    time.sleep(2) # Micro-pause between files
-                                    
-                                except ResourceExhausted:
-                                    status_text.warning(f"⏳ **Alcalzamos el límite de IA (Quota).** Esperando 60 segundos para enfriar motores...")
-                                    time.sleep(65) # Wait out the minute limit
-                                    attempt += 1
-                                except ServiceUnavailable:
-                                    status_text.warning(f"⚠️ Servidor ocupado. Reintentando en 10s...")
-                                    time.sleep(10)
-                                    attempt += 1
-                                except Exception as e:
-                                    st.error(f"❌ Error fatal en {file.name}: {e}")
-                                    attempt = max_retries # Abort this file
-                                finally:
-                                    pass
-
-                            # Cleanup Temp
-                            if os.path.exists(temp_path): os.remove(temp_path)
-                        
-                        # Update Global Progress
-                        progress_bar.progress(min((start_idx + BATCH_SIZE) / total_files, 1.0))
-                        
-                        # Inter-Batch Cooldown (Be nice to API)
-                        if start_idx + BATCH_SIZE < total_files:
-                            status_text.info(f"☕ Tomando un respiro de 10s antes del siguiente lote...")
-                            time.sleep(10)
-                            
-                    status_text.success("¡Misión Cumplida! Todos los archivos han sido procesados. 🏁")
-
-    # History
-    if st.session_state['transcript_history']:
-        
-        # Recents Header
-        st.divider()
-        c_hist_1, c_hist_2, c_hist_3 = st.columns([0.5, 0.25, 0.25], vertical_alignment="center")
-        c_hist_1.markdown(f"### 📝 Resultados Recientes")
-        
-        # CLEAR BUTTON
-        if c_hist_2.button("🧹 Limpiar Pantalla", help="Borra la pantalla y los archivos subidos (no borra de la biblioteca)", use_container_width=True):
-            st.session_state['transcript_history'] = []
-            import uuid
-            st.session_state['transcriptor_key'] = str(uuid.uuid4()) # Force Uploader Reset
-            st.rerun()
-            
-        # DISCUSS WITH TUTOR BUTTON
-        if c_hist_3.button("🗣️ Debatir con Tutor", help="Abre un chat con el profesor para analizar estas transcripciones", type="primary", use_container_width=True):
-             # 1. Aggregate Transcripts
-             context_blob = "Aquí están las transcripciones de los archivos que acabo de procesar:\n\n"
-             for item in st.session_state['transcript_history']:
-                 context_blob += f"--- ARCHIVO: {item['name']} ---\n{item['text']}\n\n"
-             
-             context_blob += "\nAnalyzalas y dime qué podemos hacer con ellas (resumen, extraer datos, ordenar instrucciones, etc). ¿Qué sugieres?"
-             
-             # 2. Create Session
-             from database import create_chat_session, save_chat_message
-             import datetime
-             sess_name = f"Debate Transcripciones {datetime.datetime.now().strftime('%H:%M')}"
-             new_sess = create_chat_session(st.session_state['user'].id, sess_name)
-             
-             if new_sess:
-                 # 3. Save Message & Prepare Redirect
-                 st.session_state['current_chat_session'] = new_sess
-                 st.session_state['tutor_chat_history'] = [] # Reset local
-                 
-                 save_chat_message(new_sess['id'], "user", context_blob)
-                 st.session_state['tutor_chat_history'].append({"role": "user", "content": context_blob})
-                 
-                 # 4. Trigger AI & Switch
-                 st.session_state['trigger_ai_response'] = True
-                 st.session_state['redirect_target_name'] = "Tutoría 1 a 1"
-                 st.session_state['force_chat_tab'] = True
-                 st.rerun()
-             else:
-                 st.error("Error al crear sesión de chat.")
-        
-        for i, item in enumerate(st.session_state['transcript_history']):
-            with st.expander(f"📄 {item['name']}", expanded=True):
-                 # Header with Copy integrated better
-                 c_lbl, c_cp = st.columns([0.85, 0.15])
-                 with c_lbl:
-                      st.markdown(f"**Transcripción: {item['name']}**")
-                 with c_cp:
-                      # JS COPY COMPONENT (Fixed positioning)
-                      import json
-                      import streamlit.components.v1 as components
-                      safe_txt = json.dumps(item['text'])
-                      html_cp = f"""
-                    <html>
-                    <body style="margin:0; padding:0; background: transparent;">
-                        <script>
-                        function copyT() {{
-                            navigator.clipboard.writeText({safe_txt}).then(function() {{
-                                const b = document.getElementById('btn');
-                                b.innerText = '✅';
-                                b.style.color = '#4625b8';
-                                setTimeout(() => {{ b.innerText = '📄'; b.style.color = '#888'; }}, 2000);
-                            }});
-                        }}
-                        </script>
-                        <div style="display: flex; justify-content: flex-end; padding-top: 5px;">
-                            <button id="btn" onclick="copyT()" style="
-                                cursor: pointer; background: transparent; border: none; font-size: 18px; color: #888;
-                            " title="Copiar al portapapeles">
-                                📄
-                            </button>
-                        </div>
-                    </body>
-                    </html>
-                    """
-                      components.html(html_cp, height=35)
-                 
-                 # NATIVE SCROLL CONTAINER (Cleanest approach)
-                 with st.container(height=400):
-                       # CLEANUP: Remove any accidental markdown code blocks that prevent color rendering
-                       processed_text = item['text']
-                       if "```" in processed_text:
-                            processed_text = processed_text.replace("```markdown", "").replace("```html", "").replace("```", "")
-                       
-                       st.markdown(processed_text, unsafe_allow_html=True)
-
-
-# --- TAB 2: Explorador Didáctico (Traductor de Conocimiento) ---
-with tab_didactic:
-    col_img, col_text = st.columns([1, 1.5], gap="large")
-    
-    with col_img:
-        # Image Display
-        import base64
-        img_b64_notes = ""
-        img_path_notes = "assets/notes_header.jpg" # Reusing assets or we can add new one
-        if os.path.exists(img_path_notes):
-            with open(img_path_notes, "rb") as image_file:
-                img_b64_notes = base64.b64encode(image_file.read()).decode()
-        
-        st.markdown(f'''
-            <div class="purple-frame" style="padding: 20px;">
-                <img src="data:image/jpeg;base64,{img_b64_notes}" style="width: 100%; border-radius: 15px; object-fit: cover;">
-            </div>
-        ''', unsafe_allow_html=True)
-         
-    with col_text:
-        tab2_html = (
-            '<div class="card-text">'
-            '<h2 style="margin-top:0;">🧠 Explorador Didáctico</h2>'
-            '<p style="color: #64748b; font-size: 1.1rem;">"Traduce" la clase difícil a lenguaje simple con analogías y ejemplos cotidianos.</p>'
-            '</div>'
-        )
-        st.markdown(tab2_html, unsafe_allow_html=True)
-        
-        c_id = st.session_state.get('current_course_id')
-        if not c_id:
-             st.info("Selecciona Espacio de Trabajo.")
-        else:
-             from database import get_files, get_file_content, upload_file_to_db, get_course_files, get_units, create_unit
-             
-             transcript_files = get_course_files(c_id, type_filter="transcript")
-             
-             # Check Global Memory
-             gl_ctx, gl_count = get_global_context()
-             if gl_count > 0:
-                st.success(f"✅ **Memoria Global Activa:** {gl_count} archivos base detectados.")
-            
-                if not transcript_files:
-                    st.info("No hay transcripciones disponibles. Sube videos en la Pestaña 1.")
-                else:
-                    options = [f['name'] for f in transcript_files]
-                    file_map = {f['name']: f['id'] for f in transcript_files}
-                    
-                    c1_sel, c2_fold = st.columns([1, 1], gap="small")
-                    
-                    with c1_sel:
-                         selected_file = st.selectbox("Selecciona la clase a traducir:", options, key="sel_didactic")
-                    
-                    with c2_fold:
-                         # --- FOLDER SELECTOR (Reused Logic) ---
-                         # Fetch all units
-                         u_all = get_units(c_id, fetch_all=True)
-                         if u_all:
-                             id_to_u = {u['id']: u for u in u_all}
-                             def get_p(u):
-                                  parts = [u['name']]
-                                  curr = u
-                                  depth = 0
-                                  while curr.get('parent_id') and depth < 5:
-                                      pid = curr['parent_id']
-                                      parent = id_to_u.get(pid)
-                                      if parent:
-                                          parts.insert(0, parent['name'])
-                                          curr = parent
-                                          depth += 1
-                                      else: break
-                                  return " / ".join(parts)
-                             
-                             map_u = {get_p(u): u['id'] for u in u_all}
-                             keys_u = sorted(list(map_u.keys()))
-                             
-                             # Default to "Apuntes Didácticos" if exists
-                             idx_def = 0
-                             for i, k in enumerate(keys_u):
-                                 if "Didácticos" in k or "Apuntes" in k:
-                                     idx_def = i
-                                     break
-                                     
-                             sel_fold_name = st.selectbox("Guardar en:", keys_u, index=idx_def, key="sel_fold_didactic")
-                             target_unit_id = map_u[sel_fold_name]
-                             target_unit_name = sel_fold_name # Display name path
-                         else:
-                             st.warning("Sin carpetas. Se creará una por defecto.")
-                             target_unit_id = None
-                    
-                    
-                    if selected_file and st.button("🔍 Traducir a Lenguaje Simple", key="btn_didactic", type="primary"):
-                        from database import get_file_content, upload_file_to_db, get_units, create_unit 
-                        f_id = file_map[selected_file]
-                        text = get_file_content(f_id)
-                        
-                        with st.spinner("Traduciendo conceptos complejos a lenguaje humano..."):
-                            # CALL NEW AI FUNCTION
-                            didactic_data = assistant.generate_didactic_explanation(text, global_context=gl_ctx)
-                            
-                            st.session_state['didactic_result'] = didactic_data
-                            
-                            # SAVE LOGIC
-                            if not target_unit_id:
-                                 # Fallback create
-                                 target_folder = "Apuntes Didácticos"
-                                 n_unit = create_unit(c_id, target_folder)
-                                 n_unit_to_use = n_unit['id']
-                                 t_folder_name = target_folder
-                            else:
-                                 n_unit_to_use = target_unit_id
-                                 t_folder_name = target_unit_name
-                            
-                            if n_unit_to_use:
-                                 # Create a Markdown representation for saving
-                                 md_save = f"# 🧠 Explicación Didáctica: {selected_file}\n\n"
-                                 
-                                 modules = []
-                                 if isinstance(didactic_data, list):
-                                     if len(didactic_data) > 0 and isinstance(didactic_data[0], dict) and 'modules' in didactic_data[0]:
-                                         modules = didactic_data[0]['modules']
-                                     else:
-                                         modules = didactic_data
-                                 elif isinstance(didactic_data, dict):
-                                     modules = didactic_data.get('modules', [])
-                                 
-                                 if not modules:
-                                     md_save += f"_{didactic_data.get('introduction', '')}_\n\n"
-                                     for b in didactic_data.get('blocks', []):
-                                         md_save += f"### {b.get('concept_title', 'Concepto')}\n"
-                                         md_save += f"{b.get('simplified_explanation', '')}\n\n"
-                                     md_save += f"\n{didactic_data.get('conclusion', '')}"
-                                 else:
-                                     for m in modules:
-                                         m_type = m.get('type', 'DEEP_DIVE')
-                                         title = m.get('title', 'Módulo')
-                                         c = m.get('content', {})
-                                         
-                                         md_save += f"## {title}\n"
-                                         
-                                         if m_type == 'STRATEGIC_BRIEF':
-                                             md_save += f"**Tesis:** {c.get('thesis')}\n\n"
-                                             md_save += f"**Impacto:** {c.get('impact')}\n\n"
-                                             
-                                         elif m_type == 'DEEP_DIVE':
-                                             md_save += f"**Definición:** {c.get('definition')}\n\n"
-                                             md_save += f"**Explicación:** {c.get('explanation')}\n\n"
-                                             if c.get('example'):
-                                                md_save += f"> **Ejemplo:** {c.get('example')}\n\n"
-                                         
-                                         elif m_type == 'REALITY_CHECK':
-                                             md_save += f"❓ **{c.get('question')}**\n\n"
-                                             md_save += f"✅ {c.get('insight')}\n\n"
-                                             
-                                         elif m_type == 'TOOLKIT':
-                                             md_save += f"{c.get('intro')}\n"
-                                             for s in c.get('steps', []):
-                                                 md_save += f"- [ ] {s}\n"
-                                             md_save += "\n"
-                                             
-                                         md_save += "---\n\n"
-                                 
-                                 fname = f"Didactico_{selected_file.replace('.txt', '')[:50]}.md"
-                                 # Using upload_file_to_db (not upload_file_v2 which looked like a typo in previous code)
-                                 upload_file_to_db(n_unit_to_use, fname, md_save, "note")
-                                 st.success(f"Explicación guardada en '{t_folder_name}'")
-
-                # --- RENDER RESULT ---
-                res = st.session_state.get('didactic_result')
-                if res:
-                    st.divider()
-                    
-                    # DYNAMIC MODULE RENDERER
-                    modules = []
-                    if isinstance(res, list):
-                        # Check if it's a list containing the root object -> [{'modules': ...}]
-                        if len(res) > 0 and isinstance(res[0], dict) and 'modules' in res[0]:
-                             modules = res[0]['modules']
-                        else:
-                             modules = res
-                    elif isinstance(res, dict):
-                        modules = res.get('modules', [])
-                        if not modules and 'blocks' in res: 
-                             # Fallback for old cache (v8)
-                             st.warning("⚠️ Formato antiguo detectado. Por favor regenera la explicación.")
-                    
-                    for i, m in enumerate(modules):
-                        # --- SMART ADAPTER FOR LEGACY/MALFORMED BLOCKS ---
-                        # If the AI returns a flat object (Old Schema) instead of nested 'content'
-                        if 'content' not in m and 'simplified_explanation' in m:
-                             m_type = 'DEEP_DIVE'
-                             title = m.get('concept_title', 'Concepto')
-                             c = {
-                                 'definition': m.get('academic_definition'),
-                                 'explanation': m.get('simplified_explanation'),
-                                 'example': m.get('analogy'),
-                             }
-                        else:
-                             m_type = m.get('type', 'DEEP_DIVE').upper()
-                             # SANITIZE TYPE: Remove emojis and spaces if AI gets creative
-                             import re
-                             m_type = re.sub(r'[^A-Z_]', '', m_type) 
-                             
-                             title = m.get('title', 'Módulo')
-                             c = m.get('content', {})
-                        
-                        # Fallback for completely empty content
-                        if not c and not m_type == 'STRATEGIC_BRIEF': 
-                             # Try to salvage anything
-                             c = {'explanation': str(m), 'definition': 'N/A'}
-
-                        # 1. 🎯 STRATEGIC BRIEF (Hero Section)
-                        
-                        # 1. 🎯 STRATEGIC BRIEF (Hero Section)
-                        if m_type == 'STRATEGIC_BRIEF':
-                            with st.container():
-                                st.markdown(f"## 🎯 {title}")
-                                st.info(f"**TESIS:** {c.get('thesis')}", icon="💡")
-                                st.markdown(f"**💎 Impacto:** {c.get('impact')}")
-                            st.divider()
-
-                        # 2. 🧠 DEEP DIVE (Technical Expander)
-                        elif m_type == 'DEEP_DIVE':
-                            with st.expander(f"🧠 {title}", expanded=True):
-                                st.markdown(f"**📖 Definición:** {c.get('definition')}")
-                                st.markdown(f"**⚙️ Funcionamiento:**\n{c.get('explanation')}")
-                                if c.get('example'):
-                                    st.markdown(f"**💼 Caso Real:**\n_{c.get('example')}_")
-
-                        # 3. 🕵🏻 REALITY CHECK (Critical Analysis)
-                        elif m_type == 'REALITY_CHECK':
-                            with st.container(border=True):
-                                c1, c2 = st.columns([0.1, 0.9])
-                                with c1: st.markdown("## 🕵🏻")
-                                with c2:
-                                    st.markdown(f"### {title}")
-                                    st.warning(f"**❓ {c.get('question')}**")
-                                    st.markdown(f"**✅ Insight:** {c.get('insight')}")
-
-                        # 4. 🛠️ TOOLKIT (Action Steps)
-                        elif m_type == 'TOOLKIT':
-                            with st.container():
-                                st.markdown(f"### 🛠️ {title}")
-                                st.caption(c.get('intro'))
-                                check_steps = c.get('steps', [])
-                                for j, step in enumerate(check_steps):
-                                    c1, c2 = st.columns([0.85, 0.15])
-                                    with c1:
-                                        st.checkbox(step, key=f"step_{i}_{j}")
-                                    with c2:
-                                        if st.button("❓", key=f"help_{i}_{j}", help="Dime cómo hago esto"):
-                                            with st.spinner("Generando guía..."):
-                                                guide = assistant.generate_micro_guide(step)
-                                                st.session_state[f"guide_{i}_{j}"] = guide
-                                    
-                                    # Show guide if exists
-                                    if f"guide_{i}_{j}" in st.session_state:
-                                        with st.expander(f"💡 Guía: {step[:30]}...", expanded=True):
-                                            st.markdown(st.session_state[f"guide_{i}_{j}"])
-                                
-                                # Export Action Plan
-                                csv_content = "To-Do;Estado\n" + "\n".join([f"{s};Pendiente" for s in check_steps])
-                                st.download_button(
-                                    label="📥 Descargar Plan de Acción",
-                                    data=csv_content,
-                                    file_name=f"Plan_Accion_{title.replace(' ', '_')}.csv",
-                                    mime="text/csv"
-                                )
-                            st.divider()
-                        
-                        else:
-                             # Debug Fallback
-                             with st.expander(f"⚠️ Módulo Desconocido: {m_type}"):
-                                 st.write(m)
-
-
-# --- TAB 4: Quiz ---
-with tab_quiz:
-    col_img, col_text = st.columns([1, 1.5], gap="large")
-    
-    with col_img:
-        # Image Display (Dynamic Update)
-        import base64
-        img_b64_quiz = ""
-        img_path_quiz = "assets/quiz_helper_header.jpg"
-        if os.path.exists(img_path_quiz):
-            with open(img_path_quiz, "rb") as image_file:
-                img_b64_quiz = base64.b64encode(image_file.read()).decode()
-        
-        st.markdown(f'''
-            <div class="purple-frame" style="padding: 20px;">
-                <img src="data:image/jpeg;base64,{img_b64_quiz}" style="width: 100%; border-radius: 15px; object-fit: cover;">
-            </div>
-        ''', unsafe_allow_html=True)
-        
-    with col_text:
-        tab4_html = (
-            '<div class="card-text">'
-            '<h2 style="margin-top:0;">4. Zona Quiz</h2>'
-            '<p style="color: #64748b; font-size: 1.1rem;">Sube tus preguntas y obtén orientación inmediata</p>'
-            '</div>'
-        )
-        st.markdown(tab4_html, unsafe_allow_html=True)
-        
-        # Check Global Memory
-        # Check Global Memory (Optimized: Count Only)
-        gl_count = get_global_file_count_only() # Fast
-        # gl_ctx content is now fetched JUST-IN-TIME inside the solver trigger
-        
-        if gl_count > 0:
-            st.success(f"✅ **Memoria Global Activa:** Usando {gl_count} archivos para mayor precisión.")
-        
-        # RESET BUTTON
-        col_up, col_reset = st.columns([0.9, 0.1])
-        with col_reset:
-             # Use the same 'copy-btn' style or just a clean emoji button
-             if st.button("🗑️", key="reset_quiz", help="Borrar todo para empezar de cero"):
-                 st.session_state['quiz_results'] = []
-                 st.session_state['pasted_images'] = []
-                 q_k = st.session_state['quiz_key']
-                 
-                 # Explicit Nuke of Component Keys
-                 if f"q_txt_{q_k}" in st.session_state: del st.session_state[f"q_txt_{q_k}"]
-                 if f"up4_{q_k}" in st.session_state: del st.session_state[f"up4_{q_k}"]
-                 
-                 st.session_state['quiz_key'] += 1
-                 st.rerun()
-                 
-        with col_up:
-            # CONSULTANT FIx: Real Paste Button (Client-Side)
-            # Using st.fragment to preventing full-page reload (White Flash)
-            
-            @st.fragment
-            def quiz_input_section():
-                # 1. Paste Button Logic
-                try:
-                    from streamlit_paste_button import paste_image_button as pbutton
-                    paste_result = pbutton(
-                        label="📋 Pegar Imagen (Portapapeles)",
-                        background_color="#4B22DD",
-                        hover_background_color="#3600B3",
-                        text_color="#ffffff",
-                        key="pbutton_quiz_frag"
-                    )
-                    
-                    if paste_result.image_data is not None:
-                         img = paste_result.image_data
-                         
-                         # FIX: Prevent Re-Insertion Loop
-                         # Hash the image to check if we already processed this specific paste event
-                         import hashlib
-                         img_bytes = img.tobytes()
-                         img_hash = hashlib.md5(img_bytes).hexdigest()
-                         
-                         last_hash = st.session_state.get('last_paste_hash')
-                         
-                         # Only append if it's a NEW paste (Hash changed)
-                         if img_hash != last_hash:
-                             if img.mode == 'RGBA': img = img.convert('RGB')
-                             st.session_state['pasted_images'].append(img)
-                             st.session_state['last_paste_hash'] = img_hash # Mark as processed
-                             st.toast("Imagen pegada con éxito!", icon='📸')
-                except Exception as e:
-                    st.error(f"Error cargando botón: {e}")
-
-                # 2. Show Thumbnails (With Delete Option)
-                if st.session_state['pasted_images']:
-                    st.caption(f"📸 {len(st.session_state['pasted_images'])} capturas pegadas:")
-                    cols_past = st.columns(max(1, len(st.session_state['pasted_images'])))
-                    for idx, p_img in enumerate(st.session_state['pasted_images']):
-                        if idx < len(cols_past):
-                            with cols_past[idx]: 
-                                st.image(p_img, width=50)
-                                # CONSULTANT FIX: Individual Delete
-                                if st.button("🗑️", key=f"del_img_{st.session_state['quiz_key']}_{idx}", help="Eliminar esta imagen"):
-                                    st.session_state['pasted_images'].pop(idx)
-                                    st.rerun()
-
-                # 3. Inputs
-                st.text_area("✍🏻 O escribe tu pregunta aquí directamente:", height=100, placeholder="Ej: ¿Cuál es la capital de Francia? a) París b) Roma...", key=f"q_txt_{st.session_state['quiz_key']}")
-                st.file_uploader("O sube archivos manualmente:", type=['png', 'jpg', 'jpeg'], accept_multiple_files=True, key=f"up4_{st.session_state['quiz_key']}")
-
-                # 4. Trigger
-                # Calculate if valid
-                # Access via session_state to be safe inside fragment
-                q_key = st.session_state['quiz_key']
-                txt_val = st.session_state.get(f"q_txt_{q_key}", "")
-                files_val = st.session_state.get(f"up4_{q_key}", [])
-                
-                has_text = bool(txt_val.strip())
-                total_items = (len(files_val) if files_val else 0) + len(st.session_state['pasted_images']) + (1 if has_text else 0)
-
-                # Context Toggle
-                use_context = st.checkbox("🔗 Vincular imágenes con el texto (Contexto)", value=False, key=f"chk_ctx_{q_key}", help="Si activas esto, el texto y las imágenes se enviarán JUNTOS para responder. Si no, se analizan por separado.")
-
-                if total_items > 0:
-                    # --- MANUAL CONFIG TABLE ---
-                    st.markdown("##### ⚙️ Configuración de Preguntas (Opcional)")
-                    st.caption("Si la IA se confunde, ayúdale seleccionando el tipo exacto de cada imagen.")
-                    
-                    # 1. Build Data List
-                    current_files = []
-                    # Pasted
-                    for i, p_img in enumerate(st.session_state['pasted_images']):
-                         # Assuming we don't have filenames for pasted, generate IDs
-                         current_files.append({"Archivo": f"Imagen Pegada {i+1}", "Tipo": "🤖 Auto (Detectar)", "id": f"paste_{i}"})
-                    
-                    # Uploaded
-                    if files_val:
-                        for f in files_val:
-                             current_files.append({"Archivo": f.name, "Tipo": "🤖 Auto (Detectar)", "id": f.name})
-                    
-                    if current_files:
-                        import pandas as pd
-                        df = pd.DataFrame(current_files)
-                        
-                        # Config Options
-                        type_options = ["🤖 Auto (Detectar)", "☑️ Selección Múltiple", "✅❌ Cierto/Falso", "✍🏻 Respuesta Abierta"]
-                        
-                        edited_df = st.data_editor(
-                            df,
-                            column_config={
-                                "Archivo": st.column_config.TextColumn("Archivo", disabled=True),
-                                "Tipo": st.column_config.SelectboxColumn(
-                                    "Tipo de Pregunta",
-                                    help="Selecciona el formato para mejorar la precisión",
-                                    width="medium",
-                                    options=type_options,
-                                    required=True
-                                ),
-                                "id": None # Hide ID
-                            },
-                            hide_index=True,
-                            use_container_width=True,
-                            key=f"editor_{q_key}" 
-                        )
-                        
-                        # Store Config Mapping (ID -> Type)
-                        # We use ID because filenames might be dupe or generic
-                        config_map = {row['id']: row['Tipo'] for row in edited_df.to_dict('records')}
-                        st.session_state['quiz_file_config'] = config_map
-                        
-                    
-                    st.write("") # Spacer
-                    if st.button("Resolver Preguntas", key="btn4_frag", type="primary"):
-                        st.session_state['trigger_quiz_solve'] = True
-                        st.session_state['quiz_use_context'] = use_context # Pass preference
-                        st.rerun()
-
-            # Call Fragment
-            quiz_input_section()
-            
-            # --- MAIN THREAD PROCESSING ---
-            if st.session_state.get('trigger_quiz_solve', False):
-                # Reset Trigger immediately so it doesn't loop
-                st.session_state['trigger_quiz_solve'] = False
-                
-                # Fetch Data AGAIN from Session context
-                q_key = st.session_state['quiz_key']
-                input_text_quiz = st.session_state.get(f"q_txt_{q_key}", "")
-                img_files = st.session_state.get(f"up4_{q_key}", [])
-                has_text = bool(input_text_quiz.strip())
-                progress_bar = st.progress(0)
-                status = st.empty()
-                results = [] 
-            
-                # 1. Process Queue
-                # 1. Process Queue
-                use_ctx_mode = st.session_state.get('quiz_use_context', False)
-                config_map = st.session_state.get('quiz_file_config', {})
-                
-                # Collect ALL Images
-                all_pil_images = []
-                
-                # Deduplication logic using dictionary keys (name/id)
-                image_map = {} 
-
-                # From Paste
-                for i, img in enumerate(st.session_state['pasted_images']):
-                     # Use a unique key
-                     k = f"paste_{i}"
-                     image_map[k] = {"img": img, "id": k, "name": f"Imagen Pegada {i+1}"}
-
-                # From Upload
-                if img_files:
-                    for f in img_files:
-                        try:
-                            # Use file name as unique key
-                            k = f.name
-                            if k not in image_map:
-                                pil_i = Image.open(f)
-                                if pil_i.mode == 'RGBA': pil_i = pil_i.convert('RGB')
-                                image_map[k] = {"img": pil_i, "id": k, "name": f.name}
-                        except Exception as e: 
-                            print(f"Error loading {f.name}: {e}")
-                
-                # Convert back to list
-                image_entries = list(image_map.values())
-                
-                items_to_process = []
-                
-                if use_ctx_mode:
-                    # LINKED MODE (Improved): Iterate but pass context to EACH
-                    # 1. Text Context Handling
-                    
-                    # HYDRATE GLOBAL CONTEXT HERE (JUST-IN-TIME)
-                    if not gl_ctx:
-                            gl_ctx, _ = get_global_context()
-                    
-                    # Process Images Individually (with text as context)
-                    for i, entry in enumerate(image_entries):
-                            # Get Manual Type
-                            manual_type = config_map.get(entry['id'], "🤖 Auto (Detectar)")
-                            
-                            items_to_process.append({
-                                "type": "linked_single", 
-                                "text": input_text_quiz, 
-                                "image": entry["img"], 
-                                "name": entry["name"],
-                                "force_type": manual_type 
-                            })
-                        
-                    # If there are NO images but there IS text, just process text
-                    if not image_entries and has_text:
-                            items_to_process.append({"type": "text", "obj": input_text_quiz, "name": "Consulta de Texto", "force_type": "Auto"})
-
-                else:
-                    # SEPARATE MODE (Legacy)
-                    if has_text:
-                        items_to_process.append({"type": "text", "obj": input_text_quiz, "name": "Pregunta de Texto", "force_type": "Auto"})
-                    
-                    # Add Images separately
-                    for i, entry in enumerate(image_entries):
-                            manual_type = config_map.get(entry['id'], "🤖 Auto (Detectar)")
-                            items_to_process.append({"type": "image_obj", "obj": entry["img"], "name": entry["name"], "force_type": manual_type})
-
-                for i, item in enumerate(items_to_process):
-                    # Calculate percentages
-                    current_percent = int((i / len(items_to_process)) * 100)
-                    status.markdown(f"**Analizando item {i+1} de {len(items_to_process)}... ({current_percent}%)**")
-                    progress_bar.progress(i / len(items_to_process))
-                
-                    try:
-                        full_answer = ""
-                        disp_img = None
-                        
-                        # Extract Force Type (Clean string)
-                        raw_type = item.get("force_type", "Auto")
-                        # Clean logic: "☑️ Selección Múltiple" -> "Selección Múltiple"
-                        ftype = "Auto"
-                        if "Selección Múltiple" in raw_type: ftype = "Selección Múltiple"
-                        elif "Cierto/Falso" in raw_type: ftype = "Cierto/Falso"
-                        elif "Respuesta Abierta" in raw_type: ftype = "Respuesta Abierta"
-                    
-                        if item["type"] == "text":
-                                # Text Only
-                                full_answer = assistant.solve_quiz(question_text=item["obj"], global_context=gl_ctx, force_type=ftype)
-                                
-                        elif item["type"] == "linked_single":
-                                # Linked Single Mode
-                                full_answer = assistant.solve_quiz(images=[item["image"]], question_text=item["text"], global_context=gl_ctx, force_type=ftype)
-                                disp_img = item["image"]
-                             
-                        elif item["type"] == "linked":
-                             # (Deprecated but safely kept for fallback)
-                             # Pass list of images
-                             full_answer = assistant.solve_quiz(images=item["images"], question_text=item["text"], global_context=gl_ctx, force_type=ftype)
-                             # Display first image as thumbnail?
-                             disp_img = item["images"][0] if item["images"] else None
-                             
-                        elif item["type"] == "image_obj":
-                            # Image Only
-                            disp_img = item["obj"]
-                            full_answer = assistant.solve_quiz(images=[disp_img], global_context=gl_ctx, force_type=ftype)
-
-                        # Skip Short Answer Parsing (User Preference: Full Detail)
-                        short_answer = "Ver abajo"
-                    
-                        results.append({"name": item["name"], "full": full_answer, "short": short_answer, "img_obj": disp_img})
-                
-                    except Exception as e:
-                        print(e)
-                        results.append({"name": item["name"], "full": f"Error: {e}", "short": "Error", "img_obj": None})
-                
-                progress_bar.progress(1.0)
-                status.success("¡Análisis Terminado! (100%)")
-                st.session_state['quiz_results'] = results # Save results
-                
-                # CONSULTANT FIX: Proactive Chat Start
-                # Clear previous chat and start fresh with context
-                st.session_state['quiz_chat'] = []
-                st.session_state['quiz_chat'].append({
-                    "role": "assistant", 
-                    "content": "✅ **Análisis completado.** He revisado tus preguntas.\n\n¿Estás de acuerdo con todas las respuestas o quieres debatir alguna?"
-                })
-
-        # --- PERSISTENT RESULTS DISPLAY ---
-        res_quiz = st.session_state.get('quiz_results')
-        if res_quiz:
-            st.divider()
-            
-            # HEADER + COPY ICON
-            c_head, c_copy = st.columns([0.9, 0.1])
-            with c_head:
-                st.markdown("### 📋 Resultados de Quiz")
-            with c_copy:
-                # Compile text for copying inside the button action
-                full_report_copy = "--- HOJA DE RESPUESTAS ---\n\n"
-                for i, res in enumerate(res_quiz):
-                     full_report_copy += f"FOTO {i+1}: {res['short']}\n"
-                full_report_copy += "\n--- DETALLES ---\n"
-                for i, res in enumerate(res_quiz):
-                     full_report_copy += f"\n[FOTO {i+1}]\n{res['full']}\n"
-                     
-                if st.button("📄", key="cp_quiz", help="Copiar Resultados Limpios"):
-                    clean_txt = clean_markdown(full_report_copy)
-                    if copy_to_clipboard(clean_txt):
-                        st.toast("¡Copiado!", icon='📋')
-            
-            # --- RESULTS DISPLAY ---
-            # Visual Display (Simplified: Direct Explanations)
-            
-            for i, res in enumerate(res_quiz):
-                # PERMANENT VIEW (No Expanders)
-                with st.container(border=True):
-                    # Header (Smaller Font)
-                    st.markdown(f"**🔹 Pregunta {i+1}**")
-                    
-                    if 'img_obj' in res and res['img_obj']:
-                        c_img, c_ans = st.columns([0.35, 0.65], gap="medium")
-                        with c_img:
-                             try:
-                                 st.image(res['img_obj'], use_container_width=True, caption=res['name'])
-                             except:
-                                 st.caption("Imagen no disponible")
-                        with c_ans:
-                             # Clean up newlines for compact view if needed, but Markdown usually handles it
-                             st.markdown(res['full'])
-                    else:
-                         st.markdown(res['full'])
-
-            # --- DEBATE CHAT ---
-            st.divider()
-            
-            # Header + Action
-            c_chat_title, c_chat_act = st.columns([0.6, 0.4])
-            with c_chat_title:
-                st.markdown("### 💬 Debatir Resultados")
-                st.caption("¿Dudas? Habla con el Profesor.")
-            
-            with c_chat_act:
-                 # BUTTON MOVED HERE
-                 pass 
-        else:
-            st.info("👆 **Sube una imagen o pregunta para ver la Zona de Análisis.**")
-            st.caption("Versión V52 - Esperando datos...")
-
-        # MOVED OUTSIDE THE IF to be visible if we want? No, logic requires results.
-        # But we keep indentation logic.
-        
-        if res_quiz:
-             if st.button("🔄 ACTUALIZAR RESULTADOS (Corrección de IA)", use_container_width=True, type="primary"):
-                     with st.spinner("Consolidando cambios..."):
-                         try:
-                             new_res = assistant.refine_quiz_results(st.session_state['quiz_results'], st.session_state['quiz_chat'])
-                             st.session_state['quiz_results'] = new_res
-                             st.success("¡Hecho!")
-                             time.sleep(0.5)
-                             st.rerun()
-                         except Exception as e:
-                             st.error(f"Error: {e}")
-
-            # Spacer
-             st.write("")
-            
-            if 'quiz_chat' not in st.session_state: st.session_state['quiz_chat'] = []
-            
-            # Display History
-            for msg in st.session_state['quiz_chat']:
-                 with st.chat_message(msg["role"]): st.markdown(msg["content"])
-                 
-            # Input
-            # Input
-            # (Native Streamlit Input - Reverted custom JS)
-
-            if prompt := st.chat_input("Escribe tu duda o corrección...", key="quiz_chat_input"):
-                # Add User Msg
-                st.session_state['quiz_chat'].append({"role": "user", "content": prompt})
-                with st.chat_message("user"): st.markdown(prompt)
-                
-                # Prepare Context (Last Quiz Results)
-                ctx_quiz = "SIN DATOS DE QUIZ RECIENTE"
-                if res_quiz:
-                    ctx_quiz = "--- RESULTADOS DEL QUIZ --- \n"
-                    for res in res_quiz:
-                        # Truncate text to avoid token explosion
-                        short_full = (res['full'][:500] + '..') if len(res['full']) > 500 else res['full']
-                        ctx_quiz += f"[Item: {res['name']}]\nAI Dice: {short_full}\n\n"
-                
-                # Call AI
-                with st.chat_message("assistant"):
-                    with st.spinner("El profesor está re-analizando las imágenes y tu argumento..."):
-                        # Gather Images for Context
-                        images_ctx = []
-                        if res_quiz:
-                            for r in res_quiz:
-                                if r.get('img_obj'): images_ctx.append(r['img_obj'])
-                        
-                        reply = assistant.debate_quiz(
-                            history=st.session_state['quiz_chat'][:-1], 
-                            latest_input=prompt, 
-                            quiz_context=ctx_quiz,
-                            images=images_ctx
-                        )
-                        
-                        # Check for Auto-Learning Tag
-                        import re
-                        match = re.search(r"\|\|APRENDIZAJE: (.*?)\|\|", reply)
-                        if match:
-                            rule = match.group(1).strip()
-                            st.session_state['pending_learning_rule'] = rule
-                            reply = reply.replace(match.group(0), "")
-                        
-                        st.markdown(reply)
-                        st.session_state['quiz_chat'].append({"role": "assistant", "content": reply})
-                        st.rerun()
-
-            # --- TEACHING / MEMORY UI (SIMPLIFIED) ---
-            pending = st.session_state.get('pending_learning_rule')
-            # Show ONLY if AI suggests a rule
-            if pending and st.session_state.get('quiz_chat') and st.session_state['quiz_chat'][-1]['role'] == 'assistant':
-                with st.container(border=True):
-                    st.info(f'🤖 **La IA propone aprender:**\n>{pending}')
-                    c1, c2 = st.columns([0.3, 0.7])
-                    with c1:
-                        if st.button('✅ Confirmar', key='btn_conf_auto', type='primary'):
-                            cid = st.session_state.get('current_course_id')
-                            if database.save_user_memory(cid, f'- {pending}', None):
-                                st.toast('¡Aprendido! 🧠')
-                                st.session_state['pending_learning_rule'] = None
-                                time.sleep(1)
-                                st.rerun()
-                    with c2:
-                        if st.button('❌ Descartar', key='btn_deny_auto'):
-                            st.session_state['pending_learning_rule'] = None
-                            st.rerun()
-# --- TAB 5: Ayudante de Tareas ---
-with tab_tasks:
-    tab5_html = (
-        '<div class="card-text">'
-        '<h2 style="margin-top:0;">5. Ayudante de Tareas</h2>'
-        '<p style="color: #64748b; font-size: 1.1rem;">Tu "Segundo Cerebro": Guarda conocimientos y úsalos para resolver tareas.</p>'
-        '</div>'
-    )
-    st.markdown(tab5_html, unsafe_allow_html=True)
-    
-    # --- LAYOUT REFOCUSED ON TASK SOLVER ---
-    col_task = st.container()
-    
-    st.info("💡 Gestiona tus archivos, sube documentos y organiza carpetas en la nueva pestaña '📂 Biblioteca'.")
-
-    # --- RIGHT COLUMN: HOMEWORK SOLVER (Now Main) ---
-    with col_task:
-        c_title, c_trash = st.columns([0.85, 0.15])
-        with c_title:
-
-            st.markdown("### 🧠 Ayudante Inteligente")
-            st.caption("Resuelve tareas usando SOLO la información de tu biblioteca.")
-            
-            # CONSULTANT: SHOW LINKED LIBRARY FILE (Tab 5)
-            if st.session_state.get('chat_context_file'):
-                l_file = st.session_state['chat_context_file']
-                st.success(f"📎 **VINCULADO:** {l_file['name']}")
-                if st.button("❌ Desvincular", key="unlink_file_tab5", help="Quitar este archivo"):
-                    st.session_state['chat_context_file'] = None
-                    st.rerun()
-
-        with c_trash:
-            if st.button("🗑️", key="clear_hw_btn", help="Borrar tarea y empezar de cero"):
-                st.session_state['homework_result'] = None
-                st.rerun()
-        
-        # MODE TOGGLE
-        arg_mode = st.toggle("💬 Activar Modo Argumentador", key="arg_mode_toggle", help="Activa un análisis profundo con 4 dimensiones: Respuesta, Fuentes, Paso a Paso y Contra-argumento.")
-        
-        # 1. Select Context
-        st.markdown("**1. ¿Qué conocimientos uso?** (Selección por Unidad)")
-        
-        # DB Logic for Context Selection
-        from database import get_units, get_unit_context
-        
-        current_course_id = st.session_state.get('current_course_id')
-        db_units = get_units(current_course_id) if current_course_id else []
-        
-        # Find Global Unit
-        global_unit = next((u for u in db_units if u['name'] == "00_Memoria_Global"), None)
-        has_global = global_unit is not None
-        
-        if has_global:
-            st.success(f"✅ **Memoria Global Activa** (Temarios/Reglas).")
-            
-        st.caption("ℹ️ Además de la Memoria Global, selecciona las unidades específicas para esta tarea:")
-        
-        # Filter available units (excluding Global)
-        available_units_objs = [u for u in db_units if u['name'] != "00_Memoria_Global"]
-        available_unit_names = [u['name'] for u in available_units_objs]
-        unit_map = {u['name']: u['id'] for u in available_units_objs}
-        
-        selected_units = st.multiselect("Unidades Específicas:", available_unit_names, placeholder="Ej: Unidad 1...")
-        
-        # 2. Input Task
-        st.markdown("**2. Tu Tarea:**")
-        task_prompt = st.text_area("Describe la tarea o pega la consigna:", height=100, placeholder="Ej: Crea un perfil de cliente ideal usando el método de la Unidad 1...")
-        
-        # ATTACHMENT UPLOADER
-        task_file = st.file_uploader("Adjuntar consigna (PDF, Imagen, TXT)", type=['pdf', 'png', 'jpg', 'jpeg', 'txt'])
-        
-        btn_label = "⚔️ Debatir y Solucionar" if arg_mode else "🚀 Resolver Tarea"
-        
-        if st.button(btn_label, key="solve_task", use_container_width=True):
-            if not task_prompt and not task_file:
-                st.warning("⚠️ Escribe la tarea o sube un archivo.")
-            else:
-                # Gather context
-                gathered_texts = []
-                
-                # CHECK IF RUNNING ON EMPTY LIBRARY
-                using_general_knowledge = False
-                if not selected_units and not has_global:
-                    using_general_knowledge = True
-                    st.toast("⚠️ Sin biblioteca seleccionada. Usando Conocimiento General de Gemini.", icon="🌐")
-                
-                # 1. Add Global Context
-                if has_global:
-                    g_text = get_unit_context(global_unit['id'])
-                    if g_text:
-                        gathered_texts.append(f"--- [MEMORIA GLOBAL / OBLIGATORIO] ---\n{g_text}\n")
-
-                # 2. Add Selected Units
-                for u_name in selected_units:
-                    u_id = unit_map[u_name]
-                    u_text = get_unit_context(u_id)
-                    if u_text:
-                        gathered_texts.append(u_text)
-                
-                # Prepare Attachment
-                attachment_data = None
-                if task_file:
-                    attachment_data = {
-                        "mime_type": task_file.type,
-                        "data": task_file.getvalue()
-                    }
-                if task_file:
-                     attachment_data = {
-                         "mime_type": task_file.type,
-                         "data": task_file.getvalue()
-                     }
-                # CONSULTANT: PREFER LINKED FILE IF NO UPLOAD
-                elif st.session_state.get('chat_context_file'):
-                     l_file = st.session_state['chat_context_file']
-                     # We treat it as text context or attachment? 
-                     # solve_homework takes 'task_attachment' (dict with data/mime) OR we append to text.
-                     # Since it's from Library, we likely have text content.
-                     # Let's append to gathered_texts for robustness.
-                     c_txt = l_file.get('content') or l_file.get('content_text') or ""
-                     gathered_texts.append(f"--- [ARCHIVO VINCULADO: {l_file['name']}] ---\n{c_txt}\n")
-                     st.toast(f"📎 Usando archivo vinculado: {l_file['name']}")
-                with st.spinner("Analizando caso... (Modo Experto)" if arg_mode else "Consultando biblioteca..."):
-                    try:
-                        if arg_mode:
-                            full_context_str = "\n".join(gathered_texts)
-                            solution = assistant.solve_argumentative_task(task_prompt, context_files=[], global_context=full_context_str)
-                        else:
-                            solution = assistant.solve_homework(task_prompt, gathered_texts, task_attachment=attachment_data)
-                            
-                        st.session_state['homework_result'] = solution
-                    except Exception as e:
-                         # Detailed error logging
-                        st.error(f"Error resolviendo tarea: {e}")
-        
-        # --- RESULT DISPLAY ---
-        res_hw = st.session_state.get('homework_result')
-        if res_hw:
-            res = res_hw
-            
-            # ARGUMENTATOR MODE DISPLAY (Dict/JSON)
-            if isinstance(res, dict):
-                 st.markdown("### 🛡️ Análisis del Consultor (Modo Argumentador)")
-                 
-                 # Tabs for Output
-                 t_resp, t_src, t_steps = st.tabs(["💡 Respuesta", "📚 Fuentes", "👣 Paso a Paso"])
-                 
-                 with t_resp:
-                     st.markdown(res.get('direct_response', ''))
-                     if st.button("📄 Copiar respuesta", key="cp_arg_resp"):
-                         copy_to_clipboard(res.get('direct_response', ''))
-                         st.toast("Copiada Respuesta")
-                         
-                 with t_src:
-                     st.markdown(res.get('sources', 'No se citaron fuentes específicas.'))
-                     
-                 with t_steps:
-                     st.markdown(res.get('step_by_step', ''))
-                     
-                 # Counter Argument (Hidden)
-                 with st.expander("🧨 Ver Contra-Argumento (Abogado del Diablo)"):
-                     st.warning("⚠️ Estas son las objeciones que un profesor estricto te haría:")
-                     st.markdown(res.get('counter_argument', ''))
-                     
-            else:
-                # LEGACY DISPLAY (String)
-                # HEADER + COPY ICON
-                c_head, c_copy = st.columns([0.9, 0.1])
-                with c_head:
-                    st.markdown("### ✅ Respuesta")
-                with c_copy:
-                     if st.button("📄", key="cp_hw", help="Copiar Respuesta"):
-                        clean_txt = clean_markdown(res)
-                        if copy_to_clipboard(clean_txt):
-                            st.toast("¡Copiado!", icon='📋')
-                
-                st.markdown(res)
-
-            # --- BRIDGE TO TUTOR ---
-            st.divider()
-            if st.button("🗣️ Debatir esta respuesta con el profesor (Ir a tutoría)", key="btn_bridge_tutor", help="Crea un nuevo chat, envía esta tarea y te redirige para discutirla."):
-                # 1. Prepare Content
-                full_text_response = ""
-                if isinstance(res, dict):
-                    full_text_response = f"**Respuesta:**\n{res.get('direct_response','')}\n\n**Contra-argumento:**\n{res.get('counter_argument','')}"
-                else:
-                    full_text_response = str(res)
-                
-                bridge_msg = (
-                    f"Hola Profe IA. Acabo de generar una respuesta para esta tarea:\n\n"
-                    f"**CONSIGNA:**\n_{task_prompt}_\n\n"
-                    f"**MI BORRADOR (Generado por Asistente):**\n{full_text_response}\n\n"
-                    f"Quiero que analicemos esto. Qué opinas? Podemos mejorarlo?"
-                )
-
-                # 2. Database Integration
-                from database import create_chat_session, save_chat_message
-                import datetime
-                
-                # Create New Session
-                # Name it based on task or timestamp
-                sess_name = f"Debate Tarea: {task_prompt[:20]}..." if task_prompt else "Debate Tarea"
-                new_sess = create_chat_session(st.session_state['user'].id, sess_name)
-                
-                if new_sess:
-                    # Set as Active
-                    st.session_state['current_chat_session'] = new_sess
-                    st.session_state['tutor_chat_history'] = [] # Reset local
-                    
-                    # 3. Save User Message
-                    save_chat_message(new_sess['id'], "user", bridge_msg)
-                    st.session_state['tutor_chat_history'].append({"role": "user", "content": bridge_msg})
-                    
-                    # 4. Generate Response (with Spinner)
-                    # Prepare Context (Global)
-                    gl_ctx_bridge, _ = get_global_context()
-                    
-                    with st.spinner("El profesor está leyendo tu tarea y creando el chat..."):
-                        try:
-                            response_bridge = assistant.chat_tutor(
-                                bridge_msg, 
-                                chat_history=st.session_state['tutor_chat_history'], 
-                                context_files=[], 
-                                global_context=gl_ctx_bridge
-                            )
-                            
-                            # 5. Save Assistant Response
-                            save_chat_message(new_sess['id'], "assistant", response_bridge)
-                            st.session_state['tutor_chat_history'].append({"role": "assistant", "content": response_bridge})
-                            
-                            st.success("✅ Chat creado. Redirigiendo...")
-                            
-                            # 6. FORCE REDIRECT
-                            st.session_state['redirect_target_name'] = "Tutoría 1 a 1"
-                            st.session_state['force_chat_tab'] = True
-                            st.rerun()
-                            
-                        except Exception as e:
-                            st.error(f"Error generando respuesta: {e}")
-                else:
-                    st.error("No se pudo crear la sesión de chat.")
-
-# --- TAB 6: Tutoría 1 a 1 (Docente Artificial) ---
-if 'tutor_chat_history' not in st.session_state: st.session_state['tutor_chat_history'] = []
-
-with tab_tutor:
-    tutor_html = (
-        '<div class="card-text">'
-        '<h2 style="margin-top:0;">6. Tutoría Personalizada (Profesor IA)</h2>'
-        '<p style="color: #64748b; font-size: 1.1rem;">Tu profesor particular. Pregunta, sube tareas para corregir y dialoga en tiempo real.</p>'
-        '</div>'
-    )
-    st.markdown(tutor_html, unsafe_allow_html=True)
-    
-    # --- SESSION STATE FOR ACTIVE FILES ---
-    if 'active_context_files' not in st.session_state:
-        st.session_state['active_context_files'] = []
-
-    # --- FETCH MESSAGES FROM DB IF SESSION ACTIVE ---
-    from database import get_chat_messages, save_chat_message
-    
-    current_sess = st.session_state.get('current_chat_session')
-    
-    if not current_sess:
-        # CONSULTANT FIX: Direct Access - Start Chat Immediately
-        # Replaces the old "Go to sidebar" placeholder
-        st.markdown("### ¿En qué te ayudo hoy? 🎓")
-        st.caption("Escribe tu pregunta y crearé una sesión nueva automáticamente.")
-        
-        init_prompt = st.chat_input("Escribe tu pregunta para empezar...", key="new_chat_init_input")
-        
-        if init_prompt:
-             # 1. Create Session
-             # Generate a title from the prompt (truncated)
-             short_title = init_prompt[:30] + "..." if len(init_prompt) > 30 else init_prompt
-             new_session = create_chat_session(st.session_state['user'].id, short_title)
-             
-             if new_session:
-                 # 2. Set as Active
-                 st.session_state['current_chat_session'] = new_session
-                 st.session_state['tutor_chat_history'] = [] 
-                 
-                 # 3. Save User Message
-                 save_chat_message(new_session['id'], "user", init_prompt)
-                 st.session_state['tutor_chat_history'].append({"role": "user", "content": init_prompt})
-                 
-                 # 4. Update Footprint (Sidebar Access)
-                 footprint = {
-                     "type": "chat",
-                     "title": short_title,
-                     "target_id": new_session['id'],
-                     "subtitle": "Nueva consulta"
-                 }
-                 update_user_footprint(st.session_state['user'].id, footprint)
-                 
-                 # 5. Trigger AI Response
-                 st.session_state['trigger_ai_response'] = True
-                 
-                 st.rerun()
-             else:
-                 st.error("Error iniciando sesión de chat.")
-    else:
-        # Load History from DB (Sync)
-        # We re-fetch to ensure we have the latest state relative to DB
-        # Optimization: Could check if len mismatch, but fetching is safer for consistency.
-        # Optimization: Only fetch if we switched session or history not loaded
-        if 'tutor_chat_history' not in st.session_state or st.session_state.get('loaded_sess_id') != current_sess['id']:
-            db_msgs = get_chat_messages(current_sess['id'])
-            st.session_state['tutor_chat_history'] = db_msgs
-            st.session_state['loaded_sess_id'] = current_sess['id']
-        
-
-
-
-        # --- UPLOAD STATUS PLACEHOLDER (Centralized) ---
-        upload_status_container = st.empty()
-
-        col_chat, col_info = st.columns([3, 1], gap="large")
-        
-        with col_info:
-            st.info(f"📝 **Clase Actual:** {current_sess['name']}")
-            st.caption("El profesor recuerda todo lo hablado en esta clase.")
-            
-            # CONSULTANT: SHOW LINKED LIBRARY FILE
-            if st.session_state.get('chat_context_file'):
-                l_file = st.session_state['chat_context_file']
-                st.success(f"📎 **VINCULADO:**\n{l_file['name']}")
-                if st.button("❌ Desvincular", key="unlink_file", help="Quitar este archivo del chat"):
-                    st.session_state['chat_context_file'] = None
-                    st.rerun()
-            
-            st.divider()
-            st.markdown("### 📎 Contexto Activo")
-            
-            # 1. SHOW ACTIVE FILES
-            if st.session_state['active_context_files']:
-                for idx, f in enumerate(st.session_state['active_context_files']):
-                    c1, c2 = st.columns([0.8, 0.2])
-                    c1.markdown(f"📄 `{f['name']}`")
-                    if c2.button("✖️", key=f"del_ctx_{idx}", help="Quitar archivo"):
-                        st.session_state['active_context_files'].pop(idx)
-                        st.rerun()
-            else:
-                st.caption("No hay archivos en memoria.")
-
-            # st.markdown("### ☁️ Subir Nuevo") # Removed for Floating Button
-            # tutor_file = st.file_uploader("Agregar a contexto", type=['pdf', 'txt', 'png', 'jpg'], key="tutor_up")
-            
-            if st.button("🗑️ Limpiar pantalla", key="clear_chat"):
-                 # This only clears screen, to delete history use delete session
-                 # But maybe we want a 'Clear Messages' function?
-                 # For now, just reset local state, but DB remains? 
-                 # User asked for "create different chats".
-                 pass
-
-        # --- FLOATING UPLOAD BUTTON (JS Injection to Input) ---
-        # 1. Render Popover (Hidden initially to prevent flash)
-        # We use a specific container to help JS find it easily if needed, but data-testid is fine.
-        
-        # CSS to hide it initially and style the internal button
-        st.markdown("""
-        <style>
-        /* Target the popover container - Initial State */
-        div[data-testid="stPopover"] {
-            /* We don't hide it fully via display:none or JS might fail to grab dimensions, 
-               but we can use opacity or just rely on JS moving it quickly. 
-               Let's style the button itself to look like a 'Clip'. 
-            */
-            border: none !important;
-        }
-        div[data-testid="stPopover"] button {
-            background-color: transparent;
-            border: none;
-            color: #555;
-            font-size: 24px;
-            padding: 5px;
-            transition: color 0.3s;
-        }
-        div[data-testid="stPopover"] button:hover {
-            color: #1f77b4;
-            background-color: rgba(0,0,0,0.05);
-        }
-        </style>
-        """, unsafe_allow_html=True)
-        
-        # 2. POP_OVER CONTENT
-        # We define it here. It renders at the bottom of the flow.
-        # JS will move this element into the Chat Input container.
-        with st.popover("➕", help="Adjuntar archivos"):
-             st.markdown("### 📎 Adjuntar")
-             new_uploads = st.file_uploader("Archivos", type=['pdf', 'txt', 'md', 'py', 'png', 'jpg'], accept_multiple_files=True, key="float_up_inj")
-             if new_uploads:
-                # UX FIX: Use central placeholder so it's visible in main chat area
-                st.toast("Procesando archivos...", icon="⏳")
-                
-                with upload_status_container.status("🔄 Procesando archivos...", expanded=True) as status:
-                    for up_file in new_uploads:
-                        if not any(f['name'] == up_file.name for f in st.session_state['active_context_files']):
-                            st.write(f"📖 Leyendo: **{up_file.name}**...")
-                            content_text = ""
-                            if up_file.type == "application/pdf":
-                                try:
-                                    import PyPDF2
-                                    pdf_reader = PyPDF2.PdfReader(up_file)
-                                    for page in pdf_reader.pages:
-                                        content_text += page.extract_text() + "\n"
-                                except:
-                                     try:
-                                         content_text = assistant.extract_text_from_pdf(up_file.getvalue())
-                                     except:
-                                         content_text = "[Error leyendo PDF]"
-                            else:
-                                try:
-                                    content_text = up_file.read().decode("utf-8")
-                                except:
-                                    content_text = f"[Archivo Binario/Imagen: {up_file.name}]"
-                            
-                            st.session_state['active_context_files'].append({
-                                "name": up_file.name,
-                                "content": content_text
-                            })
-                            st.write(f"✅ ¡{up_file.name} listo!")
-                    
-                    status.update(label="✅ Carga Completa", state="complete", expanded=True)
-                    st.toast("✅ ¡Archivos listos para usar!", icon="🚀")
-                    
-                    # Small delay to ensure they see it before any potential rerun
-                    import time
-                    time.sleep(1.5)
-        
-        # --- HIDDEN PASTE RECEIVER ---
-        if 'paste_key' not in st.session_state: st.session_state['paste_key'] = 0
-        
-        # MOVE TO SIDEBAR to prevent layout issues in main chat
-        with st.sidebar:
-             # st.markdown('<div class="paste-bin-hidden-wrapper">', unsafe_allow_html=True)
-             # paste_bin = st.file_uploader("KILL_ME_NOW", type=['png','jpg','jpeg','pdf'], key=f"paste_bin_{st.session_state['paste_key']}", label_visibility='collapsed')
-             # st.markdown('</div>', unsafe_allow_html=True)
-             paste_bin = None # Disabled to prevent rendering
-        
-        if paste_bin:
-             # Check for duplicates (Original Name OR Pasted Name)
-             # file_data['name'] is what we stored. paste_bin.name is the new file.
-             # We stored it as f"Pasted_{paste_bin.name}"
-             is_duplicate = any(f['name'] == paste_bin.name or f['name'] == f"Pasted_{paste_bin.name}" for f in st.session_state['active_context_files'])
-             
-             if not is_duplicate:
-                 st.session_state['active_context_files'].append({
-                     "name": f"Pasted_{paste_bin.name}",
-                     "content": f"[Archivo Pegado: {paste_bin.name}]" 
-                 })
-                 st.toast("📸 Archivo pegado!")
-                 
-                 # RESET UPLOADER
-                 st.session_state['paste_key'] += 1
-                 st.rerun()
-             else:
-                 # It is a duplicate in the INPUT, but maybe already handled.
-                 # If we don't reset, it stays there. 
-                 # We should probably reset anyway if it's stale?
-                 # But if user pasted same file intentionally?
-                 # Let's just reset to be clean.
-                 pass
-
-        components.html("""
-        <script>
-        const observer = new MutationObserver(() => {
-            const popovers = window.parent.document.querySelectorAll('div[data-testid="stPopover"]');
-            const chatInput = window.parent.document.querySelector('[data-testid="stChatInput"]');
-            
-            // 1. FOCUS & LAYOUT FIX
-            if (chatInput) {
-                 // Ensure the whole bar is clickable
-                 chatInput.style.cursor = 'text';
-                 chatInput.onclick = (e) => {
-                     const ta = chatInput.querySelector('textarea');
-                     if (ta && e.target !== ta && !e.target.closest('button')) {
-                         ta.focus();
-                     }
-                 };
-
-                 // Inject + Button if needed
-                 if (popovers.length > 0) {
-                     const targetPopover = popovers[popovers.length - 1]; 
-                     const textArea = chatInput.querySelector('textarea');
-                     if (textArea && textArea.parentElement) {
-                         const capsule = textArea.parentElement;
-                     // 1.5. VERTICAL LAYOUT REDESIGN
-                     // Request: Text on TOP, Button on BOTTOM.
-                     
-                     // A. Force Container to Column
-                     capsule.style.setProperty('flex-direction', 'column', 'important');
-                     capsule.style.setProperty('align-items', 'flex-start', 'important'); // Align left
-                     capsule.style.setProperty('gap', '5px', 'important');
-                     
-                     // B. Ensure Button is at the BOTTOM (Append moves it to end)
-                     if (!capsule.contains(targetPopover)) {
-                         targetPopover.style.position = 'relative';
-                         targetPopover.style.margin = '0px'; 
-                         targetPopover.style.zIndex = '10';
-                         targetPopover.style.width = '1000%'; // Full width for alignment
-                         
-                         // Insert at END (Bottom)
-                         capsule.appendChild(targetPopover);
-                     } else {
-                         // Already there, just ensure order if needed (re-append moves to end)
-                         // But be careful not to trigger infinite loop if observer reacts to this.
-                         // Check if it's already the last child
-                         if (capsule.lastElementChild !== targetPopover) {
-                             capsule.appendChild(targetPopover);
-                         }
-                     }
-                     
-                     // C. Style the Textarea (Top Element)
-                     textArea.style.setProperty('width', '100%', 'important');
-                     textArea.style.setProperty('text-align', 'left', 'important');
-                     textArea.style.setProperty('padding', '10px 0px 0px 0px', 'important'); // Visual tweak
-                     
-                     // D. ENFORCER (Relaxed to prevent lag)
-                     const enforceLayout = () => {
-                          if (capsule) {
-                              capsule.style.setProperty('flex-direction', 'column', 'important');
-                              capsule.style.setProperty('gap', '5px', 'important');
-                          }
-                          if (textArea) {
-                              textArea.style.setProperty('width', '100%', 'important');
-                              textArea.style.border = 'none';
-                          }
-                     };
-                     
-                     // Run loop (Less aggressive: 1s)
-                if (textArea.dataset.layout_v2 === undefined) {
-                      setInterval(enforceLayout, 1000);
-                      textArea.dataset.layout_v2 = 'active';
-                 }
-                 
-                  const pasteInput = Array.from(window.parent.document.querySelectorAll('input[type="file"]'))
-                      .find(i => i.getAttribute('aria-label') === "Paste_Receiver_Hidden_Bin" || i.parentElement.innerText.includes("Paste_Receiver_Hidden_Bin"));
-                 
-                 if (pasteInput) {
-                     // HELPER: Send File to Input
-                     const sendFiles = (files) => {
-                         const dataTransfer = new DataTransfer();
-                         for (let i = 0; i < files.length; i++) {
-                              dataTransfer.items.add(files[i]);
-                         }
-                         pasteInput.files = dataTransfer.files;
-                         pasteInput.dispatchEvent(new Event('change', { bubbles: true }));
-                     };
-
-                     // A. PASTE Handler
-                     if (!window.parent.document.hasPasteHandler) {
-                         window.parent.document.addEventListener('paste', (event) => {
-                             const items = (event.clipboardData || event.originalEvent.clipboardData).items;
-                             const files = [];
-                             for (let i=0; i < items.length; i++) {
-                                 if (items[i].kind === 'file') files.push(items[i].getAsFile());
-                             }
-                             if (files.length > 0) sendFiles(files);
-                         });
-                         window.parent.document.hasPasteHandler = true;
-                     }
-
-                    // B. DRAG & DROP Handler (Global)
-                    if (!window.parent.document.hasDropHandler) {
-                        // Drag Over (Allow drop)
-                        window.parent.document.addEventListener('dragover', (e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            // Optional: Highlight UI
-                        });
-                        
-                        // Drop
-                        window.parent.document.addEventListener('drop', (e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            if (e.dataTransfer && e.dataTransfer.files.length > 0) {
-                                sendFiles(e.dataTransfer.files);
-                            }
-                        });
-                        window.parent.document.hasDropHandler = true;
-                    }
-                }
-            }
-            
-        
-        });
-        observer.observe(window.parent.document.body, { childList: true, subtree: true, attributes: true });
-        </script>
-        """, height=0)
-
-        with col_chat:
-            # Display Chat History (WhatsApp Style)
-            import markdown
-            chat_html = '<div style="display: flex; flex-direction: column; gap: 15px; padding-bottom: 20px;">'
-            
-            for msg in st.session_state['tutor_chat_history']:
-                is_user = msg['role'] == 'user'
-                
-                # Styles
-                row_style = "display: flex; width: 100%; align-items: flex-end; margin-bottom: 2px;"
-                if is_user:
-                     row_style += " justify-content: flex-end;"
-                else:
-                     row_style += " justify-content: flex-start;"
-                
-                bubble_style = "padding: 10px 14px; border-radius: 12px; max-width: 85%; word-wrap: break-word; font-size: 16px; line-height: 1.5; position: relative; box-shadow: 0 1px 2px rgba(0,0,0,0.1); font-family: inherit;"
-                if is_user:
-                    bubble_style += " background-color: #d9fdd3; color: #111; border-bottom-right-radius: 2px; margin-right: 8px;"
-                else:
-                    bubble_style += " background-color: #ffffff; color: #111; border-bottom-left-radius: 2px; border: 1px solid #f0f0f0; margin-left: 8px;"
-                
-                # AVATAR (Emoji based for robustness)
-                avatar_icon = "👤" if is_user else "🎓"
-                avatar_bg = "#eee" if is_user else "#e6f3ff"
-                avatar_html = f'''
-                <div style="width: 35px; height: 35px; min-width: 35px; border-radius: 50%; background-color: {avatar_bg}; border: 1px solid #ccc; display: flex; align-items: center; justify-content: center; font-size: 20px;">
-                    {avatar_icon}
-                </div>
-                '''
-
-                # Convert Markdown
-                raw_content = msg.get('content', '') or ''
-                try:
-                    msg_html = markdown.markdown(raw_content, extensions=['fenced_code', 'tables'])
-                except:
-                    msg_html = raw_content
-
-                if is_user:
-                    # User: Bubble Left of Avatar (Avatar on far right)
-                    chat_html += f'<div style="{row_style}"><div style="{bubble_style}">{msg_html}</div>{avatar_html}</div>'
-                else:
-                    # Bot: Avatar Left of Bubble
-                    chat_html += f'<div style="{row_style}">{avatar_html}<div style="{bubble_style}">{msg_html}</div></div>'
-                    
-            chat_html += '<div id="tutor_chat_end_anchor" style="height: 1px;"></div></div>'
-            st.markdown(chat_html, unsafe_allow_html=True)
-            
-            # Files display removed per user request (handled in sidebar/backend now)
-            
-            # SCROLL BUTTON (INJECTED INTO PARENT)
-            # CLEANUP: NO INJECTION HERE. Global manager handles this.
-
-            # --- AI GENERATION BLOCK (Context-Aware) ---
-            if st.session_state.get('trigger_ai_response'):
-                 # Logic to generate response
-                 # Need to fetch the last user message
-                 hist = st.session_state['tutor_chat_history']
-                 if hist and hist[-1]['role'] == 'user':
-                     last_msg = hist[-1]['content']
-                     
-                     # Context Prep
-                     gl_ctx, _ = get_global_context()
-                     
-                     # File Context - USE PERSISTENT LIST
-                     gen_files = st.session_state.get('active_context_files', [])
-                     
-                     # Add Linked Library File if exists (Ephemeral)
-                     if st.session_state.get('chat_context_file'):
-                         l_f = st.session_state['chat_context_file']
-                         c_t = l_f.get('content') or l_f.get('content_text') or ""
-                         # Hydrate if needed (lazy)
-                         if not c_t and 'id' in l_f:
-                             from database import get_file_content
-                             c_t = get_file_content(l_f['id'])
-                         # Check duplicate
-                         if not any(f['name'] == l_f['name'] for f in gen_files):
-                             gen_files.append({"name": l_f['name'], "content": c_t})
-                     
-                     with st.chat_message("assistant"):
-                        with st.spinner("El profesor está pensando..."):
-                            try:
-                                full_resp = assistant.chat_tutor(
-                                    last_msg,
-                                    chat_history=hist[:-1],
-                                    context_files=gen_files,
-                                    global_context=gl_ctx
-                                )
-                                st.markdown(full_resp)
-                                
-                                # Save
-                                save_chat_message(current_sess['id'], "assistant", full_resp)
-                                st.session_state['tutor_chat_history'].append({"role": "assistant", "content": full_resp})
-                                st.rerun()
-                            except Exception as e:
-                                st.error(f"Error: {e}")
-                 
-                 st.session_state['trigger_ai_response'] = False # Safety
-
-        # --- INPUT MOVED OUTSIDE OF COLUMNS (STICKY FOOTER FIX) ---
-        if prompt := st.chat_input(f"Pregunta sobre {current_sess['name']}..."):
-            
-             # 2. Add User Message
-            save_chat_message(current_sess['id'], "user", prompt)
-            
-            # Update UI State
-            st.session_state['tutor_chat_history'].append({"role": "user", "content": prompt})
-            
-            # 3. Trigger Response
-            st.session_state['trigger_ai_response'] = True
-            st.rerun()
-
-# --- DEFINITIVE SCROLL ANCHOR ---
-st.markdown("<div id='end_marker' style='height: 1px; width: 1px; visibility: hidden;'></div>", unsafe_allow_html=True)
-
-# Force Reload Triggered
-
-
-# --- FLOATING SCROLL DAEMON (Robust V2) ---
-
-# Injects a permanent floating button that handles scrolling entirely via JS
-
-import streamlit.components.v1 as components
-
-components.html("""
-
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-
-<style>
-
-    .float-scroll-btn {
-
-        position: fixed;
-
-        bottom: 90px;
-
-        right: 25px;
-
-        width: 45px;
-
-        height: 45px;
-
-        background-color: #4F46E5; /* Primary Purple */
-
-        color: white;
-
-        border-radius: 50%;
-
-        box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-
-        display: flex;
-
-        align-items: center;
-
-        justify-content: center;
-
-        font-size: 20px;
-
-        cursor: pointer;
-
-        z-index: 999999;
-
-        transition: transform 0.2s, background-color 0.2s;
-
-        border: none;
-
-        outline: none;
-
-    }
-
-    .float-scroll-btn:hover {
-
-        transform: scale(1.1);
-
-        background-color: #4338ca;
-
-    }
-
-    .float-scroll-btn:active {
-
-        transform: scale(0.9);
-
-    }
-
-</style>
-
-
-
-<button id="scrollBtn" class="float-scroll-btn" title="Ir al final">
-
-    <i class="fas fa-arrow-down"></i>
-
-</button>
-
-
-
-<script>
-
-    const btn = document.getElementById('scrollBtn');
-
-    
-
-    // Logic: Scroll to bottom of main container
-
-    btn.onclick = () => {
-
-        // Streamlit's main container usually has class 'stMain' or we just scroll window
-
-        window.scrollTo({
-
-            top: document.body.scrollHeight,
-
-            behavior: 'smooth'
-
-        });
-
-        
-
-        // Also try to find the chat input and focus it
-
-        const chatInput = window.parent.document.querySelector('[data-testid="stChatInput"] textarea');
-
-        if (chatInput) chatInput.focus();
-
-    };
-
-    
-
-    // Optional: Hide if already at bottom? (Keep simple for now)
-
-</script>
-
-""", height=0)
-
+
+import streamlit as st
+import os
+import glob
+import uuid
+from transcriber import Transcriber
+from study_assistant import StudyAssistant
+from PIL import Image, ImageGrab
+import shutil
+import time
+import datetime
+import markdown
+import streamlit.components.v1 as components
+import extra_streamlit_components as stx  # --- PERSISTENCE ---
+from library_ui import render_library # --- LIBRARY UI ---
+import database
+from database import (
+    get_user_courses, create_course, delete_course, rename_course, 
+    get_chat_sessions, create_chat_session, rename_chat_session, delete_chat_session, 
+    get_dashboard_stats, update_user_nickname, get_recent_chats, check_and_update_streak, 
+    update_user_footprint, init_supabase, update_last_course, 
+    save_chat_message, get_chat_messages, get_file_content, get_course_files, delete_file, get_course_full_context, upload_file_v2,
+    get_user_memory, save_user_memory
+)
+
+
+
+# --- PAGE CONFIG MUST BE FIRST ---
+st.set_page_config(
+    page_title="E-Education",
+    page_icon="assets/favicon.jpg",
+    layout="wide",
+    initial_sidebar_state="expanded" if st.session_state.get('user') else "collapsed"
+)
+
+# --- INSTANTIATE AI ENGINES (GLOBAL Fix) ---
+try:
+    # Use secrets key by default
+    _api_key = st.secrets.get("GEMINI_API_KEY")
+    if _api_key:
+         transcriber = Transcriber(api_key=_api_key)
+         assistant = StudyAssistant(api_key=_api_key)
+    else:
+         transcriber = None
+         assistant = None
+except Exception as e:
+    print(f"AI Init Error: {e}")
+    transcriber = None
+    assistant = None
+
+# --- GLOBAL CONTEXT HELPERS ---
+def get_global_context():
+    # Only fetches content if really needed (Heavy)
+    try:
+        if not st.session_state.get('current_course'): return "", 0
+        cid = st.session_state['current_course']['id']
+        txt = get_course_full_context(cid)
+        
+        # --- CONSULTANT: INJECT USER MEMORY (OVERRIDES) ---
+        user_mem = get_user_memory(cid)
+        if user_mem:
+            txt += "\n\n=== 🧠 CORRECCIONES Y APRENDIZAJES DEL USUARIO (PRIORIDAD MÁXIMA) ===\n"
+            txt += "Estas son correcciones explícitas que el usuario te ha enseñado. Tienen prioridad sobre cualquier otra información:\n" 
+            txt += user_mem
+            txt += "\n=========================================================================\n"
+
+        fls = get_course_files(cid)
+        return txt, len(fls)
+    except:
+        return "", 0
+
+def get_global_file_count_only():
+    # Lightweight count fetch (Optimized for Render)
+    try:
+        if not st.session_state.get('current_course'): return 0
+        cid = st.session_state['current_course']['id']
+        # Use get_dashboard_stats or similar fast query
+        stats = get_dashboard_stats(cid, st.session_state['user'].id)
+        return stats['files']
+    except:
+        return 0
+
+# --- GENERATE VALID ICO (FIX) ---
+# --- VALID ICO GENERATOR (Optimized: Check only once) ---
+@st.cache_resource
+def ensure_favicon():
+    try:
+        if os.path.exists("assets/favicon.jpg") and not os.path.exists("assets/windows_icon.ico"):
+            from PIL import Image
+            img = Image.open("assets/favicon.jpg")
+            img.save("assets/windows_icon.ico", format='ICO', sizes=[(256, 256)])
+    except: pass
+
+ensure_favicon()
+# --------------------------------
+
+
+if 'quiz_results' not in st.session_state: st.session_state['quiz_results'] = []
+if 'transcript_history' not in st.session_state: st.session_state['transcript_history'] = []
+if 'notes_result' not in st.session_state: st.session_state['notes_result'] = None
+if 'guide_result' not in st.session_state: st.session_state['guide_result'] = None
+
+if 'pasted_images' not in st.session_state: st.session_state['pasted_images'] = []
+# --- GLOBAL CSS (Prevents FOUC on Logout) ---
+st.markdown("""
+    <style>
+    /* HIDE SCROLLBAR GLOBALLY */
+    ::-webkit-scrollbar {
+        width: 0px;
+        background: transparent;
+    }
+
+    /* --- GLOBAL VARIABLES (Theme Persistence) --- */
+    :root {
+        --primary-purple: #4B22DD;
+        --accent-green: #6CC04A;
+        --bg-color: #F8F9FE;
+        --card-bg: #FFFFFF;
+        --text-color: #1A1A1A;
+        --border-color: #E3E4EA;
+    }
+    
+    /* --- SYNC LAYOUT STABILITY (Prevent FOUC) --- */
+    /* Remove padding immediately for cleaner load */
+    .block-container {
+        padding-top: 0px !important;
+        padding-bottom: 2rem !important;
+        margin-top: 0px !important;
+        max-width: 100% !important;
+    }
+    header {
+        visibility: hidden !important;
+        display: none !important;
+    }
+    
+    /* DYNAMIC: FREEZE SCROLL & HIDE SIDEBAR ON LOGIN */
+    """ + ("""
+    .stApp, section.main, .block-container, [data-testid="stAppViewContainer"], html, body {
+        overflow: hidden !important;
+    }
+    """ if not st.session_state.get('user') else "") + """
+    
+    /* TAB SCROLL ARROWS */
+    .stTabs [data-baseweb="tab-list"] button:not([role="tab"]) {
+        background-color: #4B22DD !important;
+        color: white !important;
+        border-radius: 50% !important;
+        width: 30px !important;
+        height: 30px !important;
+        border: none !important;
+        display: flex !important;
+    }
+
+    /* --- SIDEBAR WIDTH CONTROL --- */
+    section[data-testid="stSidebar"] {
+        width: 280px !important;
+        min-width: 280px !important;
+        max-width: 280px !important;
+        flex: 0 0 280px !important;
+    }
+
+    /* --- NUCLEAR SEPARATOR HIDER FOR SIDEBAR (ULTIMATE NUKE) --- */
+    /* Target every single element in sidebar to kill borders, shadows, and GAPS */
+    [data-testid="stSidebar"] *, 
+    [data-testid="stSidebar"] [data-testid="stVerticalBlock"] > div,
+    [data-testid="stSidebar"] [data-testid="element-container"],
+    [data-testid="stSidebar"] [data-testid="stExpander"],
+    [data-testid="stSidebar"] hr {
+        border: none !important;
+        border-bottom: none !important;
+        border-top: none !important;
+        box-shadow: none !important;
+    }
+    
+    /* KILL ALL LAYOUT GAPS */
+    [data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
+        gap: 8px !important; /* Restore a small, natural gap */
+    }
+    
+    [data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"] {
+        border: none !important;
+    }
+
+    /* --- SCROLLER STYLES --- */
+    .aesthetic-sep {
+        height: 1px;
+        background: rgba(75, 34, 221, 0.1);
+        margin: 10px 0 !important;
+        width: 100%;
+    }
+
+    /* Ensure no background or border on expanders in sidebar */
+    [data-testid="stSidebar"] [data-testid="stExpander"] {
+        border: none !important;
+        background-color: transparent !important;
+    }
+
+    /* Highlight Styles */
+    .sc-base { background-color: #ffcccc !important; padding: 2px 5px !important; border-radius: 5px !important; font-weight: bold !important; color: #900 !important; border: 1px solid #ff9999 !important; display: inline; }
+    .sc-example { background-color: #cce5ff !important; padding: 2px 5px !important; border-radius: 5px !important; color: #004085 !important; border: 1px solid #b8daff !important; display: inline; }
+    .sc-note { background-color: #d4edda !important; padding: 2px 5px !important; border-radius: 5px !important; color: #155724 !important; border: 1px solid #c3e6cb !important; display: inline; }
+    .sc-data { background-color: #fff3cd !important; padding: 2px 5px !important; border-radius: 5px !important; color: #856404 !important; border: 1px solid #ffeeba !important; display: inline; }
+    .sc-key { background-color: #e2d9f3 !important; padding: 2px 5px !important; border-radius: 5px !important; color: #512da8 !important; border: 1px solid #d1c4e9 !important; display: inline; }
+    .study-mode-off .sc-base, .study-mode-off .sc-example, .study-mode-off .sc-note, .study-mode-off .sc-data, .study-mode-off .sc-key,
+    .stApp.study-mode-off .sc-base, .stApp.study-mode-off .sc-example, .stApp.study-mode-off .sc-note, .stApp.study-mode-off .sc-data, .stApp.study-mode-off .sc-key {
+        background-color: transparent !important; padding: 0 !important; color: inherit !important; border: none !important; font-weight: inherit !important; 
+    }
+
+    /* --- NUCLEAR UPLOADER HIDING --- */
+    div[data-testid="stFileUploader"]:has(input[aria-label="KILL_ME_NOW"]),
+    div[data-testid="stFileUploader"]:has(label:contains("KILL_ME_NOW")),
+    .paste-bin-hidden-wrapper {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0px !important;
+        position: absolute !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+if 'quiz_key' not in st.session_state: st.session_state['quiz_key'] = 0
+if 'tutor_chat_history' not in st.session_state: st.session_state['tutor_chat_history'] = []
+if 'current_course' not in st.session_state: st.session_state['current_course'] = None
+if 'homework_result' not in st.session_state: st.session_state['homework_result'] = ""
+if 'spotlight_query' not in st.session_state: st.session_state['spotlight_query'] = ""
+if 'spotlight_mode' not in st.session_state: st.session_state['spotlight_mode'] = "⚡ Concepto Rápido"
+if 'custom_api_key' not in st.session_state: st.session_state['custom_api_key'] = None
+
+# --- TAB RESTORATION LOGIC (Removed - Switched to JS LocalStorage) ---
+if 'has_restored_tab' not in st.session_state:
+    st.session_state['has_restored_tab'] = True
+
+# --- CHAT SESSION RESTORATION (URL PARAMS) ---
+# This runs once on startup or reload
+if 'has_restored_chat' not in st.session_state and st.session_state.get('user'):
+    try:
+        qp = st.query_params if hasattr(st, 'query_params') else st.experimental_get_query_params()
+        target_chat_id = qp.get('chat_id') if hasattr(st, 'query_params') else (qp.get('chat_id')[0] if qp.get('chat_id') else None)
+        
+        if target_chat_id:
+            # Validate ownership
+            from database import get_chat_sessions
+            user_chats = get_chat_sessions(st.session_state['user'].id)
+            found_chat = next((c for c in user_chats if str(c['id']) == str(target_chat_id)), None)
+            
+            if found_chat:
+                st.session_state['current_chat_session'] = found_chat
+                st.session_state['tutor_chat_history'] = [] # Force reload messages
+                # st.toast(f"📂 Chat restaurado: {found_chat['name']}")
+    except Exception as e:
+        print(f"Chat restore error: {e}")
+    st.session_state['has_restored_chat'] = True
+
+# --- AUTHENTICATION CHECK ---
+if 'user' not in st.session_state:
+    st.session_state['user'] = None
+
+# --- COOKIE MANAGER (PERSISTENCE) ---
+cookie_manager = stx.CookieManager()
+
+# --- AUTO-LOGIN CHECK ---
+if not st.session_state['user'] and not st.session_state.get('force_logout'):
+    # Try to get token from cookie
+    # We use REFERSH TOKEN for long-term persistence (simpler than session reconstruction)
+    try:
+        time.sleep(0.1)
+        refresh_token = cookie_manager.get("supabase_refresh_token")
+        if refresh_token:
+             from database import init_supabase
+             client = init_supabase()
+             res = client.auth.refresh_session(refresh_token)
+             if res.session:
+                 st.session_state['user'] = res.user
+                 st.session_state['supabase_session'] = res.session
+                 # CRITICAL FIX: Update cookie with NEW refresh token to keep chain alive
+                 cookie_manager.set("supabase_refresh_token", res.session.refresh_token, expires_at=datetime.datetime.now() + datetime.timedelta(days=30))
+                 st.success("⚡ Sesión restaurada. Actualizando...")
+                 time.sleep(2) # Allow cookie to set
+                 st.rerun()
+                 
+    except Exception as e:
+        print(f"Auto-login failed: {e}")
+
+# --- SCROLLBAR & OVERFLOW CONTROL (Conditional) ---
+is_login_view = st.session_state.get('user') is None
+
+# Rules Config
+scroll_rules = ""
+overflow_mode = "hidden"
+height_mode = "100%"
+
+if is_login_view:
+    # LOGIN: Scorched Earth (No Scroll, Fixed Height)
+    scroll_rules = """
+            /* HIDE SCROLLBARS (Login) */
+            ::-webkit-scrollbar { width: 0px !important; height: 0px !important; background: transparent !important; display: none !important; }
+            * { scrollbar-width: none !important; -ms-overflow-style: none !important; }
+    """
+    overflow_mode = "hidden"
+    height_mode = "100vh"
+else:
+    # DASHBOARD: Native Scrolling (No Kill Rules)
+    scroll_rules = "/* Dashboard: Scrollbars Enabled */"
+    overflow_mode = "hidden" # Default Streamlit: Body hidden, Container scrolls
+    height_mode = "100%" 
+
+components.html(f"""
+<script>
+    (function() {{
+        const root = window.parent.document;
+        const styleId = 'estudian2_scrollbar_manager';
+        
+        // Cleanup Old Tags
+        const old = root.getElementById(styleId);
+        if (old) old.remove();
+        const oldLegacy = root.getElementById('estudian2_scrollbar_kill_V3_FINAL');
+        if (oldLegacy) oldLegacy.remove();
+        
+        const style = root.createElement('style');
+        style.id = styleId;
+        style.innerHTML = `
+            {scroll_rules}
+            
+            /* Root Config (Streamlit Standard) */
+            html, body, .stApp {{
+                overflow-y: {overflow_mode} !important;
+                height: {height_mode} !important;
+            }}
+            
+            /* Force Scroll on App Container for Dashboard */
+            [data-testid="stAppViewContainer"] {{
+                overflow-y: {'auto' if overflow_mode == 'hidden' and not is_login_view else 'hidden'} !important;
+                height: 100% !important;
+            }}
+            
+            /* Clean Layout (Always Active) */
+            .block-container {{
+                padding-top: 0px !important;
+                margin-top: 0px !important;
+                max-width: 100% !important;
+                padding-bottom: 100px !important; /* Ensure space for chat input */
+            }}
+            
+            /* TARGET ST_BOTTOM (The Container of Chat Input) */
+            .stBottom {{
+                position: fixed !important;
+                bottom: 0px !important;
+                left: 0px !important;
+                right: 0px !important;
+                background: transparent !important;
+                z-index: 99999 !important;
+            }}
+            
+            header {{
+                visibility: hidden !important;
+                display: none !important;
+            }}
+        `;
+        root.head.appendChild(style);
+    }})();
+</script>
+""", height=0)
+
+# --- GLOBAL THEME CSS (Moved to Top to Prevent Logout Flash) ---
+THEME_CSS = """
+<style>
+/* Import Google Fonts */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+    /* HIDE STREAMLIT STATUS WIDGET & DECORATION */
+    div[data-testid="stStatusWidget"] { visibility: hidden !important; }
+    div[data-testid="stDecoration"] { visibility: hidden !important; }
+
+    /* --- ULTIMATE KILL TO LOADING OVERLAY (NO MORE WHITE TRANSPARENCY) --- */
+    /* Target every possible container Streamlit uses for the "dimming" effect */
+    [data-testid="stAppViewBlockContainer"],
+    [data-testid="stAppViewContainer"],
+    [data-testid="stMainViewContainer"],
+    [data-test-script-state="running"] [data-testid="stAppViewBlockContainer"],
+    [data-test-script-state="running"] [data-testid="stAppViewContainer"],
+    [data-test-script-state="running"] .stApp,
+    section.main,
+    div.block-container,
+    .stApp > div {
+        opacity: 1 !important;
+        filter: none !important;
+        transition: none !important;
+    }
+    
+    /* Force background to stay solid and kill any covering pseudo-elements */
+    .stApp::before, .stApp::after, 
+    [data-testid="stAppViewContainer"]::before,
+    [data-testid="stAppViewContainer"]::after {
+        display: none !important;
+        opacity: 0 !important;
+    }
+
+    /* --- GLOBAL VARIABLES (Moved to Top) --- */
+    /* :root variables are now prevalent globally to prevent FOUC */
+
+    html, body, [class*="css"] {
+        font-family: 'Inter', sans-serif;
+        color: var(--text-color);
+        background-color: var(--bg-color);
+    }
+
+    /* 1. APP BACKGROUND (Light) */
+    .stApp {
+        background-color: var(--bg-color);
+        background-image: none;
+    }
+    
+    /* 2. TOP HEADER BAR - PURPLE */
+    header[data-testid="stHeader"] {
+        background-color: var(--primary-purple);
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    /* 3. THE CENTER CARD (Content) */
+    .main .block-container {
+        background-color: #ffffff;
+        border-radius: 30px;
+        padding: 3rem 4rem !important;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+        margin-top: 20px;
+        max-width: 95%;
+    }
+    div[data-testid="block-container"] {
+        background-color: #ffffff;
+        border-radius: 30px;
+        padding: 3rem !important;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+        margin: 20px auto;
+        max-width: 95%;
+    }
+
+    /* SIDEBAR CONTAINER */
+    section[data-testid="stSidebar"], div[data-testid="stSidebar"] {
+        background-color: #FFFFFF;
+        border-right: 1px solid var(--border-color);
+    }
+    
+    /* HEADERS */
+    h1, h2, h3, h4 {
+        color: var(--primary-purple);
+        font-weight: 700;
+        letter-spacing: -0.5px;
+    }
+    h1 { font-size: 2.5rem; }
+
+    /* --- SIDEBAR SPECIFIC STYLES (MATCH REF IMAGE) --- */
+    
+    /* Custom "Logout" Button -> Purple Block */
+    div[data-testid="stSidebar"] div.stButton button {
+        background-color: var(--primary-purple) !important;
+        color: white !important;
+        border-radius: 30px !important; /* Pill shape like reference */
+        text-align: center !important;
+        justify-content: center !important;
+        font-weight: 600 !important;
+        border: none !important;
+        padding: 0.5rem 1rem !important;
+        margin-top: 10px;
+    }
+    div[data-testid="stSidebar"] div.stButton button:hover {
+        background-color: #3b1aa3 !important;
+        color: white !important;
+    }
+
+    /* Sidebar Inputs -> Light Lilac BG */
+    [data-testid="stSidebar"] div.stTextInput input, 
+    [data-testid="stSidebar"] div[data-baseweb="select"] > div {
+        background-color: #F4F1FF !important; /* Very light purple */
+        border: 1px solid #E0D4FC !important;
+        border-radius: 12px !important;
+        color: #4B22DD !important;
+    }
+
+    /* "Clave del Sistema Activa" Box */
+    .system-key-box {
+        background-color: #E6F4EA;
+        color: #1E4620;
+        padding: 10px;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid #CEEAD6;
+    }
+
+    /* TABS */
+
+
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 10px;
+        background-color: transparent;
+        padding: 0px;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #F0F0F0;
+    }
+    .stTabs [data-baseweb="tab"] {
+        background-color: #F5F6FA;
+        border-radius: 8px 8px 0 0;
+        color: #64748b;
+        font-weight: 600;
+        padding: 10px 20px;
+        border: none;
+    }
+    
+    /* UPDATED TAB STYLES: GREEN BOTTOM LINE */
+    .stTabs [aria-selected="true"] {
+        background-color: var(--primary-purple) !important;
+        color: white !important;
+        border-radius: 8px 8px 0 0 !important;
+        border-bottom: 4px solid #6CC04A !important; /* THE GREEN LINE */
+    }
+    
+    /* Remove default Streamlit tab highlight if present */
+    .stTabs [data-baseweb="tab-highlight"] {
+        background-color: #6CC04A !important;
+    }
+
+    
+
+    /* REMOVE SIDEBAR TOP PADDING */
+    /* Target the container inside the sidebar */
+    section[data-testid="stSidebar"] > div > div:first-child {
+        padding-top: 0rem !important; /* LIFT LOGO (removed padding) */
+    }
+    
+    [data-testid="stSidebar"] input {
+        background-color: #F4F1FF !important;
+        color: #4B22DD !important;
+        font-weight: 500 !important;
+        border-radius: 8px !important;
+        border: 1px solid #D8CCF6 !important;
+    }
+    /* Target the container background for Selectbox */
+    [data-testid="stSidebar"] [data-baseweb="select"] > div {
+        background-color: #F4F1FF !important;
+        border-color: #D8CCF6 !important;
+        color: #4B22DD !important;
+    }
+    
+    /* 3. Sidebar Buttons (Pill Shape, Purple) */
+    /* We target the button element specifically inside sidebar */
+    [data-testid="stSidebar"] button[kind="secondary"] {
+        background-color: #4B22DD !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 20px !important; /* Pill */
+        margin-top: 10px !important;
+        box-shadow: 0 4px 6px rgba(75, 34, 221, 0.2) !important;
+    }
+    [data-testid="stSidebar"] button[kind="secondary"]:hover {
+        background-color: #3b1aa3 !important;
+        transform: translateY(-1px);
+    }
+    
+    /* 4. "System Key" Box Tweaks */
+    .system-key-box {
+        background-color: #E6F4EA !important;
+        border: 1px solid #CEEAD6 !important;
+        color: #1E4620 !important;
+        font-weight: 600 !important;
+    }
+    
+    /* 5. Radio Buttons -> Custom Coloring if possible (Streamlit limits this) */
+    [data-testid="stSidebar"] [role="radiogroup"] label {
+        color: #1A1A1A !important;
+        font-weight: 500 !important;
+    }
+
+    /* FORCE ALL SIDEBAR BUTTONS TO BE ROUNDED */
+    [data-testid="stSidebar"] button {
+        border-radius: 25px !important; /* High value for Pill shape */
+        border: none !important;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
+        transition: transform 0.1s, box-shadow 0.1s !important;
+    }
+    
+    [data-testid="stSidebar"] button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 8px rgba(0,0,0,0.15) !important;
+    }
+    
+    /* Ensure Multiselect tags are also rounded if possible (Optional polish) */
+    [data-testid="stSidebar"] span[data-baseweb="tag"] {
+        border-radius: 15px !important;
+    }
+
+    /* --- TAB 1 REBRAND CSS --- */
+    
+    /* File Uploader Container */
+    div[data-testid="stFileUploader"] section[data-testid="stFileUploaderDropzone"] {
+        background-color: #F8F9FE;
+        border: 2px dashed #B8B9E0 !important;
+        border-radius: 20px !important;
+        padding: 30px !important;
+    }
+    
+    /* "Browse files" Button -> Bright Green */
+    div[data-testid="stFileUploader"] button[kind="secondary"] {
+        background-color: #6CC04A !important;
+        color: white !important;
+        border-radius: 10px !important;
+        border: none !important;
+        font-weight: 700 !important;
+        padding: 0.6rem 1.8rem !important;
+        text-transform: none !important;
+        box-shadow: 0 4px 10px rgba(108, 192, 74, 0.4) !important;
+    }
+    div[data-testid="stFileUploader"] button[kind="secondary"]:hover {
+        background-color: #5ab03a !important;
+        color: white !important;
+        transform: translateY(-1px);
+    }
+    
+    /* Titles */
+    h2.transcriptor-title {
+        color: #4B22DD !important; /* Authentic Ref Purple */
+        font-family: 'Inter', sans-serif !important;
+        font-weight: 800 !important;
+        font-size: 2.2rem !important;
+        letter-spacing: -1px !important;
+        margin-bottom: 1.5rem !important;
+        margin-top: 1rem !important;
+    }
+    
+    p.transcriptor-subtitle {
+        color: #4A4A4A !important;
+        font-size: 1.05rem !important;
+        margin-bottom: 30px !important;
+        line-height: 1.6;
+    }
+    
+    /* Green Placeholder Frame */
+    .green-frame {
+        background-color: #6CC04A;
+        border-radius: 30px;
+        padding: 20px;
+        box-shadow: 0 15px 30px rgba(108, 192, 74, 0.25);
+        width: 350px !important;
+        min-width: 350px !important;
+        max-width: 350px !important;
+        flex: 0 0 350px !important; /* Strict Flex locking */
+        aspect-ratio: 1 / 1.1; /* Maintain exact proportion */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto; /* Center in column */
+        overflow: hidden;
+    }
+    
+    .green-frame img {
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: cover !important;
+        max-width: 100% !important;
+        border-radius: 20px;
+    }
+    .green-frame-inner {
+        background-color: #E2E8F0;
+        border-radius: 20px;
+        width: 100%;
+        height: 100%;
+        min-height: 360px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        color: #64748b;
+        font-weight: 600;
+    }
+    
+    /* Exact replica of green-frame but Purple */
+    .purple-frame {
+        background-color: #4B22DD;
+        border-radius: 30px;
+        padding: 20px;
+        box-shadow: 0 15px 30px rgba(75, 34, 221, 0.25);
+        width: 350px !important;
+        min-width: 350px !important;
+        max-width: 350px !important;
+        flex: 0 0 350px !important; /* Strict Flex locking */
+        aspect-ratio: 1 / 1.1; /* Maintain exact proportion */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto; /* Center in column */
+        overflow: hidden;
+    }
+    
+    .purple-frame img {
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: cover !important;
+        max-width: 100% !important;
+        border-radius: 20px;
+    }
+
+    /* --- GLOBAL BUTTON STYLING (Universal Consistency) --- */
+    
+    /* Target ALL standard buttons in the main app area */
+    div.stButton > button {
+        background-color: #4B22DD !important; /* Brand Purple */
+        color: white !important;
+        border-radius: 30px !important; /* Full Pill Shape */
+        border: none !important;
+        padding: 0.6rem 2rem !important;
+        font-weight: 600 !important;
+        box-shadow: 0 4px 6px rgba(75, 34, 221, 0.2) !important;
+        transition: all 0.2s ease !important;
+    }
+    
+    div.stButton > button:hover {
+        background-color: #3b1aa3 !important; /* Darker Purple */
+        color: white !important;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(75, 34, 221, 0.3) !important;
+    }
+    
+    /* Target Primary Buttons (if any are used, e.g. Delete, ensuring they are also round) */
+    div.stButton > button[kind="primary"] {
+        border-radius: 30px !important;
+    }
+
+    /* LOGIN FORM BUTTON - GREEN FORCE (Submit Only - No SVGs) */
+    [data-testid="stForm"] button:not(:has(svg)) {
+        background-color: #6CC04A !important;
+        border: none !important;
+        color: white !important;
+    }
+    [data-testid="stForm"] button:not(:has(svg)):hover {
+        background-color: #5ab03a !important;
+    }
+
+    /* --- GLOBAL HEADERS (BRANDING) --- */
+    h1, h2, h3, h4, h5, h6 {
+        color: #4B22DD !important;
+        font-family: 'Inter', sans-serif !important;
+        font-weight: 700 !important;
+    }
+    
+    /* Specific Streamlit markdown headers */
+    /* Specific Streamlit markdown headers */
+    .stMarkdown h1, .stMarkdown h2, .stMarkdown h3 {
+        color: #4B22DD !important;
+    } 
+
+    div.stButton > button:active {
+        background-color: #2a1275 !important;
+        transform: translateY(0);
+    }
+</style>
+"""
+st.markdown(THEME_CSS, unsafe_allow_html=True)
+
+if st.session_state.get('force_logout'):
+    components.html("""
+    <script>
+        // Clear all storage to prevent ghost state
+        window.localStorage.removeItem('st_tab_target');
+        window.sessionStorage.clear();
+    </script>
+    """, height=0)
+
+
+# If not logged in, show Login Screen and STOP
+
+# If not logged in, show Login Screen and STOP
+
+# If not logged in, show Login Screen and STOP
+
+# If not logged in, show Login Screen and STOP
+
+# If not logged in, show Login Screen and STOP
+
+# If not logged in, show Login Screen and STOP
+
+# If not logged in, show Login Screen and STOP
+
+# If not logged in, show Login Screen and STOP
+
+# If not logged in, show Login Screen and STOP
+
+# If not logged in, show Login Screen and STOP
+
+# If not logged in, show Login Screen and STOP
+
+# If not logged in, show Login Screen and STOP
+
+# If not logged in, show Login Screen and STOP
+
+# If not logged in, show Login Screen and STOP
+
+# If not logged in, show Login Screen and STOP
+
+# If not logged in, show Login Screen and STOP
+
+# If not logged in, show Login Screen and STOP
+
+# If not logged in, show Login Screen and STOP
+
+# If not logged in, show Login Screen and STOP
+
+# If not logged in, show Login Screen and STOP
+
+# If not logged in, show Login Screen and STOP
+
+# If not logged in, show Login Screen and STOP
+
+# If not logged in, show Login Screen and STOP
+if not st.session_state['user']:
+    import datetime
+    import base64
+    
+    # --- HUNTER-KILLER: FORCE REMOVE SCROLLER ON LOGIN SCREEN ---
+    components.html("""
+    <script>
+        const root = window.parent.document;
+        // 1. Clear Interval
+        if (window.parent.estudian2_scroller_interval) clearInterval(window.parent.estudian2_scroller_interval);
+        
+        // 2. Kill Button Immediately
+        const btn = root.getElementById('estudian2_nuclear_scroller');
+        if (btn) btn.remove();
+        
+        // 3. Watch and Kill (Extra Security for 5 seconds)
+        const killer = setInterval(() => {
+             const b = root.getElementById('estudian2_nuclear_scroller');
+             if (b) b.remove();
+        }, 50);
+        setTimeout(() => clearInterval(killer), 5000);
+    </script>
+    """, height=0)
+
+    # --- HELPER: ASSETS ---
+    @st.cache_data
+    def get_b64_image(image_path):
+        try:
+            if os.path.exists(image_path):
+                with open(image_path, "rb") as f:
+                    return base64.b64encode(f.read()).decode()
+        except:
+            return "" # Return empty string on error to prevent crash
+        return ""
+
+    logo_b64 = get_b64_image("assets/logo_main.png")
+    hero_b64 = get_b64_image("assets/messimo_hero_new.png") # Updated to user provided PNG
+
+    # --- CUSTOM CSS FOR FULL BACKGROUND MESSIMO STYLE ---
+    
+    # 1. STATIC STYLES (WhatsApp Chat & Layout) - No f-string risk
+    st.markdown("""
+        <style>
+        /* WHATSAPP CHAT STYLES */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding-bottom: 50px;
+        }
+        .chat-row {
+            display: flex;
+            width: 100%;
+            margin-bottom: 5px;
+        }
+        .row-reverse {
+            flex-direction: row-reverse;
+        }
+        .chat-bubble {
+            padding: 10px 14px;
+            border-radius: 10px;
+            max-width: 75%;
+            word-wrap: break-word;
+            font-size: 16px;
+            line-height: 1.5;
+            position: relative;
+            box-shadow: 0 1px 1px rgba(0,0,0,0.1);
+            font-family: inherit;
+        }
+        .chat-bubble p {
+            margin: 0;
+        }
+        .user-bubble {
+            background-color: #d9fdd3; /* WhatsApp Light Green */
+            color: #111;
+            border-top-right-radius: 0;
+        }
+        .assistant-bubble {
+            background-color: #ffffff;
+            color: #111;
+            border-top-left-radius: 0;
+            border: 1px solid #eee;
+        }
+        /* Code blocks in bubbles */
+        .chat-bubble pre {
+            background: #f0f0f0;
+            padding: 5px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        
+        /* HIDE SCROLLBAR */
+        ::-webkit-scrollbar {
+            width: 0px;
+            background: transparent;
+        }
+        
+        /* RESTORE SCROLL ON CONTAINERS */
+        section[data-testid="stAppViewContainer"] {
+            overflow-y: auto !important;
+        }
+        
+        /* LOGIN CARD & ALIGNMENT */
+        .main .block-container {
+            padding-top: 0rem !important; 
+            transform: translateY(-50px) !important;
+            padding-bottom: 0vh !important;
+            max_width: 1200px !important;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            min-height: 10vh;
+        }
+        .login-card {
+            background-color: var(--secondary-background-color);
+            color: var(--text-color);
+            padding: 50px 40px; 
+            border-radius: 40px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+            margin-bottom: 0px !important; 
+            height: auto;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+        .stTextInput > div > div > input {
+            border-radius: 20px;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
+    # 2. DYNAMIC STYLES (Hero Background) - Using f-string for variable
+    st.markdown(f'''
+        <style>
+        .stApp {{
+            background-image: url("data:image/png;base64,{hero_b64}");
+            background-size: cover; /* Changed to cover for better fit */
+            background-position: center;
+            background-repeat: no-repeat;
+        }}
+
+        
+        /* HIDE SCROLLBAR (Optional, keeping getting rid of ugly bars but allowing scroll) */
+        ::-webkit-scrollbar {{
+            width: 0px;
+            background: transparent;
+        }}
+        
+        /* LOCK MAIN STREAMLIT CONTAINER REMOVED */
+        section[data-testid="stAppViewContainer"] {{
+            overflow-y: auto !important; /* ALLOW SCROLL */
+        }}
+        
+        /* 2. ALIGNMENT CONTAINER */
+        .main .block-container {{
+            padding-top: 0rem !important; /* Reduced to lift card */
+            transform: translateY(-50px) !important; /* LIFT GRANDFATHER SUPREME forceful */
+            padding-bottom: 0vh !important;
+            max_width: 1200px !important;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start; /* Align to top instead of center */
+            min-height: 10vh;
+        }}
+
+        /* GLOBAL SCROLL KILLER REMOVED */
+        
+        /* 3. LOGIN CARD CONTAINER (Theme Aware) */
+        .login-card {{
+            background-color: var(--secondary-background-color);
+            color: var(--text-color);
+            padding: 50px 40px; 
+            border-radius: 40px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+            margin-bottom: 0px !important; 
+            height: auto;
+            border: 1px solid rgba(0,0,0,0.05); /* Subtle border for better definition */
+        }}
+
+        /* 4. PILL INPUTS (Theme Aware) */
+        .stTextInput > div > div > input {{
+            border-radius: 50px !important;
+            border: 1px solid var(--secondary-background-color); 
+            padding: 0px 25px; 
+            background-color: var(--background-color);
+            color: var(--text-color);
+            height: 55px; 
+            font-size: 1rem;
+            transition: all 0.2s;
+        }}
+        .stTextInput > div > div > input:focus {{
+            border-color: #3500D3;
+            box-shadow: 0 0 0 4px rgba(53, 0, 211, 0.1);
+            outline: none;
+        }}
+
+        /* 5. PRIMARY BUTTON (Reference Shape) */
+        div[data-testid="stButton"] > button[kind="primary"] {{
+            width: 100%;
+            background-color: #4625b8 !important; /* Brand Purple */
+            color: white !important;
+            border: none;
+            border-radius: 50px !important;
+            height: 55px; /* Tall button */
+            font-weight: 700;
+            font-size: 1.1rem;
+            margin-top: 10px;
+            box-shadow: none !important; /* Clean shape, no shadow */
+            transition: transform 0.2s;
+        }}
+        div[data-testid="stButton"] > button[kind="primary"]:hover {{
+            background-color: #2900A5 !important;
+            transform: translateY(-2px);
+            box-shadow: none !important;
+        }}
+        
+        /* 6. SECONDARY/LINK BUTTONS */
+        div[data-testid="stButton"] > button[kind="secondary"] {{
+            background: transparent !important;
+            border: none !important;
+            color: #9CA3AF !important; /* Gray for "Have an account?" links check */
+            font-weight: 600;
+            font-size: 0.9rem;
+        }}
+        div[data-testid="stButton"] > button[kind="secondary"]:hover {{
+            color: #3500D3 !important;
+        }}
+
+        /* 7. TYPOGRAPHY */
+        .messimo-title {{
+            font-family: 'Manrope', sans-serif;
+            font-weight: 600; 
+            font-size: 2.5rem; /* Large Title */
+            color: #7fb74e;
+            margin-bottom: 10px;
+            letter-spacing: -1px;
+        }}
+        .messimo-subtitle {{
+            color: #6B7280;
+            margin-bottom: 30px;
+            font-size: 1rem;
+            font-weight: 500;
+        }}
+        
+        /* 9. FORM CONTAINER OVERRIDE (INPUTS REPLICA FIX) */
+        div[data-testid="stVerticalBlock"]:has(div#login_anchor):not(:has(div[data-testid="stVerticalBlock"])) {{
+            background-color: #FFFFFF !important;
+            padding: 50px 50px !important; /* Balanced padding */
+            border-radius: 40px !important;
+            box-shadow: none !important; /* Clean flat card */
+            gap: 1rem !important; /* Increased gap for better spacing */
+            display: flex;
+            flex-direction: column;
+            margin-top: 0px !important; /* Force card container UP */
+            margin-bottom: 0px !important;
+        }}
+
+        /* 4. PILL INPUTS (V41 RESTORED) */
+        
+        /* Phase 1: Parent Layout - Force Full Width and No Clipping */
+        div[data-testid="stTextInput"] {{
+            width: 100% !important;
+            min-width: 100% !important;
+            height: auto !important;
+            overflow: visible !important; /* Fix bottom border clipping */
+        }}
+        
+        div[data-testid="stTextInput"] > div {{
+            width: 100% !important;
+            background-color: transparent !important;
+            border: none !important;
+        }}
+
+        /* Phase 2: The Pill Wrapper - Force Full Width */
+        /* Using a robust selector that catches both Standard and Password (with Eye) inputs */
+        div[data-testid="stTextInput"] div:has(input) {{
+            background-color: #FFFFFF !important;
+            border-radius: 50px !important;
+            border: 2px solid #D1D5DB !important;
+            height: 55px !important; /* Slightly taller to prevent clipping */
+            padding: 0px 15px !important;
+            box-shadow: none !important;
+            width: 100% !important; /* Crucial for Password field */
+            box-sizing: border-box !important;
+            display: flex !important;
+            align-items: center !important; 
+        }}
+        
+        /* Remove inner divs bordering if any (Ghost line prev) */
+        div[data-testid="stTextInput"] div:has(input) > div {{
+             border: none !important;
+        }}
+
+        /* AUTOFILL HACK: Remove ugly blue background from browser autofill */
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover, 
+        input:-webkit-autofill:focus, 
+        input:-webkit-autofill:active {{
+            -webkit-box-shadow: 0 0 0 30px white inset !important;
+            -webkit-text-fill-color: #374151 !important;
+            transition: background-color 5000s ease-in-out 0s; /* Delay default bg */
+        }}
+
+        /* Phase 3: The Input Element Itself */
+        div[data-testid="stTextInput"] input {{
+             background-color: transparent !important;
+             border: none !important;
+             outline: none !important;
+             box-shadow: none !important;
+             color: #374151 !important;
+             width: 100% !important;
+        }}
+
+        /* Phase 4: Focus State */
+        div[data-testid="stTextInput"] div:has(input):focus-within {{
+            border-color: #3500D3 !important;
+            box-shadow: none !important; /* Removed glow/double border */
+        }}
+        
+        /* HIDE UI */
+        #MainMenu, header, footer {{ display: none !important; }}
+        
+        /* HIDE SIDEBAR ON LOGIN PAGE */
+        [data-testid="stSidebar"] {{ display: none !important; }}
+        [data-testid="stSidebarCollapsedControl"] {{ display: none !important; }}
+        </style>
+    ''', unsafe_allow_html=True)
+
+
+
+
+    # --- JS: NUCLEAR SCROLL LOCK ---
+    import streamlit.components.v1 as components
+    components.html("""
+        <script>
+            function lockScroll() {
+                try {
+                    const doc = window.parent.document;
+                    // Lock Body and HTML
+                    doc.body.style.overflow = "hidden";
+                    doc.documentElement.style.overflow = "hidden";
+                    
+                    // Lock Streamlit Containers
+                    const scrollContainers = doc.querySelectorAll('section[data-testid="stAppViewContainer"], section.main, .stApp');
+                    scrollContainers.forEach(el => {
+                        el.style.overflow = "hidden";
+                    });
+                } catch(e) {}
+            }
+            
+            // Run immediately and then every 100ms to fight re-renders
+            lockScroll();
+            setInterval(lockScroll, 100);
+        </script>
+    """, height=0, width=0)
+
+    # --- LAYOUT: Right Sided Card ---
+    # LIFT LOGIN CARD (User Request: "mas arriba" - RIGHT SIDE ONLY via Logo Margin)
+    
+    c_spacer, c_login = st.columns([1.3, 1]) 
+
+    with c_spacer:
+        st.write("") 
+
+    with c_login:
+        # ANCHOR FOR CSS TARGETING
+        st.markdown('<div id="login_anchor"></div>', unsafe_allow_html=True)
+        
+        # LOGO HEADER
+        
+        logo_html = ""
+        if logo_b64:
+             # Height 280px. Adjusted margins: -85px Top (Raised slightly), -50px Bottom (Separated)
+             logo_html = f'<img src="data:image/png;base64,{logo_b64}" style="height: 280px; width: auto; max-width: 100%; display: block; margin: -85px auto -50px auto;">'
+        
+        # Title: "Vamos a estudiar" - Title lifted closer to logo, inputs compensated
+        st.markdown(f'<div style="text-align: center; margin-bottom: 30px; margin-top: 0px;"><div style="display: flex; align-items: center; justify-content: center; margin-bottom: -20px;">{logo_html}</div><div class="messimo-title" style="margin-top: -30px; color: #4B22DD;">¡Vamos a estudiar!</div></div>', unsafe_allow_html=True)
+
+        # FORM INPUTS (Wrapped in st.form to prevent jitter/refresh while typing)
+        with st.form("login_form", clear_on_submit=False, border=False):
+            # Hack to remove default form padding if needed, but border=False helps.
+            email = st.text_input("Correo electrónico", key="login_email", placeholder="Correo electrónico", label_visibility="collapsed")
+            password = st.text_input("Contraseña", type="password", key="login_pass", placeholder="Contraseña", label_visibility="collapsed")
+            
+            # Submit Button (Primary)
+            submitted = st.form_submit_button("Iniciar sesión", type="primary", use_container_width=True)
+            
+            if submitted:
+                if email and password:
+                    from database import sign_in
+                    user = sign_in(email, password)
+                    if user:
+                        st.session_state['user'] = user
+                        
+                        # Try to set cookie
+                        if 'supabase_session' in st.session_state:
+                             try:
+                                 sess = st.session_state['supabase_session']
+                                 # Calculate expiry (e.g. 7 days)
+                                 exp_date = datetime.datetime.now() + datetime.timedelta(days=7)
+                                 # Set Keep Logged In
+                                 cookie_manager.set("supabase_refresh_token", sess.refresh_token, expires_at=exp_date)
+                                 print(f"Cookie set for user: {user.email}")
+                                 time.sleep(2) # CRITICAL: Wait for frontend to set cookie
+                             except Exception as e:
+                                 print(f"Cookie set error: {e}")
+                                 
+                        st.rerun()
+                    else:
+                        st.error("Credenciales incorrectas.")
+                else:
+                    st.warning("Por favor ingresa correo y contraseña.")
+
+
+        
+        # TERMS & FOOTER
+        # Keeping Terms in English for now or translating? "ponerlo en español todo lo inglés" -> Translate everything.
+
+        
+        # Sign up button/link
+        st.markdown('<div style="text-align: center; color: #6b7280; font-size: 0.9rem; margin-top: 15px;">¿No tienes una cuenta? <span style="color: #4B22DD; font-weight: 600;">Regístrate</span></div>', unsafe_allow_html=True)
+
+
+    st.stop()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# --- CONFIGURATION & MIGRATION ---
+CORE_OUTPUT_ROOT = "output"
+
+def run_migration_check():
+    """Moves legacy 'output' folders into a default course folder."""
+    default_course = "Diplomado_Marketing_Inicial"
+    search_paths = ["transcripts", "notes", "guides", "library"]
+    
+    # Check if any legacy folder exists directly in root 'output'
+    needs_migration = False
+    for p in search_paths:
+        if os.path.exists(os.path.join(CORE_OUTPUT_ROOT, p)):
+            needs_migration = True
+            break
+            
+    if needs_migration:
+        target_root = os.path.join(CORE_OUTPUT_ROOT, default_course)
+        os.makedirs(target_root, exist_ok=True)
+        
+        for p in search_paths:
+            src = os.path.join(CORE_OUTPUT_ROOT, p)
+            dst = os.path.join(target_root, p)
+            if os.path.exists(src):
+                # Move content 
+                try:
+                    shutil.move(src, dst)
+                except Exception as e:
+                    print(f"Migration error for {p}: {e}")
+                    
+run_migration_check() # Run once on startup
+
+# Helper for dynamic paths
+def get_out_dir(sub_folder=""):
+    course = st.session_state.get('current_course', 'Diplomado_Marketing_Inicial')
+    # Sanitize
+    safe_course = "".join([c for c in course if c.isalnum() or c in (' ', '-', '_')]).strip()
+    if not safe_course: safe_course = "General"
+    
+    path = os.path.join(CORE_OUTPUT_ROOT, safe_course, sub_folder)
+    os.makedirs(path, exist_ok=True)
+    return path
+
+# --- HELPER FUNCTIONS (MOVED TO TOP FOR SCOPE) ---
+def clean_markdown(text):
+    """Removes basic markdown syntax for clean copying."""
+    import re
+    text = re.sub(r'^#+\s*', '', text, flags=re.MULTILINE) # Headers
+    text = re.sub(r'\*\*|__', '', text) # Bold
+    text = re.sub(r'\*|_', '', text) # Italics
+    text = re.sub(r'^[\*\-]\s+', '', text, flags=re.MULTILINE) # Bullets
+    return text.strip()
+
+def copy_to_clipboard(text):
+    """Copies text to Windows clipboard using clip command."""
+    import subprocess
+    try:
+        # Use UTF-16LE for Windows clipboard to handle special chars/emojis correctly
+        subprocess.run(['clip'], input=text.encode('utf-16le'), check=True)
+        return True
+    except Exception as e:
+        print(f"Clipboard error: {e}")
+        return False
+
+def get_global_context():
+    """
+    Fetches all text content from the current course's files in DB.
+    Returns: (full_text_context, file_count)
+    """
+    from database import get_course_full_context
+    c_id = st.session_state.get('current_course_id')
+    if not c_id: return "", 0
+    
+    full_text = get_course_full_context(c_id)
+    # Count how many files are in there (approx based on our separator)
+    file_count = full_text.count("--- ARCHIVO:")
+    return full_text, file_count
+
+# --- API KEY MANAGEMENT ---
+def load_api_key():
+    # 1. User Custom Key (Session) - Highest Priority
+    if 'custom_api_key' in st.session_state and st.session_state['custom_api_key']:
+        return st.session_state['custom_api_key']
+
+    # 2. Try Streamlit Secrets (Best for Cloud)
+    try:
+        if "GEMINI_API_KEY" in st.secrets:
+            return st.secrets["GEMINI_API_KEY"]
+    except:
+        pass
+
+    # 3. Try Local File (Best for Local)
+    if os.path.exists("api_key.txt"):
+        with open("api_key.txt", "r") as f:
+            return f.read().strip()
+    return ""
+
+def save_api_key(key):
+    with open("api_key.txt", "w") as f:
+        f.write(key)
+
+# --- INITIALIZATION & API CHECK ---
+saved_key = load_api_key()
+
+if not saved_key and 'api_key_input' not in st.session_state:
+     # We can't init assistants yet if no key.
+     # But Spotlight code runs immediately.
+     # We handle this by checking if 'assistant' exists in Spotlight block.
+     pass
+
+# To avoid complexity, we'll initialize with empty key if needed, or handle it gracefully.
+# Better: Load key, if exists init.
+# --- INITIALIZATION UTILS (Cached) ---
+@st.cache_resource
+def get_transcriber_engine(key, model_choice="gemini-2.0-flash", breaker="V6"):
+    return Transcriber(key, model_name=model_choice, cache_breaker=breaker)
+
+@st.cache_resource
+def get_assistant_engine(key, model_choice="gemini-2.0-flash", breaker="V19"):
+    return StudyAssistant(key, model_name=model_choice, cache_breaker=breaker)
+
+api_key = saved_key
+transcriber = None
+assistant = None
+
+if api_key:
+    try:
+        # Force fresh engines with explicit model choice
+        # REVERTING TO CLASSIC V9 LOGIC
+        transcriber = get_transcriber_engine(api_key, model_choice="gemini-2.0-flash", breaker="V13_Classic") 
+        assistant = get_assistant_engine(api_key, model_choice="gemini-2.0-flash", breaker="V19")
+    except Exception as e:
+        st.error(f"Error al iniciar IA: {e}")
+
+    # DEBUG: Confirm Version to User (DISABLED BY REQUEST)
+    # if 'v9_classic_toast_shown' not in st.session_state:
+    #     st.toast("🦄 Sistema IA: V9.0 (Clásico) Restaurado", icon="✅")
+    #     st.session_state['v9_classic_toast_shown'] = True
+
+
+# --- SPOTLIGHT RESULT DISPLAY ---
+if 'spotlight_query' in st.session_state and st.session_state['spotlight_query']:
+    query = st.session_state['spotlight_query']
+    mode = st.session_state.get('spotlight_mode', "⚡ Concepto Rápido")
+    
+    # Visual Container
+    st.markdown(f"#### 🔍 Resultados de Búsqueda rápida: *{query}*")
+    
+    with st.spinner(f"Investigando en tu bibliografía ({mode})..."):
+        if not assistant:
+             st.error("⚠️ Configura tu API Key en la barra lateral primero.")
+        else:
+            # 1. Get Context (Efficiency: Only load if we search)
+            gl_ctx, gl_count = get_global_context()
+            
+            if gl_count == 0:
+                st.warning("⚠️ Tu cerebro digital está vacío. Sube videos o archivos a la Biblioteca primero.")
+            else:
+                # 2. Search
+                try:
+                    # Check if we already have this result cached to avoid re-run on every interaction? 
+                    # For simplicity, we run fresh or user can rely on session state if we move it there.
+                    # Let's simple-cache to session state to prevent refresh loops.
+                    search_key = f"search_{query}_{mode}"
+                    if search_key not in st.session_state:
+                        search_res = assistant.search_knowledge_base(query, gl_ctx, mode=mode)
+                        st.session_state[search_key] = search_res
+                    
+                    final_res = st.session_state[search_key]
+                    
+                    # Display
+                    if "Rápido" in mode:
+                        st.info(final_res, icon="⚡")
+                    else:
+                        st.success(final_res, icon="🕵🏻")
+                        
+                except Exception as e:
+                    st.error(f"Error en Spotlight: {e}")
+            
+    if st.button("Cerrar búsqueda", key="close_spot"):
+        st.session_state['spotlight_query'] = ""
+        st.rerun()
+
+    st.divider()
+
+# --- Custom CSS for "Estudian2" Elegant Theme ---
+# --- GLOBAL CSS ---
+CSS_STYLE = """
+<style>
+/* Import Google Fonts */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+    /* HIDE STREAMLIT STATUS WIDGET & DECORATION */
+    div[data-testid="stStatusWidget"] { visibility: hidden !important; }
+    div[data-testid="stDecoration"] { visibility: hidden !important; }
+
+    /* --- ULTIMATE KILL TO LOADING OVERLAY (NO MORE WHITE TRANSPARENCY) --- */
+    /* Target every possible container Streamlit uses for the "dimming" effect */
+    [data-testid="stAppViewBlockContainer"],
+    [data-testid="stAppViewContainer"],
+    [data-testid="stMainViewContainer"],
+    [data-test-script-state="running"] [data-testid="stAppViewBlockContainer"],
+    [data-test-script-state="running"] [data-testid="stAppViewContainer"],
+    [data-test-script-state="running"] .stApp,
+    section.main,
+    div.block-container,
+    .stApp > div {
+        opacity: 1 !important;
+        filter: none !important;
+        transition: none !important;
+    }
+    
+    /* Force background to stay solid and kill any covering pseudo-elements */
+    .stApp::before, .stApp::after, 
+    [data-testid="stAppViewContainer"]::before,
+    [data-testid="stAppViewContainer"]::after {
+        display: none !important;
+        opacity: 0 !important;
+    }
+
+    /* --- GLOBAL VARIABLES (Moved to Top) --- */
+    /* :root variables are now prevalent globally to prevent FOUC */
+
+    html, body, [class*="css"] {
+        font-family: 'Inter', sans-serif;
+        color: var(--text-color);
+        background-color: var(--bg-color);
+    }
+
+    /* 1. APP BACKGROUND (Light) */
+    .stApp {
+        background-color: var(--bg-color);
+        background-image: none;
+    }
+    
+    /* 2. TOP HEADER BAR - PURPLE */
+    header[data-testid="stHeader"] {
+        background-color: var(--primary-purple);
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    /* 3. THE CENTER CARD (Content) */
+    .main .block-container {
+        background-color: #ffffff;
+        border-radius: 30px;
+        padding: 3rem 4rem !important;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+        margin-top: 20px;
+        max-width: 95%;
+    }
+    div[data-testid="block-container"] {
+        background-color: #ffffff;
+        border-radius: 30px;
+        padding: 3rem !important;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+        margin: 20px auto;
+        max-width: 95%;
+    }
+
+    /* SIDEBAR CONTAINER */
+    section[data-testid="stSidebar"], div[data-testid="stSidebar"] {
+        background-color: #FFFFFF;
+        border-right: 1px solid var(--border-color);
+    }
+    
+    /* HEADERS */
+    h1, h2, h3, h4 {
+        color: var(--primary-purple);
+        font-weight: 700;
+        letter-spacing: -0.5px;
+    }
+    h1 { font-size: 2.5rem; }
+
+    /* --- SIDEBAR SPECIFIC STYLES (MATCH REF IMAGE) --- */
+    
+    /* Custom "Logout" Button -> Purple Block */
+    div[data-testid="stSidebar"] div.stButton button {
+        background-color: var(--primary-purple) !important;
+        color: white !important;
+        border-radius: 30px !important; /* Pill shape like reference */
+        text-align: center !important;
+        justify-content: center !important;
+        font-weight: 600 !important;
+        border: none !important;
+        padding: 0.5rem 1rem !important;
+        margin-top: 10px;
+    }
+    div[data-testid="stSidebar"] div.stButton button:hover {
+        background-color: #3b1aa3 !important;
+        color: white !important;
+    }
+
+    /* Sidebar Inputs -> Light Lilac BG */
+    [data-testid="stSidebar"] div.stTextInput input, 
+    [data-testid="stSidebar"] div[data-baseweb="select"] > div {
+        background-color: #F4F1FF !important; /* Very light purple */
+        border: 1px solid #E0D4FC !important;
+        border-radius: 12px !important;
+        color: #4B22DD !important;
+    }
+
+    /* "Clave del Sistema Activa" Box */
+    .system-key-box {
+        background-color: #E6F4EA;
+        color: #1E4620;
+        padding: 10px;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid #CEEAD6;
+    }
+
+    /* TABS */
+
+
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 10px;
+        background-color: transparent;
+        padding: 0px;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #F0F0F0;
+    }
+    .stTabs [data-baseweb="tab"] {
+        background-color: #F5F6FA;
+        border-radius: 8px 8px 0 0;
+        color: #64748b;
+        font-weight: 600;
+        padding: 10px 20px;
+        border: none;
+    }
+    
+    /* UPDATED TAB STYLES: GREEN BOTTOM LINE */
+    .stTabs [aria-selected="true"] {
+        background-color: var(--primary-purple) !important;
+        color: white !important;
+        border-radius: 8px 8px 0 0 !important;
+        border-bottom: 4px solid #6CC04A !important; /* THE GREEN LINE */
+    }
+    
+    /* Remove default Streamlit tab highlight if present */
+    .stTabs [data-baseweb="tab-highlight"] {
+        background-color: #6CC04A !important;
+    }
+
+    
+
+    /* REMOVE SIDEBAR TOP PADDING */
+    /* Target the container inside the sidebar */
+    section[data-testid="stSidebar"] > div > div:first-child {
+        padding-top: 0rem !important; /* LIFT LOGO (removed padding) */
+    }
+    
+    [data-testid="stSidebar"] input {
+        background-color: #F4F1FF !important;
+        color: #4B22DD !important;
+        font-weight: 500 !important;
+        border-radius: 8px !important;
+        border: 1px solid #D8CCF6 !important;
+    }
+    /* Target the container background for Selectbox */
+    [data-testid="stSidebar"] [data-baseweb="select"] > div {
+        background-color: #F4F1FF !important;
+        border-color: #D8CCF6 !important;
+        color: #4B22DD !important;
+    }
+    
+    /* 3. Sidebar Buttons (Pill Shape, Purple) */
+    /* We target the button element specifically inside sidebar */
+    [data-testid="stSidebar"] button[kind="secondary"] {
+        background-color: #4B22DD !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 20px !important; /* Pill */
+        margin-top: 10px !important;
+        box-shadow: 0 4px 6px rgba(75, 34, 221, 0.2) !important;
+    }
+    [data-testid="stSidebar"] button[kind="secondary"]:hover {
+        background-color: #3b1aa3 !important;
+        transform: translateY(-1px);
+    }
+    
+    /* 4. "System Key" Box Tweaks */
+    .system-key-box {
+        background-color: #E6F4EA !important;
+        border: 1px solid #CEEAD6 !important;
+        color: #1E4620 !important;
+        font-weight: 600 !important;
+    }
+    
+    /* 5. Radio Buttons -> Custom Coloring if possible (Streamlit limits this) */
+    [data-testid="stSidebar"] [role="radiogroup"] label {
+        color: #1A1A1A !important;
+        font-weight: 500 !important;
+    }
+
+    /* FORCE ALL SIDEBAR BUTTONS TO BE ROUNDED */
+    [data-testid="stSidebar"] button {
+        border-radius: 25px !important; /* High value for Pill shape */
+        border: none !important;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1) !important;
+        transition: transform 0.1s, box-shadow 0.1s !important;
+    }
+    
+    [data-testid="stSidebar"] button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 8px rgba(0,0,0,0.15) !important;
+    }
+    
+    /* Ensure Multiselect tags are also rounded if possible (Optional polish) */
+    [data-testid="stSidebar"] span[data-baseweb="tag"] {
+        border-radius: 15px !important;
+    }
+
+    /* --- TAB 1 REBRAND CSS --- */
+    
+    /* File Uploader Container */
+    div[data-testid="stFileUploader"] section[data-testid="stFileUploaderDropzone"] {
+        background-color: #F8F9FE;
+        border: 2px dashed #B8B9E0 !important;
+        border-radius: 20px !important;
+        padding: 30px !important;
+    }
+    
+    /* "Browse files" Button -> Bright Green */
+    div[data-testid="stFileUploader"] button[kind="secondary"] {
+        background-color: #6CC04A !important;
+        color: white !important;
+        border-radius: 10px !important;
+        border: none !important;
+        font-weight: 700 !important;
+        padding: 0.6rem 1.8rem !important;
+        text-transform: none !important;
+        box-shadow: 0 4px 10px rgba(108, 192, 74, 0.4) !important;
+    }
+    div[data-testid="stFileUploader"] button[kind="secondary"]:hover {
+        background-color: #5ab03a !important;
+        color: white !important;
+        transform: translateY(-1px);
+    }
+    
+    /* Titles */
+    h2.transcriptor-title {
+        color: #4B22DD !important; /* Authentic Ref Purple */
+        font-family: 'Inter', sans-serif !important;
+        font-weight: 800 !important;
+        font-size: 2.2rem !important;
+        letter-spacing: -1px !important;
+        margin-bottom: 1.5rem !important;
+        margin-top: 1rem !important;
+    }
+    
+    p.transcriptor-subtitle {
+        color: #4A4A4A !important;
+        font-size: 1.05rem !important;
+        margin-bottom: 30px !important;
+        line-height: 1.6;
+    }
+    
+    /* Green Placeholder Frame */
+    .green-frame {
+        background-color: #6CC04A;
+        border-radius: 30px;
+        padding: 20px;
+        box-shadow: 0 15px 30px rgba(108, 192, 74, 0.25);
+        width: 350px !important;
+        min-width: 350px !important;
+        max-width: 350px !important;
+        flex: 0 0 350px !important; /* Strict Flex locking */
+        aspect-ratio: 1 / 1.1; /* Maintain exact proportion */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto; /* Center in column */
+        overflow: hidden;
+    }
+    
+    .green-frame img {
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: cover !important;
+        max-width: 100% !important;
+        border-radius: 20px;
+    }
+    .green-frame-inner {
+        background-color: #E2E8F0;
+        border-radius: 20px;
+        width: 100%;
+        height: 100%;
+        min-height: 360px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        color: #64748b;
+        font-weight: 600;
+    }
+    
+    /* Exact replica of green-frame but Purple */
+    .purple-frame {
+        background-color: #4B22DD;
+        border-radius: 30px;
+        padding: 20px;
+        box-shadow: 0 15px 30px rgba(75, 34, 221, 0.25);
+        width: 350px !important;
+        min-width: 350px !important;
+        max-width: 350px !important;
+        flex: 0 0 350px !important; /* Strict Flex locking */
+        aspect-ratio: 1 / 1.1; /* Maintain exact proportion */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto; /* Center in column */
+        overflow: hidden;
+    }
+    
+    .purple-frame img {
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: cover !important;
+        max-width: 100% !important;
+        border-radius: 20px;
+    }
+
+    /* --- GLOBAL BUTTON STYLING (Universal Consistency) --- */
+    
+    /* Target ALL standard buttons in the main app area */
+    div.stButton > button {
+        background-color: #4B22DD !important; /* Brand Purple */
+        color: white !important;
+        border-radius: 30px !important; /* Full Pill Shape */
+        border: none !important;
+        padding: 0.6rem 2rem !important;
+        font-weight: 600 !important;
+        box-shadow: 0 4px 6px rgba(75, 34, 221, 0.2) !important;
+        transition: all 0.2s ease !important;
+    }
+    
+    div.stButton > button:hover {
+        background-color: #3b1aa3 !important; /* Darker Purple */
+        color: white !important;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(75, 34, 221, 0.3) !important;
+    }
+    
+    /* Target Primary Buttons (if any are used, e.g. Delete, ensuring they are also round) */
+    div.stButton > button[kind="primary"] {
+        border-radius: 30px !important;
+    }
+
+    /* LOGIN FORM BUTTON - GREEN FORCE (Submit Only - No SVGs) */
+    [data-testid="stForm"] button:not(:has(svg)) {
+        background-color: #6CC04A !important;
+        border: none !important;
+        color: white !important;
+    }
+    [data-testid="stForm"] button:not(:has(svg)):hover {
+        background-color: #5ab03a !important;
+    }
+
+    /* --- GLOBAL HEADERS (BRANDING) --- */
+    h1, h2, h3, h4, h5, h6 {
+        color: #4B22DD !important;
+        font-family: 'Inter', sans-serif !important;
+        font-weight: 700 !important;
+    }
+    
+    /* Specific Streamlit markdown headers */
+    /* Specific Streamlit markdown headers */
+    .stMarkdown h1, .stMarkdown h2, .stMarkdown h3 {
+        color: #4B22DD !important;
+    } 
+
+    div.stButton > button:active {
+        background-color: #2a1275 !important;
+        transform: translateY(0);
+    }
+</style>
+"""
+st.markdown(CSS_STYLE, unsafe_allow_html=True)
+
+# CSS moved to top (Legacy cleanup)
+
+# --- NUCLEAR UNIVERSAL SCROLLER (DEFINITIVE) ---
+
+# 1. GLOBAL LOADING FIX (Always running)
+components.html("""
+<script>
+    (function() {
+        const root = window.parent.document;
+        
+        // Inject Base CSS
+        const style = root.createElement('style');
+        style.id = 'estudian2_nuclear_overlay_kill';
+        style.innerHTML = `
+            [data-testid="stAppViewBlockContainer"],
+            [data-testid="stAppViewContainer"],
+            [data-testid="stMainViewContainer"],
+            iframe, .stApp, section.main, .block-container {
+                opacity: 1 !important;
+                filter: none !important;
+                transition: none !important;
+            }
+            .stApp::before, .stApp::after, 
+            [data-testid="stAppViewContainer"]::before,
+            [data-testid="stAppViewContainer"]::after {
+                display: none !important;
+                opacity: 0 !important;
+            }
+            /* NUCLEAR SCROLLBAR HIDE (PARENT LEVEL) */
+            ::-webkit-scrollbar {
+                width: 0px !important;
+                background: transparent !important;
+                display: none !important;
+            }
+            html, body {
+                scrollbar-width: none !important;
+                -ms-overflow-style: none !important; 
+                overflow-y: auto !important; /* Keep scrolling, hide bar */
+            }
+        `;
+        if (!root.getElementById(style.id)) root.head.appendChild(style);
+
+        // REAL-TIME VIGILANTE OBSERVER
+        const observer = new MutationObserver(() => {
+            const state = root.querySelector('.stApp')?.getAttribute('data-test-script-state');
+            if (state === 'running') {
+                const iframes = root.querySelectorAll('iframe');
+                iframes.forEach(i => {
+                    i.style.opacity = '1';
+                    i.style.filter = 'none';
+                });
+                const containers = root.querySelectorAll('[data-testid*="Container"]');
+                containers.forEach(c => {
+                    c.style.opacity = '1';
+                    c.style.filter = 'none';
+                });
+            }
+        });
+        observer.observe(root.body, { attributes: true, subtree: true, attributeFilter: ['style', 'data-test-script-state'] });
+    })();
+</script>
+""", height=0)
+
+# 2. LOGGED-IN SCROLLER (Only after login)
+if st.session_state.get('user'):
+    components.html("""
+    <script>
+        (function() {
+            const root = window.parent.document;
+            const inject = () => {
+                try {
+                    // Check if we are still meant to be here (Security check)
+                    // But simpler: just check if button exists
+                    if (root.getElementById('estudian2_nuclear_scroller')) return;
+                    
+                    const btn = root.createElement('button');
+                    btn.id = 'estudian2_nuclear_scroller';
+                    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px; pointer-events: none;"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>';
+                    
+                    btn.style.cssText = `
+                        position: fixed !important;
+                        bottom: 120px !important;
+                        right: 30px !important;
+                        z-index: 2147483647 !important;
+                        width: 40px !important;
+                        height: 40px !important;
+                        border-radius: 50% !important;
+                        background-color: #4B22DD !important;
+                        display: flex !important;
+                        align-items: center !important;
+                        justify-content: center !important;
+                        cursor: pointer !important;
+                        border: none !important;
+                        box-shadow: 0 4px 15px rgba(0,0,0,0.4) !important;
+                        transition: transform 0.2s !important;
+                        outline: none !important;
+                    `;
+                    
+                    btn.onclick = function() {
+                        const marker = window.parent.document.getElementById('end_marker');
+                        if (marker) {
+                            marker.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                        } else {
+                            const main = window.parent.document.querySelector('.main');
+                            if (main) main.scrollTo({ top: 100000, behavior: 'smooth' });
+                        }
+                    };
+                    
+                    btn.onmouseenter = () => btn.style.transform = 'scale(1.1)';
+                    btn.onmouseleave = () => btn.style.transform = 'scale(1.0)';
+                    
+                    root.body.appendChild(btn);
+                } catch(e) {}
+            };
+            
+            // KILL PREVIOUS INTERVALS
+            if (window.parent.estudian2_scroller_interval) clearInterval(window.parent.estudian2_scroller_interval);
+            
+            // START NEW
+            window.parent.estudian2_scroller_interval = setInterval(inject, 2000);
+            inject();
+        })();
+    </script>
+    """, height=0)
+else:
+    # Cleanup if logged out (important for estetico)
+    components.html("""
+    <script>
+        const root = window.parent.document;
+        
+        // 1. KILL KNOWN INTERVALS
+        if (window.parent.estudian2_scroller_interval) clearInterval(window.parent.estudian2_scroller_interval);
+        
+        // 2. ACTIVE DEFENSE (Anti-Zombie Shield)
+        // Since we can't kill anonymous intervals from old versions, we constantly delete their work.
+        const killerInfo = setInterval(() => {
+            const btn = root.getElementById('estudian2_nuclear_scroller');
+            if (btn) btn.remove();
+        }, 50); // Run faster than the creator (which is 2000ms)
+        
+        // Store this killer so we can stop it if we login later (though page reload handles that)
+        window.parent.estudian2_killer_interval = killerInfo;
+    </script>
+    """, height=0)
+
+# Sidebar
+with st.sidebar:
+    # st.caption("🚀 v3.3 (API Fix)") # Removed per user request
+    # --- 1. LOGO & USER ---
+    # Left Aligned ("RAS con el resto")
+    @st.cache_data
+    def load_logo_cached():
+        if os.path.exists("assets/logo_sidebar.png"):
+            return Image.open("assets/logo_sidebar.png")
+        return None
+
+    logo_img = load_logo_cached()
+    if logo_img:
+        st.image(logo_img, width=180)
+    else:
+        st.markdown("### 🎓 E-Education")
+    if st.session_state.get('user'):
+        # User Info (Consistent spacing)
+        st.markdown(f"""
+        <div style="display: flex; align-items: center; gap: 10px; margin-top: 30px; margin-bottom: 20px;">
+            <div style="font-size: 24px;">👤</div>
+            <div style="font-size: 14px; color: #31333F; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{st.session_state['user'].email}">
+                {st.session_state['user'].email}
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        if st.button("Cerrar sesión", key="logout_btn", use_container_width=True):
+            st.session_state['force_logout'] = True 
+            st.session_state['user'] = None
+            if 'supabase_session' in st.session_state: del st.session_state['supabase_session']
+            try:
+                # Force delete multiple times to be sure
+                cookie_manager.delete("supabase_refresh_token")
+            except: pass
+            
+            # Double Rerun strategy for specific stx components issues
+            st.rerun()
+
+    st.markdown('<div class="aesthetic-sep"></div>', unsafe_allow_html=True)
+    st.markdown('<div style="height:15px;"></div>', unsafe_allow_html=True)
+
+    # --- MODO ESTUDIO & LEYENDA ---
+    study_mode = st.toggle("Modo Estudio (Resaltadores) 🎨", value=True, help="Activa o desactiva los colores de estudio.", key="study_mode_toggle")
+    
+    # Combined block for toggle logic and legend
+    with st.expander("📚 Leyenda de Colores", expanded=study_mode):
+        st.markdown("""
+            <div style="font-size: 0.8rem; line-height: 1.4;">
+                <div style="margin-bottom:6px;"><span style="background-color: #ffcccc; color: #900; border: 1px solid #ff9999; padding: 1px 4px; border-radius: 3px; font-weight: bold;">Rojo</span>: Definiciones.</div>
+                <div style="margin-bottom:6px;"><span style="background-color: #cce5ff; color: #004085; border: 1px solid #b8daff; padding: 1px 4px; border-radius: 3px; font-weight: bold;">Azul</span>: Ejemplos.</div>
+                <div style="margin-bottom:6px;"><span style="background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; padding: 1px 4px; border-radius: 3px; font-weight: bold;">Verde</span>: Notas.</div>
+                <div style="margin-bottom:6px;"><span style="background-color: #fff3cd; color: #856404; border: 1px solid #ffeeba; padding: 1px 4px; border-radius: 3px; font-weight: bold;">Amarillo</span>: Datos.</div>
+                <div style="margin-bottom:6px;"><span style="background-color: #e2d9f3; color: #512da8; border: 1px solid #d1c4e9; padding: 1px 4px; border-radius: 3px; font-weight: bold;">Púrpura</span>: Claves.</div>
+            </div>
+        """, unsafe_allow_html=True)
+
+    # LOGIC: Python-Based Toggle (Clean & Synchronous)
+    # When toggle is changed, script reruns. We simply inject the hiding CSS if needed.
+    if not study_mode:
+        st.markdown("""
+            <style>
+            .sc-base, .sc-example, .sc-note, .sc-data, .sc-key,
+            .stApp .sc-base, .stApp .sc-example, .stApp .sc-note, .stApp .sc-data, .stApp .sc-key {
+                background-color: transparent !important;
+                padding: 0 !important;
+                color: inherit !important;
+                border: none !important;
+                font-weight: inherit !important;
+            }
+            </style>
+        """, unsafe_allow_html=True)
+
+    st.markdown('<div class="aesthetic-sep"></div>', unsafe_allow_html=True)
+
+    # --- 2. HISTORIAL DE CHATS ---
+    if 'current_chat_session' not in st.session_state:
+        st.session_state['current_chat_session'] = None
+    with st.expander("🗂️ Historial de Chats", expanded=True):
+        # Create New
+        if st.button("➕ Nuevo chat", use_container_width=True):
+            new_sess = create_chat_session(st.session_state['user'].id, "Nuevo chat")
+            if new_sess:
+                st.session_state['current_chat_session'] = new_sess
+                st.session_state['tutor_chat_history'] = [] # Reset for new chat
+                st.session_state['redirect_target_name'] = "Tutoría 1 a 1" # Explicit Redirect
+                st.session_state['force_chat_tab'] = True # Force switch
+                
+                # UPDATE URL
+                try:
+                    if hasattr(st, 'query_params'):
+                        st.query_params['chat_id'] = str(new_sess['id'])
+                    else:
+                        st.experimental_set_query_params(chat_id=str(new_sess['id']))
+                except: pass
+                
+                st.rerun()
+
+        # List Sessions
+        sessions = get_chat_sessions(st.session_state['user'].id)
+        
+        # Determine active ID for highlighting
+        active_id = st.session_state['current_chat_session']['id'] if st.session_state['current_chat_session'] else None
+
+        # LIMIT TO TOP 1 (Minimalist)
+        visible_sessions = sessions[:1]
+        
+        for sess in visible_sessions:
+            # Highlight active session button style could be done via key or custom CSS, 
+            # for now standard buttons.
+            # Truncate name to prevent fat buttons
+            display_name = sess['name']
+            if len(display_name) > 28:
+                display_name = display_name[:25] + "..."
+                
+            label = f"📝 {display_name}"
+            if active_id == sess['id']:
+                label = f"🟢 {display_name}"
+            
+            if st.button(label, key=f"sess_{sess['id']}", use_container_width=True):
+                st.session_state['current_chat_session'] = sess
+                st.session_state['tutor_chat_history'] = [] # Force reload
+                st.session_state['redirect_target_name'] = "Tutoría 1 a 1" # Explicit Redirect
+                st.session_state['force_chat_tab'] = True # Force switch
+                
+                # TRACK FOOTPRINT
+                update_user_footprint(st.session_state['user'].id, {
+                    "type": "chat",
+                    "title": sess['name'],
+                    "target_id": sess['id'],
+                    "subtitle": "Continuar conversación"
+                })
+                
+                # UPDATE URL
+                try:
+                    if hasattr(st, 'query_params'):
+                        st.query_params['chat_id'] = str(sess['id'])
+                    else:
+                        st.experimental_set_query_params(chat_id=str(sess['id']))
+                except: pass
+                
+                st.rerun()
+
+        # VIEW ALL BUTTON ALWAYS VISIBLE
+        if True:
+            if st.button("📂 Ver todo el historial...", help="Ir al panel de gestión completo", use_container_width=True):
+                st.session_state['redirect_target_name'] = "Inicio"
+                st.session_state['force_chat_tab'] = True
+                st.session_state['dashboard_mode'] = 'history' # Activate History View in Dashboard
+                st.rerun()
+
+        # Management for Active Session
+        if st.session_state['current_chat_session']:
+            st.caption("Gestionar Actual:")
+            new_name = st.text_input("Renombrar:", value=st.session_state['current_chat_session']['name'], key="rename_chat_input")
+            if new_name != st.session_state['current_chat_session']['name']:
+                # Save immediately on change (Enter)
+                rename_chat_session(st.session_state['current_chat_session']['id'], new_name)
+                st.session_state['current_chat_session']['name'] = new_name # Valid local update
+                st.rerun()
+            
+            if st.button("🗑️ Borrar chat", key="del_chat_btn"):
+                delete_chat_session(st.session_state['current_chat_session']['id'])
+                st.session_state['current_chat_session'] = None
+                st.session_state['tutor_chat_history'] = []
+                
+                # CLEAR URL
+                try:
+                    if hasattr(st, 'query_params'):
+                        if 'chat_id' in st.query_params: del st.query_params['chat_id']
+                    else:
+                        st.experimental_set_query_params()
+                except: pass
+                
+                st.rerun()
+
+        # --- BULK DELETE (GESTIÓN MASIVA) ---
+        with st.expander("🗑️ Gestión Masiva", expanded=False):
+            # 1. Multi-Select with Invisible Uniqueness Hack
+            # User wants clean names, but Streamlit merges duplicates.
+            # Solution: Append zero-width spaces to duplicates.
+            
+            valid_sessions = [s for s in sessions if s and 'name' in s]
+            
+            # Pre-calc unique labels
+            name_counts = {}
+            processed_sessions = []
+            for s in valid_sessions:
+                original_name = s['name']
+                count = name_counts.get(original_name, 0)
+                # Append invisible characters equal to the count count
+                invisible_suffix = "\u200b" * count
+                s['unique_label'] = f"{original_name}{invisible_suffix}"
+                processed_sessions.append(s)
+                name_counts[original_name] = count + 1
+
+            sel_sessions = st.multiselect(
+                "Seleccionar chats:", 
+                options=processed_sessions,
+                format_func=lambda x: x['unique_label'],
+                key="bulk_chat_select",
+                placeholder="Elige para borrar..."
+            )
+            
+            if sel_sessions:
+                if st.button(f"Eliminar {len(sel_sessions)} chats", type="primary", use_container_width=True):
+                    success_count = 0
+                    deleted_ids = []
+                    for s in sel_sessions:
+                        if delete_chat_session(s['id']):
+                            success_count += 1
+                            deleted_ids.append(s['id'])
+                    
+                    if success_count > 0:
+                        st.success(f"¡{success_count} chats borrados!")
+                        
+                        # Reset current if deleted
+                        curr = st.session_state.get('current_chat_session')
+                        if curr and curr['id'] in deleted_ids:
+                             st.session_state['current_chat_session'] = None
+                             st.session_state['tutor_chat_history'] = []
+                        
+                        time.sleep(0.5)
+                        st.rerun()
+
+    st.markdown('<div class="aesthetic-sep"></div>', unsafe_allow_html=True)
+
+    # --- 3. SPOTLIGHT ACADÉMICO ---
+    st.markdown("#### 🔍 Búsqueda rápida")
+    st.caption("¿Qué buscas hoy?")
+    # Styled Input defined in CSS
+    search_query = st.text_input("Busqueda", placeholder="Ej: 'Concepto de Lead'...", label_visibility="collapsed")
+    # Radio with custom icons workaround via emoji
+    search_mode = st.radio("Modo:", ["⚡ Concepto Rápido", "🕵🏻 Análisis Profundo"], horizontal=False, label_visibility="collapsed")
+    # Search Button (Purple Pill via CSS)
+    if st.button("Buscar 🔍", key="btn_spotlight", use_container_width=True):
+        if search_query:
+            st.session_state['spotlight_query'] = search_query
+            st.session_state['spotlight_mode'] = search_mode
+            st.rerun()
+
+    st.markdown('<div class="aesthetic-sep"></div>', unsafe_allow_html=True)
+
+    # --- 4. ESPACIO DE TRABAJO ---
+    st.markdown("#### 📂 Espacio de Trabajo")
+    st.caption("Diplomado Actual:")
+    if not st.session_state.get('user'):
+        st.stop()
+    current_user_id = st.session_state['user'].id
+    db_courses = get_user_courses(current_user_id)
+    course_names = [c['name'] for c in db_courses]
+    course_map = {c['name']: c['id'] for c in db_courses}
+    if not course_names: course_names = []
+    # RECOVERY LOGIC (Persistence)
+    if 'current_course' not in st.session_state or (st.session_state['current_course'] not in course_names and st.session_state['current_course'] is not None):
+        saved_course = st.session_state['user'].user_metadata.get('last_course_name')
+        if saved_course and saved_course in course_names:
+             st.session_state['current_course'] = saved_course
+        else:
+             st.session_state['current_course'] = course_names[0] if course_names else None
+    options = course_names + ["➕ Crear nuevo..."]
+    idx = 0
+    if st.session_state['current_course'] in course_names: idx = course_names.index(st.session_state['current_course'])
+    selected_option = st.selectbox("Diplomado", options, index=idx, label_visibility="collapsed")
+    if selected_option == "➕ Crear nuevo...":
+        new_name = st.text_input("Nombre Nuevo:", placeholder="Ej: Curso IA")
+        if st.button("Crear"):
+            if new_name:
+                nc = create_course(current_user_id, new_name)
+                if nc: 
+                    st.session_state['current_course'] = nc['name']
+                    st.rerun()
+    else:
+        st.session_state['current_course'] = selected_option
+        st.session_state['current_course_id'] = course_map[selected_option]
+        update_last_course(selected_option)
+        # --- ACTIONS (RENAME / DELETE) ---
+        
+        # RENAME
+        with st.expander("✏️ Renombrar"):
+            rename_input = st.text_input("Nuevo nombre:", value=st.session_state['current_course'], key="rename_input_sb")
+            if rename_input and rename_input != st.session_state['current_course']:
+                # Simple sanitize
+                safe_rename = "".join([c for c in rename_input if c.isalnum() or c in (' ', '-', '_')]).strip()
+                
+                # DB Update
+                from database import rename_course
+                c_id = st.session_state.get('current_course_id')
+                if c_id and rename_course(c_id, safe_rename):
+                    st.session_state['current_course'] = safe_rename
+                    st.success("Renombrado!")
+                    st.rerun()
+                else:
+                    st.error("Error al renombrar.")
+
+        # DELETE
+        
+        # DELETE (Safe & Multi)
+        with st.expander("🗑️ Borrar"):
+            st.caption("Selecciona uno o varios diplomados para borrar.")
+            
+            # 1. Multi-Select (Exclude 'Crear Nuevo' logic implies just listing course names)
+            # We already have course_names and course_map available from above scope
+            
+            courses_to_delete = st.multiselect(
+                "Seleccionar Diplomados:", 
+                options=course_names,
+                format_func=lambda x: f"🗑️ {x}",
+                key="multi_delete_select"
+            )
+            
+            if courses_to_delete:
+                st.write("")
+                # 2. First Trigger Button
+                if st.button("Solicitar eliminación", type="primary", key="btn_req_del"):
+                    st.session_state['delete_confirmation_pending'] = True
+                
+                # 3. Safety Confirmation (Only if requested)
+                if st.session_state.get('delete_confirmation_pending'):
+                    st.warning(f"⚠️ ¿Estás seguro? Vas a eliminar {len(courses_to_delete)} diplomado(s). Esta acción NO se puede deshacer.")
+                    
+                    col_confirm_a, col_confirm_b = st.columns(2)
+                    with col_confirm_a:
+                        if st.button("❌ Cancelar", key="btn_cancel_del"):
+                            st.session_state['delete_confirmation_pending'] = False
+                            st.rerun()
+                    
+                    with col_confirm_b:
+                        if st.button("✅ Sí, confirmar", type="primary", key="btn_confirm_del"):
+                            from database import delete_course
+                            success_count = 0
+                            
+                            for c_name in courses_to_delete:
+                                c_id_del = course_map.get(c_name)
+                                if c_id_del:
+                                    if delete_course(c_id_del):
+                                        success_count += 1
+                            
+                            if success_count > 0:
+                                st.success(f"¡{success_count} cursos borrados!")
+                                st.session_state['delete_confirmation_pending'] = False
+                                # Reset current course if it was deleted
+                                if st.session_state.get('current_course') in courses_to_delete:
+                                    st.session_state['current_course'] = None
+                                st.rerun()
+                            else:
+                                st.error("No se pudo completar la eliminación.")
+            else:
+                # Reset confirmation if selection is cleared
+                if st.session_state.get('delete_confirmation_pending'):
+                    st.session_state['delete_confirmation_pending'] = False
+
+
+# --- INJECT CUSTOM TAB SCROLL BUTTONS (JS) ---
+    components.html("""
+    <script>
+    function lockSidebar() {
+        const doc = window.parent.document;
+        
+        // 1. Force Sidebar Width
+        const sidebar = doc.querySelector('section[data-testid="stSidebar"]');
+        if (sidebar) {
+            sidebar.style.minWidth = '280px';
+            sidebar.style.maxWidth = '280px';
+            sidebar.style.width = '280px';
+            sidebar.style.flex = '0 0 280px';
+        }
+        
+        // 2. Hide specific resize handle if present (safer selector)
+        const resizeHandle = doc.querySelector('div[class*="stSidebarResizeHandle"]');
+        if (resizeHandle) {
+            resizeHandle.style.display = 'none';
+        }
+    }
+
+    function addTabScrollButtons() {
+        const doc = window.parent.document;
+        const tabList = doc.querySelector('div[role="tablist"]');
+        
+        if (tabList && !doc.getElementById('tab-scroll-left')) {
+            // Style the tabList for scroll - FORCE OVERRIDE GLOBAL CSS
+            tabList.style.setProperty('overflow-x', 'auto', 'important');
+            tabList.style.setProperty('overflow-y', 'hidden', 'important');
+            tabList.style.setProperty('white-space', 'nowrap', 'important');
+            tabList.style.scrollBehavior = 'smooth';
+            tabList.style.scrollbarWidth = 'none'; // Hide scrollbar
+            
+            // Create Left Button
+            const btnLeft = doc.createElement('button');
+            btnLeft.id = 'tab-scroll-left';
+            btnLeft.innerHTML = '◀';
+            btnLeft.onclick = (e) => {
+                e.preventDefault();
+                tabList.scrollBy({left: -200, behavior: 'smooth'});
+            };
+            
+            // Create Right Button
+            const btnRight = doc.createElement('button');
+            btnRight.id = 'tab-scroll-right';
+            btnRight.innerHTML = '▶';
+            btnRight.onclick = (e) => {
+                 e.preventDefault();
+                 tabList.scrollBy({left: 200, behavior: 'smooth'});
+            };
+            
+            // Shared Styles
+            const btnStyle = `
+                position: absolute;
+                top: 50%;
+                transform: translateY(-50%);
+                background-color: #4B22DD;
+                color: white;
+                border: none;
+                border-radius: 50%;
+                width: 30px;
+                height: 30px;
+                cursor: pointer;
+                z-index: 100;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 12px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            `;
+            
+            btnLeft.style.cssText = btnStyle + 'left: 0px;';
+            btnRight.style.cssText = btnStyle + 'right: 0px;';
+            
+            // Find container to attach relative positioning
+            const parent = tabList.parentElement;
+            parent.style.position = 'relative';
+            parent.style.padding = '0 35px'; // Make space for buttons
+            
+            parent.appendChild(btnLeft);
+            parent.appendChild(btnRight);
+        }
+    }
+    
+    // Aggressive Loop to fight React Re-renders
+    setInterval(lockSidebar, 100);
+    setTimeout(lockSidebar, 500);
+    
+    // Run Tab Buttons
+    setTimeout(addTabScrollButtons, 500);
+    setTimeout(addTabScrollButtons, 1500); // Retry
+    
+    // --- CONSULTANT FIX: LOCAL STORAGE PERSISTENCE (Option B) ---
+    function setupTabPersistence() {
+        const tabs = window.parent.document.querySelectorAll('button[data-testid="stTab"]');
+        
+        // 1. ADD LISTENERS (Save on click)
+        tabs.forEach(tab => {
+            tab.onclick = () => {
+                localStorage.setItem("my_active_tab", tab.innerText);
+            };
+        });
+
+        // 2. RESTORE (Click saved tab)
+        const savedTab = localStorage.getItem("my_active_tab");
+        if (savedTab) {
+             for (const tab of tabs) {
+                 if (tab.innerText === savedTab && tab.getAttribute('aria-selected') !== 'true') {
+                     tab.click();
+                     break;
+                 }
+             }
+        }
+    }
+    
+    // Run periodically to catch re-renders
+    setTimeout(setupTabPersistence, 1000);
+    setInterval(setupTabPersistence, 3000); 
+    
+    </script>
+    """, height=0)
+
+    # --- TABS DEFINITION ---
+# --- TABS DEFINITION ---
+# NEW: "Inicio" is the Dashboard Tab
+# NEW: "Explorador Didáctico" replaces Apuntes/Guide
+tab_home, tab1, tab_didactic, tab_quiz, tab_lib, tab_tasks, tab_tutor = st.tabs([
+    "🏠 Inicio",
+    "📹 Transcriptor", 
+    "🧠 Explorador Didáctico", 
+    "🧩 Zona Quiz",
+    "📂 Biblioteca",
+    "👩🏻‍🏫 Ayudante de Tareas",
+    "📚 Tutoría 1 a 1"
+])
+
+import pandas as pd # FIX: Missing import for charts
+
+# --- DASHBOARD TAB (HOME) ---
+with tab_home:
+    # Load Stats
+    current_c_id = st.session_state.get('current_course_id')
+    current_c_name = st.session_state.get('current_course', 'General')
+    
+    # --- NICKNAME LOGIC ---
+    # 1. Try to load from User Metadata (Persistent)
+    current_user = st.session_state['user']
+    meta_nick = current_user.user_metadata.get('nickname') if current_user.user_metadata else None
+    
+    if 'user_nickname' not in st.session_state:
+        # Priority: Metadata > Email
+        if meta_nick:
+            st.session_state['user_nickname'] = meta_nick
+        else:
+            st.session_state['user_nickname'] = current_user.email.split('@')[0].capitalize()
+        
+    # Header with Edit Button
+    h_col1, h_col2 = st.columns([0.8, 0.2], vertical_alignment="center")
+    with h_col1:
+        st.markdown(f"## ¡Hola, {st.session_state['user_nickname']}! 👋🏻")
+    with h_col2:
+        with st.popover("✏️", help="Editar tu apodo"):
+            new_nick = st.text_input("¿Cómo quieres que te llame?", value=st.session_state['user_nickname'])
+            if new_nick != st.session_state['user_nickname']:
+                 # SAVE TO DB
+                 updated_user = update_user_nickname(new_nick)
+                 if updated_user:
+                     st.session_state['user'] = updated_user # Update session user to keep metadata fresh
+                     st.session_state['user_nickname'] = new_nick
+                     st.rerun()
+
+    st.markdown(f"Estás estudiando: **{current_c_name.strip()}**")
+    
+    # --- DAILY QUOTE ---
+    import random
+    from datetime import datetime
+    today_str = datetime.utcnow().strftime("%Y-%m-%d")
+    random.seed(today_str) # Seed with date for consistency
+    quotes = [
+        "“La educación es el arma más poderosa que puedes usar para cambiar el mundo.” – Nelson Mandela",
+        "“Cree en ti mismo y en lo que eres.” – Christian D. Larson",
+        "“El éxito es la suma de pequeños esfuerzos repetidos día tras día.” – Robert Collier",
+        "“No cuentes los días, haz que los días cuenten.” – Muhammad Ali",
+        "“Lo único imposible es aquello que no intentas.”",
+        "“La disciplina es el puente entre metas y logros.” – Jim Rohn",
+        "“Aprender es como remar contra corriente: en cuanto se deja, se retrocede.” – Edward Benjamin Britten",
+        "“Tu actitud, no tu aptitud, determinará tu altitud.” – Zig Ziglar",
+        "“Si puedes soñarlo, puedes hacerlo.” – Walt Disney",
+        "“El futuro pertenece a aquellos que creen en la belleza de sus sueños.” – Eleanor Roosevelt"
+    ]
+    daily_quote = random.choice(quotes)
+    st.info(f"💡 **Frase del Día:** {daily_quote}")
+    
+    st.write("")
+    
+    st.write("")
+    
+    # --- DASHBOARD MODE CONTROLLER ---
+    dash_mode = st.session_state.get('dashboard_mode', 'standard')
+    
+    if dash_mode == 'history':
+        # --- FULL HISTORY VIEW ---
+        c_h1, c_h2 = st.columns([0.8, 0.2])
+        c_h1.markdown("### 📚 Historial Completo")
+        if c_h2.button("🔙 Volver"):
+            st.session_state['dashboard_mode'] = 'standard'
+            st.rerun()
+            
+        # Search
+        q_hist = st.text_input("🔍 Buscar en historial...", placeholder="Nombre del chat...")
+        
+        # Get All Chats
+        all_chats = get_chat_sessions(st.session_state['user'].id)
+        if q_hist:
+            all_chats = [c for c in all_chats if q_hist.lower() in c['name'].lower()]
+            
+        # --- BULK DELETE IN DASHBOARD ---
+        if all_chats:
+            with st.expander("🗑️ Gestión Masiva (Eliminar)", expanded=False):
+                # Unique Keys Logic
+                sess_opts = []
+                name_map = {}
+                for s in all_chats:
+                    raw_n = s['name']
+                    count = name_map.get(raw_n, 0)
+                    suffix = "\u200b" * count
+                    label = f"{raw_n}{suffix}"
+                    s['_label'] = label
+                    sess_opts.append(s)
+                    name_map[raw_n] = count + 1
+                
+                sel_del = st.multiselect("Seleccionar para borrar:", sess_opts, format_func=lambda x: x['_label'], key="dash_bulk_del")
+                if sel_del:
+                    st.warning(f"¿Estás seguro de borrar {len(sel_del)} conversaciones?")
+                    if st.button("Sí, borrar definitivamente", key="btn_conf_dash_del"):
+                        succ = 0
+                        ids_del = []
+                        for d in sel_del:
+                            if delete_chat_session(d['id']):
+                                succ += 1
+                                ids_del.append(d['id'])
+                        
+                        if succ > 0:
+                            st.success(f"Se eliminaron {succ} chats.")
+                            # Check active
+                            curr_s = st.session_state.get('current_chat_session')
+                            if curr_s and curr_s['id'] in ids_del:
+                                st.session_state['current_chat_session'] = None
+                                st.session_state['tutor_chat_history'] = []
+                            time.sleep(1)
+                            st.rerun()
+            
+        if all_chats:
+            h_cols = st.columns(3)
+            for i, chat in enumerate(all_chats):
+                with h_cols[i % 3]:
+                    date_str = chat['created_at'].split('T')[0]
+                    if st.button(f"📝 {chat['name']}\n\n📅 {date_str}", key=f"hist_all_{chat['id']}", use_container_width=True):
+                        st.session_state['current_chat_session'] = chat
+                        st.session_state['tutor_chat_history'] = [] 
+                        st.session_state['redirect_target_name'] = "Tutoría 1 a 1"
+                        st.session_state['force_chat_tab'] = True
+                        
+                        # UPDATE URL
+                        try:
+                            if hasattr(st, 'query_params'):
+                                st.query_params['chat_id'] = str(chat['id'])
+                            else:
+                                st.experimental_set_query_params(chat_id=str(chat['id']))
+                        except: pass
+
+                        st.rerun()
+        else:
+            st.warning("No se encontraron chats.")
+            
+    elif current_c_id:
+        # --- STANDARD DASHBOARD VIEW ---
+        stats = get_dashboard_stats(current_c_id, st.session_state['user'].id)
+        
+        # Calculate Real Streak
+        streak = check_and_update_streak(st.session_state['user'])
+        
+        # Gamification Messages
+        streak_msg = "¡Sigue así!"
+        if streak >= 3: streak_msg = "🔥 ¡Estás en llamas!"
+        if streak >= 7: streak_msg = "👑 ¡Leyenda!"
+        
+        # Metrics Row
+        m1, m2, m3 = st.columns(3)
+        m1.metric("📚 Archivos", stats['files'], delta="Recursos totales")
+        m2.metric("💬 Sesiones", stats['chats'], delta="Conversaciones")
+        m3.metric("🔥 Racha", f"{streak} Día{'s' if streak != 1 else ''}", delta=streak_msg)
+        
+        st.divider()
+        
+        # Visuals Row
+        d1, d2 = st.columns([0.6, 0.4])
+        
+        with d1:
+            st.markdown("##### 📊 Tu Biblioteca")
+            # Simple Bar Chart of File Types
+            chart_data = pd.DataFrame.from_dict(stats['file_types'], orient='index', columns=['Cantidad'])
+            st.bar_chart(chart_data)
+            
+        with d2:
+            st.markdown("##### 🚀 Acciones Rápidas")
+            st.write("")
+            if st.button("📂 Ir a Biblioteca", use_container_width=True):
+                st.session_state['redirect_target_name'] = "Biblioteca"
+                st.session_state['force_chat_tab'] = True 
+                st.rerun()
+            
+            st.write("")
+            if st.button("➕ Subir Archivo Nuevo", use_container_width=True):
+                st.session_state['redirect_target_name'] = "Biblioteca"
+                st.session_state['force_chat_tab'] = True
+                st.session_state['lib_auto_open_upload'] = True
+                st.rerun()
+        
+        st.divider()
+        
+        st.divider()
+        
+        # --- SMART CONTINUITY CARD ---
+        st.markdown("##### 🕰️ Continuar donde lo dejaste")
+        
+        # Load Footprint
+        curr_user = st.session_state['user']
+        footprint = curr_user.user_metadata.get('smart_footprint') if curr_user.user_metadata else None
+        
+        # Helper to render the card
+        def render_smart_card(icon, title, subtitle, btn_label, on_click_fn):
+             # Styled Container
+             with st.container(border=True):
+                 c_icon, c_info, c_btn = st.columns([0.15, 0.65, 0.2])
+                 with c_icon:
+                     st.markdown(f"<div style='font-size: 30px; text-align: center;'>{icon}</div>", unsafe_allow_html=True)
+                 with c_info:
+                     st.markdown(f"**{title}**")
+                     st.caption(subtitle)
+                 with c_btn:
+                     st.write("") # Spacer
+                     if st.button(btn_label, use_container_width=True, type="primary"):
+                         on_click_fn()
+                         st.rerun()
+
+        if footprint:
+             ftype = footprint.get('type')
+             ftitle = footprint.get('title', 'Actividad Reciente')
+             fsub = footprint.get('subtitle', 'Retomar actividad')
+             ftarget = footprint.get('target_id')
+             
+             if ftype == 'chat':
+                 def go_chat():
+                     # Re-fetch session data (mock object minimal)
+                     st.session_state['current_chat_session'] = {'id': ftarget, 'name': ftitle}
+                     st.session_state['tutor_chat_history'] = []
+                     st.session_state['redirect_target_name'] = "Tutoría 1 a 1"
+                     st.session_state['force_chat_tab'] = True
+                     
+                     # UPDATE URL
+                     try:
+                         if hasattr(st, 'query_params'):
+                             st.query_params['chat_id'] = str(ftarget)
+                         else:
+                             st.experimental_set_query_params(chat_id=str(ftarget))
+                     except: pass
+                 
+                 render_smart_card("💬", f"Chat: {ftitle}", "Estabas conversando con tu asistente", "Retomar Chat", go_chat)
+                 
+             elif ftype == 'unit':
+                 def go_unit():
+                     st.session_state['redirect_target_name'] = "Biblioteca"
+                     st.session_state['force_chat_tab'] = True
+                     st.session_state['lib_current_unit_id'] = ftarget
+                     st.session_state['lib_current_unit_name'] = ftitle
+                     # Breadcrumbs might be tricky to reconstruct perfectly without query, 
+                     # but we can set simple path
+                     st.session_state['lib_breadcrumbs'] = [{'id': ftarget, 'name': ftitle}]
+                     
+                 render_smart_card("📂", f"Carpeta: {ftitle}", "Estabas explorando archivos aquí", "Ir a Carpeta", go_unit)
+                 
+             else:
+                 # Fallback for unknown types
+                 st.info(f"Última actividad: {ftitle}")
+                 
+        else:
+             # Fallback to Recents if no footprint (First run)
+             st.info("Explora la app para generar tu tarjeta de viaje. 🚀")
+             recent_chats = get_recent_chats(st.session_state['user'].id, limit=3) # Keep fallback just in case
+             if recent_chats:
+                chat = recent_chats[0]
+                if st.button(f"📝 Último chat: {chat['name']}", key="fallback_rec"):
+                        st.session_state['current_chat_session'] = chat
+                        st.session_state['tutor_chat_history'] = [] 
+                        st.session_state['redirect_target_name'] = "Tutoría 1 a 1"
+                        st.session_state['force_chat_tab'] = True
+                        st.rerun()
+
+    else:
+        st.info("Selecciona o crea un Diplomado en la barra lateral para ver tus estadísticas.")
+
+# --- AUTO-SWITCH TAB LOGIC ---
+if st.session_state.get('force_chat_tab'):
+    # Inject JS to click the tab
+    # timestamp ensures the component sends a new message to frontend even if target is same
+    import time
+    ts = time.time()
+    components.html(f"""
+    <script>
+        setTimeout(() => {{
+            try {{
+                const tabs = window.parent.document.querySelectorAll('button[data-testid="stTab"]');
+                const targetName = "{st.session_state.get('redirect_target_name', 'Ayudante de Tareas')}"; 
+                for (const tab of tabs) {{
+                    if (tab.innerText.includes(targetName)) {{
+                        tab.click();
+                        // Also sync URL immediately to be sure
+                        const newUrl = new URL(window.parent.location);
+                        newUrl.searchParams.set('tab', tab.innerText);
+                        window.parent.history.pushState({{}}, '', newUrl);
+                        break;
+                    }}
+                }}
+            }} catch(e) {{ console.log(e); }}
+        }}, 500);
+        // Retry logic for slow loaders
+        setTimeout(() => {{ 
+             const tabs = window.parent.document.querySelectorAll('button[data-testid="stTab"]');
+             const targetName = "{st.session_state.get('redirect_target_name', 'Ayudante de Tareas')}"; 
+             for (const tab of tabs) {{ if (tab.innerText.includes(targetName)) tab.click(); }}
+        }}, 2000);
+        setTimeout(() => {{ 
+             const tabs = window.parent.document.querySelectorAll('button[data-testid="stTab"]');
+             const targetName = "{st.session_state.get('redirect_target_name', 'Ayudante de Tareas')}"; 
+             for (const tab of tabs) {{ if (tab.innerText.includes(targetName)) tab.click(); }}
+        }}, 5000); 
+        // {ts}
+    </script>
+    """, height=0)
+    # Reset flag so it doesn't keep clicking
+    st.session_state['force_chat_tab'] = False
+
+# --- Helper for ECharts Visualization ---
+
+
+# --- Helper for styled image container ---
+# --- Helper for styled image container ---
+def render_image_card(img_path):
+    import base64
+    if os.path.exists(img_path):
+        with open(img_path, "rb") as f:
+            img_data = f.read()
+        b64_img = base64.b64encode(img_data).decode()
+        
+        card_html = (
+            f'<div style="'
+            f'    background-color: #f3e8ff;'
+            f'    border-radius: 20px;'
+            f'    padding: 40px;'
+            f'    display: flex;'
+            f'    align-items: center;'
+            f'    justify-content: center;'
+            f'    height: 100%;'
+            f'">'
+            f'    <img src="data:image/png;base64,{b64_img}" style="'
+            f'        width: 100%; '
+            f'        max-width: 400px;'
+            f'        height: auto; '
+            f'        filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));'
+            f'    ">'
+            f'</div>'
+        )
+        st.markdown(card_html, unsafe_allow_html=True)
+    else:
+        st.error(f"Image not found: {img_path}")
+
+# --- TAB LIBRARY ---
+with tab_lib:
+    if 'assistant' in locals() and assistant:
+         render_library(assistant)
+    else:
+         st.info("⚠️ Configura tu API Key en la barra lateral para activar la Biblioteca IA.")
+
+# --- BATCH SYSTEM FOLDER CHECK (Prevention of "Popping" folders) ---
+if st.session_state.get('current_course_id'):
+    c_id_check = st.session_state['current_course_id']
+    from database import get_units, create_unit
+    
+    # Check what exists BEFORE rendering tabs
+    existing_units = get_units(c_id_check)
+    existing_names = [u['name'] for u in existing_units]
+    
+    
+    # CONSULTANT FIX: ONLY CREATE DEFAULTS IF COURSE IS EMPTY
+    # If the user has deleted specific folders, we should NOT recreate them ("Zombie Folders").
+    # But if the course is BRAND NEW (no units), we initialize the structure.
+    required_folders = ["Transcriptor - Videos", "Transcriptor - Audios", "Apuntes Simples", "Guía de Estudio"]
+    created_any_batch = False
+    
+    if not existing_units: # Only runs if 0 folders exist
+        for req in required_folders:
+             create_unit(c_id_check, req)
+             created_any_batch = True
+    
+    # If we created anything new, RERUN ONCE to refresh all subsequent 'get_units' calls
+    if created_any_batch:
+        st.session_state['force_rerun_batch'] = True # Optional flag if needed
+        st.rerun()
+
+# --- TAB 1: Transcriptor ---
+with tab1:
+    # LAYOUT: Image Left (1) | Text Right (1.4)
+    col_img, col_text = st.columns([1, 1.4], gap="large")
+    
+    with col_img:
+        # Green Frame Placeholder
+        # Image Display
+        # Image Display (Dynamic Update)
+        import base64
+        img_path = "assets/transcriptor_header_v2.jpg"
+        img_b64 = ""
+        if os.path.exists(img_path):
+            with open(img_path, "rb") as image_file:
+                img_b64 = base64.b64encode(image_file.read()).decode()
+        
+        st.markdown(f'''
+            <div class="green-frame" style="padding: 20px;">
+                <img src="data:image/jpeg;base64,{img_b64}" style="width: 100%; border-radius: 15px; object-fit: cover;">
+            </div>
+        ''', unsafe_allow_html=True)
+
+    with col_text:
+        # Styled Title & Subtitle via HTML
+        st.markdown('''
+            <h2 class="transcriptor-title">1. Transcriptor de Audio y Video</h2>
+            <p class="transcriptor-subtitle">
+                Sube videos o audios para procesarlos y clasificarlos automáticamente.<br>
+                <span style="font-size: 0.9rem; color: #888; font-weight: 500;">Soporta: MP4, MOV, MP3, WAV, M4A</span>
+            </p>
+        ''', unsafe_allow_html=True)
+        
+        # Dynamic Key for Uploader Reset
+        if 'transcriptor_key' not in st.session_state: st.session_state['transcriptor_key'] = "up1"
+        
+        # File Uploader
+        # Added .waptt (WhatsApp), .opus, .aac, .wma
+        uploaded_files = st.file_uploader("Upload", type=['mp4', 'mov', 'avi', 'mkv', 'mp3', 'wav', 'm4a', 'flac', 'ogg', 'opus', 'waptt', 'aac', 'wma'], accept_multiple_files=True, key=st.session_state['transcriptor_key'], label_visibility="collapsed")
+        
+        if uploaded_files:
+            # --- MEMORY SAFETY CHECK (TRAFFIC CONTROL) ---
+            total_size_bytes = sum(f.size for f in uploaded_files)
+            total_size_mb = total_size_bytes / (1024 * 1024)
+            SAFE_RAM_LIMIT_MB = 400 # 400MB: The "Sweet Spot" for stability
+            
+            if total_size_mb > SAFE_RAM_LIMIT_MB:
+                st.error(
+                    f"🛡️ **LÍMITE DE ESTABILIDAD ({total_size_mb:.0f} MB / {SAFE_RAM_LIMIT_MB} MB)**\n\n"
+                    f"Para evitar que la app se rompa (Over Capacity), mantén tus subidas por debajo de **400 MB** en total.\n"
+                    f"Es mejor subir en tandas pequeñas que reiniciar el servidor a cada rato.\n\n"
+                    f"👉 **ACCIÓN:** Haz clic en la 'X' en la lista de arriba hasta que este mensaje desaparezca.", 
+                    icon="🚦"
+                )
+                st.stop() # Force execution stop
+
+            # --- FOLDER SELECTION ---
+            c_id = st.session_state.get('current_course_id')
+            selected_unit_id = None
+            
+            if c_id:
+                from database import get_units, create_unit, upload_file_to_db, get_files
+                # RECURSIVE UNITS FETCH
+                units = get_units(c_id, fetch_all=True) # Fetch ALL folders
+                if units:
+                    # Build Path Map
+                    id_to_unit = {u['id']: u for u in units}
+                    
+                    def get_path(u):
+                         parts = [u['name']]
+                         curr = u
+                         # Safety limit for depth
+                         depth = 0
+                         while curr.get('parent_id') and depth < 10:
+                             pid = curr['parent_id']
+                             parent = id_to_unit.get(pid)
+                             if parent:
+                                 parts.insert(0, parent['name'])
+                                 curr = parent
+                                 depth += 1
+                             else:
+                                 break
+                         return " / ".join(parts)
+                    
+                    # Create Map: Path String -> ID
+                    u_map = {get_path(u): u['id'] for u in units}
+                    keys = sorted(list(u_map.keys()))
+                    
+                    # Default
+                    def_idx = 0
+                    for i, k in enumerate(keys):
+                         if "Transcriptor" in k:
+                             def_idx = i
+                             break
+                    
+                    sel_name = st.selectbox("📂 ¿Dónde guardar la transcripción?", keys, index=def_idx, help="Elige cualquier carpeta o subcarpeta")
+                    selected_unit_id = u_map[sel_name]
+                else:
+                    st.warning("⚠️ Tu diplomado no tiene carpetas. Se crearán automáticamente.")
+            else:
+                st.warning("⚠️ Por favor selecciona un diplomado en la barra lateral.")
+
+            st.info(f"📂 {len(uploaded_files)} archivo(s) cargado(s).")
+            
+            # --- RENAME FEATURE ---
+            file_renames = {}
+            if uploaded_files:
+                with st.expander("✍🏻 Renombrar archivos (Opcional)", expanded=True):
+                    for i, uf in enumerate(uploaded_files):
+                         base = os.path.splitext(uf.name)[0]
+                         new_n = st.text_input(f"Nombre para {uf.name}:", value=base, key=f"ren_{i}")
+                         file_renames[uf.name] = new_n
+            
+            if st.button("▶️ Iniciar Transcripción Inteligente", type="primary", key="btn_start_transcription", use_container_width=True, disabled=(not selected_unit_id)):
+                if not selected_unit_id:
+                    st.error("Error: Carpeta no seleccionada.")
+                else:
+                    progress_bar = st.progress(0)
+                    status_text = st.empty()
+                    import time
+                    from google.api_core.exceptions import ResourceExhausted, ServiceUnavailable
+                    
+                    # --- SMART BATCH LOGIC ---
+                    # User Request: "Procesar 40 videos de 3 en 3 automáticamente"
+                    all_files = uploaded_files
+                    total_files = len(all_files)
+                    BATCH_SIZE = 3
+                    
+                    for start_idx in range(0, total_files, BATCH_SIZE):
+                        batch = all_files[start_idx : start_idx + BATCH_SIZE]
+                        batch_num = (start_idx // BATCH_SIZE) + 1
+                        total_batches = (total_files + BATCH_SIZE - 1) // BATCH_SIZE
+                        
+                        # Update Status for Lote
+                        status_text.markdown(f"**🚀 Procesando Lote {batch_num} de {total_batches}** (Archivos {start_idx+1} al {min(start_idx+BATCH_SIZE, total_files)})")
+                        
+                        for file in batch:
+                            t_unit_id = selected_unit_id 
+                            
+                            temp_path = file.name
+                            with open(temp_path, "wb") as f: f.write(file.getbuffer())
+                            
+                            # RETRY LOGIC (Quota Protection)
+                            max_retries = 3
+                            success = False
+                            attempt = 0
+                            
+                            while attempt < max_retries and not success:
+                                try:
+                                    status_text.markdown(f"**⚡ Transcribiendo: {file.name}...**")
+                                    
+                                    def update_ui(msg, prog):
+                                        # Update both text and bar
+                                        status_text.markdown(f"**⚡ {msg}**")
+                                        progress_bar.progress(prog)
+                                    
+                                    # Process
+                                    txt_path = transcriber.process_video(temp_path, progress_callback=update_ui, chunk_length_sec=600)
+                                    
+                                    # Save
+                                    with open(txt_path, "r", encoding="utf-8") as f: 
+                                        trans_text = f.read()
+                                    
+                                    custom_n = file_renames.get(file.name, os.path.splitext(file.name)[0])
+                                    final_name = f"{custom_n}.txt"
+                                    
+                                    upload_file_to_db(t_unit_id, final_name, trans_text, "transcript")
+                                    st.toast(f"✅ Listo: {final_name}") 
+                                    st.session_state['transcript_history'].append({"name": custom_n, "text": trans_text})
+                                    
+                                    if os.path.exists(txt_path): os.remove(txt_path)
+                                    success = True
+                                    time.sleep(2) # Micro-pause between files
+                                    
+                                except ResourceExhausted:
+                                    status_text.warning(f"⏳ **Alcalzamos el límite de IA (Quota).** Esperando 60 segundos para enfriar motores...")
+                                    time.sleep(65) # Wait out the minute limit
+                                    attempt += 1
+                                except ServiceUnavailable:
+                                    status_text.warning(f"⚠️ Servidor ocupado. Reintentando en 10s...")
+                                    time.sleep(10)
+                                    attempt += 1
+                                except Exception as e:
+                                    st.error(f"❌ Error fatal en {file.name}: {e}")
+                                    attempt = max_retries # Abort this file
+                                finally:
+                                    pass
+
+                            # Cleanup Temp
+                            if os.path.exists(temp_path): os.remove(temp_path)
+                        
+                        # Update Global Progress
+                        progress_bar.progress(min((start_idx + BATCH_SIZE) / total_files, 1.0))
+                        
+                        # Inter-Batch Cooldown (Be nice to API)
+                        if start_idx + BATCH_SIZE < total_files:
+                            status_text.info(f"☕ Tomando un respiro de 10s antes del siguiente lote...")
+                            time.sleep(10)
+                            
+                    status_text.success("¡Misión Cumplida! Todos los archivos han sido procesados. 🏁")
+
+    # History
+    if st.session_state['transcript_history']:
+        
+        # Recents Header
+        st.divider()
+        c_hist_1, c_hist_2, c_hist_3 = st.columns([0.5, 0.25, 0.25], vertical_alignment="center")
+        c_hist_1.markdown(f"### 📝 Resultados Recientes")
+        
+        # CLEAR BUTTON
+        if c_hist_2.button("🧹 Limpiar Pantalla", help="Borra la pantalla y los archivos subidos (no borra de la biblioteca)", use_container_width=True):
+            st.session_state['transcript_history'] = []
+            import uuid
+            st.session_state['transcriptor_key'] = str(uuid.uuid4()) # Force Uploader Reset
+            st.rerun()
+            
+        # DISCUSS WITH TUTOR BUTTON
+        if c_hist_3.button("🗣️ Debatir con Tutor", help="Abre un chat con el profesor para analizar estas transcripciones", type="primary", use_container_width=True):
+             # 1. Aggregate Transcripts
+             context_blob = "Aquí están las transcripciones de los archivos que acabo de procesar:\n\n"
+             for item in st.session_state['transcript_history']:
+                 context_blob += f"--- ARCHIVO: {item['name']} ---\n{item['text']}\n\n"
+             
+             context_blob += "\nAnalyzalas y dime qué podemos hacer con ellas (resumen, extraer datos, ordenar instrucciones, etc). ¿Qué sugieres?"
+             
+             # 2. Create Session
+             from database import create_chat_session, save_chat_message
+             import datetime
+             sess_name = f"Debate Transcripciones {datetime.datetime.now().strftime('%H:%M')}"
+             new_sess = create_chat_session(st.session_state['user'].id, sess_name)
+             
+             if new_sess:
+                 # 3. Save Message & Prepare Redirect
+                 st.session_state['current_chat_session'] = new_sess
+                 st.session_state['tutor_chat_history'] = [] # Reset local
+                 
+                 save_chat_message(new_sess['id'], "user", context_blob)
+                 st.session_state['tutor_chat_history'].append({"role": "user", "content": context_blob})
+                 
+                 # 4. Trigger AI & Switch
+                 st.session_state['trigger_ai_response'] = True
+                 st.session_state['redirect_target_name'] = "Tutoría 1 a 1"
+                 st.session_state['force_chat_tab'] = True
+                 st.rerun()
+             else:
+                 st.error("Error al crear sesión de chat.")
+        
+        for i, item in enumerate(st.session_state['transcript_history']):
+            with st.expander(f"📄 {item['name']}", expanded=True):
+                 # Header with Copy integrated better
+                 c_lbl, c_cp = st.columns([0.85, 0.15])
+                 with c_lbl:
+                      st.markdown(f"**Transcripción: {item['name']}**")
+                 with c_cp:
+                      # JS COPY COMPONENT (Fixed positioning)
+                      import json
+                      import streamlit.components.v1 as components
+                      safe_txt = json.dumps(item['text'])
+                      html_cp = f"""
+                    <html>
+                    <body style="margin:0; padding:0; background: transparent;">
+                        <script>
+                        function copyT() {{
+                            navigator.clipboard.writeText({safe_txt}).then(function() {{
+                                const b = document.getElementById('btn');
+                                b.innerText = '✅';
+                                b.style.color = '#4625b8';
+                                setTimeout(() => {{ b.innerText = '📄'; b.style.color = '#888'; }}, 2000);
+                            }});
+                        }}
+                        </script>
+                        <div style="display: flex; justify-content: flex-end; padding-top: 5px;">
+                            <button id="btn" onclick="copyT()" style="
+                                cursor: pointer; background: transparent; border: none; font-size: 18px; color: #888;
+                            " title="Copiar al portapapeles">
+                                📄
+                            </button>
+                        </div>
+                    </body>
+                    </html>
+                    """
+                      components.html(html_cp, height=35)
+                 
+                 # NATIVE SCROLL CONTAINER (Cleanest approach)
+                 with st.container(height=400):
+                       # CLEANUP: Remove any accidental markdown code blocks that prevent color rendering
+                       processed_text = item['text']
+                       if "```" in processed_text:
+                            processed_text = processed_text.replace("```markdown", "").replace("```html", "").replace("```", "")
+                       
+                       st.markdown(processed_text, unsafe_allow_html=True)
+
+
+# --- TAB 2: Explorador Didáctico (Traductor de Conocimiento) ---
+with tab_didactic:
+    col_img, col_text = st.columns([1, 1.5], gap="large")
+    
+    with col_img:
+        # Image Display
+        import base64
+        img_b64_notes = ""
+        img_path_notes = "assets/notes_header.jpg" # Reusing assets or we can add new one
+        if os.path.exists(img_path_notes):
+            with open(img_path_notes, "rb") as image_file:
+                img_b64_notes = base64.b64encode(image_file.read()).decode()
+        
+        st.markdown(f'''
+            <div class="purple-frame" style="padding: 20px;">
+                <img src="data:image/jpeg;base64,{img_b64_notes}" style="width: 100%; border-radius: 15px; object-fit: cover;">
+            </div>
+        ''', unsafe_allow_html=True)
+         
+    with col_text:
+        tab2_html = (
+            '<div class="card-text">'
+            '<h2 style="margin-top:0;">🧠 Explorador Didáctico</h2>'
+            '<p style="color: #64748b; font-size: 1.1rem;">"Traduce" la clase difícil a lenguaje simple con analogías y ejemplos cotidianos.</p>'
+            '</div>'
+        )
+        st.markdown(tab2_html, unsafe_allow_html=True)
+        
+        c_id = st.session_state.get('current_course_id')
+        if not c_id:
+             st.info("Selecciona Espacio de Trabajo.")
+        else:
+             from database import get_files, get_file_content, upload_file_to_db, get_course_files, get_units, create_unit
+             
+             transcript_files = get_course_files(c_id, type_filter="transcript")
+             
+             # Check Global Memory
+             gl_ctx, gl_count = get_global_context()
+             if gl_count > 0:
+                st.success(f"✅ **Memoria Global Activa:** {gl_count} archivos base detectados.")
+            
+                if not transcript_files:
+                    st.info("No hay transcripciones disponibles. Sube videos en la Pestaña 1.")
+                else:
+                    options = [f['name'] for f in transcript_files]
+                    file_map = {f['name']: f['id'] for f in transcript_files}
+                    
+                    c1_sel, c2_fold = st.columns([1, 1], gap="small")
+                    
+                    with c1_sel:
+                         selected_file = st.selectbox("Selecciona la clase a traducir:", options, key="sel_didactic")
+                    
+                    with c2_fold:
+                         # --- FOLDER SELECTOR (Reused Logic) ---
+                         # Fetch all units
+                         u_all = get_units(c_id, fetch_all=True)
+                         if u_all:
+                             id_to_u = {u['id']: u for u in u_all}
+                             def get_p(u):
+                                  parts = [u['name']]
+                                  curr = u
+                                  depth = 0
+                                  while curr.get('parent_id') and depth < 5:
+                                      pid = curr['parent_id']
+                                      parent = id_to_u.get(pid)
+                                      if parent:
+                                          parts.insert(0, parent['name'])
+                                          curr = parent
+                                          depth += 1
+                                      else: break
+                                  return " / ".join(parts)
+                             
+                             map_u = {get_p(u): u['id'] for u in u_all}
+                             keys_u = sorted(list(map_u.keys()))
+                             
+                             # Default to "Apuntes Didácticos" if exists
+                             idx_def = 0
+                             for i, k in enumerate(keys_u):
+                                 if "Didácticos" in k or "Apuntes" in k:
+                                     idx_def = i
+                                     break
+                                     
+                             sel_fold_name = st.selectbox("Guardar en:", keys_u, index=idx_def, key="sel_fold_didactic")
+                             target_unit_id = map_u[sel_fold_name]
+                             target_unit_name = sel_fold_name # Display name path
+                         else:
+                             st.warning("Sin carpetas. Se creará una por defecto.")
+                             target_unit_id = None
+                    
+                    
+                    if selected_file and st.button("🔍 Traducir a Lenguaje Simple", key="btn_didactic", type="primary"):
+                        from database import get_file_content, upload_file_to_db, get_units, create_unit 
+                        f_id = file_map[selected_file]
+                        text = get_file_content(f_id)
+                        
+                        with st.spinner("Traduciendo conceptos complejos a lenguaje humano..."):
+                            # CALL NEW AI FUNCTION
+                            didactic_data = assistant.generate_didactic_explanation(text, global_context=gl_ctx)
+                            
+                            st.session_state['didactic_result'] = didactic_data
+                            
+                            # SAVE LOGIC
+                            if not target_unit_id:
+                                 # Fallback create
+                                 target_folder = "Apuntes Didácticos"
+                                 n_unit = create_unit(c_id, target_folder)
+                                 n_unit_to_use = n_unit['id']
+                                 t_folder_name = target_folder
+                            else:
+                                 n_unit_to_use = target_unit_id
+                                 t_folder_name = target_unit_name
+                            
+                            if n_unit_to_use:
+                                 # Create a Markdown representation for saving
+                                 md_save = f"# 🧠 Explicación Didáctica: {selected_file}\n\n"
+                                 
+                                 modules = []
+                                 if isinstance(didactic_data, list):
+                                     if len(didactic_data) > 0 and isinstance(didactic_data[0], dict) and 'modules' in didactic_data[0]:
+                                         modules = didactic_data[0]['modules']
+                                     else:
+                                         modules = didactic_data
+                                 elif isinstance(didactic_data, dict):
+                                     modules = didactic_data.get('modules', [])
+                                 
+                                 if not modules:
+                                     md_save += f"_{didactic_data.get('introduction', '')}_\n\n"
+                                     for b in didactic_data.get('blocks', []):
+                                         md_save += f"### {b.get('concept_title', 'Concepto')}\n"
+                                         md_save += f"{b.get('simplified_explanation', '')}\n\n"
+                                     md_save += f"\n{didactic_data.get('conclusion', '')}"
+                                 else:
+                                     for m in modules:
+                                         m_type = m.get('type', 'DEEP_DIVE')
+                                         title = m.get('title', 'Módulo')
+                                         c = m.get('content', {})
+                                         
+                                         md_save += f"## {title}\n"
+                                         
+                                         if m_type == 'STRATEGIC_BRIEF':
+                                             md_save += f"**Tesis:** {c.get('thesis')}\n\n"
+                                             md_save += f"**Impacto:** {c.get('impact')}\n\n"
+                                             
+                                         elif m_type == 'DEEP_DIVE':
+                                             md_save += f"**Definición:** {c.get('definition')}\n\n"
+                                             md_save += f"**Explicación:** {c.get('explanation')}\n\n"
+                                             if c.get('example'):
+                                                md_save += f"> **Ejemplo:** {c.get('example')}\n\n"
+                                         
+                                         elif m_type == 'REALITY_CHECK':
+                                             md_save += f"❓ **{c.get('question')}**\n\n"
+                                             md_save += f"✅ {c.get('insight')}\n\n"
+                                             
+                                         elif m_type == 'TOOLKIT':
+                                             md_save += f"{c.get('intro')}\n"
+                                             for s in c.get('steps', []):
+                                                 md_save += f"- [ ] {s}\n"
+                                             md_save += "\n"
+                                             
+                                         md_save += "---\n\n"
+                                 
+                                 fname = f"Didactico_{selected_file.replace('.txt', '')[:50]}.md"
+                                 # Using upload_file_to_db (not upload_file_v2 which looked like a typo in previous code)
+                                 upload_file_to_db(n_unit_to_use, fname, md_save, "note")
+                                 st.success(f"Explicación guardada en '{t_folder_name}'")
+
+                # --- RENDER RESULT ---
+                res = st.session_state.get('didactic_result')
+                if res:
+                    st.divider()
+                    
+                    # DYNAMIC MODULE RENDERER
+                    modules = []
+                    if isinstance(res, list):
+                        # Check if it's a list containing the root object -> [{'modules': ...}]
+                        if len(res) > 0 and isinstance(res[0], dict) and 'modules' in res[0]:
+                             modules = res[0]['modules']
+                        else:
+                             modules = res
+                    elif isinstance(res, dict):
+                        modules = res.get('modules', [])
+                        if not modules and 'blocks' in res: 
+                             # Fallback for old cache (v8)
+                             st.warning("⚠️ Formato antiguo detectado. Por favor regenera la explicación.")
+                    
+                    for i, m in enumerate(modules):
+                        # --- SMART ADAPTER FOR LEGACY/MALFORMED BLOCKS ---
+                        # If the AI returns a flat object (Old Schema) instead of nested 'content'
+                        if 'content' not in m and 'simplified_explanation' in m:
+                             m_type = 'DEEP_DIVE'
+                             title = m.get('concept_title', 'Concepto')
+                             c = {
+                                 'definition': m.get('academic_definition'),
+                                 'explanation': m.get('simplified_explanation'),
+                                 'example': m.get('analogy'),
+                             }
+                        else:
+                             m_type = m.get('type', 'DEEP_DIVE').upper()
+                             # SANITIZE TYPE: Remove emojis and spaces if AI gets creative
+                             import re
+                             m_type = re.sub(r'[^A-Z_]', '', m_type) 
+                             
+                             title = m.get('title', 'Módulo')
+                             c = m.get('content', {})
+                        
+                        # Fallback for completely empty content
+                        if not c and not m_type == 'STRATEGIC_BRIEF': 
+                             # Try to salvage anything
+                             c = {'explanation': str(m), 'definition': 'N/A'}
+
+                        # 1. 🎯 STRATEGIC BRIEF (Hero Section)
+                        
+                        # 1. 🎯 STRATEGIC BRIEF (Hero Section)
+                        if m_type == 'STRATEGIC_BRIEF':
+                            with st.container():
+                                st.markdown(f"## 🎯 {title}")
+                                st.info(f"**TESIS:** {c.get('thesis')}", icon="💡")
+                                st.markdown(f"**💎 Impacto:** {c.get('impact')}")
+                            st.divider()
+
+                        # 2. 🧠 DEEP DIVE (Technical Expander)
+                        elif m_type == 'DEEP_DIVE':
+                            with st.expander(f"🧠 {title}", expanded=True):
+                                st.markdown(f"**📖 Definición:** {c.get('definition')}")
+                                st.markdown(f"**⚙️ Funcionamiento:**\n{c.get('explanation')}")
+                                if c.get('example'):
+                                    st.markdown(f"**💼 Caso Real:**\n_{c.get('example')}_")
+
+                        # 3. 🕵🏻 REALITY CHECK (Critical Analysis)
+                        elif m_type == 'REALITY_CHECK':
+                            with st.container(border=True):
+                                c1, c2 = st.columns([0.1, 0.9])
+                                with c1: st.markdown("## 🕵🏻")
+                                with c2:
+                                    st.markdown(f"### {title}")
+                                    st.warning(f"**❓ {c.get('question')}**")
+                                    st.markdown(f"**✅ Insight:** {c.get('insight')}")
+
+                        # 4. 🛠️ TOOLKIT (Action Steps)
+                        elif m_type == 'TOOLKIT':
+                            with st.container():
+                                st.markdown(f"### 🛠️ {title}")
+                                st.caption(c.get('intro'))
+                                check_steps = c.get('steps', [])
+                                for j, step in enumerate(check_steps):
+                                    c1, c2 = st.columns([0.85, 0.15])
+                                    with c1:
+                                        st.checkbox(step, key=f"step_{i}_{j}")
+                                    with c2:
+                                        if st.button("❓", key=f"help_{i}_{j}", help="Dime cómo hago esto"):
+                                            with st.spinner("Generando guía..."):
+                                                guide = assistant.generate_micro_guide(step)
+                                                st.session_state[f"guide_{i}_{j}"] = guide
+                                    
+                                    # Show guide if exists
+                                    if f"guide_{i}_{j}" in st.session_state:
+                                        with st.expander(f"💡 Guía: {step[:30]}...", expanded=True):
+                                            st.markdown(st.session_state[f"guide_{i}_{j}"])
+                                
+                                # Export Action Plan
+                                csv_content = "To-Do;Estado\n" + "\n".join([f"{s};Pendiente" for s in check_steps])
+                                st.download_button(
+                                    label="📥 Descargar Plan de Acción",
+                                    data=csv_content,
+                                    file_name=f"Plan_Accion_{title.replace(' ', '_')}.csv",
+                                    mime="text/csv"
+                                )
+                            st.divider()
+                        
+                        else:
+                             # Debug Fallback
+                             with st.expander(f"⚠️ Módulo Desconocido: {m_type}"):
+                                 st.write(m)
+
+
+# --- TAB 4: Quiz ---
+with tab_quiz:
+    col_img, col_text = st.columns([1, 1.5], gap="large")
+    
+    with col_img:
+        # Image Display (Dynamic Update)
+        import base64
+        img_b64_quiz = ""
+        img_path_quiz = "assets/quiz_helper_header.jpg"
+        if os.path.exists(img_path_quiz):
+            with open(img_path_quiz, "rb") as image_file:
+                img_b64_quiz = base64.b64encode(image_file.read()).decode()
+        
+        st.markdown(f'''
+            <div class="purple-frame" style="padding: 20px;">
+                <img src="data:image/jpeg;base64,{img_b64_quiz}" style="width: 100%; border-radius: 15px; object-fit: cover;">
+            </div>
+        ''', unsafe_allow_html=True)
+        
+    with col_text:
+        tab4_html = (
+            '<div class="card-text">'
+            '<h2 style="margin-top:0;">4. Zona Quiz</h2>'
+            '<p style="color: #64748b; font-size: 1.1rem;">Sube tus preguntas y obtén orientación inmediata</p>'
+            '</div>'
+        )
+        st.markdown(tab4_html, unsafe_allow_html=True)
+        
+        # Check Global Memory
+        # Check Global Memory (Optimized: Count Only)
+        gl_count = get_global_file_count_only() # Fast
+        # gl_ctx content is now fetched JUST-IN-TIME inside the solver trigger
+        
+        if gl_count > 0:
+            st.success(f"✅ **Memoria Global Activa:** Usando {gl_count} archivos para mayor precisión.")
+        
+        # RESET BUTTON
+        col_up, col_reset = st.columns([0.9, 0.1])
+        with col_reset:
+             # Use the same 'copy-btn' style or just a clean emoji button
+             if st.button("🗑️", key="reset_quiz", help="Borrar todo para empezar de cero"):
+                 st.session_state['quiz_results'] = []
+                 st.session_state['pasted_images'] = []
+                 q_k = st.session_state['quiz_key']
+                 
+                 # Explicit Nuke of Component Keys
+                 if f"q_txt_{q_k}" in st.session_state: del st.session_state[f"q_txt_{q_k}"]
+                 if f"up4_{q_k}" in st.session_state: del st.session_state[f"up4_{q_k}"]
+                 
+                 st.session_state['quiz_key'] += 1
+                 st.rerun()
+                 
+        with col_up:
+            # CONSULTANT FIx: Real Paste Button (Client-Side)
+            # Using st.fragment to preventing full-page reload (White Flash)
+            
+            @st.fragment
+            def quiz_input_section():
+                # 1. Paste Button Logic
+                try:
+                    from streamlit_paste_button import paste_image_button as pbutton
+                    paste_result = pbutton(
+                        label="📋 Pegar Imagen (Portapapeles)",
+                        background_color="#4B22DD",
+                        hover_background_color="#3600B3",
+                        text_color="#ffffff",
+                        key="pbutton_quiz_frag"
+                    )
+                    
+                    if paste_result.image_data is not None:
+                         img = paste_result.image_data
+                         
+                         # FIX: Prevent Re-Insertion Loop
+                         # Hash the image to check if we already processed this specific paste event
+                         import hashlib
+                         img_bytes = img.tobytes()
+                         img_hash = hashlib.md5(img_bytes).hexdigest()
+                         
+                         last_hash = st.session_state.get('last_paste_hash')
+                         
+                         # Only append if it's a NEW paste (Hash changed)
+                         if img_hash != last_hash:
+                             if img.mode == 'RGBA': img = img.convert('RGB')
+                             st.session_state['pasted_images'].append(img)
+                             st.session_state['last_paste_hash'] = img_hash # Mark as processed
+                             st.toast("Imagen pegada con éxito!", icon='📸')
+                except Exception as e:
+                    st.error(f"Error cargando botón: {e}")
+
+                # 2. Show Thumbnails (With Delete Option)
+                if st.session_state['pasted_images']:
+                    st.caption(f"📸 {len(st.session_state['pasted_images'])} capturas pegadas:")
+                    cols_past = st.columns(max(1, len(st.session_state['pasted_images'])))
+                    for idx, p_img in enumerate(st.session_state['pasted_images']):
+                        if idx < len(cols_past):
+                            with cols_past[idx]: 
+                                st.image(p_img, width=50)
+                                # CONSULTANT FIX: Individual Delete
+                                if st.button("🗑️", key=f"del_img_{st.session_state['quiz_key']}_{idx}", help="Eliminar esta imagen"):
+                                    st.session_state['pasted_images'].pop(idx)
+                                    st.rerun()
+
+                # 3. Inputs
+                st.text_area("✍🏻 O escribe tu pregunta aquí directamente:", height=100, placeholder="Ej: ¿Cuál es la capital de Francia? a) París b) Roma...", key=f"q_txt_{st.session_state['quiz_key']}")
+                st.file_uploader("O sube archivos manualmente:", type=['png', 'jpg', 'jpeg'], accept_multiple_files=True, key=f"up4_{st.session_state['quiz_key']}")
+
+                # 4. Trigger
+                # Calculate if valid
+                # Access via session_state to be safe inside fragment
+                q_key = st.session_state['quiz_key']
+                txt_val = st.session_state.get(f"q_txt_{q_key}", "")
+                files_val = st.session_state.get(f"up4_{q_key}", [])
+                
+                has_text = bool(txt_val.strip())
+                total_items = (len(files_val) if files_val else 0) + len(st.session_state['pasted_images']) + (1 if has_text else 0)
+
+                # Context Toggle
+                use_context = st.checkbox("🔗 Vincular imágenes con el texto (Contexto)", value=False, key=f"chk_ctx_{q_key}", help="Si activas esto, el texto y las imágenes se enviarán JUNTOS para responder. Si no, se analizan por separado.")
+
+                if total_items > 0:
+                    # --- MANUAL CONFIG TABLE ---
+                    st.markdown("##### ⚙️ Configuración de Preguntas (Opcional)")
+                    st.caption("Si la IA se confunde, ayúdale seleccionando el tipo exacto de cada imagen.")
+                    
+                    # 1. Build Data List
+                    current_files = []
+                    # Pasted
+                    for i, p_img in enumerate(st.session_state['pasted_images']):
+                         # Assuming we don't have filenames for pasted, generate IDs
+                         current_files.append({"Archivo": f"Imagen Pegada {i+1}", "Tipo": "🤖 Auto (Detectar)", "id": f"paste_{i}"})
+                    
+                    # Uploaded
+                    if files_val:
+                        for f in files_val:
+                             current_files.append({"Archivo": f.name, "Tipo": "🤖 Auto (Detectar)", "id": f.name})
+                    
+                    if current_files:
+                        import pandas as pd
+                        df = pd.DataFrame(current_files)
+                        
+                        # Config Options
+                        type_options = ["🤖 Auto (Detectar)", "☑️ Selección Múltiple", "✅❌ Cierto/Falso", "✍🏻 Respuesta Abierta"]
+                        
+                        edited_df = st.data_editor(
+                            df,
+                            column_config={
+                                "Archivo": st.column_config.TextColumn("Archivo", disabled=True),
+                                "Tipo": st.column_config.SelectboxColumn(
+                                    "Tipo de Pregunta",
+                                    help="Selecciona el formato para mejorar la precisión",
+                                    width="medium",
+                                    options=type_options,
+                                    required=True
+                                ),
+                                "id": None # Hide ID
+                            },
+                            hide_index=True,
+                            use_container_width=True,
+                            key=f"editor_{q_key}" 
+                        )
+                        
+                        # Store Config Mapping (ID -> Type)
+                        # We use ID because filenames might be dupe or generic
+                        config_map = {row['id']: row['Tipo'] for row in edited_df.to_dict('records')}
+                        st.session_state['quiz_file_config'] = config_map
+                        
+                    
+                    st.write("") # Spacer
+                    if st.button("Resolver Preguntas", key="btn4_frag", type="primary"):
+                        st.session_state['trigger_quiz_solve'] = True
+                        st.session_state['quiz_use_context'] = use_context # Pass preference
+                        st.rerun()
+
+            # Call Fragment
+            quiz_input_section()
+            
+            # --- MAIN THREAD PROCESSING ---
+            if st.session_state.get('trigger_quiz_solve', False):
+                # Reset Trigger immediately so it doesn't loop
+                st.session_state['trigger_quiz_solve'] = False
+                
+                # Fetch Data AGAIN from Session context
+                q_key = st.session_state['quiz_key']
+                input_text_quiz = st.session_state.get(f"q_txt_{q_key}", "")
+                img_files = st.session_state.get(f"up4_{q_key}", [])
+                has_text = bool(input_text_quiz.strip())
+                progress_bar = st.progress(0)
+                status = st.empty()
+                results = [] 
+            
+                # 1. Process Queue
+                # 1. Process Queue
+                use_ctx_mode = st.session_state.get('quiz_use_context', False)
+                config_map = st.session_state.get('quiz_file_config', {})
+                
+                # Collect ALL Images
+                all_pil_images = []
+                
+                # Deduplication logic using dictionary keys (name/id)
+                image_map = {} 
+
+                # From Paste
+                for i, img in enumerate(st.session_state['pasted_images']):
+                     # Use a unique key
+                     k = f"paste_{i}"
+                     image_map[k] = {"img": img, "id": k, "name": f"Imagen Pegada {i+1}"}
+
+                # From Upload
+                if img_files:
+                    for f in img_files:
+                        try:
+                            # Use file name as unique key
+                            k = f.name
+                            if k not in image_map:
+                                pil_i = Image.open(f)
+                                if pil_i.mode == 'RGBA': pil_i = pil_i.convert('RGB')
+                                image_map[k] = {"img": pil_i, "id": k, "name": f.name}
+                        except Exception as e: 
+                            print(f"Error loading {f.name}: {e}")
+                
+                # Convert back to list
+                image_entries = list(image_map.values())
+                
+                items_to_process = []
+                
+                if use_ctx_mode:
+                    # LINKED MODE (Improved): Iterate but pass context to EACH
+                    # 1. Text Context Handling
+                    
+                    # HYDRATE GLOBAL CONTEXT HERE (JUST-IN-TIME)
+                    if not gl_ctx:
+                            gl_ctx, _ = get_global_context()
+                    
+                    # Process Images Individually (with text as context)
+                    for i, entry in enumerate(image_entries):
+                            # Get Manual Type
+                            manual_type = config_map.get(entry['id'], "🤖 Auto (Detectar)")
+                            
+                            items_to_process.append({
+                                "type": "linked_single", 
+                                "text": input_text_quiz, 
+                                "image": entry["img"], 
+                                "name": entry["name"],
+                                "force_type": manual_type 
+                            })
+                        
+                    # If there are NO images but there IS text, just process text
+                    if not image_entries and has_text:
+                            items_to_process.append({"type": "text", "obj": input_text_quiz, "name": "Consulta de Texto", "force_type": "Auto"})
+
+                else:
+                    # SEPARATE MODE (Legacy)
+                    if has_text:
+                        items_to_process.append({"type": "text", "obj": input_text_quiz, "name": "Pregunta de Texto", "force_type": "Auto"})
+                    
+                    # Add Images separately
+                    for i, entry in enumerate(image_entries):
+                            manual_type = config_map.get(entry['id'], "🤖 Auto (Detectar)")
+                            items_to_process.append({"type": "image_obj", "obj": entry["img"], "name": entry["name"], "force_type": manual_type})
+
+                for i, item in enumerate(items_to_process):
+                    # Calculate percentages
+                    current_percent = int((i / len(items_to_process)) * 100)
+                    status.markdown(f"**Analizando item {i+1} de {len(items_to_process)}... ({current_percent}%)**")
+                    progress_bar.progress(i / len(items_to_process))
+                
+                    try:
+                        full_answer = ""
+                        disp_img = None
+                        
+                        # Extract Force Type (Clean string)
+                        raw_type = item.get("force_type", "Auto")
+                        # Clean logic: "☑️ Selección Múltiple" -> "Selección Múltiple"
+                        ftype = "Auto"
+                        if "Selección Múltiple" in raw_type: ftype = "Selección Múltiple"
+                        elif "Cierto/Falso" in raw_type: ftype = "Cierto/Falso"
+                        elif "Respuesta Abierta" in raw_type: ftype = "Respuesta Abierta"
+                    
+                        if item["type"] == "text":
+                                # Text Only
+                                full_answer = assistant.solve_quiz(question_text=item["obj"], global_context=gl_ctx, force_type=ftype)
+                                
+                        elif item["type"] == "linked_single":
+                                # Linked Single Mode
+                                full_answer = assistant.solve_quiz(images=[item["image"]], question_text=item["text"], global_context=gl_ctx, force_type=ftype)
+                                disp_img = item["image"]
+                             
+                        elif item["type"] == "linked":
+                             # (Deprecated but safely kept for fallback)
+                             # Pass list of images
+                             full_answer = assistant.solve_quiz(images=item["images"], question_text=item["text"], global_context=gl_ctx, force_type=ftype)
+                             # Display first image as thumbnail?
+                             disp_img = item["images"][0] if item["images"] else None
+                             
+                        elif item["type"] == "image_obj":
+                            # Image Only
+                            disp_img = item["obj"]
+                            full_answer = assistant.solve_quiz(images=[disp_img], global_context=gl_ctx, force_type=ftype)
+
+                        # Skip Short Answer Parsing (User Preference: Full Detail)
+                        short_answer = "Ver abajo"
+                    
+                        results.append({"name": item["name"], "full": full_answer, "short": short_answer, "img_obj": disp_img})
+                
+                    except Exception as e:
+                        print(e)
+                        results.append({"name": item["name"], "full": f"Error: {e}", "short": "Error", "img_obj": None})
+                
+                progress_bar.progress(1.0)
+                status.success("¡Análisis Terminado! (100%)")
+                st.session_state['quiz_results'] = results # Save results
+                
+                # CONSULTANT FIX: Proactive Chat Start
+                # Clear previous chat and start fresh with context
+                st.session_state['quiz_chat'] = []
+                st.session_state['quiz_chat'].append({
+                    "role": "assistant", 
+                    "content": "✅ **Análisis completado.** He revisado tus preguntas.\n\n¿Estás de acuerdo con todas las respuestas o quieres debatir alguna?"
+                })
+
+        # --- PERSISTENT RESULTS DISPLAY ---
+        res_quiz = st.session_state.get('quiz_results')
+        if res_quiz:
+            st.divider()
+            
+            # HEADER + COPY ICON
+            c_head, c_copy = st.columns([0.9, 0.1])
+            with c_head:
+                st.markdown("### 📋 Resultados de Quiz")
+            with c_copy:
+                # Compile text for copying inside the button action
+                full_report_copy = "--- HOJA DE RESPUESTAS ---\n\n"
+                for i, res in enumerate(res_quiz):
+                     full_report_copy += f"FOTO {i+1}: {res['short']}\n"
+                full_report_copy += "\n--- DETALLES ---\n"
+                for i, res in enumerate(res_quiz):
+                     full_report_copy += f"\n[FOTO {i+1}]\n{res['full']}\n"
+                     
+                if st.button("📄", key="cp_quiz", help="Copiar Resultados Limpios"):
+                    clean_txt = clean_markdown(full_report_copy)
+                    if copy_to_clipboard(clean_txt):
+                        st.toast("¡Copiado!", icon='📋')
+            
+            # --- RESULTS DISPLAY ---
+            # Visual Display (Simplified: Direct Explanations)
+            
+            for i, res in enumerate(res_quiz):
+                # PERMANENT VIEW (No Expanders)
+                with st.container(border=True):
+                    # Header (Smaller Font)
+                    st.markdown(f"**🔹 Pregunta {i+1}**")
+                    
+                    if 'img_obj' in res and res['img_obj']:
+                        c_img, c_ans = st.columns([0.35, 0.65], gap="medium")
+                        with c_img:
+                             try:
+                                 st.image(res['img_obj'], use_container_width=True, caption=res['name'])
+                             except:
+                                 st.caption("Imagen no disponible")
+                        with c_ans:
+                             # Clean up newlines for compact view if needed, but Markdown usually handles it
+                             st.markdown(res['full'])
+                    else:
+                         st.markdown(res['full'])
+
+            # --- DEBATE CHAT ---
+            st.divider()
+            
+            # Header + Action
+            c_chat_title, c_chat_act = st.columns([0.6, 0.4])
+            with c_chat_title:
+                st.markdown("### 💬 Debatir Resultados")
+                st.caption("¿Dudas? Habla con el Profesor.")
+            
+            with c_chat_act:
+                 # BUTTON MOVED HERE
+                 pass 
+        else:
+            st.info("👆 **Sube una imagen o pregunta para ver la Zona de Análisis.**")
+            st.caption("Versión V52 - Esperando datos...")
+
+        # MOVED OUTSIDE THE IF to be visible if we want? No, logic requires results.
+        # But we keep indentation logic.
+        
+        if res_quiz:
+             if st.button("🔄 ACTUALIZAR RESULTADOS (Corrección de IA)", use_container_width=True, type="primary"):
+                     with st.spinner("Consolidando cambios..."):
+                         try:
+                             new_res = assistant.refine_quiz_results(st.session_state['quiz_results'], st.session_state['quiz_chat'])
+                             st.session_state['quiz_results'] = new_res
+                             st.success("¡Hecho!")
+                             time.sleep(0.5)
+                             st.rerun()
+                         except Exception as e:
+                             st.error(f"Error: {e}")
+
+            # Spacer
+             st.write("")
+            
+            if 'quiz_chat' not in st.session_state:
+                st.session_state['quiz_chat'] = []
+            
+            # Display History
+            for msg in st.session_state['quiz_chat']:
+                with st.chat_message(msg["role"]):
+                    st.markdown(msg["content"])
+                 
+            # Input
+            # Input
+            # (Native Streamlit Input - Reverted custom JS)
+
+            if prompt := st.chat_input("Escribe tu duda o corrección...", key="quiz_chat_input"):
+                # Add User Msg
+                st.session_state['quiz_chat'].append({"role": "user", "content": prompt})
+                with st.chat_message("user"): st.markdown(prompt)
+                
+                # Prepare Context (Last Quiz Results)
+                ctx_quiz = "SIN DATOS DE QUIZ RECIENTE"
+                if res_quiz:
+                    ctx_quiz = "--- RESULTADOS DEL QUIZ --- \n"
+                    for res in res_quiz:
+                        # Truncate text to avoid token explosion
+                        short_full = (res['full'][:500] + '..') if len(res['full']) > 500 else res['full']
+                        ctx_quiz += f"[Item: {res['name']}]\nAI Dice: {short_full}\n\n"
+                
+                # Call AI
+                with st.chat_message("assistant"):
+                    with st.spinner("El profesor está re-analizando las imágenes y tu argumento..."):
+                        # Gather Images for Context
+                        images_ctx = []
+                        if res_quiz:
+                            for r in res_quiz:
+                                if r.get('img_obj'): images_ctx.append(r['img_obj'])
+                        
+                        reply = assistant.debate_quiz(
+                            history=st.session_state['quiz_chat'][:-1], 
+                            latest_input=prompt, 
+                            quiz_context=ctx_quiz,
+                            images=images_ctx
+                        )
+                        
+                        # Check for Auto-Learning Tag
+                        import re
+                        match = re.search(r"\|\|APRENDIZAJE: (.*?)\|\|", reply)
+                        if match:
+                            rule = match.group(1).strip()
+                            st.session_state['pending_learning_rule'] = rule
+                            reply = reply.replace(match.group(0), "")
+                        
+                        st.markdown(reply)
+                        st.session_state['quiz_chat'].append({"role": "assistant", "content": reply})
+                        st.rerun()
+
+            # --- TEACHING / MEMORY UI (SIMPLIFIED) ---
+            pending = st.session_state.get('pending_learning_rule')
+            # Show ONLY if AI suggests a rule
+            if pending and st.session_state.get('quiz_chat') and st.session_state['quiz_chat'][-1]['role'] == 'assistant':
+                with st.container(border=True):
+                    st.info(f'🤖 **La IA propone aprender:**\n>{pending}')
+                    c1, c2 = st.columns([0.3, 0.7])
+                    with c1:
+                        if st.button('✅ Confirmar', key='btn_conf_auto', type='primary'):
+                            cid = st.session_state.get('current_course_id')
+                            if database.save_user_memory(cid, f'- {pending}', None):
+                                st.toast('¡Aprendido! 🧠')
+                                st.session_state['pending_learning_rule'] = None
+                                time.sleep(1)
+                                st.rerun()
+                    with c2:
+                        if st.button('❌ Descartar', key='btn_deny_auto'):
+                            st.session_state['pending_learning_rule'] = None
+                            st.rerun()
+# --- TAB 5: Ayudante de Tareas ---
+with tab_tasks:
+    tab5_html = (
+        '<div class="card-text">'
+        '<h2 style="margin-top:0;">5. Ayudante de Tareas</h2>'
+        '<p style="color: #64748b; font-size: 1.1rem;">Tu "Segundo Cerebro": Guarda conocimientos y úsalos para resolver tareas.</p>'
+        '</div>'
+    )
+    st.markdown(tab5_html, unsafe_allow_html=True)
+    
+    # --- LAYOUT REFOCUSED ON TASK SOLVER ---
+    col_task = st.container()
+    
+    st.info("💡 Gestiona tus archivos, sube documentos y organiza carpetas en la nueva pestaña '📂 Biblioteca'.")
+
+    # --- RIGHT COLUMN: HOMEWORK SOLVER (Now Main) ---
+    with col_task:
+        c_title, c_trash = st.columns([0.85, 0.15])
+        with c_title:
+
+            st.markdown("### 🧠 Ayudante Inteligente")
+            st.caption("Resuelve tareas usando SOLO la información de tu biblioteca.")
+            
+            # CONSULTANT: SHOW LINKED LIBRARY FILE (Tab 5)
+            if st.session_state.get('chat_context_file'):
+                l_file = st.session_state['chat_context_file']
+                st.success(f"📎 **VINCULADO:** {l_file['name']}")
+                if st.button("❌ Desvincular", key="unlink_file_tab5", help="Quitar este archivo"):
+                    st.session_state['chat_context_file'] = None
+                    st.rerun()
+
+        with c_trash:
+            if st.button("🗑️", key="clear_hw_btn", help="Borrar tarea y empezar de cero"):
+                st.session_state['homework_result'] = None
+                st.rerun()
+        
+        # MODE TOGGLE
+        arg_mode = st.toggle("💬 Activar Modo Argumentador", key="arg_mode_toggle", help="Activa un análisis profundo con 4 dimensiones: Respuesta, Fuentes, Paso a Paso y Contra-argumento.")
+        
+        # 1. Select Context
+        st.markdown("**1. ¿Qué conocimientos uso?** (Selección por Unidad)")
+        
+        # DB Logic for Context Selection
+        from database import get_units, get_unit_context
+        
+        current_course_id = st.session_state.get('current_course_id')
+        db_units = get_units(current_course_id) if current_course_id else []
+        
+        # Find Global Unit
+        global_unit = next((u for u in db_units if u['name'] == "00_Memoria_Global"), None)
+        has_global = global_unit is not None
+        
+        if has_global:
+            st.success(f"✅ **Memoria Global Activa** (Temarios/Reglas).")
+            
+        st.caption("ℹ️ Además de la Memoria Global, selecciona las unidades específicas para esta tarea:")
+        
+        # Filter available units (excluding Global)
+        available_units_objs = [u for u in db_units if u['name'] != "00_Memoria_Global"]
+        available_unit_names = [u['name'] for u in available_units_objs]
+        unit_map = {u['name']: u['id'] for u in available_units_objs}
+        
+        selected_units = st.multiselect("Unidades Específicas:", available_unit_names, placeholder="Ej: Unidad 1...")
+        
+        # 2. Input Task
+        st.markdown("**2. Tu Tarea:**")
+        task_prompt = st.text_area("Describe la tarea o pega la consigna:", height=100, placeholder="Ej: Crea un perfil de cliente ideal usando el método de la Unidad 1...")
+        
+        # ATTACHMENT UPLOADER
+        task_file = st.file_uploader("Adjuntar consigna (PDF, Imagen, TXT)", type=['pdf', 'png', 'jpg', 'jpeg', 'txt'])
+        
+        btn_label = "⚔️ Debatir y Solucionar" if arg_mode else "🚀 Resolver Tarea"
+        
+        if st.button(btn_label, key="solve_task", use_container_width=True):
+            if not task_prompt and not task_file:
+                st.warning("⚠️ Escribe la tarea o sube un archivo.")
+            else:
+                # Gather context
+                gathered_texts = []
+                
+                # CHECK IF RUNNING ON EMPTY LIBRARY
+                using_general_knowledge = False
+                if not selected_units and not has_global:
+                    using_general_knowledge = True
+                    st.toast("⚠️ Sin biblioteca seleccionada. Usando Conocimiento General de Gemini.", icon="🌐")
+                
+                # 1. Add Global Context
+                if has_global:
+                    g_text = get_unit_context(global_unit['id'])
+                    if g_text:
+                        gathered_texts.append(f"--- [MEMORIA GLOBAL / OBLIGATORIO] ---\n{g_text}\n")
+
+                # 2. Add Selected Units
+                for u_name in selected_units:
+                    u_id = unit_map[u_name]
+                    u_text = get_unit_context(u_id)
+                    if u_text:
+                        gathered_texts.append(u_text)
+                
+                # Prepare Attachment
+                attachment_data = None
+                if task_file:
+                    attachment_data = {
+                        "mime_type": task_file.type,
+                        "data": task_file.getvalue()
+                    }
+                if task_file:
+                     attachment_data = {
+                         "mime_type": task_file.type,
+                         "data": task_file.getvalue()
+                     }
+                # CONSULTANT: PREFER LINKED FILE IF NO UPLOAD
+                elif st.session_state.get('chat_context_file'):
+                     l_file = st.session_state['chat_context_file']
+                     # We treat it as text context or attachment? 
+                     # solve_homework takes 'task_attachment' (dict with data/mime) OR we append to text.
+                     # Since it's from Library, we likely have text content.
+                     # Let's append to gathered_texts for robustness.
+                     c_txt = l_file.get('content') or l_file.get('content_text') or ""
+                     gathered_texts.append(f"--- [ARCHIVO VINCULADO: {l_file['name']}] ---\n{c_txt}\n")
+                     st.toast(f"📎 Usando archivo vinculado: {l_file['name']}")
+                with st.spinner("Analizando caso... (Modo Experto)" if arg_mode else "Consultando biblioteca..."):
+                    try:
+                        if arg_mode:
+                            full_context_str = "\n".join(gathered_texts)
+                            solution = assistant.solve_argumentative_task(task_prompt, context_files=[], global_context=full_context_str)
+                        else:
+                            solution = assistant.solve_homework(task_prompt, gathered_texts, task_attachment=attachment_data)
+                            
+                        st.session_state['homework_result'] = solution
+                    except Exception as e:
+                         # Detailed error logging
+                        st.error(f"Error resolviendo tarea: {e}")
+        
+        # --- RESULT DISPLAY ---
+        res_hw = st.session_state.get('homework_result')
+        if res_hw:
+            res = res_hw
+            
+            # ARGUMENTATOR MODE DISPLAY (Dict/JSON)
+            if isinstance(res, dict):
+                 st.markdown("### 🛡️ Análisis del Consultor (Modo Argumentador)")
+                 
+                 # Tabs for Output
+                 t_resp, t_src, t_steps = st.tabs(["💡 Respuesta", "📚 Fuentes", "👣 Paso a Paso"])
+                 
+                 with t_resp:
+                     st.markdown(res.get('direct_response', ''))
+                     if st.button("📄 Copiar respuesta", key="cp_arg_resp"):
+                         copy_to_clipboard(res.get('direct_response', ''))
+                         st.toast("Copiada Respuesta")
+                         
+                 with t_src:
+                     st.markdown(res.get('sources', 'No se citaron fuentes específicas.'))
+                     
+                 with t_steps:
+                     st.markdown(res.get('step_by_step', ''))
+                     
+                 # Counter Argument (Hidden)
+                 with st.expander("🧨 Ver Contra-Argumento (Abogado del Diablo)"):
+                     st.warning("⚠️ Estas son las objeciones que un profesor estricto te haría:")
+                     st.markdown(res.get('counter_argument', ''))
+                     
+            else:
+                # LEGACY DISPLAY (String)
+                # HEADER + COPY ICON
+                c_head, c_copy = st.columns([0.9, 0.1])
+                with c_head:
+                    st.markdown("### ✅ Respuesta")
+                with c_copy:
+                     if st.button("📄", key="cp_hw", help="Copiar Respuesta"):
+                        clean_txt = clean_markdown(res)
+                        if copy_to_clipboard(clean_txt):
+                            st.toast("¡Copiado!", icon='📋')
+                
+                st.markdown(res)
+
+            # --- BRIDGE TO TUTOR ---
+            st.divider()
+            if st.button("🗣️ Debatir esta respuesta con el profesor (Ir a tutoría)", key="btn_bridge_tutor", help="Crea un nuevo chat, envía esta tarea y te redirige para discutirla."):
+                # 1. Prepare Content
+                full_text_response = ""
+                if isinstance(res, dict):
+                    full_text_response = f"**Respuesta:**\n{res.get('direct_response','')}\n\n**Contra-argumento:**\n{res.get('counter_argument','')}"
+                else:
+                    full_text_response = str(res)
+                
+                bridge_msg = (
+                    f"Hola Profe IA. Acabo de generar una respuesta para esta tarea:\n\n"
+                    f"**CONSIGNA:**\n_{task_prompt}_\n\n"
+                    f"**MI BORRADOR (Generado por Asistente):**\n{full_text_response}\n\n"
+                    f"Quiero que analicemos esto. Qué opinas? Podemos mejorarlo?"
+                )
+
+                # 2. Database Integration
+                from database import create_chat_session, save_chat_message
+                import datetime
+                
+                # Create New Session
+                # Name it based on task or timestamp
+                sess_name = f"Debate Tarea: {task_prompt[:20]}..." if task_prompt else "Debate Tarea"
+                new_sess = create_chat_session(st.session_state['user'].id, sess_name)
+                
+                if new_sess:
+                    # Set as Active
+                    st.session_state['current_chat_session'] = new_sess
+                    st.session_state['tutor_chat_history'] = [] # Reset local
+                    
+                    # 3. Save User Message
+                    save_chat_message(new_sess['id'], "user", bridge_msg)
+                    st.session_state['tutor_chat_history'].append({"role": "user", "content": bridge_msg})
+                    
+                    # 4. Generate Response (with Spinner)
+                    # Prepare Context (Global)
+                    gl_ctx_bridge, _ = get_global_context()
+                    
+                    with st.spinner("El profesor está leyendo tu tarea y creando el chat..."):
+                        try:
+                            response_bridge = assistant.chat_tutor(
+                                bridge_msg, 
+                                chat_history=st.session_state['tutor_chat_history'], 
+                                context_files=[], 
+                                global_context=gl_ctx_bridge
+                            )
+                            
+                            # 5. Save Assistant Response
+                            save_chat_message(new_sess['id'], "assistant", response_bridge)
+                            st.session_state['tutor_chat_history'].append({"role": "assistant", "content": response_bridge})
+                            
+                            st.success("✅ Chat creado. Redirigiendo...")
+                            
+                            # 6. FORCE REDIRECT
+                            st.session_state['redirect_target_name'] = "Tutoría 1 a 1"
+                            st.session_state['force_chat_tab'] = True
+                            st.rerun()
+                            
+                        except Exception as e:
+                            st.error(f"Error generando respuesta: {e}")
+                else:
+                    st.error("No se pudo crear la sesión de chat.")
+
+# --- TAB 6: Tutoría 1 a 1 (Docente Artificial) ---
+if 'tutor_chat_history' not in st.session_state: st.session_state['tutor_chat_history'] = []
+
+with tab_tutor:
+    tutor_html = (
+        '<div class="card-text">'
+        '<h2 style="margin-top:0;">6. Tutoría Personalizada (Profesor IA)</h2>'
+        '<p style="color: #64748b; font-size: 1.1rem;">Tu profesor particular. Pregunta, sube tareas para corregir y dialoga en tiempo real.</p>'
+        '</div>'
+    )
+    st.markdown(tutor_html, unsafe_allow_html=True)
+    
+    # --- SESSION STATE FOR ACTIVE FILES ---
+    if 'active_context_files' not in st.session_state:
+        st.session_state['active_context_files'] = []
+
+    # --- FETCH MESSAGES FROM DB IF SESSION ACTIVE ---
+    from database import get_chat_messages, save_chat_message
+    
+    current_sess = st.session_state.get('current_chat_session')
+    
+    if not current_sess:
+        # CONSULTANT FIX: Direct Access - Start Chat Immediately
+        # Replaces the old "Go to sidebar" placeholder
+        st.markdown("### ¿En qué te ayudo hoy? 🎓")
+        st.caption("Escribe tu pregunta y crearé una sesión nueva automáticamente.")
+        
+        init_prompt = st.chat_input("Escribe tu pregunta para empezar...", key="new_chat_init_input")
+        
+        if init_prompt:
+             # 1. Create Session
+             # Generate a title from the prompt (truncated)
+             short_title = init_prompt[:30] + "..." if len(init_prompt) > 30 else init_prompt
+             new_session = create_chat_session(st.session_state['user'].id, short_title)
+             
+             if new_session:
+                 # 2. Set as Active
+                 st.session_state['current_chat_session'] = new_session
+                 st.session_state['tutor_chat_history'] = [] 
+                 
+                 # 3. Save User Message
+                 save_chat_message(new_session['id'], "user", init_prompt)
+                 st.session_state['tutor_chat_history'].append({"role": "user", "content": init_prompt})
+                 
+                 # 4. Update Footprint (Sidebar Access)
+                 footprint = {
+                     "type": "chat",
+                     "title": short_title,
+                     "target_id": new_session['id'],
+                     "subtitle": "Nueva consulta"
+                 }
+                 update_user_footprint(st.session_state['user'].id, footprint)
+                 
+                 # 5. Trigger AI Response
+                 st.session_state['trigger_ai_response'] = True
+                 
+                 st.rerun()
+             else:
+                 st.error("Error iniciando sesión de chat.")
+    else:
+        # Load History from DB (Sync)
+        # We re-fetch to ensure we have the latest state relative to DB
+        # Optimization: Could check if len mismatch, but fetching is safer for consistency.
+        # Optimization: Only fetch if we switched session or history not loaded
+        if 'tutor_chat_history' not in st.session_state or st.session_state.get('loaded_sess_id') != current_sess['id']:
+            db_msgs = get_chat_messages(current_sess['id'])
+            st.session_state['tutor_chat_history'] = db_msgs
+            st.session_state['loaded_sess_id'] = current_sess['id']
+        
+
+
+
+        # --- UPLOAD STATUS PLACEHOLDER (Centralized) ---
+        upload_status_container = st.empty()
+
+        col_chat, col_info = st.columns([3, 1], gap="large")
+        
+        with col_info:
+            st.info(f"📝 **Clase Actual:** {current_sess['name']}")
+            st.caption("El profesor recuerda todo lo hablado en esta clase.")
+            
+            # CONSULTANT: SHOW LINKED LIBRARY FILE
+            if st.session_state.get('chat_context_file'):
+                l_file = st.session_state['chat_context_file']
+                st.success(f"📎 **VINCULADO:**\n{l_file['name']}")
+                if st.button("❌ Desvincular", key="unlink_file", help="Quitar este archivo del chat"):
+                    st.session_state['chat_context_file'] = None
+                    st.rerun()
+            
+            st.divider()
+            st.markdown("### 📎 Contexto Activo")
+            
+            # 1. SHOW ACTIVE FILES
+            if st.session_state['active_context_files']:
+                for idx, f in enumerate(st.session_state['active_context_files']):
+                    c1, c2 = st.columns([0.8, 0.2])
+                    c1.markdown(f"📄 `{f['name']}`")
+                    if c2.button("✖️", key=f"del_ctx_{idx}", help="Quitar archivo"):
+                        st.session_state['active_context_files'].pop(idx)
+                        st.rerun()
+            else:
+                st.caption("No hay archivos en memoria.")
+
+            # st.markdown("### ☁️ Subir Nuevo") # Removed for Floating Button
+            # tutor_file = st.file_uploader("Agregar a contexto", type=['pdf', 'txt', 'png', 'jpg'], key="tutor_up")
+            
+            if st.button("🗑️ Limpiar pantalla", key="clear_chat"):
+                 # This only clears screen, to delete history use delete session
+                 # But maybe we want a 'Clear Messages' function?
+                 # For now, just reset local state, but DB remains? 
+                 # User asked for "create different chats".
+                 pass
+
+        # --- FLOATING UPLOAD BUTTON (JS Injection to Input) ---
+        # 1. Render Popover (Hidden initially to prevent flash)
+        # We use a specific container to help JS find it easily if needed, but data-testid is fine.
+        
+        # CSS to hide it initially and style the internal button
+        st.markdown("""
+        <style>
+        /* Target the popover container - Initial State */
+        div[data-testid="stPopover"] {
+            /* We don't hide it fully via display:none or JS might fail to grab dimensions, 
+               but we can use opacity or just rely on JS moving it quickly. 
+               Let's style the button itself to look like a 'Clip'. 
+            */
+            border: none !important;
+        }
+        div[data-testid="stPopover"] button {
+            background-color: transparent;
+            border: none;
+            color: #555;
+            font-size: 24px;
+            padding: 5px;
+            transition: color 0.3s;
+        }
+        div[data-testid="stPopover"] button:hover {
+            color: #1f77b4;
+            background-color: rgba(0,0,0,0.05);
+        }
+        </style>
+        """, unsafe_allow_html=True)
+        
+        # 2. POP_OVER CONTENT
+        # We define it here. It renders at the bottom of the flow.
+        # JS will move this element into the Chat Input container.
+        with st.popover("➕", help="Adjuntar archivos"):
+             st.markdown("### 📎 Adjuntar")
+             new_uploads = st.file_uploader("Archivos", type=['pdf', 'txt', 'md', 'py', 'png', 'jpg'], accept_multiple_files=True, key="float_up_inj")
+             if new_uploads:
+                # UX FIX: Use central placeholder so it's visible in main chat area
+                st.toast("Procesando archivos...", icon="⏳")
+                
+                with upload_status_container.status("🔄 Procesando archivos...", expanded=True) as status:
+                    for up_file in new_uploads:
+                        if not any(f['name'] == up_file.name for f in st.session_state['active_context_files']):
+                            st.write(f"📖 Leyendo: **{up_file.name}**...")
+                            content_text = ""
+                            if up_file.type == "application/pdf":
+                                try:
+                                    import PyPDF2
+                                    pdf_reader = PyPDF2.PdfReader(up_file)
+                                    for page in pdf_reader.pages:
+                                        content_text += page.extract_text() + "\n"
+                                except:
+                                     try:
+                                         content_text = assistant.extract_text_from_pdf(up_file.getvalue())
+                                     except:
+                                         content_text = "[Error leyendo PDF]"
+                            else:
+                                try:
+                                    content_text = up_file.read().decode("utf-8")
+                                except:
+                                    content_text = f"[Archivo Binario/Imagen: {up_file.name}]"
+                            
+                            st.session_state['active_context_files'].append({
+                                "name": up_file.name,
+                                "content": content_text
+                            })
+                            st.write(f"✅ ¡{up_file.name} listo!")
+                    
+                    status.update(label="✅ Carga Completa", state="complete", expanded=True)
+                    st.toast("✅ ¡Archivos listos para usar!", icon="🚀")
+                    
+                    # Small delay to ensure they see it before any potential rerun
+                    import time
+                    time.sleep(1.5)
+        
+        # --- HIDDEN PASTE RECEIVER ---
+        if 'paste_key' not in st.session_state: st.session_state['paste_key'] = 0
+        
+        # MOVE TO SIDEBAR to prevent layout issues in main chat
+        with st.sidebar:
+             # st.markdown('<div class="paste-bin-hidden-wrapper">', unsafe_allow_html=True)
+             # paste_bin = st.file_uploader("KILL_ME_NOW", type=['png','jpg','jpeg','pdf'], key=f"paste_bin_{st.session_state['paste_key']}", label_visibility='collapsed')
+             # st.markdown('</div>', unsafe_allow_html=True)
+             paste_bin = None # Disabled to prevent rendering
+        
+        if paste_bin:
+             # Check for duplicates (Original Name OR Pasted Name)
+             # file_data['name'] is what we stored. paste_bin.name is the new file.
+             # We stored it as f"Pasted_{paste_bin.name}"
+             is_duplicate = any(f['name'] == paste_bin.name or f['name'] == f"Pasted_{paste_bin.name}" for f in st.session_state['active_context_files'])
+             
+             if not is_duplicate:
+                 st.session_state['active_context_files'].append({
+                     "name": f"Pasted_{paste_bin.name}",
+                     "content": f"[Archivo Pegado: {paste_bin.name}]" 
+                 })
+                 st.toast("📸 Archivo pegado!")
+                 
+                 # RESET UPLOADER
+                 st.session_state['paste_key'] += 1
+                 st.rerun()
+             else:
+                 # It is a duplicate in the INPUT, but maybe already handled.
+                 # If we don't reset, it stays there. 
+                 # We should probably reset anyway if it's stale?
+                 # But if user pasted same file intentionally?
+                 # Let's just reset to be clean.
+                 pass
+
+        components.html("""
+        <script>
+        const observer = new MutationObserver(() => {
+            const popovers = window.parent.document.querySelectorAll('div[data-testid="stPopover"]');
+            const chatInput = window.parent.document.querySelector('[data-testid="stChatInput"]');
+            
+            // 1. FOCUS & LAYOUT FIX
+            if (chatInput) {
+                 // Ensure the whole bar is clickable
+                 chatInput.style.cursor = 'text';
+                 chatInput.onclick = (e) => {
+                     const ta = chatInput.querySelector('textarea');
+                     if (ta && e.target !== ta && !e.target.closest('button')) {
+                         ta.focus();
+                     }
+                 };
+
+                 // Inject + Button if needed
+                 if (popovers.length > 0) {
+                     const targetPopover = popovers[popovers.length - 1]; 
+                     const textArea = chatInput.querySelector('textarea');
+                     if (textArea && textArea.parentElement) {
+                         const capsule = textArea.parentElement;
+                     // 1.5. VERTICAL LAYOUT REDESIGN
+                     // Request: Text on TOP, Button on BOTTOM.
+                     
+                     // A. Force Container to Column
+                     capsule.style.setProperty('flex-direction', 'column', 'important');
+                     capsule.style.setProperty('align-items', 'flex-start', 'important'); // Align left
+                     capsule.style.setProperty('gap', '5px', 'important');
+                     
+                     // B. Ensure Button is at the BOTTOM (Append moves it to end)
+                     if (!capsule.contains(targetPopover)) {
+                         targetPopover.style.position = 'relative';
+                         targetPopover.style.margin = '0px'; 
+                         targetPopover.style.zIndex = '10';
+                         targetPopover.style.width = '1000%'; // Full width for alignment
+                         
+                         // Insert at END (Bottom)
+                         capsule.appendChild(targetPopover);
+                     } else {
+                         // Already there, just ensure order if needed (re-append moves to end)
+                         // But be careful not to trigger infinite loop if observer reacts to this.
+                         // Check if it's already the last child
+                         if (capsule.lastElementChild !== targetPopover) {
+                             capsule.appendChild(targetPopover);
+                         }
+                     }
+                     
+                     // C. Style the Textarea (Top Element)
+                     textArea.style.setProperty('width', '100%', 'important');
+                     textArea.style.setProperty('text-align', 'left', 'important');
+                     textArea.style.setProperty('padding', '10px 0px 0px 0px', 'important'); // Visual tweak
+                     
+                     // D. ENFORCER (Relaxed to prevent lag)
+                     const enforceLayout = () => {
+                          if (capsule) {
+                              capsule.style.setProperty('flex-direction', 'column', 'important');
+                              capsule.style.setProperty('gap', '5px', 'important');
+                          }
+                          if (textArea) {
+                              textArea.style.setProperty('width', '100%', 'important');
+                              textArea.style.border = 'none';
+                          }
+                     };
+                     
+                     // Run loop (Less aggressive: 1s)
+                if (textArea.dataset.layout_v2 === undefined) {
+                      setInterval(enforceLayout, 1000);
+                      textArea.dataset.layout_v2 = 'active';
+                 }
+                 
+                  const pasteInput = Array.from(window.parent.document.querySelectorAll('input[type="file"]'))
+                      .find(i => i.getAttribute('aria-label') === "Paste_Receiver_Hidden_Bin" || i.parentElement.innerText.includes("Paste_Receiver_Hidden_Bin"));
+                 
+                 if (pasteInput) {
+                     // HELPER: Send File to Input
+                     const sendFiles = (files) => {
+                         const dataTransfer = new DataTransfer();
+                         for (let i = 0; i < files.length; i++) {
+                              dataTransfer.items.add(files[i]);
+                         }
+                         pasteInput.files = dataTransfer.files;
+                         pasteInput.dispatchEvent(new Event('change', { bubbles: true }));
+                     };
+
+                     // A. PASTE Handler
+                     if (!window.parent.document.hasPasteHandler) {
+                         window.parent.document.addEventListener('paste', (event) => {
+                             const items = (event.clipboardData || event.originalEvent.clipboardData).items;
+                             const files = [];
+                             for (let i=0; i < items.length; i++) {
+                                 if (items[i].kind === 'file') files.push(items[i].getAsFile());
+                             }
+                             if (files.length > 0) sendFiles(files);
+                         });
+                         window.parent.document.hasPasteHandler = true;
+                     }
+
+                    // B. DRAG & DROP Handler (Global)
+                    if (!window.parent.document.hasDropHandler) {
+                        // Drag Over (Allow drop)
+                        window.parent.document.addEventListener('dragover', (e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            // Optional: Highlight UI
+                        });
+                        
+                        // Drop
+                        window.parent.document.addEventListener('drop', (e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (e.dataTransfer && e.dataTransfer.files.length > 0) {
+                                sendFiles(e.dataTransfer.files);
+                            }
+                        });
+                        window.parent.document.hasDropHandler = true;
+                    }
+                }
+            }
+            
+        
+        });
+        observer.observe(window.parent.document.body, { childList: true, subtree: true, attributes: true });
+        </script>
+        """, height=0)
+
+        with col_chat:
+            # Display Chat History (WhatsApp Style)
+            import markdown
+            chat_html = '<div style="display: flex; flex-direction: column; gap: 15px; padding-bottom: 20px;">'
+            
+            for msg in st.session_state['tutor_chat_history']:
+                is_user = msg['role'] == 'user'
+                
+                # Styles
+                row_style = "display: flex; width: 100%; align-items: flex-end; margin-bottom: 2px;"
+                if is_user:
+                     row_style += " justify-content: flex-end;"
+                else:
+                     row_style += " justify-content: flex-start;"
+                
+                bubble_style = "padding: 10px 14px; border-radius: 12px; max-width: 85%; word-wrap: break-word; font-size: 16px; line-height: 1.5; position: relative; box-shadow: 0 1px 2px rgba(0,0,0,0.1); font-family: inherit;"
+                if is_user:
+                    bubble_style += " background-color: #d9fdd3; color: #111; border-bottom-right-radius: 2px; margin-right: 8px;"
+                else:
+                    bubble_style += " background-color: #ffffff; color: #111; border-bottom-left-radius: 2px; border: 1px solid #f0f0f0; margin-left: 8px;"
+                
+                # AVATAR (Emoji based for robustness)
+                avatar_icon = "👤" if is_user else "🎓"
+                avatar_bg = "#eee" if is_user else "#e6f3ff"
+                avatar_html = f'''
+                <div style="width: 35px; height: 35px; min-width: 35px; border-radius: 50%; background-color: {avatar_bg}; border: 1px solid #ccc; display: flex; align-items: center; justify-content: center; font-size: 20px;">
+                    {avatar_icon}
+                </div>
+                '''
+
+                # Convert Markdown
+                raw_content = msg.get('content', '') or ''
+                try:
+                    msg_html = markdown.markdown(raw_content, extensions=['fenced_code', 'tables'])
+                except:
+                    msg_html = raw_content
+
+                if is_user:
+                    # User: Bubble Left of Avatar (Avatar on far right)
+                    chat_html += f'<div style="{row_style}"><div style="{bubble_style}">{msg_html}</div>{avatar_html}</div>'
+                else:
+                    # Bot: Avatar Left of Bubble
+                    chat_html += f'<div style="{row_style}">{avatar_html}<div style="{bubble_style}">{msg_html}</div></div>'
+                    
+            chat_html += '<div id="tutor_chat_end_anchor" style="height: 1px;"></div></div>'
+            st.markdown(chat_html, unsafe_allow_html=True)
+            
+            # Files display removed per user request (handled in sidebar/backend now)
+            
+            # SCROLL BUTTON (INJECTED INTO PARENT)
+            # CLEANUP: NO INJECTION HERE. Global manager handles this.
+
+            # --- AI GENERATION BLOCK (Context-Aware) ---
+            if st.session_state.get('trigger_ai_response'):
+                 # Logic to generate response
+                 # Need to fetch the last user message
+                 hist = st.session_state['tutor_chat_history']
+                 if hist and hist[-1]['role'] == 'user':
+                     last_msg = hist[-1]['content']
+                     
+                     # Context Prep
+                     gl_ctx, _ = get_global_context()
+                     
+                     # File Context - USE PERSISTENT LIST
+                     gen_files = st.session_state.get('active_context_files', [])
+                     
+                     # Add Linked Library File if exists (Ephemeral)
+                     if st.session_state.get('chat_context_file'):
+                         l_f = st.session_state['chat_context_file']
+                         c_t = l_f.get('content') or l_f.get('content_text') or ""
+                         # Hydrate if needed (lazy)
+                         if not c_t and 'id' in l_f:
+                             from database import get_file_content
+                             c_t = get_file_content(l_f['id'])
+                         # Check duplicate
+                         if not any(f['name'] == l_f['name'] for f in gen_files):
+                             gen_files.append({"name": l_f['name'], "content": c_t})
+                     
+                     with st.chat_message("assistant"):
+                        with st.spinner("El profesor está pensando..."):
+                            try:
+                                full_resp = assistant.chat_tutor(
+                                    last_msg,
+                                    chat_history=hist[:-1],
+                                    context_files=gen_files,
+                                    global_context=gl_ctx
+                                )
+                                st.markdown(full_resp)
+                                
+                                # Save
+                                save_chat_message(current_sess['id'], "assistant", full_resp)
+                                st.session_state['tutor_chat_history'].append({"role": "assistant", "content": full_resp})
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"Error: {e}")
+                 
+                 st.session_state['trigger_ai_response'] = False # Safety
+
+        # --- INPUT MOVED OUTSIDE OF COLUMNS (STICKY FOOTER FIX) ---
+        if prompt := st.chat_input(f"Pregunta sobre {current_sess['name']}..."):
+            
+             # 2. Add User Message
+            save_chat_message(current_sess['id'], "user", prompt)
+            
+            # Update UI State
+            st.session_state['tutor_chat_history'].append({"role": "user", "content": prompt})
+            
+            # 3. Trigger Response
+            st.session_state['trigger_ai_response'] = True
+            st.rerun()
+
+# --- DEFINITIVE SCROLL ANCHOR ---
+st.markdown("<div id='end_marker' style='height: 1px; width: 1px; visibility: hidden;'></div>", unsafe_allow_html=True)
+
+# Force Reload Triggered
+
+ 
+ #   - - -   F L O A T I N G   S C R O L L   D A E M O N   ( R o b u s t   V 2 )   - - - 
+ 
+ #   I n j e c t s   a   p e r m a n e n t   f l o a t i n g   b u t t o n   t h a t   h a n d l e s   s c r o l l i n g   e n t i r e l y   v i a   J S 
+ 
+ i m p o r t   s t r e a m l i t . c o m p o n e n t s . v 1   a s   c o m p o n e n t s 
+ 
+ c o m p o n e n t s . h t m l ( " " " 
+ 
+ < l i n k   r e l = " s t y l e s h e e t "   h r e f = " h t t p s : / / c d n j s . c l o u d f l a r e . c o m / a j a x / l i b s / f o n t - a w e s o m e / 6 . 0 . 0 / c s s / a l l . m i n . c s s " > 
+ 
+ < s t y l e > 
+ 
+         . f l o a t - s c r o l l - b t n   { 
+ 
+                 p o s i t i o n :   f i x e d ; 
+ 
+                 b o t t o m :   9 0 p x ; 
+ 
+                 r i g h t :   2 5 p x ; 
+ 
+                 w i d t h :   4 5 p x ; 
+ 
+                 h e i g h t :   4 5 p x ; 
+ 
+                 b a c k g r o u n d - c o l o r :   # 4 F 4 6 E 5 ;   / *   P r i m a r y   P u r p l e   * / 
+ 
+                 c o l o r :   w h i t e ; 
+ 
+                 b o r d e r - r a d i u s :   5 0 % ; 
+ 
+                 b o x - s h a d o w :   0   4 p x   6 p x   r g b a ( 0 , 0 , 0 , 0 . 2 ) ; 
+ 
+                 d i s p l a y :   f l e x ; 
+ 
+                 a l i g n - i t e m s :   c e n t e r ; 
+ 
+                 j u s t i f y - c o n t e n t :   c e n t e r ; 
+ 
+                 f o n t - s i z e :   2 0 p x ; 
+ 
+                 c u r s o r :   p o i n t e r ; 
+ 
+                 z - i n d e x :   9 9 9 9 9 9 ; 
+ 
+                 t r a n s i t i o n :   t r a n s f o r m   0 . 2 s ,   b a c k g r o u n d - c o l o r   0 . 2 s ; 
+ 
+                 b o r d e r :   n o n e ; 
+ 
+                 o u t l i n e :   n o n e ; 
+ 
+         } 
+ 
+         . f l o a t - s c r o l l - b t n : h o v e r   { 
+ 
+                 t r a n s f o r m :   s c a l e ( 1 . 1 ) ; 
+ 
+                 b a c k g r o u n d - c o l o r :   # 4 3 3 8 c a ; 
+ 
+         } 
+ 
+         . f l o a t - s c r o l l - b t n : a c t i v e   { 
+ 
+                 t r a n s f o r m :   s c a l e ( 0 . 9 ) ; 
+ 
+         } 
+ 
+ < / s t y l e > 
+ 
+ 
+ 
+ < b u t t o n   i d = " s c r o l l B t n "   c l a s s = " f l o a t - s c r o l l - b t n "   t i t l e = " I r   a l   f i n a l " > 
+ 
+         < i   c l a s s = " f a s   f a - a r r o w - d o w n " > < / i > 
+ 
+ < / b u t t o n > 
+ 
+ 
+ 
+ < s c r i p t > 
+ 
+         c o n s t   b t n   =   d o c u m e n t . g e t E l e m e n t B y I d ( ' s c r o l l B t n ' ) ; 
+ 
+         
+ 
+         / /   L o g i c :   S c r o l l   t o   b o t t o m   o f   m a i n   c o n t a i n e r 
+ 
+         b t n . o n c l i c k   =   ( )   = >   { 
+ 
+                 / /   S t r e a m l i t ' s   m a i n   c o n t a i n e r   u s u a l l y   h a s   c l a s s   ' s t M a i n '   o r   w e   j u s t   s c r o l l   w i n d o w 
+ 
+                 w i n d o w . s c r o l l T o ( { 
+ 
+                         t o p :   d o c u m e n t . b o d y . s c r o l l H e i g h t , 
+ 
+                         b e h a v i o r :   ' s m o o t h ' 
+ 
+                 } ) ; 
+ 
+                 
+ 
+                 / /   A l s o   t r y   t o   f i n d   t h e   c h a t   i n p u t   a n d   f o c u s   i t 
+ 
+                 c o n s t   c h a t I n p u t   =   w i n d o w . p a r e n t . d o c u m e n t . q u e r y S e l e c t o r ( ' [ d a t a - t e s t i d = " s t C h a t I n p u t " ]   t e x t a r e a ' ) ; 
+ 
+                 i f   ( c h a t I n p u t )   c h a t I n p u t . f o c u s ( ) ; 
+ 
+         } ; 
+ 
+         
+ 
+         / /   O p t i o n a l :   H i d e   i f   a l r e a d y   a t   b o t t o m ?   ( K e e p   s i m p l e   f o r   n o w ) 
+ 
+ < / s c r i p t > 
+ 
+ " " " ,   h e i g h t = 0 ) 
+ 
+ 
