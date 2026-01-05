@@ -3583,26 +3583,31 @@ with tab_quiz:
                 
                 # Collect ALL Images
                 all_pil_images = []
-                # MAP images to their IDs to retrieve config later
-                # We need a parallel list or an object wrapper. 
-                # Let's use a list of tuples: (image, id)
                 
-                image_entries = [] # List of {"img": pil, "id": id, "name": name}
+                # Deduplication logic using dictionary keys (name/id)
+                image_map = {} 
 
                 # From Paste
                 for i, img in enumerate(st.session_state['pasted_images']):
-                     image_entries.append({"img": img, "id": f"paste_{i}", "name": f"Imagen Pegada {i+1}"})
+                     # Use a unique key
+                     k = f"paste_{i}"
+                     image_map[k] = {"img": img, "id": k, "name": f"Imagen Pegada {i+1}"}
 
                 # From Upload
-                # Re-open or use cached? 
-                # st.file_uploader objects can be re-read.
                 if img_files:
                     for f in img_files:
                         try:
-                            pil_i = Image.open(f)
-                            if pil_i.mode == 'RGBA': pil_i = pil_i.convert('RGB')
-                            image_entries.append({"img": pil_i, "id": f.name, "name": f.name})
-                        except: pass
+                            # Use file name as unique key
+                            k = f.name
+                            if k not in image_map:
+                                pil_i = Image.open(f)
+                                if pil_i.mode == 'RGBA': pil_i = pil_i.convert('RGB')
+                                image_map[k] = {"img": pil_i, "id": k, "name": f.name}
+                        except Exception as e: 
+                            print(f"Error loading {f.name}: {e}")
+                
+                # Convert back to list
+                image_entries = list(image_map.values())
                 
                 items_to_process = []
                 
@@ -3730,19 +3735,23 @@ with tab_quiz:
             # Visual Display (Simplified: Direct Explanations)
             
             for i, res in enumerate(res_quiz):
-                # Using container or expanded expander for "Immediate View"
-                with st.expander(f"📝 Resultado: {res['name']}", expanded=True):
+                # PERMANENT VIEW (No Expanders)
+                with st.container(border=True):
+                    # Header
+                    st.markdown(f"#### 🔹 Pregunta {i+1}")
+                    
                     if 'img_obj' in res and res['img_obj']:
-                        c_i, c_t = st.columns([0.3, 0.7])
-                        with c_i:
+                        c_img, c_ans = st.columns([0.35, 0.65], gap="medium")
+                        with c_img:
                              try:
-                                 st.image(res['img_obj'], use_container_width=True)
+                                 st.image(res['img_obj'], use_container_width=True, caption=res['name'])
                              except:
-                                 st.caption("Imagen original")
-                        with c_t:
+                                 st.caption("Imagen no disponible")
+                        with c_ans:
+                             # Clean up newlines for compact view if needed, but Markdown usually handles it
                              st.markdown(res['full'])
                     else:
-                        st.markdown(res['full'])
+                         st.markdown(res['full'])
 
             # --- DEBATE CHAT ---
             st.divider()

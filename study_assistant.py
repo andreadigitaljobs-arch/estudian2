@@ -324,33 +324,26 @@ Google ofrece una capa gratuita generosa, pero limitada.
             """
 
         prompt = f"""
-        Analiza esta pregunta de examen con el rigor de un CATEDRÁTICO UNIVERSITARIO.
+        Actúa como una hoja de respuestas profesional y directa. TU OBJETIVO ES LA VELOCIDAD Y LA CLARIDAD.
         
-        CONTEXTO DE LA BIBLIOTECA:
+        CONTEXTO DE LA BIBLIOTECA (Úsalo solo si es vital):
         {global_context}
         
-        INSTRUCCIONES SUPREMAS:
-        {override_instr}
-        1. **DETECCIÓN AUTOMÁTICA DE TIPO**:
-           - Mira la imagen. ¿Es Selección Múltiple? ¿Verdadero/Falso? ¿Respuesta Abierta?
-           - **ADÁPTATE AL FORMATO**: Si es Verdadero/Falso, responde explícitamente "Verdadero" o "Falso". Si es Selección, di "Opción B".
-        2. **RESOLUCIÓN DIRECTA**: Identifica la respuesta correcta de inmediato.
-        3. **FUENTE DE VERDAD**: 
-           - Busca primero en la Biblioteca.
-           - Si NO está ahí, AUTOMÁTICAMENTE usa tu conocimiento enciclopédico mundial.
-           - **PROHIBIDO** decir "El texto no lo dice" o "No tengo información".
-           - **PROHIBIDO** ser vago (ej: "épocas tempranas"). Sé preciso (ej: "Año 1732").
-        4. **EXPLICACIÓN MAGISTRAL (El valor real)**:
-           - Tu explicación NO debe ser una simple justificación. Debe ser una **mini-clase**.
-           - Aporta contexto histórico, define conceptos clave, menciona autores o fechas si aplica.
-           - El estudiante debe aprender el "POR QUÉ" profundo, no solo cuál es la opción correcta.
-           - Sé asertivo, profesional y detallista.
-
-        Salida Estructurada:
-        **Pregunta:** [Texto completo o resumen]
-        **Tipo Detectado:** [Ej: Cierto/Falso, Selección Múltiple]
-        **Respuesta Correcta:** [La opción ganadora claramente]
-        **Explicación:** [Párrafo robusto, educativo y detallado que demuestre dominio total del tema]
+        INSTRUCCIONES DE FORMATO ({override_instr}):
+        1. **DIRECTO AL GRANO**: No saludes, no analices, no concluyas.
+        2. **ESTRUCTURA OBLIGATORIA** (Usa exactamente este formato):
+        
+        ### ✅ RESPUESTA: [La opción correcta, ej: "B) 1945" o "Verdadero"]
+        
+        **💡 POR QUÉ:** [1 o 2 frases MÁXIMO explicando el motivo clave. Sé quirúrgico.]
+        
+        **⛔ NO ES:** [Opcional. Brevemente por qué las otras distraen, si es necesario.]
+        
+        REGLAS:
+        - Si es **Cierto/Falso**, di solo "Verdadero" o "Falso".
+        - Si es **Selección Múltiple**, lista TODAS las correctas si hay varias.
+        - **PROHIBIDO** decir "Basado en la imagen" o "El texto dice". Simplemente afirma el hecho.
+        - **PROHIBIDO** dar introducciones ("La respuesta correcta es..."). Empieza directo con la respuesta.
         """
         
         content_parts = [prompt]
