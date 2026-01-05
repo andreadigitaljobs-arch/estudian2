@@ -41,6 +41,9 @@ def render_library(assistant):
         st.info("👈 Selecciona un Diplomado en la barra lateral para ver su Biblioteca.")
         return
 
+    # DEBUG TOAST
+    st.toast("Cargando Biblioteca V54... (Contadores Activos)", icon="📂")
+
     # --- MAINTENANCE TOOLS ---
     with st.expander("🔧 Mantenimiento de Archivos"):
         c_m1, c_m2 = st.columns([0.8, 0.2])
