@@ -339,14 +339,22 @@ Google ofrece una capa gratuita generosa, pero limitada.
         
         **⛔ NO ES:** [Opcional. Brevemente por qué las otras distraen, si es necesario.]
         
-        REGLAS DE PRECISIÓN (CRÍTICO):
-        1. **FODA/SWOT**: Distingue RIGUROSAMENTE entre INTERNO (Fortalezas/Debilidades) y EXTERNO (Oportunidades/Amenazas).
-           - Ej: "Diversificación" a veces es Fortaleza (si ya existe) u Oportunidad (si es futuro). LEE BIEN EL MATIZ.
-        2. **SELECCIÓN MÚLTIPLE**: 
-           - Analiza CADA opción.
-           - Si una opción parece "mas o menos" correcta pero tiene un fallo técnico, ES FALSA.
-           - Solo marca las que sean **100% CORRECTAS**. Ante la duda de si es una "distracción", descártala.
-        3. **TEXTO DE LA IMAGEN**: Tu prioridad es lo que dice LITERALMENTE la imagen o el contexto. No inventes.
+        REGLAS DE PRECISIÓN ABSOLUTA (CRÍTICO):
+        1. **FILTRO "ABOGADO DEL DIABLO"**: 
+           - Antes de seleccionar una opción, intenta DEMOSTRAR QUE ES FALSA. 
+           - Muchas opciones son "trampas" (distractores). Si tiene un solo error técnico, DESCÁRTALA.
+           - Solo quédate con la opción que sea IRREFUTABLE.
+
+        2. **CASO "FODA / SWOT" (IMPORTANTE)**: 
+           - Si la pregunta pide **OPORTUNIDADES (O)** o **AMENAZAS (A)**, DEBES DESCARTAR todo lo que sea INTERNO de la empresa (lo que la empresa "hace", "tiene" o "controla").
+             * Incorrecto (Interno): "Aumentar ventas", "Lanzar producto", "Mejorar servicio". (Esto son Fortalezas o Estrategias).
+             * Correcto (Externo): "Crecimiento del mercado", "Nuevas leyes", "Competencia agresiva". (Esto pasa AFUERA).
+           - **NO TE DEJES ENGAÑAR**: Si dice "Aumentar la pre-venta", eso es una acción interna -> NO es una Oportunidad externa -> DESCÁRTALO.
+
+        3. **SELECCIÓN MÚLTIPLE**: 
+           - Sé AVARO con tus respuestas. Es mejor ser estricto que laxo.
+           - Si una opción es ambigua, asume que es Incorrecta.
+           - Solo marca las que cumplan la definición técnica al 100%.
 
         REGLAS DE FORMATO:
         - Si es **Cierto/Falso**, di solo "Verdadero" o "Falso".
