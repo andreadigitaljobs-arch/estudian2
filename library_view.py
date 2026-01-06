@@ -4,12 +4,13 @@ import os
 import base64
 import pandas as pd
 import mimetypes
-from database import get_units, get_course_full_context, get_unit_context, get_files, delete_file_db, rename_file_db, move_file_db, get_courses, get_supabase
+from database import get_units, get_course_full_context, get_unit_context, get_files, delete_file_db, rename_file_db, move_file_db, get_courses
 
-# --- SAFETY HELPER (INLINED) ---
+# --- SAFETY HELPER (INLINED & DECOUPLED) ---
 def get_unit_file_counts_safe(course_id):
     try:
-        supabase = get_supabase()
+        # Use Session State directly to avoid circular imports
+        supabase = st.session_state.get('supabase_client_instance')
         if not supabase: return {}
         
         # 1. Fetch Units
