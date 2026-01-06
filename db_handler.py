@@ -129,6 +129,21 @@ def update_user_footprint(user_id, footprint_data):
     except Exception as e:
         print(f"Error updating footprint: {e}")
 
+def get_user_footprint(user_id):
+    """
+    Retrieves the 'smart_footprint' from user metadata.
+    """
+    supabase = init_supabase()
+    try:
+        # Attempt to get from session user first (most common case is getting own footprint)
+        user = supabase.auth.get_user()
+        if user and user.user:
+            # We don't strictly check user_id vs current because usually we only see own data
+            return user.user.user_metadata.get('smart_footprint', {})
+        return {}
+    except:
+        return {}
+
 # --- COURSES (DIPLOMADOS) ---
 def get_user_courses(user_id):
     supabase = init_supabase()
