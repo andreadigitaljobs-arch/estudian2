@@ -3768,16 +3768,6 @@ with tab_quiz:
                              st.markdown(clean_body)
                     else:
                          st.markdown(clean_body)
-                        c_img, c_ans = st.columns([0.35, 0.65], gap="medium")
-                        with c_img:
-                             try:
-                                 st.image(res['img_obj'], use_container_width=True, caption=res['name'])
-                             except:
-                                 st.caption("Imagen no disponible")
-                        with c_ans:
-                             st.markdown(res['full'])
-                    else:
-                         st.markdown(res['full'])
 
             # --- DEBATE CHAT ---
             st.divider()
