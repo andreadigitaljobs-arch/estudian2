@@ -312,7 +312,6 @@ def render_library(assistant):
                     sel_rename = st.selectbox("Selecciona carpeta:", ["-- Seleccionar --"] + list(editable_units.keys()), key="ren_unit_sel")
                     
                     if sel_rename != "-- Seleccionar --":
-                    if sel_rename != "-- Seleccionar --":
                         new_name = st.text_input("Nuevo nombre:", key="ren_new_name")
                         if st.button("Renombrar Carpeta", use_container_width=True):
                             new_name = st.session_state.get('ren_new_name') 
@@ -489,6 +488,9 @@ def render_library(assistant):
                                     st.toast("Renombrado!")
                                     del st.session_state[ren_key]
                                     st.rerun()
+                            new_name_input = st.text_input("Nuevo nombre", value=display_name, key=f"in_{ren_key}", label_visibility="collapsed")
+                            
+                            col_s, col_c = st.columns([1, 1])
                             if col_s.button("💾", key=f"sav_{ren_key}", help="Guardar", use_container_width=True):
                                 # Re-attach extension to ensure system integrity
                                 val = st.session_state[f"in_{ren_key}"]
