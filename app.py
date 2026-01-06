@@ -4637,21 +4637,26 @@ components.html("""
 </button>
 
 <script>
-    const btn = document.getElementById('scrollBtn');
-    
-    // VALIDATED FIX: Use window.parent to scroll the actual app
+    // ROBUST FIX: Try All Possible Scroll Containers
     btn.onclick = () => {
-        const mainContainer = window.parent.document.querySelector('.stMain');
-        if (mainContainer) {
-            mainContainer.scrollTo({
-                top: mainContainer.scrollHeight,
-                behavior: 'smooth'
-            });
-        } else {
-             window.parent.scrollTo({
-                top: window.parent.document.body.scrollHeight,
-                behavior: 'smooth'
-            });
+        const targets = [
+            window.parent.document.querySelector('[data-testid="stAppViewContainer"]'), // Modern Streamlit
+            window.parent.document.querySelector('.main'),
+            window.parent.document.querySelector('.stMain'),
+            window.parent.document.documentElement
+        ];
+
+        let scrolled = false;
+        for (let t of targets) {
+            if (t && t.scrollHeight > t.clientHeight) {
+                t.scrollTo({ top: t.scrollHeight, behavior: 'smooth' });
+                scrolled = true;
+                break; 
+            }
+        }
+
+        if (!scrolled) {
+             window.parent.scrollTo({ top: window.parent.document.body.scrollHeight, behavior: 'smooth' });
         }
 
         // Auto-focus chat input
