@@ -4,7 +4,7 @@ import os
 import base64
 import pandas as pd
 import mimetypes
-from database import get_units, get_course_full_context, get_unit_context, get_files, delete_file_db, rename_file_db, move_file_db, get_courses
+from database import get_units, get_course_full_context, get_unit_context, get_files, delete_file, rename_file_db, move_file_db, get_courses
 
 
 def render_library(assistant):
@@ -198,7 +198,7 @@ def render_library(assistant):
                 with c4:
                     st.markdown("<div style='height: 8px'></div>", unsafe_allow_html=True)
                     if st.button("🗑️", key=f"s_del_{f['id']}", help="Eliminar archivo"):
-                        if delete_file(f['id']):
+                        if delete_file(file_to_delete['id']):
                             st.toast(f"Archivo eliminado: {f['name']}")
                             time.sleep(0.5)
                             st.rerun()
