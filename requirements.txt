@@ -6,4 +6,4 @@ Pillow
 streamlit-paste-button
 python-docx
 markdown
-# TRIGGER_V130_NO_COLLAPSE
+# TRIGGER_V131_DOUBLE_BRACE_FIX

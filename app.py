@@ -352,7 +352,15 @@ components.html(f"""
             }}
             
             header {{
-                visibility: hidden !important;
+                visibility: visible !important;
+                display: block !important;
+            }}
+
+            /* HIDE SIDEBAR COLLAPSE BUTTON to prevent accidental loss */
+            [data-testid="stSidebarCollapseButton"] {{
+                display: none !important;
+            }}
+            section[data-testid="stSidebar"] > button {{
                 display: none !important;
             }}
         `;
