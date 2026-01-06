@@ -4,8 +4,8 @@ import time
 import os
 import base64
 import pandas as pd
-# V83 - Force Reload
-from database import get_units, create_unit, upload_file_to_db, get_files, delete_file, rename_file, rename_unit, delete_unit, create_chat_session, save_chat_message, search_library, update_user_footprint, get_course_files, move_file
+# V85 - Nuclear Rename
+from db_handler import get_units, create_unit, upload_file_to_db, get_files, delete_file, rename_file, rename_unit, delete_unit, create_chat_session, save_chat_message, search_library, update_user_footprint, get_course_files, move_file
 
 
 def render_library(assistant):
