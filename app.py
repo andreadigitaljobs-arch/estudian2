@@ -361,12 +361,16 @@ components.html(f"""
                 background-color: transparent !important;
             }}
             
-            /* FORCE SHOW SIDEBAR BUTTONS */
-            [data-testid="stSidebarCollapsedControl"], [data-testid="stSidebarNavOpenControl"] {{
-                display: block !important;
-                visibility: visible !important;
-                z-index: 1000001 !important;
-                color: black !important; /* Ensure high contrast */
+            /* HIDE SIDEBAR COLLAPSE BUTTON (The << Arrow) */
+            [data-testid="stSidebarCollapseButton"] {{
+                display: none !important;
+                visibility: hidden !important;
+                opacity: 0 !important;
+            }}
+            
+            /* Extra safety: Target the button inside the sidebar header */
+            section[data-testid="stSidebar"] header button {{
+                display: none !important;
             }}
         `;
         root.head.appendChild(style);
