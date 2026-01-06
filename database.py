@@ -365,9 +365,6 @@ def move_file(file_id, new_unit_id):
         print(f"Error moving file: {e}")
         return False
 
-# Alias
-move_file_db = move_file
-
 def get_file_content(file_id):
     supabase = init_supabase()
     try:
@@ -383,9 +380,6 @@ def delete_file(file_id):
         return True
     except: return False
 
-# Alias for backward compatibility (Restored)
-delete_file_db = delete_file
-
 def rename_file(file_id, new_name):
     # SANITIZE
     if new_name:
@@ -395,9 +389,6 @@ def rename_file(file_id, new_name):
         supabase.table("library_files").update({"name": new_name}).eq("id", file_id).execute()
         return True
     except: return False
-
-# Alias
-rename_file_db = rename_file
 
 
 

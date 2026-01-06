@@ -1,10 +1,10 @@
+
 import streamlit as st
 import time
 import os
 import base64
 import pandas as pd
-import mimetypes
-from database import get_units, get_course_full_context, get_unit_context, get_files, delete_file, rename_file_db, move_file_db, get_courses
+from database import get_units, create_unit, upload_file_to_db, get_files, delete_file, rename_file, rename_unit, delete_unit, create_chat_session, save_chat_message, search_library, update_user_footprint, get_course_files, move_file
 
 
 def render_library(assistant):
@@ -198,7 +198,7 @@ def render_library(assistant):
                 with c4:
                     st.markdown("<div style='height: 8px'></div>", unsafe_allow_html=True)
                     if st.button("🗑️", key=f"s_del_{f['id']}", help="Eliminar archivo"):
-                        if delete_file(file_to_delete['id']):
+                        if delete_file(f['id']):
                             st.toast(f"Archivo eliminado: {f['name']}")
                             time.sleep(0.5)
                             st.rerun()
@@ -250,18 +250,12 @@ def render_library(assistant):
     # --- FOLDER VIEW ---
     subfolders = get_units(current_course_id, parent_id=current_unit_id)
     
-    # [SAFETY] Fetch counts protected by try/except inside helper
-    unit_counts = get_unit_file_counts_safe(current_course_id)
-
     if subfolders:
         st.markdown("##### 📁 Carpetas")
         cols = st.columns(3)
         for i, unit in enumerate(subfolders):
-            count = unit_counts.get(unit['id'], 0)
-            label = f"📁 {unit['name']} ({count})"
-            
             with cols[i % 3]:
-                if st.button(label, key=f"btn_unit_{unit['id']}", use_container_width=True):
+                if st.button(f"📁 {unit['name']}", key=f"btn_unit_{unit['id']}", use_container_width=True):
                     st.session_state['lib_current_unit_id'] = unit['id']
                     st.session_state['lib_current_unit_name'] = unit['name']
                     st.session_state['lib_breadcrumbs'].append({'id': unit['id'], 'name': unit['name']})

@@ -3790,6 +3790,7 @@ with tab_quiz:
                  pass 
         else:
             st.info("👆 **Sube una imagen o pregunta para ver la Zona de Análisis.**")
+            st.caption("Versión V52 - Esperando datos...")
 
         # MOVED OUTSIDE THE IF to be visible if we want? No, logic requires results.
         # But we keep indentation logic.
