@@ -33,7 +33,7 @@ st.set_page_config(
     initial_sidebar_state="expanded" if st.session_state.get('user') else "collapsed"
 )
 
-# --- EMERGENCY SIDEBAR RESCUE (V152) ---
+# --- EMERGENCY SIDEBAR RESCUE (V153: CLEAN UP) ---
 st.markdown("""
 <style>
     /* 1. FORCE NATIVE ARROW (The "Right" Way) */
@@ -56,57 +56,7 @@ st.markdown("""
         opacity: 1 !important;
         display: block !important;
     }
-
-    /* 2. RESCUE BUTTON (Fallback via Markdown) */
-    #rescue-sidebar-btn {
-        position: fixed;
-        bottom: 20px;
-        left: 20px;
-        z-index: 99999999;
-        background-color: #FF4B4B;
-        color: white;
-        border: 2px solid white;
-        border-radius: 50%;
-        width: 60px;
-        height: 60px;
-        font-size: 30px;
-        cursor: pointer;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
 </style>
-
-<!-- JS for the Button -->
-<script>
-    function forceOpen() {
-        const doc = window.parent.document;
-        const target = doc.querySelector('[data-testid="stSidebarCollapsedControl"]');
-        if (target) { target.click(); }
-    }
-</script>
-
-<!-- The Button itself (Rendered in main DOM) -->
-<div style="position: fixed; bottom: 20px; left: 20px; z-index: 99999999;">
-    <button onclick="
-        const doc = window.parent.document;
-        const target = doc.querySelector('[data-testid=\'stSidebarCollapsedControl\']');
-        if (target) { target.click(); } else { alert('Intenta refrescar la página, no encuentro el menú.'); }
-    " style="
-        background-color: #FF4B4B; 
-        color: white; 
-        border: 2px solid white; 
-        border-radius: 50%; 
-        width: 60px; 
-        height: 60px; 
-        font-size: 30px; 
-        cursor: pointer; 
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-    " title="SOS: Abrir Menú">
-    🆘
-    </button>
-</div>
 """, unsafe_allow_html=True)
 
 

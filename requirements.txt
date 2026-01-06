@@ -6,4 +6,4 @@ Pillow
 streamlit-paste-button
 python-docx
 markdown
-# TRIGGER_V152_MARKDOWN_INJECTION_FIX
+# TRIGGER_V153_REMOVE_SOS_BUTTON
