@@ -3807,8 +3807,13 @@ with tab_quiz:
                     except Exception as e:
                         st.error(f"Error: {e}")
 
-            # Spacer
             st.write("")
+            
+            # --- STANDARD BUTTON INSTEAD OF FLOATING ---
+            if st.button("⏬ PROCESAR Y VER RESULTADOS", key="btn_solve_quiz_main", type="primary", use_container_width=True):
+                 st.session_state['trigger_quiz_solve'] = True
+                 st.session_state['quiz_use_context'] = use_context
+                 st.rerun()
             
             if 'quiz_chat' not in st.session_state:
                 st.session_state['quiz_chat'] = []
