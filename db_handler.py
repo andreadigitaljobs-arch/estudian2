@@ -411,6 +411,10 @@ def rename_file(file_id, new_name):
     supabase = init_supabase()
     try:
         supabase.table("library_files").update({"name": new_name}).eq("id", file_id).execute()
+        
+        # CRITICAL FIX: Clear Cache to prevent "Double Click" issue on Rename
+        get_files.clear()
+        
         return True
     except: return False
 rename_file_db = rename_file # Compatibility Alias
