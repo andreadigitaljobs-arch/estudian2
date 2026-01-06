@@ -289,6 +289,9 @@ def get_full_course_backup(course_id):
                     "unit": uname
                 })
                 
+        # Sort by Name (Case Insensitive) to ensure "01, 02, 03" order
+        all_files.sort(key=lambda x: x['name'].lower())
+        
         return all_files
     except Exception as e:
         print(f"Backup Error: {e}")
@@ -342,7 +345,11 @@ def get_files(unit_id):
     try:
         # RPC Bypass for API Cache issues
         res = supabase.rpc("get_unit_files", {"p_unit_id": unit_id}).execute()
-        return res.data
+        
+        # V113: Safety Sort (Alphabetical)
+        if res.data:
+            return sorted(res.data, key=lambda x: x['name'].lower())
+        return []
     except Exception as e:
         # print(f"Error fetching files (RPC): {e}") # Log silently
         return []
