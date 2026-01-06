@@ -629,7 +629,7 @@ def render_library(assistant):
                              st.warning("¿Borrar definitivamente?")
                              if st.button("🔥 SÍ, BORRAR", key=f"go_del_{f['id']}_{token}", use_container_width=True, type="primary"):
                                  if delete_file(f['id']):
-                                     st.session_state.get_files.clear()
+                                     # Clean up cache properly
                                      get_files.clear()
                                      st.toast("Archivo eliminado")
                                      st.rerun()
