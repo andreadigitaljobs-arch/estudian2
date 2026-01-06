@@ -3483,7 +3483,9 @@ with tab_quiz:
                     # Uploaded
                     if files_val:
                         for f in files_val:
-                             current_files.append({"Archivo": f.name, "Tipo": "🤖 Auto (Detectar)", "id": f.name})
+                             # V147 Fix: Handle both UploadedFile object and dict (persisted state)
+                             fname = getattr(f, 'name', None) or f.get('name') if isinstance(f, dict) else "Archivo sin nombre"
+                             current_files.append({"Archivo": fname, "Tipo": "🤖 Auto (Detectar)", "id": fname})
                     
                     if current_files:
                         import pandas as pd
