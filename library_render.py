@@ -489,7 +489,7 @@ def render_library(assistant):
                                 del st.session_state[ren_key]
                                 st.rerun()
                     else:
-                        st.markdown(f"**{display_name}**")
+                        st.markdown(f"**{display_name_edit}**")
                     
                     with st.expander("Ver contenido"):
                         safe_content = f.get('content') or f.get('content_text') or ""
