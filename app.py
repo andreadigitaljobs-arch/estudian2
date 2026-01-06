@@ -33,73 +33,90 @@ st.set_page_config(
     initial_sidebar_state="expanded" if st.session_state.get('user') else "collapsed"
 )
 
-# --- EMERGENCY SIDEBAR RESCUE (V150) ---
+# --- EMERGENCY SIDEBAR RESCUE (V151) ---
 import streamlit.components.v1 as components
 components.html("""
 <style>
+    /* 1. FORCE NATIVE ARROW (The "Right" Way) */
+    [data-testid="stSidebarCollapsedControl"] {
+        display: block !important;
+        visibility: visible !important;
+        z-index: 99999999 !important;
+        color: black !important; /* Ensure high contrast */
+        background-color: white !important;
+        border-radius: 5px;
+        top: 10px !important;
+        left: 10px !important;
+    }
+
+    /* 2. RESCUE BUTTON (Fallback) */
     #rescue-sidebar-btn {
         position: fixed;
         bottom: 20px;
         left: 20px;
-        z-index: 999999;
-        background-color: #4F46E5;
+        z-index: 99999999;
+        background-color: #FF4B4B; /* Red for emergency visibility */
         color: white;
-        border: none;
+        border: 2px solid white;
         border-radius: 50%;
-        width: 50px;
-        height: 50px;
-        font-size: 24px;
+        width: 60px;
+        height: 60px;
+        font-size: 30px;
         cursor: pointer;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        display: none; /* Hidden by default */
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        display: flex; /* ALWAYS VISIBLE BY DEFAULT */
         align-items: center;
         justify-content: center;
         transition: transform 0.2s;
     }
     #rescue-sidebar-btn:hover { transform: scale(1.1); }
 </style>
-<button id="rescue-sidebar-btn" onclick="forceOpen()" title="Abrir Menú">☰</button>
+
+<!-- The Button -->
+<button id="rescue-sidebar-btn" onclick="forceOpen()" title="RESCATE: Abrir Menú">🆘</button>
+
 <script>
     function forceOpen() {
         const doc = window.parent.document;
-        // Search for standard collapse button
-        const buttons = doc.querySelectorAll('button');
-        let found = false;
         
-        // 1. Try Test ID
+        // 1. Try Native Control
         const target = doc.querySelector('[data-testid="stSidebarCollapsedControl"]');
-        if (target) { target.click(); found = true; }
+        if (target) { 
+            console.log("Clicking native control");
+            target.click(); 
+            return;
+        }
         
-        // 2. Try Headers
-        if (!found) {
-            for (const btn of buttons) {
-                if (btn.innerText === "☰" || btn.getAttribute("aria-label") === "collapsed") {
-                    btn.click();
-                    break;
-                }
+        // 2. Bruteforce search for any button that looks like a menu
+        const buttons = doc.querySelectorAll('button');
+        for (const btn of buttons) {
+            const label = (btn.getAttribute("aria-label") || "").toLowerCase();
+            if (label.includes("sidebar") || label.includes("collapse")) {
+                btn.click();
+                return;
             }
         }
     }
 
-    // AUTO-DETECT: Show button ONLY if sidebar is closed
+    // AUTO-HIDE: Only hide if we are 100% sure sidebar is OPEN
     setInterval(() => {
         const doc = window.parent.document;
         const sidebar = doc.querySelector('[data-testid="stSidebar"]');
         const btn = document.getElementById('rescue-sidebar-btn');
         
-        if (sidebar) {
-            // Check if collapsed (width ~0 or aria-expanded=false logic)
+        if (sidebar && btn) {
+            // Check visibility
             const style = window.getComputedStyle(sidebar);
-            const isClosed = sidebar.getAttribute("aria-expanded") === "false" || style.width === "0px" || style.visibility === "hidden";
+            const isOpen = sidebar.getAttribute("aria-expanded") === "true";
             
-            // If closed, SHOW rescue button
-            if (isClosed) {
-                btn.style.display = "flex";
+            // Only hide if TRULY open. If in doubt, stay visible.
+            if (isOpen && style.width !== "0px") {
+                 btn.style.display = "none";
             } else {
-                btn.style.display = "none";
+                 btn.style.display = "flex";
             }
         }
-    }, 1000);
+    }, 500);
 </script>
 """, height=0)
 
