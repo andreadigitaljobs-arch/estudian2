@@ -4507,6 +4507,33 @@ with tab_tutor:
                                 st.rerun()
                             except Exception as e:
                                 st.error(f"Error: {e}")
+                            
+                            # V142: DEBATE AUTO-CORRECTOR SNIFFER
+                            # Checks if the AI admitted a mistake and corrected a quiz answer.
+                            if "CORRECCIÓN ACEPTADA" in full_resp or "tienes razón" in full_resp.lower():
+                                try:
+                                    # Very basic heuristic: Look for "Pregunta X" and "Respuesta: Y"
+                                    # Ideally, the AI should output structured data, but we parse text for now.
+                                    import re
+                                    
+                                    # 1. Find Question Index (e.g. "Pregunta 2")
+                                    q_match = re.search(r'Pregunta\s+(\d+)', full_resp, re.IGNORECASE)
+                                    
+                                    # 2. Find Correct Answer (e.g. "respuesta correcta es 'False'")
+                                    a_match = re.search(r'correcta\s+es\s+[\'"]?([^\'"\.\n]+)', full_resp, re.IGNORECASE)
+                                    
+                                    if q_match and a_match and 'quiz_results' in st.session_state:
+                                        idx = int(q_match.group(1)) - 1 # 0-indexed
+                                        new_ans = a_match.group(1).strip()
+                                        
+                                        if 0 <= idx < len(st.session_state['quiz_results']):
+                                            # UPDATE THE QUIZ STATE
+                                            st.session_state['quiz_results'][idx]['correct_answer'] = new_ans
+                                            st.session_state['quiz_results'][idx]['user_correct'] = True # Assume user was right since they debated
+                                            st.session_state['quiz_results'][idx]['explanation'] += f"\n\n[CORREGIDO EN DEBATE]: {full_resp[:100]}..."
+                                            st.toast(f"✅ Quiz corregido: P{idx+1} -> {new_ans}")
+                                except Exception as e:
+                                    print(f"Debate Auto-Correct Error: {e}")
                  
                  st.session_state['trigger_ai_response'] = False # Safety
 
