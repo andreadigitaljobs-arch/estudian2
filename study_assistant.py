@@ -659,15 +659,15 @@ Google ofrece una capa gratuita generosa, pero limitada.
         2. **ESTRUCTURA OBLIGATORIA** (Usa exactamente este formato):
 
         
+        **❓ PREGUNTA:** [Transcribe aquí el texto de la pregunta (o resume qué se pide) brevemente.]
 
+        
         **✅ RESPUESTA:** [La opción correcta, ej: "B) 1945" o "Verdadero"]
 
         
-
         **💡 POR QUÉ:** [1 o 2 frases MÁXIMO explicando el motivo clave. Sé quirúrgico.]
 
         
-
         **⛔ NO ES:** [Opcional. Brevemente por qué las otras distraen, si es necesario.]
 
         
