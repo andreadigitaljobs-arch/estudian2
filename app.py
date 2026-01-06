@@ -33,6 +33,76 @@ st.set_page_config(
     initial_sidebar_state="expanded" if st.session_state.get('user') else "collapsed"
 )
 
+# --- EMERGENCY SIDEBAR RESCUE (V150) ---
+import streamlit.components.v1 as components
+components.html("""
+<style>
+    #rescue-sidebar-btn {
+        position: fixed;
+        bottom: 20px;
+        left: 20px;
+        z-index: 999999;
+        background-color: #4F46E5;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        font-size: 24px;
+        cursor: pointer;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        display: none; /* Hidden by default */
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.2s;
+    }
+    #rescue-sidebar-btn:hover { transform: scale(1.1); }
+</style>
+<button id="rescue-sidebar-btn" onclick="forceOpen()" title="Abrir Menú">☰</button>
+<script>
+    function forceOpen() {
+        const doc = window.parent.document;
+        // Search for standard collapse button
+        const buttons = doc.querySelectorAll('button');
+        let found = false;
+        
+        // 1. Try Test ID
+        const target = doc.querySelector('[data-testid="stSidebarCollapsedControl"]');
+        if (target) { target.click(); found = true; }
+        
+        // 2. Try Headers
+        if (!found) {
+            for (const btn of buttons) {
+                if (btn.innerText === "☰" || btn.getAttribute("aria-label") === "collapsed") {
+                    btn.click();
+                    break;
+                }
+            }
+        }
+    }
+
+    // AUTO-DETECT: Show button ONLY if sidebar is closed
+    setInterval(() => {
+        const doc = window.parent.document;
+        const sidebar = doc.querySelector('[data-testid="stSidebar"]');
+        const btn = document.getElementById('rescue-sidebar-btn');
+        
+        if (sidebar) {
+            // Check if collapsed (width ~0 or aria-expanded=false logic)
+            const style = window.getComputedStyle(sidebar);
+            const isClosed = sidebar.getAttribute("aria-expanded") === "false" || style.width === "0px" || style.visibility === "hidden";
+            
+            // If closed, SHOW rescue button
+            if (isClosed) {
+                btn.style.display = "flex";
+            } else {
+                btn.style.display = "none";
+            }
+        }
+    }, 1000);
+</script>
+""", height=0)
+
 
 
 # --- INSTANTIATE AI ENGINES (GLOBAL Fix) ---
