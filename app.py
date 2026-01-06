@@ -3698,8 +3698,10 @@ with tab_quiz:
             # 1. Try to detect "Question X" or "Pregunta X" to restore order
             import re
             def extract_q_num(text):
-                # Search for "Question 5" or "Pregunta 5"
-                match = re.search(r'(?:Question|Pregunta)\s+(\d+)', text, re.IGNORECASE)
+                # V144 Fix: More robust regex that prioritizes HEADERS
+                # 1. Try finding "Question X" or "Pregunta X" at start or after newlines/markdown
+                # Matches: "**Question 5**", "### Pregunta 5", "Question 5:"
+                match = re.search(r'(?:^|\n|#|\*)\s*(?:Question|Pregunta|P)\s*(\d+)', text[:300], re.IGNORECASE)
                 if match:
                     return int(match.group(1))
                 return 9999 # Push to end if not found
