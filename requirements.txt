@@ -6,4 +6,4 @@ Pillow
 streamlit-paste-button
 python-docx
 markdown
-# TRIGGER_V156_FIX_CACHE_ATTR_ERROR
+# TRIGGER_V157_ROBUST_TRANSCRIPTOR

@@ -2973,9 +2973,24 @@ with tab1:
                                     custom_n = file_renames.get(file.name, os.path.splitext(file.name)[0])
                                     final_name = f"{custom_n}.txt"
                                     
-                                    upload_file_to_db(t_unit_id, final_name, trans_text, "transcript")
-                                    st.toast(f"✅ Listo: {final_name}") 
-                                    st.session_state['transcript_history'].append({"name": custom_n, "text": trans_text})
+                                    # ROBUST UPLOAD: Retry with timestamp if fails (likely duplicate)
+                                    saved = upload_file_to_db(t_unit_id, final_name, trans_text, "transcript")
+                                    if not saved:
+                                        # Retry with suffix
+                                        import time
+                                        suffix = int(time.time())
+                                        final_name_retry = f"{custom_n}_{suffix}.txt"
+                                        saved = upload_file_to_db(t_unit_id, final_name_retry, trans_text, "transcript")
+                                        
+                                        if saved:
+                                            st.toast(f"⚠️ Nombre duplicado. Guardado como: {final_name_retry}", icon="📝")
+                                            final_name = final_name_retry
+                                        else:
+                                            st.error(f"❌ Error CRÍTICO: No se pudo guardar '{custom_n}' en la base de datos.")
+                                    
+                                    if saved:
+                                        st.toast(f"✅ Listo: {final_name}") 
+                                        st.session_state['transcript_history'].append({"name": custom_n, "text": trans_text})
                                     
                                     if os.path.exists(txt_path): os.remove(txt_path)
                                     success = True
