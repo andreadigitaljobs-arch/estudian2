@@ -5,7 +5,7 @@ import os
 import base64
 import pandas as pd
 # V85 - Nuclear Rename
-from db_handler import get_units, create_unit, upload_file_to_db, get_files, delete_file, rename_file, rename_unit, delete_unit, create_chat_session, save_chat_message, search_library, update_user_footprint, get_course_files, move_file
+from db_handler import get_units, create_unit, upload_file_to_db, get_files, delete_file, rename_file, rename_unit, delete_unit, create_chat_session, save_chat_message, search_library, update_user_footprint, get_course_files, move_file, get_course_file_counts
 
 
 def render_library(assistant):
@@ -254,9 +254,17 @@ def render_library(assistant):
     if subfolders:
         st.markdown("##### 📁 Carpetas")
         cols = st.columns(3)
+        
+        # V110: Fetch Counts efficiently
+        file_counts = get_course_file_counts(current_course_id)
+        
         for i, unit in enumerate(subfolders):
             with cols[i % 3]:
-                if st.button(f"📁 {unit['name']}", key=f"btn_unit_{unit['id']}", use_container_width=True):
+                # Dynamic Label
+                count = file_counts.get(unit['id'], 0)
+                label = f"📁 {unit['name']} ({count})" if count > 0 else f"📁 {unit['name']}"
+                
+                if st.button(label, key=f"btn_unit_{unit['id']}", use_container_width=True):
                     st.session_state['lib_current_unit_id'] = unit['id']
                     st.session_state['lib_current_unit_name'] = unit['name']
                     st.session_state['lib_breadcrumbs'].append({'id': unit['id'], 'name': unit['name']})

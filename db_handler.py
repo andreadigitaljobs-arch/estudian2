@@ -759,3 +759,28 @@ def save_user_memory(course_id, new_memory_text, unit_id_fallback):
     except Exception as e:
         print(f"Error saving memory: {e}")
         return False
+
+def get_course_file_counts(course_id):
+    """
+    Returns a dict {unit_id: file_count} for the given course.
+    Optimized: Uses 1 query to fetch file unit_ids and counts via Python.
+    """
+    supabase = init_supabase()
+    try:
+        # 1. Get Unit IDs for this course (to filter files)
+        units = supabase.table("units").select("id").eq("course_id", course_id).execute().data
+        if not units: return {}
+        
+        unit_ids = [u['id'] for u in units]
+        
+        # 2. Fetch only unit_id of files (Lightweight)
+        # We use .select("unit_id") to avoid fetching content
+        res = supabase.table("library_files").select("unit_id").in_("unit_id", unit_ids).execute()
+        
+        # 3. Aggregate in Python
+        from collections import Counter
+        counts = Counter([f['unit_id'] for f in res.data])
+        return dict(counts)
+    except Exception as e:
+        print(f"Error counting files: {e}")
+        return {}
