@@ -280,7 +280,7 @@ def render_library(assistant):
                     st.rerun() # REQUIRED: To clear parent folders from view
                     
         # Management Section (Rename & Delete)
-        with st.expander("⚙️ Gestión de Carpetas (Renombrar/Borrar)"):
+        with st.expander("⚙️ Gestión de Carpetas (Renombrar/Borrar)", expanded=True):
             c_rename, c_delete = st.columns(2, gap="large")
             
             
