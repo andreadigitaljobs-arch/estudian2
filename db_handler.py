@@ -237,8 +237,11 @@ def create_unit(course_id, name, parent_id=None):
         if parent_id:
             data["parent_id"] = parent_id
             
-        res = supabase.table("units").insert(data).execute()
-        return res.data[0] if res.data else None
+        if res.data:
+             # V118: Clear Cache
+             get_units.clear()
+             return res.data[0]
+        return None
     except Exception as e:
         # CONSULTANT FIX: Suppress noisy RLS errors on the UI for auto-creation
         print(f"Error creating unit (Background): {e}") 
@@ -248,6 +251,8 @@ def delete_unit(unit_id):
     supabase = init_supabase()
     try:
         supabase.table("units").delete().eq("id", unit_id).execute()
+        # V118: Clear Cache
+        get_units.clear()
         return True
     except Exception as e: 
         print(f"Error deleting unit: {e}")
@@ -301,6 +306,8 @@ def rename_unit(unit_id, new_name):
     supabase = init_supabase()
     try:
         supabase.table("units").update({"name": new_name}).eq("id", unit_id).execute()
+        # V118: Clear Cache
+        get_units.clear()
         return True
     except: return False
 
