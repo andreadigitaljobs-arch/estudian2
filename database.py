@@ -380,6 +380,9 @@ def delete_file(file_id):
         return True
     except: return False
 
+# Alias for backward compatibility (Restored)
+delete_file_db = delete_file
+
 def rename_file(file_id, new_name):
     # SANITIZE
     if new_name:

@@ -6,33 +6,6 @@ import pandas as pd
 import mimetypes
 from database import get_units, get_course_full_context, get_unit_context, get_files, delete_file_db, rename_file_db, move_file_db, get_courses
 
-# --- SAFETY HELPER (INLINED & DECOUPLED) ---
-def get_unit_file_counts_safe(course_id):
-    try:
-        # Use Session State directly to avoid circular imports
-        supabase = st.session_state.get('supabase_client_instance')
-        if not supabase: return {}
-        
-        # 1. Fetch Units
-        u_res = supabase.table("library_units").select("id").eq("course_id", course_id).execute()
-        if not u_res.data: return {}
-        
-        unit_ids = [u['id'] for u in u_res.data]
-        if not unit_ids: return {}
-
-        # 2. Fetch Files
-        f_res = supabase.table("library_files").select("id, unit_id").in_("unit_id", unit_ids).execute()
-        
-        counts = {uid: 0 for uid in unit_ids}
-        for f in f_res.data:
-            uid = f['unit_id']
-            if uid in counts:
-                counts[uid] += 1
-        return counts
-    except:
-        return {}
-# -------------------------------
-
 
 def render_library(assistant):
     """
