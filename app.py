@@ -12,7 +12,7 @@ import datetime
 import markdown
 import streamlit.components.v1 as components
 import extra_streamlit_components as stx  # --- PERSISTENCE ---
-from library_ui import render_library # --- LIBRARY UI ---
+from library_render import render_library # --- LIBRARY UI ---
 import database
 from database import (
     get_user_courses, create_course, delete_course, rename_course, 
