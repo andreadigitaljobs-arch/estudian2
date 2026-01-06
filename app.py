@@ -4591,4 +4591,104 @@ st.markdown("<div id='end_marker' style='height: 1px; width: 1px; visibility: hi
 # Force Reload Triggered
 
 
-# Floating button temporarily removed to clear duplicates.
+# --- FLOATING SCROLL DAEMON (V103 - The "Breakout" Pattern) ---
+# This uses components.html to execute JS that injects the button directly into the PARENT window.
+# This ensures:
+# 1. JS Execution (unlike st.markdown)
+# 2. No Visual Clipping (unlike pure iframe)
+# 3. Singleton control (removes duplicates)
+
+import streamlit.components.v1 as components
+
+components.html("""
+<script>
+    // 1. "Exorcist" - Clean up ANY old buttons in the parent
+    const parentDoc = window.parent.document;
+    
+    // Remove by Class names used in V96-V102
+    const ghosts = parentDoc.querySelectorAll('.float-scroll-btn, .floating-action-btn, .final-scroll-arrow');
+    ghosts.forEach(el => el.remove());
+    
+    // Remove by ID
+    const oldId = parentDoc.getElementById('fabSubmitAction');
+    if (oldId) oldId.remove();
+    const oldId2 = parentDoc.getElementById('scrollBtnDirect');
+    if (oldId2) oldId2.remove();
+
+    // 2. Create the ONE TRUE BUTTON
+    const btn = parentDoc.createElement('button');
+    btn.id = 'final_v103_scroll_btn';
+    btn.className = 'final-scroll-arrow';
+    btn.innerHTML = '<i class="fas fa-arrow-down"></i>';
+    btn.title = 'Ir al final';
+    
+    // 3. Apply Styles Programmatically (to avoid polluting parent global CSS too much)
+    Object.assign(btn.style, {
+        position: 'fixed',
+        bottom: '90px',
+        right: '25px',
+        width: '50px',
+        height: '50px',
+        backgroundColor: '#4F46E5', // Purple
+        color: 'white',
+        borderRadius: '50%',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+        border: 'none',
+        outline: 'none',
+        zIndex: '9999999',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: '24px',
+        transition: 'transform 0.2s'
+    });
+    
+    // Hover Effects
+    btn.onmouseenter = () => { btn.style.transform = 'scale(1.1)'; btn.style.backgroundColor = '#4338ca'; };
+    btn.onmouseleave = () => { btn.style.transform = 'scale(1)'; btn.style.backgroundColor = '#4F46E5'; };
+    
+    // 4. Font Awesome Injection (if missing in parent)
+    if (!parentDoc.getElementById('fa-v6')) {
+        const link = parentDoc.createElement('link');
+        link.id = 'fa-v6';
+        link.rel = 'stylesheet';
+        link.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css';
+        parentDoc.head.appendChild(link);
+    }
+
+    // 5. Scroll Logic
+    btn.onclick = () => {
+        // Try precise targets first
+        const targets = [
+            parentDoc.querySelector('[data-testid="stAppViewContainer"]'),
+            parentDoc.querySelector('.main'),
+            parentDoc.documentElement
+        ];
+        
+        let scrolled = false;
+        for (let t of targets) {
+            if (t && t.scrollHeight > t.clientHeight) {
+                t.scrollTo({ top: t.scrollHeight, behavior: 'smooth' });
+                scrolled = true;
+                break;
+            }
+        }
+        
+        if (!scrolled) {
+            // Brute force window scroll
+            window.parent.scrollTo({ top: parentDoc.body.scrollHeight, behavior: 'smooth' });
+        }
+        
+        // Focus Chat
+        setTimeout(() => {
+            const chatInput = parentDoc.querySelector('[data-testid="stChatInput"] textarea');
+            if (chatInput) chatInput.focus();
+        }, 100);
+    };
+
+    // 6. Append to Parent Body
+    parentDoc.body.appendChild(btn);
+
+</script>
+""", height=0)
