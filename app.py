@@ -4512,10 +4512,10 @@ st.markdown("<div id='end_marker' style='height: 1px; width: 1px; visibility: hi
 # Force Reload Triggered
 
 
-# --- FLOATING SCROLL DAEMON (V109 - "Gravity Well") ---
-# Strategy: Previous scroll logic was too polite (checked headers/heights).
-# New Strategy: BRUTE FORCE.
-# We target the main Streamlit container and FORCE its scrollTop to a massive number.
+# --- FLOATING SCROLL DAEMON (V110 - "Universal Shotgun") ---
+# Strategy: Stop guessing the container name.
+# WE SCROLL EVERYTHING.
+# The script finds *any* element on the page that is scrollable and forces it down.
 
 import streamlit.components.v1 as components
 
@@ -4523,8 +4523,8 @@ components.html("""
 <script>
     const parentDoc = window.parent.document;
     
-    // 1. KILL SWITCH (Keep things clean)
-    const styleId = 'v106-kill-switch';
+    // 1. KILL SWITCH (Cleanup)
+    const styleId = 'v110-cleaner';
     if (!parentDoc.getElementById(styleId)) {
         const style = parentDoc.createElement('style');
         style.id = styleId;
@@ -4536,8 +4536,12 @@ components.html("""
         parentDoc.head.appendChild(style);
     }
 
-    // 2. THE PHOENIX BUTTON (V109)
-    const newId = 'v106_phoenix_arrow'; // Keep ID to reuse existing CSS if any
+    // 2. THE PHOENIX BUTTON (V110)
+    const newId = 'v110_phoenix_arrow'; // New ID to force fresh logic binding
+    // Remove old phoenix if exists (V109)
+    const oldPhoenix = parentDoc.getElementById('v106_phoenix_arrow');
+    if (oldPhoenix) oldPhoenix.remove();
+    
     let btn = parentDoc.getElementById(newId);
     
     if (!btn) {
@@ -4572,30 +4576,34 @@ components.html("""
         btn.onmouseenter = () => { btn.style.transform = 'scale(1.1)'; btn.style.backgroundColor = '#4338ca'; };
         btn.onmouseleave = () => { btn.style.transform = 'scale(1)'; btn.style.backgroundColor = '#4F46E5'; };
         
-        // CLICK HANDLER (THE GRAVITY WELL)
+        // CLICK HANDLER (THE SHOTGUN)
         btn.onclick = () => {
              const doc = window.parent.document;
              
-             // 1. Target the known Streamlit Scroll Container
-             const appContainer = doc.querySelector('[data-testid="stAppViewContainer"]');
+             // 1. Find ALL elements
+             const allElements = doc.querySelectorAll('*');
+             let scrolledSomething = false;
              
-             if (appContainer) {
-                 // FORCE SCROLL
-                 appContainer.scrollTop = appContainer.scrollHeight; // Instant Jump to check functionality
-                 appContainer.scrollTo({ top: appContainer.scrollHeight, behavior: 'smooth' }); // Then try smooth
-             } else {
-                 // Fallback
-                 window.parent.scrollTo({ top: 100000, behavior: 'smooth' });
-             }
+             allElements.forEach(el => {
+                 // Check if scrollable vertically
+                 if (el.scrollHeight > el.clientHeight && (getComputedStyle(el).overflowY === 'auto' || getComputedStyle(el).overflowY === 'scroll')) {
+                     // SCROLL IT DOWN
+                     el.scrollTop = el.scrollHeight;
+                     scrolledSomething = true;
+                 }
+             });
              
-             // 2. Focus Chat Input (Critical for UX)
+             // 2. Fallback: Window Scroll
+             window.parent.scrollTo(0, 999999);
+             
+             // 3. Fallback: Specific Marker
+             const marker = doc.getElementById('end_marker');
+             if (marker) marker.scrollIntoView({behavior: "smooth", block: "end"});
+
+             // 4. Focus Chat (UX)
              setTimeout(() => {
                 const chatInput = doc.querySelector('[data-testid="stChatInput"] textarea');
-                if (chatInput) {
-                    chatInput.focus();
-                    // Optional: Scroll input into view
-                    chatInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
+                if (chatInput) chatInput.focus();
              }, 100);
         };
         
