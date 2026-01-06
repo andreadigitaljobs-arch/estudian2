@@ -6,4 +6,4 @@ Pillow
 streamlit-paste-button
 python-docx
 markdown
-# TRIGGER_V138_RENAME_FIX
+# TRIGGER_V139_MANUAL_NUMBERING_SUPPORT

@@ -462,13 +462,10 @@ def render_library(assistant):
                 
                 with c2:
                     # RENAME LOGIC
-                    # V138 Fix: Strip numbering for cleaner editing and prevent duplication
-                    import re
-                    name_clean = re.sub(r'^\d{2}\.\s*', '', f['name']) # Remove "01. "
-                    name_root, name_ext = os.path.splitext(name_clean)
-                    
-                    # Display name clean (without number or extension if applicable)
-                    display_name_edit = name_root if name_ext.lower() in ['.txt', '.md', '.pdf'] else name_clean
+                    # V139: Show FULL NAME (User Request) - Trusted User Input
+                    # We still handle extension hiding if standard text file for cleanliness
+                    name_root, name_ext = os.path.splitext(f['name'])
+                    display_name_edit = name_root if name_ext.lower() in ['.txt', '.md', '.pdf'] else f['name']
                     
                     ren_key = f"ren_file_{f['id']}"
                     if st.session_state.get(ren_key):
@@ -482,7 +479,7 @@ def render_library(assistant):
                                 
                                 # Rename first
                                 if rename_file(f['id'], final_name):
-                                    # V138: Auto-renumber to ensure "01. " is correctly applied/restored
+                                    # V139: Auto-Renumber (Robust) to ensure sorting is correct
                                     ensure_unit_numbering(current_unit_id)
                                     
                                     st.toast("Renombrado!")

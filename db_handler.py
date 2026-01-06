@@ -813,8 +813,10 @@ def ensure_unit_numbering(unit_id):
             
     if needs_renumbering:
         # Renaming loop
+        # Renaming loop
         for idx, f in enumerate(files):
-            clean_name = re.sub(r'^\d{2}\.\s*', '', f['name'])
+            # V139: Robust Regex - Handles "1. ", "01. ", "001. " to prevent duplication
+            clean_name = re.sub(r'^\d+\.\s*', '', f['name'])
             new_name = f"{idx+1:02d}. {clean_name}"
             if f['name'] != new_name:
                 rename_file_db(f['id'], new_name)
