@@ -4512,10 +4512,10 @@ st.markdown("<div id='end_marker' style='height: 1px; width: 1px; visibility: hi
 # Force Reload Triggered
 
 
-# --- FLOATING SCROLL DAEMON (V106 - The "CSS Kill Switch") ---
-# Strategy: Instead of trying to "find and remove" ghosts (which fails), 
-# we inject a CSS GRENADE that force-hides all previous classes.
-# Then we spawn a "Phoenix" button with a fresh ID that ignores the grenade.
+# --- FLOATING SCROLL DAEMON (V109 - "Gravity Well") ---
+# Strategy: Previous scroll logic was too polite (checked headers/heights).
+# New Strategy: BRUTE FORCE.
+# We target the main Streamlit container and FORCE its scrollTop to a massive number.
 
 import streamlit.components.v1 as components
 
@@ -4523,102 +4523,86 @@ components.html("""
 <script>
     const parentDoc = window.parent.document;
     
-    // 1. THE CSS GRENADE (Force Hide Aliens)
-    // We inject a style tag that targets ALL known ghost classes and ID's
+    // 1. KILL SWITCH (Keep things clean)
     const styleId = 'v106-kill-switch';
     if (!parentDoc.getElementById(styleId)) {
         const style = parentDoc.createElement('style');
         style.id = styleId;
         style.innerHTML = `
-            /* Hide ALL Historical Ghost Classes */
-            .float-scroll-btn, 
-            .floating-action-btn, 
-            .final-scroll-arrow, 
-            #fabSubmitAction, 
-            #scrollBtnDirect, 
-            #final_v103_scroll_btn,
-            #v105_guardian_btn { 
-                display: none !important; 
-                opacity: 0 !important; 
-                pointer-events: none !important; 
-                visibility: hidden !important; 
-            }
+            .float-scroll-btn, .floating-action-btn, .final-scroll-arrow, 
+            #fabSubmitAction, #scrollBtnDirect, #final_v103_scroll_btn, #v105_guardian_btn 
+            { display: none !important; opacity: 0 !important; pointer-events: none !important; }
         `;
         parentDoc.head.appendChild(style);
     }
 
-    // 2. THE PHOENIX BUTTON (Fresh Identity)
-    const newId = 'v106_phoenix_arrow';
-    
-    // Check if Phoenix already lives
+    // 2. THE PHOENIX BUTTON (V109)
+    const newId = 'v106_phoenix_arrow'; // Keep ID to reuse existing CSS if any
     let btn = parentDoc.getElementById(newId);
+    
     if (!btn) {
         btn = parentDoc.createElement('button');
         btn.id = newId;
-        // NO CLASS that matches the Kill Switch!
         btn.innerHTML = '<i class="fas fa-arrow-down"></i>';
-        btn.title = 'Ir al final';
+        btn.title = 'Ir al final'; // Tooltip
         
-        // Inline Styles (Unkillable)
+        // STYLES
         Object.assign(btn.style, {
             position: 'fixed',
             bottom: '90px',
             right: '25px',
             width: '50px',
             height: '50px',
-            backgroundColor: '#4F46E5', // Purple
+            backgroundColor: '#4F46E5',
             color: 'white',
             borderRadius: '50%',
             boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
             border: 'none',
             outline: 'none',
-            zIndex: '2147483647', // Max Z-Index
+            zIndex: '2147483647',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             fontSize: '24px',
-            transition: 'transform 0.2s, background-color 0.2s',
-            textDecoration: 'none'
+            transition: 'transform 0.2s',
         });
         
-        // Hover
+        // HOVER
         btn.onmouseenter = () => { btn.style.transform = 'scale(1.1)'; btn.style.backgroundColor = '#4338ca'; };
         btn.onmouseleave = () => { btn.style.transform = 'scale(1)'; btn.style.backgroundColor = '#4F46E5'; };
         
-        // 3. Scroll Logic (Verified V98 Logic)
+        // CLICK HANDLER (THE GRAVITY WELL)
         btn.onclick = () => {
              const doc = window.parent.document;
-             // Try precise targets
-             const targets = [
-                doc.querySelector('[data-testid="stAppViewContainer"]'),
-                doc.querySelector('.main'),
-                doc.documentElement
-             ];
-             let scrolled = false;
-             for (let t of targets) {
-                 if (t && t.scrollHeight > t.clientHeight) {
-                     t.scrollTo({ top: t.scrollHeight, behavior: 'smooth' });
-                     scrolled = true;
-                     break;
-                 }
-             }
-             if (!scrolled) {
-                 window.parent.scrollTo({ top: doc.body.scrollHeight, behavior: 'smooth' });
+             
+             // 1. Target the known Streamlit Scroll Container
+             const appContainer = doc.querySelector('[data-testid="stAppViewContainer"]');
+             
+             if (appContainer) {
+                 // FORCE SCROLL
+                 appContainer.scrollTop = appContainer.scrollHeight; // Instant Jump to check functionality
+                 appContainer.scrollTo({ top: appContainer.scrollHeight, behavior: 'smooth' }); // Then try smooth
+             } else {
+                 // Fallback
+                 window.parent.scrollTo({ top: 100000, behavior: 'smooth' });
              }
              
-             // Focus
+             // 2. Focus Chat Input (Critical for UX)
              setTimeout(() => {
                 const chatInput = doc.querySelector('[data-testid="stChatInput"] textarea');
-                if (chatInput) chatInput.focus();
-             }, 150);
+                if (chatInput) {
+                    chatInput.focus();
+                    // Optional: Scroll input into view
+                    chatInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+             }, 100);
         };
         
-        // Inject Phoenix
         parentDoc.body.appendChild(btn);
     }
-    
-    // Link FontAwesome
+
+    // FontAwesome
     if (!parentDoc.getElementById('fa-v6-phoenix')) {
         const link = parentDoc.createElement('link');
         link.id = 'fa-v6-phoenix';
@@ -4626,6 +4610,5 @@ components.html("""
         link.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css';
         parentDoc.head.appendChild(link);
     }
-
 </script>
 """, height=0)
