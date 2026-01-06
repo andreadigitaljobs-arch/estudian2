@@ -624,13 +624,7 @@ def render_library(assistant):
                             st.session_state['force_chat_tab'] = True
                             st.rerun()
 
-                with c4:
-                    # Spacer to align with "Ver contenido"
-                    st.markdown("<div style='height: 8px'></div>", unsafe_allow_html=True)
-                    # Compact Delete Button
-                    if st.button("🗑️", key=f"del_f_{f['id']}", help="Borrar archivo permanentemente"):
-                        delete_file(f['id'])
-                        st.rerun()
+
                             
             # END OF LOOP
 
