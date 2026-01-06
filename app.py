@@ -4683,25 +4683,26 @@ components.html("""
     // Logic: Scroll to bottom of main container
 
     btn.onclick = () => {
+        // Target the Streamlit main container via parent
+        const mainContainer = window.parent.document.querySelector('.stMain');
+        if (mainContainer) {
+            mainContainer.scrollTo({
+                top: mainContainer.scrollHeight,
+                behavior: 'smooth'
+            });
+        } else {
+             // Fallback to window parent scroll
+             window.parent.scrollTo({
+                top: window.parent.document.body.scrollHeight,
+                behavior: 'smooth'
+            });
+        }
 
-        // Streamlit's main container usually has class 'stMain' or we just scroll window
-
-        window.scrollTo({
-
-            top: document.body.scrollHeight,
-
-            behavior: 'smooth'
-
-        });
-
-        
-
-        // Also try to find the chat input and focus it
-
-        const chatInput = window.parent.document.querySelector('[data-testid="stChatInput"] textarea');
-
-        if (chatInput) chatInput.focus();
-
+        // Try to focus input
+        setTimeout(() => {
+            const chatInput = window.parent.document.querySelector('[data-testid="stChatInput"] textarea');
+            if (chatInput) chatInput.focus();
+        }, 100);
     };
 
     
