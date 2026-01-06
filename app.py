@@ -4597,10 +4597,10 @@ st.markdown("<div id='end_marker' style='height: 1px; width: 1px; visibility: hi
 
 import streamlit.components.v1 as components
 
-# Injects a permanent floating button that handles scrolling entirely via JS
-import streamlit.components.v1 as components
+# Injects a permanent floating button using st.markdown to perform Direct DOM Manipulation (Bypassing Iframe Sandbox)
+import streamlit.components.v1 as components # Keep import just in case, but unused for this.
 
-components.html("""
+st.markdown("""
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 <style>
     .float-scroll-btn {
@@ -4622,50 +4622,43 @@ components.html("""
         transition: transform 0.2s, background-color 0.2s;
         border: none;
         outline: none;
+        text-decoration: none; /* For anchor tags */
     }
     .float-scroll-btn:hover {
         transform: scale(1.1);
         background-color: #4338ca;
+        color: white;
     }
     .float-scroll-btn:active {
         transform: scale(0.9);
     }
 </style>
 
-<button id="scrollBtn" class="float-scroll-btn" title="Ir al final">
+<div id="scroll-target-container"></div>
+
+<button id="scrollBtnDirect" class="float-scroll-btn" title="Ir al final" onclick="scrollToBottomConfig()">
     <i class="fas fa-arrow-down"></i>
 </button>
 
 <script>
-    const btn = document.getElementById('scrollBtn');
-    
-    // ROBUST FIX: Try All Possible Scroll Containers
-    btn.onclick = () => {
-        const targets = [
-            window.parent.document.querySelector('[data-testid="stAppViewContainer"]'), // Modern Streamlit
-            window.parent.document.querySelector('.main'),
-            window.parent.document.querySelector('.stMain'),
-            window.parent.document.documentElement
-        ];
-
-        let scrolled = false;
-        for (let t of targets) {
-            if (t && t.scrollHeight > t.clientHeight) {
-                t.scrollTo({ top: t.scrollHeight, behavior: 'smooth' });
-                scrolled = true;
-                break; 
-            }
+    function scrollToBottomConfig() {
+        // Since we are now in the main DOM (via st.markdown unsafe), we can just scroll window!
+        // Try multiple scrolling methods for redundancy
+        
+        // Method 1: Scroll Main View Container (Streamlit specific)
+        const viewContainer = document.querySelector('[data-testid="stAppViewContainer"]');
+        if (viewContainer) {
+            viewContainer.scrollTo({ top: viewContainer.scrollHeight, behavior: 'smooth' });
         }
-
-        if (!scrolled) {
-             window.parent.scrollTo({ top: window.parent.document.body.scrollHeight, behavior: 'smooth' });
-        }
-
-        // Auto-focus chat input
+        
+        // Method 2: Scroll Body/HTML (Fallback)
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        
+        // Method 3: Focus Chat Input
         setTimeout(() => {
-            const chatInput = window.parent.document.querySelector('[data-testid="stChatInput"] textarea');
+            const chatInput = document.querySelector('[data-testid="stChatInput"] textarea');
             if (chatInput) chatInput.focus();
-        }, 100);
-    };
+        }, 150);
+    }
 </script>
-""", height=0)
+""", unsafe_allow_html=True)
