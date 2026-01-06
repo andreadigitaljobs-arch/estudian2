@@ -237,11 +237,8 @@ def create_unit(course_id, name, parent_id=None):
         if parent_id:
             data["parent_id"] = parent_id
             
-        if res.data:
-             # V118: Clear Cache
-             get_units.clear()
-             return res.data[0]
-        return None
+        res = supabase.table("units").insert(data).execute()
+        return res.data[0] if res.data else None
     except Exception as e:
         # CONSULTANT FIX: Suppress noisy RLS errors on the UI for auto-creation
         print(f"Error creating unit (Background): {e}") 
@@ -251,8 +248,6 @@ def delete_unit(unit_id):
     supabase = init_supabase()
     try:
         supabase.table("units").delete().eq("id", unit_id).execute()
-        # V118: Clear Cache
-        get_units.clear()
         return True
     except Exception as e: 
         print(f"Error deleting unit: {e}")
@@ -294,9 +289,6 @@ def get_full_course_backup(course_id):
                     "unit": uname
                 })
                 
-        # Sort by Name (Case Insensitive) to ensure "01, 02, 03" order
-        all_files.sort(key=lambda x: x['name'].lower())
-        
         return all_files
     except Exception as e:
         print(f"Backup Error: {e}")
@@ -306,8 +298,6 @@ def rename_unit(unit_id, new_name):
     supabase = init_supabase()
     try:
         supabase.table("units").update({"name": new_name}).eq("id", unit_id).execute()
-        # V118: Clear Cache
-        get_units.clear()
         return True
     except: return False
 
@@ -352,11 +342,7 @@ def get_files(unit_id):
     try:
         # RPC Bypass for API Cache issues
         res = supabase.rpc("get_unit_files", {"p_unit_id": unit_id}).execute()
-        
-        # V113: Safety Sort (Alphabetical)
-        if res.data:
-            return sorted(res.data, key=lambda x: x['name'].lower())
-        return []
+        return res.data
     except Exception as e:
         # print(f"Error fetching files (RPC): {e}") # Log silently
         return []
@@ -418,10 +404,6 @@ def rename_file(file_id, new_name):
     supabase = init_supabase()
     try:
         supabase.table("library_files").update({"name": new_name}).eq("id", file_id).execute()
-        
-        # CRITICAL FIX: Clear Cache to prevent "Double Click" issue on Rename
-        get_files.clear()
-        
         return True
     except: return False
 rename_file_db = rename_file # Compatibility Alias
@@ -802,115 +784,3 @@ def get_course_file_counts(course_id):
     except Exception as e:
         print(f"Error counting files: {e}")
         return {}
-
-# --- SMART REORDERING (MAGIC ARROWS) ---
-import re
-
-def ensure_unit_numbering(unit_id):
-    """
-    Checks if files in a unit are numbered (01. Name).
-    If not, auto-numbers them based on current alphabetical order.
-    Returns the sorted list of files.
-    """
-    files = get_files(unit_id) # Already sorted alphabetically by V113
-    if not files: return []
-    
-    # Check if > 50% have numbering "01. "
-    pattern = re.compile(r'^\d{2}\.\s+')
-    numbered_count = sum(1 for f in files if pattern.match(f['name']))
-    
-    # If mostly un-numbered, enforce numbering on ALL
-    if numbered_count < len(files) * 0.5:
-        supabase = init_supabase()
-        for i, f in enumerate(files):
-            # Strip existing numbers if any (to avoid 01. 01. Name)
-            clean_name = pattern.sub('', f['name']).strip()
-            new_prefix = f"{i+1:02d}"
-            new_name = f"{new_prefix}. {clean_name}"
-            
-            if new_name != f['name']:
-                rename_file(f['id'], new_name)
-                files[i]['name'] = new_name # Update local list
-        return files
-    
-    return files
-
-def move_file_up(unit_id, file_id):
-    """
-    Moves a file "Up" by swapping its number prefix with the file above it.
-    """
-    # 1. Ensure Baseline Numbering
-    files = ensure_unit_numbering(unit_id)
-    
-    # 2. Find Index
-    idx = -1
-    for i, f in enumerate(files):
-        if f['id'] == file_id:
-            idx = i
-            break
-            
-    if idx <= 0: return False # Already at top or not found
-    
-    # 3. Swap with Previous
-    curr = files[idx]
-    prev = files[idx-1]
-    
-    # Extract Prefixes (assuming standard format "XX. Name")
-    # We trust ensure_unit_numbering has done its job
-    try:
-        curr_prefix = curr['name'].split('.')[0]
-        prev_prefix = prev['name'].split('.')[0]
-        
-        curr_body = curr['name'].split('.', 1)[1].strip()
-        prev_body = prev['name'].split('.', 1)[1].strip()
-        
-        # Cross-Assign Prefixes
-        new_curr_name = f"{prev_prefix}. {curr_body}"
-        new_prev_name = f"{curr_prefix}. {prev_body}"
-        
-        rename_file(curr['id'], new_curr_name)
-        rename_file(prev['id'], new_prev_name)
-        
-        # CRITICAL FIX: Clear Cache to prevent "Double Click" issue
-        get_files.clear()
-        
-        return True
-    except:
-        return False
-
-def move_file_down(unit_id, file_id):
-    """
-    Moves a file "Down" by swapping its number prefix with the file below it.
-    """
-    files = ensure_unit_numbering(unit_id)
-    
-    idx = -1
-    for i, f in enumerate(files):
-        if f['id'] == file_id:
-            idx = i
-            break
-            
-    if idx == -1 or idx >= len(files) - 1: return False # Already at bottom
-    
-    curr = files[idx]
-    next_f = files[idx+1]
-    
-    try:
-        curr_prefix = curr['name'].split('.')[0]
-        next_prefix = next_f['name'].split('.')[0]
-        
-        curr_body = curr['name'].split('.', 1)[1].strip()
-        next_body = next_f['name'].split('.', 1)[1].strip()
-        
-        new_curr_name = f"{next_prefix}. {curr_body}"
-        new_next_name = f"{curr_prefix}. {next_body}"
-        
-        rename_file(curr['id'], new_curr_name)
-        rename_file(next_f['id'], new_next_name)
-        
-        # CRITICAL FIX: Clear Cache to prevent "Double Click" issue
-        get_files.clear()
-        
-        return True
-    except:
-        return False

@@ -5,7 +5,7 @@ import os
 import base64
 import pandas as pd
 # V85 - Nuclear Rename
-from db_handler import get_units, create_unit, upload_file_to_db, get_files, delete_file, rename_file, rename_unit, delete_unit, create_chat_session, save_chat_message, search_library, update_user_footprint, get_course_files, move_file, get_course_file_counts, move_file_up, move_file_down
+from db_handler import get_units, create_unit, upload_file_to_db, get_files, delete_file, rename_file, rename_unit, delete_unit, create_chat_session, save_chat_message, search_library, update_user_footprint, get_course_files, move_file, get_course_file_counts
 
 
 def render_library(assistant):
@@ -280,7 +280,7 @@ def render_library(assistant):
                     st.rerun() # REQUIRED: To clear parent folders from view
                     
         # Management Section (Rename & Delete)
-        with st.expander("⚙️ Gestión de Carpetas (Renombrar/Borrar)", expanded=True):
+        with st.expander("⚙️ Gestión de Carpetas (Renombrar/Borrar)"):
             c_rename, c_delete = st.columns(2, gap="large")
             
             
@@ -314,13 +314,10 @@ def render_library(assistant):
                     if sel_rename != "-- Seleccionar --":
                         new_name = st.text_input("Nuevo nombre:", key="ren_new_name")
                         if st.button("Renombrar Carpeta", use_container_width=True):
-                            new_name = st.session_state.get('ren_new_name') 
                             if new_name:
                                  target_id = editable_units[sel_rename]
                                  if rename_unit(target_id, new_name):
                                      st.success(f"Renombrado a '{new_name}'")
-                                     time.sleep(1)
-                                     st.rerun()
                                      time.sleep(1)
                                      st.rerun()
                                  else:
@@ -432,36 +429,21 @@ def render_library(assistant):
 
             # --- FILE LIST ---
             for f in files:
-                # COMPACT LAYOUT with Checkbox & Arrows
-                # c0: Check/Arrows, c1: Icon, c2: Link, c3: Menu, c4: Del
-                # Expanded c0 to fit arrows
-                c0, c1, c2, c3, c4 = st.columns([0.15, 0.08, 0.57, 0.1, 0.1], vertical_alignment="bottom")
+                # COMPACT LAYOUT with Checkbox
+                # c0: Check, c1: Icon, c2: Link, c3: Menu, c4: Del
+                c0, c1, c2, c3, c4 = st.columns([0.05, 0.1, 0.65, 0.1, 0.1], vertical_alignment="bottom")
                 
                 with c0:
-                     # FLEX ROW: Checkbox | UP | DOWN
-                     sc0, sc1, sc2 = st.columns([0.3, 0.35, 0.35])
-                     with sc0:
-                         # Checkbox
-                         is_sel = f['id'] in st.session_state['lib_multi_select']
-                         def toggle_sel(fid=f['id']):
-                             if fid in st.session_state['lib_multi_select']:
-                                 st.session_state['lib_multi_select'].remove(fid)
-                             else:
-                                 st.session_state['lib_multi_select'].append(fid)
-                         st.checkbox("Sel", value=is_sel, key=f"chk_{f['id']}", on_change=toggle_sel, label_visibility="collapsed")
+                     # Checkbox for Multi Select
+                     is_sel = f['id'] in st.session_state['lib_multi_select']
                      
-                     # Logic for Arrows
-                     idx = files.index(f)
-                     
-                     with sc1:
-                         if idx > 0: # Can go up
-                            if st.button("⬆️", key=f"up_{f['id']}", help="Subir (Reordenar)", on_click=lambda fid=f['id'], uid=current_unit_id: move_file_up(uid, fid)):
-                                pass # Rerun handled by on_click
-                     
-                     with sc2:
-                         if idx < len(files) - 1: # Can go down
-                            if st.button("⬇️", key=f"down_{f['id']}", help="Bajar (Reordenar)", on_click=lambda fid=f['id'], uid=current_unit_id: move_file_down(uid, fid)):
-                                pass
+                     def toggle_sel(fid=f['id']):
+                         if fid in st.session_state['lib_multi_select']:
+                             st.session_state['lib_multi_select'].remove(fid)
+                         else:
+                             st.session_state['lib_multi_select'].append(fid)
+                             
+                     st.checkbox("Select", value=is_sel, key=f"chk_{f['id']}", on_change=toggle_sel, label_visibility="collapsed")
 
                 with c1:
                     icon = "📄" if f['type'] == "text" else "📕"
@@ -476,25 +458,12 @@ def render_library(assistant):
                     ren_key = f"ren_file_{f['id']}"
                     if st.session_state.get(ren_key):
                         with st.container(border=True):
-                            
                             new_name_input = st.text_input("Nuevo nombre", value=display_name, key=f"in_{ren_key}", label_visibility="collapsed")
                             
                             col_s, col_c = st.columns([1, 1])
                             if col_s.button("💾", key=f"sav_{ren_key}", help="Guardar", use_container_width=True):
                                 # Re-attach extension to ensure system integrity
                                 final_name = new_name_input + name_ext if name_ext else new_name_input
-                                
-                                if rename_file(f['id'], final_name):
-                                    st.toast("Renombrado!")
-                                    del st.session_state[ren_key]
-                                    st.rerun()
-                            new_name_input = st.text_input("Nuevo nombre", value=display_name, key=f"in_{ren_key}", label_visibility="collapsed")
-                            
-                            col_s, col_c = st.columns([1, 1])
-                            if col_s.button("💾", key=f"sav_{ren_key}", help="Guardar", use_container_width=True):
-                                # Re-attach extension to ensure system integrity
-                                val = st.session_state[f"in_{ren_key}"]
-                                final_name = val + name_ext if name_ext else val
                                 
                                 if rename_file(f['id'], final_name):
                                     st.toast("Renombrado!")
@@ -509,11 +478,57 @@ def render_library(assistant):
                     with st.expander("Ver contenido"):
                         safe_content = f.get('content') or f.get('content_text') or ""
                         
-                        # Native Streamlit Copy (Lightweight)
-                        if safe_content:
-                            st.code(safe_content, language="markdown")
-                        else:
-                            st.caption("(Archivo vacío)")
+                        # COPY BUTTON (JS-BASED)
+                        import streamlit.components.v1 as components
+                        import json
+                        
+                        safe_json = json.dumps(safe_content)
+                        # JS Component
+                        # We use an iframe, so we need to ensure clipboard access is allowed.
+                        # Usually standard button click works.
+                        html_code = f"""
+                        <html>
+                        <body style="margin:0; padding:0; background: transparent;">
+                            <script>
+                            function copyContent() {{
+                                const txt = {safe_json};
+                                navigator.clipboard.writeText(txt).then(function() {{
+                                    const btn = document.getElementById('copy_btn');
+                                    btn.innerText = '✅ Copiado!';
+                                    btn.style.color = 'green';
+                                    btn.style.borderColor = 'green';
+                                    setTimeout(() => {{ 
+                                        btn.innerText = '📄 Copiar Texto'; 
+                                        btn.style.color = '#555';
+                                        btn.style.borderColor = '#ccc';
+                                    }}, 2000);
+                                }}, function(err) {{
+                                    console.error('Async: Could not copy text: ', err);
+                                }});
+                            }}
+                            </script>
+                            <button id="copy_btn" onclick="copyContent()" style="
+                                cursor: pointer;
+                                background-color: #ffffff;
+                                border: 1px solid #cccccc;
+                                border-radius: 5px;
+                                padding: 5px 12px;
+                                font-family: 'Segoe UI', sans-serif;
+                                font-size: 14px;
+                                color: #555;
+                                display: flex;
+                                align-items: center;
+                                gap: 5px;
+                                width: 100%;
+                                justify-content: center;
+                            ">
+                                📄 Copiar Texto
+                            </button>
+                        </body>
+                        </html>
+                        """
+                        # Render with height enough for the button
+                        components.html(html_code, height=40)
                         
                         st.markdown(safe_content, unsafe_allow_html=True)
 
