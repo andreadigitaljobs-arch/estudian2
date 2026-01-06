@@ -312,17 +312,8 @@ def render_library(assistant):
                     sel_rename = st.selectbox("Selecciona carpeta:", ["-- Seleccionar --"] + list(editable_units.keys()), key="ren_unit_sel")
                     
                     if sel_rename != "-- Seleccionar --":
-                        # Callback for Enter Key
-                        def on_ren_unit():
-                            u_new_name = st.session_state['ren_new_name']
-                            if u_new_name:
-                                tgt_id = editable_units[sel_rename]
-                                if rename_unit(tgt_id, u_new_name):
-                                    st.toast(f"Renombrado a '{u_new_name}'")
-                                    # Allow rerun to happen naturally or force it if needed
-                                    
-                        st.text_input("Nuevo nombre (Enter para guardar):", key="ren_new_name", on_change=on_ren_unit)
-                        
+                    if sel_rename != "-- Seleccionar --":
+                        new_name = st.text_input("Nuevo nombre:", key="ren_new_name")
                         if st.button("Renombrar Carpeta", use_container_width=True):
                             new_name = st.session_state.get('ren_new_name') 
                             if new_name:
@@ -487,22 +478,17 @@ def render_library(assistant):
                     if st.session_state.get(ren_key):
                         with st.container(border=True):
                             
-                            # CALLBACK FOR ENTER KEY
-                            def on_ren_file_enter(fid=f['id'], ext=name_ext, k=f"in_{ren_key}"):
-                                if k in st.session_state:
-                                    val = st.session_state[k]
-                                    final_n = val + ext if ext else val
-                                    if rename_file(fid, final_n):
-                                        st.toast("Renombrado!")
-                                        if f"ren_file_{fid}" in st.session_state:
-                                            del st.session_state[f"ren_file_{fid}"] # Close UI
-                                        # Force a hard rerun to update UI
-                                        # (Using standard restart trick if st.rerun feels weak, but st.rerun() is standard)
-                                        pass 
-                                        
-                            new_name_input = st.text_input("Nuevo nombre (Enter)", value=display_name, key=f"in_{ren_key}", label_visibility="collapsed", on_change=on_ren_file_enter)
+                            new_name_input = st.text_input("Nuevo nombre", value=display_name, key=f"in_{ren_key}", label_visibility="collapsed")
                             
                             col_s, col_c = st.columns([1, 1])
+                            if col_s.button("💾", key=f"sav_{ren_key}", help="Guardar", use_container_width=True):
+                                # Re-attach extension to ensure system integrity
+                                final_name = new_name_input + name_ext if name_ext else new_name_input
+                                
+                                if rename_file(f['id'], final_name):
+                                    st.toast("Renombrado!")
+                                    del st.session_state[ren_key]
+                                    st.rerun()
                             if col_s.button("💾", key=f"sav_{ren_key}", help="Guardar", use_container_width=True):
                                 # Re-attach extension to ensure system integrity
                                 val = st.session_state[f"in_{ren_key}"]
