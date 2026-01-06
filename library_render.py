@@ -430,8 +430,8 @@ def render_library(assistant):
             # --- FILE LIST ---
             for f in files:
                 # COMPACT LAYOUT with Checkbox
-                # c0: Check, c1: Icon, c2: Link, c3: Menu, c4: Del
-                c0, c1, c2, c3, c4 = st.columns([0.05, 0.1, 0.65, 0.1, 0.1], vertical_alignment="bottom")
+                # c0: Check, c1: Icon, c1b: Up, c1c: Down, c2: Link, c3: Menu
+                c0, c1, c1b, c1c, c2, c3 = st.columns([0.05, 0.08, 0.05, 0.05, 0.65, 0.12], vertical_alignment="bottom")
                 
                 with c0:
                      # Checkbox for Multi Select
@@ -447,7 +447,18 @@ def render_library(assistant):
 
                 with c1:
                     icon = "📄" if f['type'] == "text" else "📕"
-                    st.write(f"## {icon}")
+                    st.markdown(f"### {icon}")
+
+                # --- MAGIC ARROWS ---
+                with c1b:
+                     if st.button("⬆️", key=f"up_{f['id']}", help="Subir prioridad"):
+                         move_file_up(current_unit_id, f['id'])
+                         st.rerun()
+
+                with c1c:
+                     if st.button("⬇️", key=f"down_{f['id']}", help="Bajar prioridad"):
+                         move_file_down(current_unit_id, f['id'])
+                         st.rerun()
                 
                 with c2:
                     # RENAME LOGIC
