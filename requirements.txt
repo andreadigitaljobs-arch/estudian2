@@ -6,4 +6,4 @@ Pillow
 streamlit-paste-button
 python-docx
 markdown
-# TRIGGER_V151_FORCE_ARROW_VISIBLE
+# TRIGGER_V152_MARKDOWN_INJECTION_FIX

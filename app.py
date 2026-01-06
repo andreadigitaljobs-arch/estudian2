@@ -33,29 +33,37 @@ st.set_page_config(
     initial_sidebar_state="expanded" if st.session_state.get('user') else "collapsed"
 )
 
-# --- EMERGENCY SIDEBAR RESCUE (V151) ---
-import streamlit.components.v1 as components
-components.html("""
+# --- EMERGENCY SIDEBAR RESCUE (V152) ---
+st.markdown("""
 <style>
     /* 1. FORCE NATIVE ARROW (The "Right" Way) */
     [data-testid="stSidebarCollapsedControl"] {
         display: block !important;
         visibility: visible !important;
+        opacity: 1 !important;
         z-index: 99999999 !important;
-        color: black !important; /* Ensure high contrast */
-        background-color: white !important;
+        color: black !important;
+        background-color: rgba(255, 255, 255, 0.8) !important;
         border-radius: 5px;
-        top: 10px !important;
-        left: 10px !important;
+        top: 0px !important;
+        left: 0px !important;
+        margin: 5px !important;
+    }
+    
+    /* Ensure Header itself is visible if it was hidden */
+    header[data-testid="stHeader"] {
+        visibility: visible !important;
+        opacity: 1 !important;
+        display: block !important;
     }
 
-    /* 2. RESCUE BUTTON (Fallback) */
+    /* 2. RESCUE BUTTON (Fallback via Markdown) */
     #rescue-sidebar-btn {
         position: fixed;
         bottom: 20px;
         left: 20px;
         z-index: 99999999;
-        background-color: #FF4B4B; /* Red for emergency visibility */
+        background-color: #FF4B4B;
         color: white;
         border: 2px solid white;
         border-radius: 50%;
@@ -64,61 +72,42 @@ components.html("""
         font-size: 30px;
         cursor: pointer;
         box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        display: flex; /* ALWAYS VISIBLE BY DEFAULT */
+        display: flex;
         align-items: center;
         justify-content: center;
-        transition: transform 0.2s;
     }
-    #rescue-sidebar-btn:hover { transform: scale(1.1); }
 </style>
 
-<!-- The Button -->
-<button id="rescue-sidebar-btn" onclick="forceOpen()" title="RESCATE: Abrir Menú">🆘</button>
-
+<!-- JS for the Button -->
 <script>
     function forceOpen() {
         const doc = window.parent.document;
-        
-        // 1. Try Native Control
         const target = doc.querySelector('[data-testid="stSidebarCollapsedControl"]');
-        if (target) { 
-            console.log("Clicking native control");
-            target.click(); 
-            return;
-        }
-        
-        // 2. Bruteforce search for any button that looks like a menu
-        const buttons = doc.querySelectorAll('button');
-        for (const btn of buttons) {
-            const label = (btn.getAttribute("aria-label") || "").toLowerCase();
-            if (label.includes("sidebar") || label.includes("collapse")) {
-                btn.click();
-                return;
-            }
-        }
+        if (target) { target.click(); }
     }
-
-    // AUTO-HIDE: Only hide if we are 100% sure sidebar is OPEN
-    setInterval(() => {
-        const doc = window.parent.document;
-        const sidebar = doc.querySelector('[data-testid="stSidebar"]');
-        const btn = document.getElementById('rescue-sidebar-btn');
-        
-        if (sidebar && btn) {
-            // Check visibility
-            const style = window.getComputedStyle(sidebar);
-            const isOpen = sidebar.getAttribute("aria-expanded") === "true";
-            
-            // Only hide if TRULY open. If in doubt, stay visible.
-            if (isOpen && style.width !== "0px") {
-                 btn.style.display = "none";
-            } else {
-                 btn.style.display = "flex";
-            }
-        }
-    }, 500);
 </script>
-""", height=0)
+
+<!-- The Button itself (Rendered in main DOM) -->
+<div style="position: fixed; bottom: 20px; left: 20px; z-index: 99999999;">
+    <button onclick="
+        const doc = window.parent.document;
+        const target = doc.querySelector('[data-testid=\'stSidebarCollapsedControl\']');
+        if (target) { target.click(); } else { alert('Intenta refrescar la página, no encuentro el menú.'); }
+    " style="
+        background-color: #FF4B4B; 
+        color: white; 
+        border: 2px solid white; 
+        border-radius: 50%; 
+        width: 60px; 
+        height: 60px; 
+        font-size: 30px; 
+        cursor: pointer; 
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    " title="SOS: Abrir Menú">
+    🆘
+    </button>
+</div>
+""", unsafe_allow_html=True)
 
 
 
