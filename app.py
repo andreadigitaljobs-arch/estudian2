@@ -4591,116 +4591,110 @@ st.markdown("<div id='end_marker' style='height: 1px; width: 1px; visibility: hi
 # Force Reload Triggered
 
 
-# --- FLOATING SCROLL DAEMON (V103 - The "Breakout" Pattern) ---
-# This uses components.html to execute JS that injects the button directly into the PARENT window.
-# This ensures:
-# 1. JS Execution (unlike st.markdown)
-# 2. No Visual Clipping (unlike pure iframe)
-# 3. Singleton control (removes duplicates)
+# --- FLOATING SCROLL DAEMON (V105 - The "Active Guardian") ---
+# The previous "Ghost" button persisted even when code was removed, meaning it's stuck in the DOM.
+# IFrame scripts (components.html) failed to kill it, likely due to context isolation.
+# We switch back to st.markdown (Main Context) with a setInterval POLLER to actively police the DOM.
 
-import streamlit.components.v1 as components
+import streamlit.components.v1 as components # Keep import just in case
 
-components.html("""
+# RAW JS INJECTION (Blocking Iframe Ghosts from outside)
+st.markdown("""
 <script>
-    // 1. "Exorcist" (Spatial & Class based) - Clean up ANY old buttons in the parent
-    const parentDoc = window.parent.document;
-    
-    // A. Remove by Class names (All historical versions)
-    const knownClasses = ['.float-scroll-btn', '.floating-action-btn', '.final-scroll-arrow'];
-    knownClasses.forEach(c => {
-        parentDoc.querySelectorAll(c).forEach(el => el.remove());
-    });
-    
-    // B. Remove by IDs
-    ['fabSubmitAction', 'scrollBtnDirect', 'final_v103_scroll_btn'].forEach(id => {
-        const el = parentDoc.getElementById(id);
-        if (el) el.remove();
-    });
+    // V105 GUARDIAN: Runs every 1s to ensure visual supremacy
+    if (!window.v105_guardian_interval) {
+        window.v105_guardian_interval = setInterval(function() {
+            
+            // 1. SEARCH FOR ALL "LIKE" BUTTONS (Position based)
+            // We look for anything fixed at bottom-right 25px/90px
+            const allElements = document.querySelectorAll('*');
+            const myNewId = 'v105_guardian_btn';
+            
+            // Collect candidates to destroy (Everything that looks like a scroll button but isn't OURS)
+            // We use a loose heuristic to catch broken ghosts
+            allElements.forEach(el => {
+                if (el.id === myNewId) return; // Don't kill self
+                
+                // Detection: Is it a button/div? Is it fixed? Is it in the corner?
+                const style = window.getComputedStyle(el);
+                if (style.position === 'fixed' && 
+                    (style.bottom === '90px' || style.bottom === '25px') && 
+                    (style.right === '25px') &&
+                    (el.tagName === 'BUTTON' || el.tagName === 'DIV')) {
+                    
+                    // FOUND A GHOST!
+                    // console.log("Killing ghost:", el);
+                    el.remove();
+                }
+            });
 
-    // C. SPATIAL CLEANUP: Remove *anything* fixed near that corner (The "Nuclear" Option)
-    // This catches "zombie" elements that might have lost their class or ID but persist in DOM
-    const allFixed = parentDoc.querySelectorAll('*');
-    allFixed.forEach(el => {
-        const style = window.parent.getComputedStyle(el);
-        if (style.position === 'fixed' && style.bottom === '90px' && style.right === '25px') {
-             el.remove();
-        }
-    });
+            // 2. ENSURE OUR BUTTON EXISTS
+            let mine = document.getElementById(myNewId);
+            if (!mine) {
+                // Create it
+                mine = document.createElement('button');
+                mine.id = myNewId;
+                mine.innerHTML = '<i class="fas fa-arrow-down"></i>';
+                mine.title = 'Ir al final';
+                
+                // Style it
+                Object.assign(mine.style, {
+                    position: 'fixed',
+                    bottom: '90px',
+                    right: '25px',
+                    width: '50px',
+                    height: '50px',
+                    backgroundColor: '#4F46E5', 
+                    color: 'white',
+                    borderRadius: '50%',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                    border: 'none',
+                    outline: 'none',
+                    zIndex: '1000001', // Superior Z-Index
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '24px',
+                    transition: 'transform 0.2s'
+                });
+                
+                // Hover
+                mine.onmouseenter = () => { mine.style.transform = 'scale(1.1)'; mine.style.backgroundColor = '#4338ca'; };
+                mine.onmouseleave = () => { mine.style.transform = 'scale(1)'; mine.style.backgroundColor = '#4F46E5'; };
 
-    // 2. Create the ONE TRUE BUTTON
-    const btn = parentDoc.createElement('button');
-    btn.id = 'final_v103_scroll_btn';
-    btn.className = 'final-scroll-arrow';
-    btn.innerHTML = '<i class="fas fa-arrow-down"></i>';
-    btn.title = 'Ir al final';
-    
-    // 3. Apply Styles Programmatically (to avoid polluting parent global CSS too much)
-    Object.assign(btn.style, {
-        position: 'fixed',
-        bottom: '90px',
-        right: '25px',
-        width: '50px',
-        height: '50px',
-        backgroundColor: '#4F46E5', // Purple
-        color: 'white',
-        borderRadius: '50%',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-        border: 'none',
-        outline: 'none',
-        zIndex: '9999999',
-        cursor: 'pointer',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontSize: '24px',
-        transition: 'transform 0.2s'
-    });
-    
-    // Hover Effects
-    btn.onmouseenter = () => { btn.style.transform = 'scale(1.1)'; btn.style.backgroundColor = '#4338ca'; };
-    btn.onmouseleave = () => { btn.style.transform = 'scale(1)'; btn.style.backgroundColor = '#4F46E5'; };
-    
-    // 4. Font Awesome Injection (if missing in parent)
-    if (!parentDoc.getElementById('fa-v6')) {
-        const link = parentDoc.createElement('link');
-        link.id = 'fa-v6';
-        link.rel = 'stylesheet';
-        link.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css';
-        parentDoc.head.appendChild(link);
-    }
-
-    // 5. Scroll Logic
-    btn.onclick = () => {
-        // Try precise targets first
-        const targets = [
-            parentDoc.querySelector('[data-testid="stAppViewContainer"]'),
-            parentDoc.querySelector('.main'),
-            parentDoc.documentElement
-        ];
-        
-        let scrolled = false;
-        for (let t of targets) {
-            if (t && t.scrollHeight > t.clientHeight) {
-                t.scrollTo({ top: t.scrollHeight, behavior: 'smooth' });
-                scrolled = true;
-                break;
+                // Logic
+                mine.onclick = () => {
+                     // Scroll Logic
+                     const doc = document; // We are in main context now
+                     const appContainer = doc.querySelector('[data-testid="stAppViewContainer"]');
+                     if (appContainer) {
+                         appContainer.scrollTo({ top: appContainer.scrollHeight, behavior: 'smooth' });
+                     } else {
+                         window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+                     }
+                     
+                     // Input Focus
+                     setTimeout(() => {
+                        const bg = doc.querySelector('[data-testid="stChatInput"] textarea');
+                        if (bg) bg.focus();
+                     }, 150);
+                };
+                
+                // Inject
+                document.body.appendChild(mine);
+                
+                // Font Awesome check
+                if (!document.getElementById('fa-v6-guard')) {
+                    const link = document.createElement('link');
+                    link.id = 'fa-v6-guard';
+                    link.rel = 'stylesheet';
+                    link.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css';
+                    document.head.appendChild(link);
+                }
             }
-        }
-        
-        if (!scrolled) {
-            // Brute force window scroll
-            window.parent.scrollTo({ top: parentDoc.body.scrollHeight, behavior: 'smooth' });
-        }
-        
-        // Focus Chat
-        setTimeout(() => {
-            const chatInput = parentDoc.querySelector('[data-testid="stChatInput"] textarea');
-            if (chatInput) chatInput.focus();
-        }, 100);
-    };
 
-    // 6. Append to Parent Body
-    parentDoc.body.appendChild(btn);
-
+        }, 1000); // Check every second
+    }
 </script>
-""", height=0)
+""", unsafe_allow_html=True)
