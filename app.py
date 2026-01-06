@@ -3807,13 +3807,8 @@ with tab_quiz:
                     except Exception as e:
                         st.error(f"Error: {e}")
 
+            # Spacer
             st.write("")
-            
-            # --- STANDARD BUTTON INSTEAD OF FLOATING ---
-            if st.button("⏬ PROCESAR Y VER RESULTADOS", key="btn_solve_quiz_main", type="primary", use_container_width=True):
-                 st.session_state['trigger_quiz_solve'] = True
-                 st.session_state['quiz_use_context'] = use_context
-                 st.rerun()
             
             if 'quiz_chat' not in st.session_state:
                 st.session_state['quiz_chat'] = []
@@ -4602,4 +4597,68 @@ st.markdown("<div id='end_marker' style='height: 1px; width: 1px; visibility: hi
 
 import streamlit.components.v1 as components
 
-# Floating button removed in favor of standard button for stability.
+# Injects a permanent floating button that handles scrolling entirely via JS
+import streamlit.components.v1 as components
+
+components.html("""
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<style>
+    .float-scroll-btn {
+        position: fixed;
+        bottom: 90px;
+        right: 25px;
+        width: 45px;
+        height: 45px;
+        background-color: #4F46E5; /* Primary Purple */
+        color: white;
+        border-radius: 50%;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        cursor: pointer;
+        z-index: 999999;
+        transition: transform 0.2s, background-color 0.2s;
+        border: none;
+        outline: none;
+    }
+    .float-scroll-btn:hover {
+        transform: scale(1.1);
+        background-color: #4338ca;
+    }
+    .float-scroll-btn:active {
+        transform: scale(0.9);
+    }
+</style>
+
+<button id="scrollBtn" class="float-scroll-btn" title="Ir al final">
+    <i class="fas fa-arrow-down"></i>
+</button>
+
+<script>
+    const btn = document.getElementById('scrollBtn');
+    
+    // VALIDATED FIX: Use window.parent to scroll the actual app
+    btn.onclick = () => {
+        const mainContainer = window.parent.document.querySelector('.stMain');
+        if (mainContainer) {
+            mainContainer.scrollTo({
+                top: mainContainer.scrollHeight,
+                behavior: 'smooth'
+            });
+        } else {
+             window.parent.scrollTo({
+                top: window.parent.document.body.scrollHeight,
+                behavior: 'smooth'
+            });
+        }
+
+        // Auto-focus chat input
+        setTimeout(() => {
+            const chatInput = window.parent.document.querySelector('[data-testid="stChatInput"] textarea');
+            if (chatInput) chatInput.focus();
+        }, 100);
+    };
+</script>
+""", height=0)
