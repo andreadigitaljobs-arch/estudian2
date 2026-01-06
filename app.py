@@ -239,7 +239,7 @@ if 'has_restored_chat' not in st.session_state and st.session_state.get('user'):
         
         if target_chat_id:
             # Validate ownership
-            from database import get_chat_sessions
+            from db_handler import get_chat_sessions
             user_chats = get_chat_sessions(st.session_state['user'].id)
             found_chat = next((c for c in user_chats if str(c['id']) == str(target_chat_id)), None)
             
@@ -266,7 +266,7 @@ if not st.session_state['user'] and not st.session_state.get('force_logout'):
         time.sleep(0.1)
         refresh_token = cookie_manager.get("supabase_refresh_token")
         if refresh_token:
-             from database import init_supabase
+             from db_handler import init_supabase
              client = init_supabase()
              res = client.auth.refresh_session(refresh_token)
              if res.session:
@@ -1321,7 +1321,7 @@ def get_global_context():
     Fetches all text content from the current course's files in DB.
     Returns: (full_text_context, file_count)
     """
-    from database import get_course_full_context
+    from db_handler import get_course_full_context
     c_id = st.session_state.get('current_course_id')
     if not c_id: return "", 0
     

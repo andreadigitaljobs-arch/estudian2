@@ -79,7 +79,7 @@ def render_library(assistant):
         
         if st.button("Generar Backup .ZIP", key="btn_gen_backup"):
             with st.spinner("Empaquetando conocimientos... 🧠📦"):
-                 from database import get_full_course_backup
+                 from db_handler import get_full_course_backup
                  import io
                  import zipfile
                  
