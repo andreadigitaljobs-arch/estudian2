@@ -238,6 +238,7 @@ def create_unit(course_id, name, parent_id=None):
             data["parent_id"] = parent_id
             
         res = supabase.table("units").insert(data).execute()
+        get_units.clear() # CACHE FIX
         return res.data[0] if res.data else None
     except Exception as e:
         # CONSULTANT FIX: Suppress noisy RLS errors on the UI for auto-creation
@@ -248,6 +249,7 @@ def delete_unit(unit_id):
     supabase = init_supabase()
     try:
         supabase.table("units").delete().eq("id", unit_id).execute()
+        get_units.clear() # CACHE FIX
         return True
     except Exception as e: 
         print(f"Error deleting unit: {e}")
@@ -298,6 +300,7 @@ def rename_unit(unit_id, new_name):
     supabase = init_supabase()
     try:
         supabase.table("units").update({"name": new_name}).eq("id", unit_id).execute()
+        get_units.clear() # CACHE FIX
         return True
     except: return False
 
@@ -404,6 +407,7 @@ def rename_file(file_id, new_name):
     supabase = init_supabase()
     try:
         supabase.table("library_files").update({"name": new_name}).eq("id", file_id).execute()
+        get_files.clear() # CACHE FIX
         return True
     except: return False
 rename_file_db = rename_file # Compatibility Alias
@@ -784,3 +788,102 @@ def get_course_file_counts(course_id):
     except Exception as e:
         print(f"Error counting files: {e}")
         return {}
+# --- REORDERING LOGIC (MAGIC ARROWS) ---
+def ensure_unit_numbering(unit_id):
+    """
+    Ensures all files in a unit start with '01. ', '02. ', etc.
+    Returns the sorted list of files.
+    """
+    files = get_files(unit_id) # Uses cache, but we will invalidate it
+    if not files: return []
+    
+    # Check if already numbered
+    needs_renumbering = False
+    import re
+    
+    # Sort by current name to establish baseline order if not numbered
+    # If they have numbers, this respects them. If not, alphabetical.
+    files.sort(key=lambda x: x['name'])
+    
+    for idx, f in enumerate(files):
+        prefix = f"{idx+1:02d}. "
+        if not f['name'].startswith(prefix):
+            needs_renumbering = True
+            break
+            
+    if needs_renumbering:
+        # Renaming loop
+        for idx, f in enumerate(files):
+            clean_name = re.sub(r'^\d{2}\.\s*', '', f['name'])
+            new_name = f"{idx+1:02d}. {clean_name}"
+            if f['name'] != new_name:
+                rename_file_db(f['id'], new_name)
+        
+        # Invalidate cache locally
+        get_files.clear()
+        return get_files(unit_id) # Fetch fresh
+        
+    return files
+
+def move_file_up(unit_id, file_id):
+    files = ensure_unit_numbering(unit_id)
+    # Find current index
+    curr_idx = next((i for i, f in enumerate(files) if f['id'] == file_id), -1)
+    
+    if curr_idx <= 0: return # Already top or not found
+    
+    # Swap with prev
+    file_a = files[curr_idx]
+    file_b = files[curr_idx - 1] # The one above
+    
+    # We only swap NAMES (since numbering is in the name)
+    # But wait, ensure_unit_numbering guarantees "01. Foo", "02. Bar"
+    # To swap "02. Bar" UP, it becomes "01. Bar" and "01. Foo" becomes "02. Foo"
+    
+    # Extract raw names without prefix
+    import re
+    name_a_raw = re.sub(r'^\d{2}\.\s*', '', file_a['name'])
+    name_b_raw = re.sub(r'^\d{2}\.\s*', '', file_b['name'])
+    
+    # New names
+    # A moves up (takes B's index/prefix)
+    # B moves down (takes A's index/prefix)
+    
+    prefix_top = f"{curr_idx:02d}. "     # e.g. 01.
+    prefix_bot = f"{curr_idx+1:02d}. "   # e.g. 02.
+    
+    # Rename B (prev top) to Bot
+    rename_file_db(file_b['id'], prefix_bot + name_b_raw)
+    # Rename A (prev bot) to Top
+    rename_file_db(file_a['id'], prefix_top + name_a_raw)
+    
+    get_files.clear() # FORCE UI UPDATE
+    return True
+
+def move_file_down(unit_id, file_id):
+    files = ensure_unit_numbering(unit_id)
+    curr_idx = next((i for i, f in enumerate(files) if f['id'] == file_id), -1)
+    
+    if curr_idx == -1 or curr_idx == len(files) - 1: return # Not found or already bottom
+    
+    # Swap with next
+    file_a = files[curr_idx]
+    file_b = files[curr_idx + 1] # The one below
+    
+    import re
+    name_a_raw = re.sub(r'^\d{2}\.\s*', '', file_a['name'])
+    name_b_raw = re.sub(r'^\d{2}\.\s*', '', file_b['name'])
+    
+    # A moves down (takes B's index)
+    # B moves up (takes A's index)
+    
+    prefix_top = f"{curr_idx+1:02d}. "
+    prefix_bot = f"{curr_idx+2:02d}. "
+    
+    # Rename A to Bot
+    rename_file_db(file_a['id'], prefix_bot + name_a_raw)
+    # Rename B to Top
+    rename_file_db(file_b['id'], prefix_top + name_b_raw)
+    
+    get_files.clear() # FORCE UI UPDATE
+    return True

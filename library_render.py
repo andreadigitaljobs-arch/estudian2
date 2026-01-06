@@ -5,7 +5,7 @@ import os
 import base64
 import pandas as pd
 # V85 - Nuclear Rename
-from db_handler import get_units, create_unit, upload_file_to_db, get_files, delete_file, rename_file, rename_unit, delete_unit, create_chat_session, save_chat_message, search_library, update_user_footprint, get_course_files, move_file, get_course_file_counts
+from db_handler import get_units, create_unit, upload_file_to_db, get_files, delete_file, rename_file, rename_unit, delete_unit, create_chat_session, save_chat_message, search_library, update_user_footprint, get_course_files, move_file, get_course_file_counts, move_file_up, move_file_down
 
 
 def render_library(assistant):
