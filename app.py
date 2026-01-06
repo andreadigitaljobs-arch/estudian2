@@ -3700,13 +3700,17 @@ with tab_quiz:
             # 1. Try to detect "Question X" or "Pregunta X" to restore order
             import re
             def extract_q_num(text):
-                # V144 Fix: More robust regex that prioritizes HEADERS
-                # 1. Try finding "Question X" or "Pregunta X" at start or after newlines/markdown
-                # Matches: "**Question 5**", "### Pregunta 5", "Question 5:"
+                # V148 Fix: Strict Tag Priority
+                # 1. Look for [[NUM:X]]
+                tag_match = re.search(r'\[\[NUM:(\d+)\]\]', text)
+                if tag_match:
+                     return int(tag_match.group(1))
+                     
+                # 2. Fallback: Headers
                 match = re.search(r'(?:^|\n|#|\*)\s*(?:Question|Pregunta|P)\s*(\d+)', text[:300], re.IGNORECASE)
                 if match:
                     return int(match.group(1))
-                return 9999 # Push to end if not found
+                return 9999 # Push to end
             
             # Sort the list in-place
             try:
@@ -3717,27 +3721,53 @@ with tab_quiz:
                 print(f"Sort Error: {e}")
 
             for i, res in enumerate(res_quiz):
-                # V145: SPOILER-FREE PREVIEW (User Request)
-                # Avoid showing "RESPUESTA: Verdadero" in the title.
+                # V148: STRICT TAG PARSING (Robust Protocol)
                 full_txt = res['full']
                 
-                # Try to extract the "Topic/Reasoning" (Why) instead of the Answer
-                topic_match = re.search(r'\*\*💡 POR QUÉ:\*\*\s*(.+)', full_txt, re.IGNORECASE)
-                if topic_match:
-                    # Take the first ~80 chars of the explanation
-                    snippet = topic_match.group(1).strip()[:85] + "..."
+                # 1. Extract Number tag [[NUM:X]]
+                # Heuristic: If we find [[NUM:5]], we trust it explicitly for sorting/display
+                # This should be done inside the sort loop actually? 
+                # Ideally yes, but let's handle display logic here first.
+                
+                # 2. Extract Question tag [[PREGUNTA:Text]]
+                q_text_match = re.search(r'\[\[PREGUNTA:(.*?)\]\]', full_txt, re.IGNORECASE)
+                
+                if q_text_match:
+                    # New Format: We have exact text!
+                    snippet = q_text_match.group(1).strip()[:90] + "..."
                 else:
-                    # Fallback: Just show "Ver Análisis" to avoid spoiling
-                    snippet = "Ver Análisis y Explicación"
+                    # Fallback for old results:
+                    # SAFE MODE: Do NOT show random text to avoid spoilers.
+                    snippet = "Ver Pregunta y Análisis"
 
-                # Detect the Real Number again for display
-                real_num = extract_q_num(full_txt)
-                display_num = str(real_num) if real_num != 9999 else str(i+1)
+                # 3. Detect Real Number
+                num_match = re.search(r'\[\[NUM:(\d+)\]\]', full_txt)
+                if num_match:
+                    real_num = int(num_match.group(1))
+                else:
+                    # Legacy fallback
+                    real_num = extract_q_num(full_txt)
+                
+                display_num = str(real_num) if real_num != 9999 and real_num != 0 else str(i+1)
+                
+                # 4. Clean visible text (Hide tags)
+                # We hide the metadata tags from the UI body so it looks clean
+                clean_body = re.sub(r'\[\[.*?\]\]', '', full_txt).strip()
                 
                 # USE EXPANDER (User wants to see structure)
                 with st.expander(f"🔹 **P{display_num}:** {snippet}", expanded=True):
                     
                     if 'img_obj' in res and res['img_obj']:
+                        c_img, c_ans = st.columns([0.35, 0.65], gap="medium")
+                        with c_img:
+                             try:
+                                 st.image(res['img_obj'], use_container_width=True, caption=res['name'])
+                             except:
+                                 st.caption("Imagen no disponible")
+                        with c_ans:
+                             st.markdown(clean_body)
+                    else:
+                         st.markdown(clean_body)
                         c_img, c_ans = st.columns([0.35, 0.65], gap="medium")
                         with c_img:
                              try:

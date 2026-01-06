@@ -654,21 +654,22 @@ Google ofrece una capa gratuita generosa, pero limitada.
 
         INSTRUCCIONES DE FORMATO ({override_instr}):
 
-        1. **DIRECTO AL GRANO**: No saludes, no analices, no concluyas.
-
-        2. **ESTRUCTURA OBLIGATORIA** (Usa exactamente este formato):
-
+        1. **DIRECTO AL GRANO**: No saludes.
         
-        **❓ PREGUNTA:** [Transcribe aquí el texto de la pregunta (o resume qué se pide) brevemente.]
+        2. **METADATOS OBLIGATORIOS (PARA EL SISTEMA)**:
+           Al principio de tu respuesta, DEBES incluir estos tags invisibles:
+           [[NUM:X]] -> Donde X es el número de la pregunta si es visible en la imagen (ej: [[NUM:5]]). Si no hay número, pon [[NUM:0]].
+           [[PREGUNTA:Texto]] -> Transcribe LA PREGUNTA completa aquí (ej: [[PREGUNTA:¿Qué es el ROI?]]). 
 
-        
-        **✅ RESPUESTA:** [La opción correcta, ej: "B) 1945" o "Verdadero"]
+        3. **ESTRUCTURA VISIBLE** (Lo que lee el usuario):
 
-        
-        **💡 POR QUÉ:** [1 o 2 frases MÁXIMO explicando el motivo clave. Sé quirúrgico.]
+        **❓ PREGUNTA:** [Copia el texto de la pregunta aquí también]
 
-        
-        **⛔ NO ES:** [Opcional. Brevemente por qué las otras distraen, si es necesario.]
+        **✅ RESPUESTA:** [La opción correcta]
+
+        **💡 POR QUÉ:** [Explicación breve]
+
+        **⛔ NO ES:** [Opcional]
 
         
 
