@@ -1900,38 +1900,7 @@ components.html("""
 """, height=0)
 
 # Hidden duplicate button removed.
-                } catch(e) {}
-            };
-            
-            // KILL PREVIOUS INTERVALS
-            if (window.parent.estudian2_scroller_interval) clearInterval(window.parent.estudian2_scroller_interval);
-            
-            // START NEW
-            window.parent.estudian2_scroller_interval = setInterval(inject, 2000);
-            inject();
-        })();
-    </script>
-    """, height=0)
-else:
-    # Cleanup if logged out (important for estetico)
-    components.html("""
-    <script>
-        const root = window.parent.document;
-        
-        // 1. KILL KNOWN INTERVALS
-        if (window.parent.estudian2_scroller_interval) clearInterval(window.parent.estudian2_scroller_interval);
-        
-        // 2. ACTIVE DEFENSE (Anti-Zombie Shield)
-        // Since we can't kill anonymous intervals from old versions, we constantly delete their work.
-        const killerInfo = setInterval(() => {
-            const btn = root.getElementById('estudian2_nuclear_scroller');
-            if (btn) btn.remove();
-        }, 50); // Run faster than the creator (which is 2000ms)
-        
-        // Store this killer so we can stop it if we login later (though page reload handles that)
-        window.parent.estudian2_killer_interval = killerInfo;
-    </script>
-    """, height=0)
+# Duplicate button cleanup complete.
 
 # Sidebar
 with st.sidebar:
