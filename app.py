@@ -33,74 +33,7 @@ st.set_page_config(
     initial_sidebar_state="expanded" if st.session_state.get('user') else "collapsed"
 )
 
-# --- EMERGENCY SIDEBAR JUMPSTART ---
-# This injects a visible button to force-click the sidebar toggle if it's hidden
-st.components.v1.html("""
-<script>
-    function forceOpenSidebar() {
-        const doc = window.parent.document;
-        
-        // 1. Try by standard Test ID
-        let btn = doc.querySelector('[data-testid="stSidebarCollapsedControl"]');
-        
-        // 2. Try by Aria Label (Best for accessibility compliance)
-        if (!btn) {
-            // Select all buttons and find one with 'sidebar' in aria-label
-            const allBtns = doc.querySelectorAll('button');
-            for (const b of allBtns) {
-                const label = b.getAttribute('aria-label') || "";
-                if (label.toLowerCase().includes('sidebar') && label.toLowerCase().includes('open')) {
-                    btn = b;
-                    break;
-                }
-            }
-        }
 
-        // 3. Fallback: The Sidebar Checkbox (Streamlit internal state hack)
-        if (!btn) {
-             // Sometimes it's not a button but a hidden checkbox input in pure CSS implementations
-             // But usually in Streamlit it's a button.
-             // Let's try finding the "Chevron Right" icon specifically if possible, 
-             // OR just get the very first header button that is NOT Share/Deploy.
-             const headerBtns = doc.querySelectorAll('header button');
-             for (const b of headerBtns) {
-                 if (b.innerText.includes("Deploy") || b.innerText.includes("Share") || b.innerText.includes("Invite")) continue;
-                 // Assuming the toggle is the left-most and has no text, just icon.
-                 btn = b; 
-                 break; 
-             }
-        }
-
-        if (btn) {
-            btn.style.display = 'block';
-            btn.style.visibility = 'visible';
-            btn.click();
-            console.log("Sidebar force-opened via JS");
-        } else {
-            console.error("Could not find Sidebar Toggle Button.");
-            alert("⚠️ No encontré el botón. Intenta recargar la página.");
-        }
-    }
-</script>
-<style>
-    #rescue-btn {
-        background-color: #ff4b4b;
-        color: white;
-        padding: 10px 20px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        font-weight: bold;
-        position: fixed;
-        top: 10px;
-        left: 50%;
-        transform: translateX(-50%);
-        z-index: 9999999;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-    }
-</style>
-<button id="rescue-btn" onclick="forceOpenSidebar()">🆘 ABRIR BARRA LATERAL (CLIC AQUÍ)</button>
-""", height=80)
 
 # --- INSTANTIATE AI ENGINES (GLOBAL Fix) ---
 try:
