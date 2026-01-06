@@ -859,6 +859,10 @@ def move_file_up(unit_id, file_id):
         
         rename_file(curr['id'], new_curr_name)
         rename_file(prev['id'], new_prev_name)
+        
+        # CRITICAL FIX: Clear Cache to prevent "Double Click" issue
+        get_files.clear()
+        
         return True
     except:
         return False
@@ -892,6 +896,10 @@ def move_file_down(unit_id, file_id):
         
         rename_file(curr['id'], new_curr_name)
         rename_file(next_f['id'], new_next_name)
+        
+        # CRITICAL FIX: Clear Cache to prevent "Double Click" issue
+        get_files.clear()
+        
         return True
     except:
         return False
