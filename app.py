@@ -354,6 +354,17 @@ components.html(f"""
             header {{
                 visibility: visible !important;
                 display: block !important;
+                opacity: 1 !important;
+                z-index: 1000000 !important;
+                background-color: transparent !important;
+            }}
+            
+            /* FORCE SHOW SIDEBAR BUTTONS */
+            [data-testid="stSidebarCollapsedControl"], [data-testid="stSidebarNavOpenControl"] {{
+                display: block !important;
+                visibility: visible !important;
+                z-index: 1000001 !important;
+                color: black !important; /* Ensure high contrast */
             }}
         `;
         root.head.appendChild(style);
