@@ -33,6 +33,53 @@ st.set_page_config(
     initial_sidebar_state="expanded" if st.session_state.get('user') else "collapsed"
 )
 
+# --- EMERGENCY SIDEBAR JUMPSTART ---
+# This injects a visible button to force-click the sidebar toggle if it's hidden
+st.components.v1.html("""
+<script>
+    function forceOpenSidebar() {
+        const buttons = window.parent.document.querySelectorAll('button');
+        // Look for the toggle button by common attributes
+        let target = null;
+        for (const btn of buttons) {
+             if (btn.getAttribute('data-testid') === 'stSidebarCollapsedControl' || 
+                 btn.getAttribute('data-testid') === 'stSidebarNavOpenControl') {
+                 target = btn;
+                 break;
+             }
+        }
+        if (target) {
+            target.click();
+            target.style.display = 'block'; // Ensure it stays visible
+            target.style.visibility = 'visible';
+        } else {
+            console.log("Sidebar toggle not found, attempting generic header search");
+            // Fallback: Click specifically the arrow in the header
+            const arrows = window.parent.document.querySelectorAll('button[kind="header"]');
+            if (arrows.length > 0) arrows[0].click();
+        }
+    }
+</script>
+<style>
+    #rescue-btn {
+        background-color: #ff4b4b;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+        position: fixed;
+        top: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 9999999;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    }
+</style>
+<button id="rescue-btn" onclick="forceOpenSidebar()">🆘 ABRIR BARRA LATERAL (CLIC AQUÍ)</button>
+""", height=80)
+
 # --- INSTANTIATE AI ENGINES (GLOBAL Fix) ---
 try:
     # Use secrets key by default
