@@ -4591,110 +4591,120 @@ st.markdown("<div id='end_marker' style='height: 1px; width: 1px; visibility: hi
 # Force Reload Triggered
 
 
-# --- FLOATING SCROLL DAEMON (V105 - The "Active Guardian") ---
-# The previous "Ghost" button persisted even when code was removed, meaning it's stuck in the DOM.
-# IFrame scripts (components.html) failed to kill it, likely due to context isolation.
-# We switch back to st.markdown (Main Context) with a setInterval POLLER to actively police the DOM.
+# --- FLOATING SCROLL DAEMON (V106 - The "CSS Kill Switch") ---
+# Strategy: Instead of trying to "find and remove" ghosts (which fails), 
+# we inject a CSS GRENADE that force-hides all previous classes.
+# Then we spawn a "Phoenix" button with a fresh ID that ignores the grenade.
 
-import streamlit.components.v1 as components # Keep import just in case
+import streamlit.components.v1 as components
 
-# RAW JS INJECTION (Blocking Iframe Ghosts from outside)
-st.markdown("""
+components.html("""
 <script>
-    // V105 GUARDIAN: Runs every 1s to ensure visual supremacy
-    if (!window.v105_guardian_interval) {
-        window.v105_guardian_interval = setInterval(function() {
-            
-            // 1. SEARCH FOR ALL "LIKE" BUTTONS (Position based)
-            // We look for anything fixed at bottom-right 25px/90px
-            const allElements = document.querySelectorAll('*');
-            const myNewId = 'v105_guardian_btn';
-            
-            // Collect candidates to destroy (Everything that looks like a scroll button but isn't OURS)
-            // We use a loose heuristic to catch broken ghosts
-            allElements.forEach(el => {
-                if (el.id === myNewId) return; // Don't kill self
-                
-                // Detection: Is it a button/div? Is it fixed? Is it in the corner?
-                const style = window.getComputedStyle(el);
-                if (style.position === 'fixed' && 
-                    (style.bottom === '90px' || style.bottom === '25px') && 
-                    (style.right === '25px') &&
-                    (el.tagName === 'BUTTON' || el.tagName === 'DIV')) {
-                    
-                    // FOUND A GHOST!
-                    // console.log("Killing ghost:", el);
-                    el.remove();
-                }
-            });
-
-            // 2. ENSURE OUR BUTTON EXISTS
-            let mine = document.getElementById(myNewId);
-            if (!mine) {
-                // Create it
-                mine = document.createElement('button');
-                mine.id = myNewId;
-                mine.innerHTML = '<i class="fas fa-arrow-down"></i>';
-                mine.title = 'Ir al final';
-                
-                // Style it
-                Object.assign(mine.style, {
-                    position: 'fixed',
-                    bottom: '90px',
-                    right: '25px',
-                    width: '50px',
-                    height: '50px',
-                    backgroundColor: '#4F46E5', 
-                    color: 'white',
-                    borderRadius: '50%',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-                    border: 'none',
-                    outline: 'none',
-                    zIndex: '1000001', // Superior Z-Index
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '24px',
-                    transition: 'transform 0.2s'
-                });
-                
-                // Hover
-                mine.onmouseenter = () => { mine.style.transform = 'scale(1.1)'; mine.style.backgroundColor = '#4338ca'; };
-                mine.onmouseleave = () => { mine.style.transform = 'scale(1)'; mine.style.backgroundColor = '#4F46E5'; };
-
-                // Logic
-                mine.onclick = () => {
-                     // Scroll Logic
-                     const doc = document; // We are in main context now
-                     const appContainer = doc.querySelector('[data-testid="stAppViewContainer"]');
-                     if (appContainer) {
-                         appContainer.scrollTo({ top: appContainer.scrollHeight, behavior: 'smooth' });
-                     } else {
-                         window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-                     }
-                     
-                     // Input Focus
-                     setTimeout(() => {
-                        const bg = doc.querySelector('[data-testid="stChatInput"] textarea');
-                        if (bg) bg.focus();
-                     }, 150);
-                };
-                
-                // Inject
-                document.body.appendChild(mine);
-                
-                // Font Awesome check
-                if (!document.getElementById('fa-v6-guard')) {
-                    const link = document.createElement('link');
-                    link.id = 'fa-v6-guard';
-                    link.rel = 'stylesheet';
-                    link.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css';
-                    document.head.appendChild(link);
-                }
+    const parentDoc = window.parent.document;
+    
+    // 1. THE CSS GRENADE (Force Hide Aliens)
+    // We inject a style tag that targets ALL known ghost classes and ID's
+    const styleId = 'v106-kill-switch';
+    if (!parentDoc.getElementById(styleId)) {
+        const style = parentDoc.createElement('style');
+        style.id = styleId;
+        style.innerHTML = `
+            /* Hide ALL Historical Ghost Classes */
+            .float-scroll-btn, 
+            .floating-action-btn, 
+            .final-scroll-arrow, 
+            #fabSubmitAction, 
+            #scrollBtnDirect, 
+            #final_v103_scroll_btn,
+            #v105_guardian_btn { 
+                display: none !important; 
+                opacity: 0 !important; 
+                pointer-events: none !important; 
+                visibility: hidden !important; 
             }
-
-        }, 1000); // Check every second
+        `;
+        parentDoc.head.appendChild(style);
     }
+
+    // 2. THE PHOENIX BUTTON (Fresh Identity)
+    const newId = 'v106_phoenix_arrow';
+    
+    // Check if Phoenix already lives
+    let btn = parentDoc.getElementById(newId);
+    if (!btn) {
+        btn = parentDoc.createElement('button');
+        btn.id = newId;
+        // NO CLASS that matches the Kill Switch!
+        btn.innerHTML = '<i class="fas fa-arrow-down"></i>';
+        btn.title = 'Ir al final';
+        
+        // Inline Styles (Unkillable)
+        Object.assign(btn.style, {
+            position: 'fixed',
+            bottom: '90px',
+            right: '25px',
+            width: '50px',
+            height: '50px',
+            backgroundColor: '#4F46E5', // Purple
+            color: 'white',
+            borderRadius: '50%',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+            border: 'none',
+            outline: 'none',
+            zIndex: '2147483647', // Max Z-Index
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '24px',
+            transition: 'transform 0.2s, background-color 0.2s',
+            textDecoration: 'none'
+        });
+        
+        // Hover
+        btn.onmouseenter = () => { btn.style.transform = 'scale(1.1)'; btn.style.backgroundColor = '#4338ca'; };
+        btn.onmouseleave = () => { btn.style.transform = 'scale(1)'; btn.style.backgroundColor = '#4F46E5'; };
+        
+        // 3. Scroll Logic (Verified V98 Logic)
+        btn.onclick = () => {
+             const doc = window.parent.document;
+             // Try precise targets
+             const targets = [
+                doc.querySelector('[data-testid="stAppViewContainer"]'),
+                doc.querySelector('.main'),
+                doc.documentElement
+             ];
+             let scrolled = false;
+             for (let t of targets) {
+                 if (t && t.scrollHeight > t.clientHeight) {
+                     t.scrollTo({ top: t.scrollHeight, behavior: 'smooth' });
+                     scrolled = true;
+                     break;
+                 }
+             }
+             if (!scrolled) {
+                 window.parent.scrollTo({ top: doc.body.scrollHeight, behavior: 'smooth' });
+             }
+             
+             // Focus
+             setTimeout(() => {
+                const chatInput = doc.querySelector('[data-testid="stChatInput"] textarea');
+                if (chatInput) chatInput.focus();
+             }, 150);
+        };
+        
+        // Inject Phoenix
+        parentDoc.body.appendChild(btn);
+    }
+    
+    // Link FontAwesome
+    if (!parentDoc.getElementById('fa-v6-phoenix')) {
+        const link = parentDoc.createElement('link');
+        link.id = 'fa-v6-phoenix';
+        link.rel = 'stylesheet';
+        link.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css';
+        parentDoc.head.appendChild(link);
+    }
+
 </script>
-""", unsafe_allow_html=True)
+""", height=0)
