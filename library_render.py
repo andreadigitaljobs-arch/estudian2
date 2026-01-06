@@ -5,7 +5,7 @@ import os
 import base64
 import pandas as pd
 # V85 - Nuclear Rename
-from db_handler import get_units, create_unit, upload_file_to_db, get_files, delete_file, rename_file, rename_unit, delete_unit, create_chat_session, save_chat_message, search_library, update_user_footprint, get_course_files, move_file, get_course_file_counts, move_file_up, move_file_down
+from db_handler import get_units, create_unit, upload_file_to_db, get_files, delete_file, rename_file, rename_unit, delete_unit, create_chat_session, save_chat_message, search_library, update_user_footprint, get_course_files, move_file, get_course_file_counts, move_file_up, move_file_down, ensure_unit_numbering
 
 
 def render_library(assistant):
@@ -462,21 +462,29 @@ def render_library(assistant):
                 
                 with c2:
                     # RENAME LOGIC
-                    # consultant fix: hide extension in display (Case Insensitive)
-                    name_root, name_ext = os.path.splitext(f['name'])
-                    display_name = name_root if name_ext.lower() in ['.txt', '.md', '.pdf'] else f['name']
+                    # V138 Fix: Strip numbering for cleaner editing and prevent duplication
+                    import re
+                    name_clean = re.sub(r'^\d{2}\.\s*', '', f['name']) # Remove "01. "
+                    name_root, name_ext = os.path.splitext(name_clean)
+                    
+                    # Display name clean (without number or extension if applicable)
+                    display_name_edit = name_root if name_ext.lower() in ['.txt', '.md', '.pdf'] else name_clean
                     
                     ren_key = f"ren_file_{f['id']}"
                     if st.session_state.get(ren_key):
                         with st.container(border=True):
-                            new_name_input = st.text_input("Nuevo nombre", value=display_name, key=f"in_{ren_key}", label_visibility="collapsed")
+                            new_name_input = st.text_input("Nuevo nombre", value=display_name_edit, key=f"in_{ren_key}", label_visibility="collapsed")
                             
                             col_s, col_c = st.columns([1, 1])
                             if col_s.button("💾", key=f"sav_{ren_key}", help="Guardar", use_container_width=True):
-                                # Re-attach extension to ensure system integrity
+                                # Re-attach extension
                                 final_name = new_name_input + name_ext if name_ext else new_name_input
                                 
+                                # Rename first
                                 if rename_file(f['id'], final_name):
+                                    # V138: Auto-renumber to ensure "01. " is correctly applied/restored
+                                    ensure_unit_numbering(current_unit_id)
+                                    
                                     st.toast("Renombrado!")
                                     del st.session_state[ren_key]
                                     st.rerun()
