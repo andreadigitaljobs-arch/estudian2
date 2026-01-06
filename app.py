@@ -3715,20 +3715,25 @@ with tab_quiz:
                 print(f"Sort Error: {e}")
 
             for i, res in enumerate(res_quiz):
-                # V143: RICH PREVIEW (User Request: "Leer desde afuera")
-                # Extract a snippet for the title
+                # V145: SPOILER-FREE PREVIEW (User Request)
+                # Avoid showing "RESPUESTA: Verdadero" in the title.
                 full_txt = res['full']
                 
-                # Try to find the actual question text (usually after "Question X" line)
-                # Or just take the first 60 chars of the text body
-                clean_preview = full_txt.replace("**", "").replace("###", "").strip()[:60] + "..."
-                
+                # Try to extract the "Topic/Reasoning" (Why) instead of the Answer
+                topic_match = re.search(r'\*\*💡 POR QUÉ:\*\*\s*(.+)', full_txt, re.IGNORECASE)
+                if topic_match:
+                    # Take the first ~80 chars of the explanation
+                    snippet = topic_match.group(1).strip()[:85] + "..."
+                else:
+                    # Fallback: Just show "Ver Análisis" to avoid spoiling
+                    snippet = "Ver Análisis y Explicación"
+
                 # Detect the Real Number again for display
                 real_num = extract_q_num(full_txt)
                 display_num = str(real_num) if real_num != 9999 else str(i+1)
                 
                 # USE EXPANDER (User wants to see structure)
-                with st.expander(f"🔹 **P{display_num}:** {clean_preview}", expanded=True):
+                with st.expander(f"🔹 **P{display_num}:** {snippet}", expanded=True):
                     
                     if 'img_obj' in res and res['img_obj']:
                         c_img, c_ans = st.columns([0.35, 0.65], gap="medium")
