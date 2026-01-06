@@ -30,7 +30,7 @@ st.set_page_config(
     page_title="E-Education",
     page_icon="assets/favicon.jpg",
     layout="wide",
-    initial_sidebar_state="expanded" if st.session_state.get('user') else "collapsed"
+    initial_sidebar_state="expanded"
 )
 
 # --- INSTANTIATE AI ENGINES (GLOBAL Fix) ---
