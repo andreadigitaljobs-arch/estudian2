@@ -1,5 +1,15 @@
-        
+import os
+import google.generativeai as genai
+from google.api_core.exceptions import ResourceExhausted, ServiceUnavailable
+from PIL import Image
+# V85 - Using db_handler
+import db_handler as database
 
+class StudyAssistant:
+    def __init__(self, api_key, model_name="gemini-2.0-flash", cache_breaker="V6"):
+        genai.configure(api_key=api_key)
+        self.sync_id = f"STUDY_V6_PRECISION_{cache_breaker}"
+        
         system_instruction = """
 
         ERES UN TUTOR ACADÉMICO DE ALTO NIVEL.
