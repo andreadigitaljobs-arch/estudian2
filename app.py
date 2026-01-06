@@ -2266,7 +2266,7 @@ with st.sidebar:
                 safe_rename = "".join([c for c in rename_input if c.isalnum() or c in (' ', '-', '_')]).strip()
                 
                 # DB Update
-                from database import rename_course
+                from db_handler import rename_course
                 c_id = st.session_state.get('current_course_id')
                 if c_id and rename_course(c_id, safe_rename):
                     st.session_state['current_course'] = safe_rename
@@ -2309,7 +2309,7 @@ with st.sidebar:
                     
                     with col_confirm_b:
                         if st.button("✅ Sí, confirmar", type="primary", key="btn_confirm_del"):
-                            from database import delete_course
+                            from db_handler import delete_course
                             success_count = 0
                             
                             for c_name in courses_to_delete:
@@ -2904,7 +2904,7 @@ with tab1:
             selected_unit_id = None
             
             if c_id:
-                from database import get_units, create_unit, upload_file_to_db, get_files
+                from db_handler import get_units, create_unit, upload_file_to_db, get_files
                 # RECURSIVE UNITS FETCH
                 units = get_units(c_id, fetch_all=True) # Fetch ALL folders
                 if units:
@@ -3069,7 +3069,7 @@ with tab1:
              context_blob += "\nAnalyzalas y dime qué podemos hacer con ellas (resumen, extraer datos, ordenar instrucciones, etc). ¿Qué sugieres?"
              
              # 2. Create Session
-             from database import create_chat_session, save_chat_message
+             from db_handler import create_chat_session, save_chat_message
              import datetime
              sess_name = f"Debate Transcripciones {datetime.datetime.now().strftime('%H:%M')}"
              new_sess = create_chat_session(st.session_state['user'].id, sess_name)
@@ -3227,7 +3227,7 @@ with tab_didactic:
                     
                     
                     if selected_file and st.button("🔍 Traducir a Lenguaje Simple", key="btn_didactic", type="primary"):
-                        from database import get_file_content, upload_file_to_db, get_units, create_unit 
+                        from db_handler import get_file_content, upload_file_to_db, get_units, create_unit 
                         f_id = file_map[selected_file]
                         text = get_file_content(f_id)
                         
@@ -3927,7 +3927,7 @@ with tab_tasks:
         st.markdown("**1. ¿Qué conocimientos uso?** (Selección por Unidad)")
         
         # DB Logic for Context Selection
-        from database import get_units, get_unit_context
+        from db_handler import get_units, get_unit_context
         
         current_course_id = st.session_state.get('current_course_id')
         db_units = get_units(current_course_id) if current_course_id else []
@@ -4079,7 +4079,7 @@ with tab_tasks:
                 )
 
                 # 2. Database Integration
-                from database import create_chat_session, save_chat_message
+                from db_handler import create_chat_session, save_chat_message
                 import datetime
                 
                 # Create New Session
@@ -4142,7 +4142,7 @@ with tab_tutor:
         st.session_state['active_context_files'] = []
 
     # --- FETCH MESSAGES FROM DB IF SESSION ACTIVE ---
-    from database import get_chat_messages, save_chat_message
+    from db_handler import get_chat_messages, save_chat_message
     
     current_sess = st.session_state.get('current_chat_session')
     
@@ -4546,7 +4546,7 @@ with tab_tutor:
                          c_t = l_f.get('content') or l_f.get('content_text') or ""
                          # Hydrate if needed (lazy)
                          if not c_t and 'id' in l_f:
-                             from database import get_file_content
+                             from db_handler import get_file_content
                              c_t = get_file_content(l_f['id'])
                          # Check duplicate
                          if not any(f['name'] == l_f['name'] for f in gen_files):
