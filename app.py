@@ -1899,55 +1899,7 @@ components.html("""
 </script>
 """, height=0)
 
-# 2. LOGGED-IN SCROLLER (Only after login)
-if st.session_state.get('user'):
-    components.html("""
-    <script>
-        (function() {
-            const root = window.parent.document;
-            const inject = () => {
-                try {
-                    // Check if we are still meant to be here (Security check)
-                    // But simpler: just check if button exists
-                    if (root.getElementById('estudian2_nuclear_scroller')) return;
-                    
-                    const btn = root.createElement('button');
-                    btn.id = 'estudian2_nuclear_scroller';
-                    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="width: 20px; height: 20px; pointer-events: none;"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>';
-                    
-                    btn.style.cssText = `
-                        position: fixed !important;
-                        bottom: 120px !important;
-                        right: 30px !important;
-                        z-index: 2147483647 !important;
-                        width: 40px !important;
-                        height: 40px !important;
-                        border-radius: 50% !important;
-                        background-color: #4B22DD !important;
-                        display: flex !important;
-                        align-items: center !important;
-                        justify-content: center !important;
-                        cursor: pointer !important;
-                        border: none !important;
-                        box-shadow: 0 4px 15px rgba(0,0,0,0.4) !important;
-                        transition: transform 0.2s !important;
-                        outline: none !important;
-                    `;
-                    
-                    btn.onclick = function() {
-                        const marker = window.parent.document.getElementById('end_marker');
-                        if (marker) {
-                            marker.scrollIntoView({ behavior: 'smooth', block: 'end' });
-                        } else {
-                            const main = window.parent.document.querySelector('.main');
-                            if (main) main.scrollTo({ top: 100000, behavior: 'smooth' });
-                        }
-                    };
-                    
-                    btn.onmouseenter = () => btn.style.transform = 'scale(1.1)';
-                    btn.onmouseleave = () => btn.style.transform = 'scale(1.0)';
-                    
-                    root.body.appendChild(btn);
+# Hidden duplicate button removed.
                 } catch(e) {}
             };
             
