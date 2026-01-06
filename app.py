@@ -38,25 +38,47 @@ st.set_page_config(
 st.components.v1.html("""
 <script>
     function forceOpenSidebar() {
-        const buttons = window.parent.document.querySelectorAll('button');
-        // Look for the toggle button by common attributes
-        let target = null;
-        for (const btn of buttons) {
-             if (btn.getAttribute('data-testid') === 'stSidebarCollapsedControl' || 
-                 btn.getAttribute('data-testid') === 'stSidebarNavOpenControl') {
-                 target = btn;
-                 break;
+        const doc = window.parent.document;
+        
+        // 1. Try by standard Test ID
+        let btn = doc.querySelector('[data-testid="stSidebarCollapsedControl"]');
+        
+        // 2. Try by Aria Label (Best for accessibility compliance)
+        if (!btn) {
+            // Select all buttons and find one with 'sidebar' in aria-label
+            const allBtns = doc.querySelectorAll('button');
+            for (const b of allBtns) {
+                const label = b.getAttribute('aria-label') || "";
+                if (label.toLowerCase().includes('sidebar') && label.toLowerCase().includes('open')) {
+                    btn = b;
+                    break;
+                }
+            }
+        }
+
+        // 3. Fallback: The Sidebar Checkbox (Streamlit internal state hack)
+        if (!btn) {
+             // Sometimes it's not a button but a hidden checkbox input in pure CSS implementations
+             // But usually in Streamlit it's a button.
+             // Let's try finding the "Chevron Right" icon specifically if possible, 
+             // OR just get the very first header button that is NOT Share/Deploy.
+             const headerBtns = doc.querySelectorAll('header button');
+             for (const b of headerBtns) {
+                 if (b.innerText.includes("Deploy") || b.innerText.includes("Share") || b.innerText.includes("Invite")) continue;
+                 // Assuming the toggle is the left-most and has no text, just icon.
+                 btn = b; 
+                 break; 
              }
         }
-        if (target) {
-            target.click();
-            target.style.display = 'block'; // Ensure it stays visible
-            target.style.visibility = 'visible';
+
+        if (btn) {
+            btn.style.display = 'block';
+            btn.style.visibility = 'visible';
+            btn.click();
+            console.log("Sidebar force-opened via JS");
         } else {
-            console.log("Sidebar toggle not found, attempting generic header search");
-            // Fallback: Click specifically the arrow in the header
-            const arrows = window.parent.document.querySelectorAll('button[kind="header"]');
-            if (arrows.length > 0) arrows[0].click();
+            console.error("Could not find Sidebar Toggle Button.");
+            alert("⚠️ No encontré el botón. Intenta recargar la página.");
         }
     }
 </script>
