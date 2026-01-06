@@ -5,7 +5,7 @@ import os
 import base64
 import pandas as pd
 # V85 - Nuclear Rename
-from db_handler import get_units, create_unit, upload_file_to_db, get_files, delete_file, rename_file, rename_unit, delete_unit, create_chat_session, save_chat_message, search_library, update_user_footprint, get_course_files, move_file, get_course_file_counts
+from db_handler import get_units, create_unit, upload_file_to_db, get_files, delete_file, rename_file, rename_unit, delete_unit, create_chat_session, save_chat_message, search_library, update_user_footprint, get_course_files, move_file, get_course_file_counts, move_file_up, move_file_down
 
 
 def render_library(assistant):
@@ -429,21 +429,36 @@ def render_library(assistant):
 
             # --- FILE LIST ---
             for f in files:
-                # COMPACT LAYOUT with Checkbox
-                # c0: Check, c1: Icon, c2: Link, c3: Menu, c4: Del
-                c0, c1, c2, c3, c4 = st.columns([0.05, 0.1, 0.65, 0.1, 0.1], vertical_alignment="bottom")
+                # COMPACT LAYOUT with Checkbox & Arrows
+                # c0: Check/Arrows, c1: Icon, c2: Link, c3: Menu, c4: Del
+                # Expanded c0 to fit arrows
+                c0, c1, c2, c3, c4 = st.columns([0.15, 0.08, 0.57, 0.1, 0.1], vertical_alignment="bottom")
                 
                 with c0:
-                     # Checkbox for Multi Select
-                     is_sel = f['id'] in st.session_state['lib_multi_select']
+                     # FLEX ROW: Checkbox | UP | DOWN
+                     sc0, sc1, sc2 = st.columns([0.3, 0.35, 0.35])
+                     with sc0:
+                         # Checkbox
+                         is_sel = f['id'] in st.session_state['lib_multi_select']
+                         def toggle_sel(fid=f['id']):
+                             if fid in st.session_state['lib_multi_select']:
+                                 st.session_state['lib_multi_select'].remove(fid)
+                             else:
+                                 st.session_state['lib_multi_select'].append(fid)
+                         st.checkbox("Sel", value=is_sel, key=f"chk_{f['id']}", on_change=toggle_sel, label_visibility="collapsed")
                      
-                     def toggle_sel(fid=f['id']):
-                         if fid in st.session_state['lib_multi_select']:
-                             st.session_state['lib_multi_select'].remove(fid)
-                         else:
-                             st.session_state['lib_multi_select'].append(fid)
-                             
-                     st.checkbox("Select", value=is_sel, key=f"chk_{f['id']}", on_change=toggle_sel, label_visibility="collapsed")
+                     # Logic for Arrows
+                     idx = files.index(f)
+                     
+                     with sc1:
+                         if idx > 0: # Can go up
+                            if st.button("⬆️", key=f"up_{f['id']}", help="Subir (Reordenar)", on_click=lambda fid=f['id'], uid=current_unit_id: move_file_up(uid, fid)):
+                                pass # Rerun handled by on_click
+                     
+                     with sc2:
+                         if idx < len(files) - 1: # Can go down
+                            if st.button("⬇️", key=f"down_{f['id']}", help="Bajar (Reordenar)", on_click=lambda fid=f['id'], uid=current_unit_id: move_file_down(uid, fid)):
+                                pass
 
                 with c1:
                     icon = "📄" if f['type'] == "text" else "📕"
