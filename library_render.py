@@ -489,12 +489,17 @@ def render_library(assistant):
                             
                             # CALLBACK FOR ENTER KEY
                             def on_ren_file_enter(fid=f['id'], ext=name_ext, k=f"in_{ren_key}"):
-                                val = st.session_state[k]
-                                final_n = val + ext if ext else val
-                                if rename_file(fid, final_n):
-                                    st.toast("Renombrado!")
-                                    del st.session_state[f"ren_file_{fid}"] # Close UI
-                                    
+                                if k in st.session_state:
+                                    val = st.session_state[k]
+                                    final_n = val + ext if ext else val
+                                    if rename_file(fid, final_n):
+                                        st.toast("Renombrado!")
+                                        if f"ren_file_{fid}" in st.session_state:
+                                            del st.session_state[f"ren_file_{fid}"] # Close UI
+                                        # Force a hard rerun to update UI
+                                        # (Using standard restart trick if st.rerun feels weak, but st.rerun() is standard)
+                                        pass 
+                                        
                             new_name_input = st.text_input("Nuevo nombre (Enter)", value=display_name, key=f"in_{ren_key}", label_visibility="collapsed", on_change=on_ren_file_enter)
                             
                             col_s, col_c = st.columns([1, 1])
