@@ -3168,7 +3168,7 @@ with tab_didactic:
         if not c_id:
              st.info("Selecciona Espacio de Trabajo.")
         else:
-             from database import get_files, get_file_content, upload_file_to_db, get_course_files, get_units, create_unit
+             from db_handler import get_files, get_file_content, upload_file_to_db, get_course_files, get_units, create_unit
              
              transcript_files = get_course_files(c_id, type_filter="transcript")
              
