@@ -4602,18 +4602,30 @@ import streamlit.components.v1 as components
 
 components.html("""
 <script>
-    // 1. "Exorcist" - Clean up ANY old buttons in the parent
+    // 1. "Exorcist" (Spatial & Class based) - Clean up ANY old buttons in the parent
     const parentDoc = window.parent.document;
     
-    // Remove by Class names used in V96-V102
-    const ghosts = parentDoc.querySelectorAll('.float-scroll-btn, .floating-action-btn, .final-scroll-arrow');
-    ghosts.forEach(el => el.remove());
+    // A. Remove by Class names (All historical versions)
+    const knownClasses = ['.float-scroll-btn', '.floating-action-btn', '.final-scroll-arrow'];
+    knownClasses.forEach(c => {
+        parentDoc.querySelectorAll(c).forEach(el => el.remove());
+    });
     
-    // Remove by ID
-    const oldId = parentDoc.getElementById('fabSubmitAction');
-    if (oldId) oldId.remove();
-    const oldId2 = parentDoc.getElementById('scrollBtnDirect');
-    if (oldId2) oldId2.remove();
+    // B. Remove by IDs
+    ['fabSubmitAction', 'scrollBtnDirect', 'final_v103_scroll_btn'].forEach(id => {
+        const el = parentDoc.getElementById(id);
+        if (el) el.remove();
+    });
+
+    // C. SPATIAL CLEANUP: Remove *anything* fixed near that corner (The "Nuclear" Option)
+    // This catches "zombie" elements that might have lost their class or ID but persist in DOM
+    const allFixed = parentDoc.querySelectorAll('*');
+    allFixed.forEach(el => {
+        const style = window.parent.getComputedStyle(el);
+        if (style.position === 'fixed' && style.bottom === '90px' && style.right === '25px') {
+             el.remove();
+        }
+    });
 
     // 2. Create the ONE TRUE BUTTON
     const btn = parentDoc.createElement('button');
