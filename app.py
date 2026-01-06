@@ -4598,65 +4598,62 @@ st.markdown("<div id='end_marker' style='height: 1px; width: 1px; visibility: hi
 import streamlit.components.v1 as components
 
 # Injects a permanent floating button using st.markdown to perform Direct DOM Manipulation (Bypassing Iframe Sandbox)
-import streamlit.components.v1 as components # Keep import just in case, but unused for this.
 
 st.markdown("""
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 <style>
-    .float-scroll-btn {
+    .floating-action-btn {
         position: fixed;
         bottom: 90px;
         right: 25px;
-        width: 45px;
-        height: 45px;
+        width: 50px;
+        height: 50px;
         background-color: #4F46E5; /* Primary Purple */
-        color: white;
+        color: white !important;
         border-radius: 50%;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 20px;
+        font-size: 24px;
         cursor: pointer;
-        z-index: 999999;
-        transition: transform 0.2s, background-color 0.2s;
+        z-index: 1000000;
+        transition: all 0.3s ease;
         border: none;
         outline: none;
-        text-decoration: none; /* For anchor tags */
+        text-decoration: none;
     }
-    .float-scroll-btn:hover {
-        transform: scale(1.1);
+    .floating-action-btn:hover {
+        transform: scale(1.1) translateY(-2px);
         background-color: #4338ca;
-        color: white;
+        box-shadow: 0 6px 14px rgba(0,0,0,0.4);
     }
-    .float-scroll-btn:active {
-        transform: scale(0.9);
+    .floating-action-btn:active {
+        transform: scale(0.95);
     }
 </style>
 
-<div id="scroll-target-container"></div>
-
-<button id="scrollBtnDirect" class="float-scroll-btn" title="Ir al final" onclick="scrollToBottomConfig()">
+<button id="fabSubmitAction" class="floating-action-btn" title="Ir al final (Procesar)" onclick="forceScrollBottom()">
     <i class="fas fa-arrow-down"></i>
 </button>
 
 <script>
-    function scrollToBottomConfig() {
-        // Since we are now in the main DOM (via st.markdown unsafe), we can just scroll window!
-        // Try multiple scrolling methods for redundancy
+    function forceScrollBottom() {
+        // Robust Scroll Logic specific to Streamlit's structure
+        const doc = window.parent.document;
         
-        // Method 1: Scroll Main View Container (Streamlit specific)
-        const viewContainer = document.querySelector('[data-testid="stAppViewContainer"]');
-        if (viewContainer) {
-            viewContainer.scrollTo({ top: viewContainer.scrollHeight, behavior: 'smooth' });
+        // 1. Try scrolling the main scrolling container (AppViewContainer)
+        const appContainer = doc.querySelector('[data-testid="stAppViewContainer"]');
+        if (appContainer) {
+            appContainer.scrollTo({ top: appContainer.scrollHeight, behavior: 'smooth' });
+        } else {
+            // Fallback: Body scroll
+            doc.body.scrollIntoView({ behavior: 'smooth', block: 'end' });
         }
-        
-        // Method 2: Scroll Body/HTML (Fallback)
-        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-        
-        // Method 3: Focus Chat Input
+
+        // 2. Focus the Chat Input (User Experience)
         setTimeout(() => {
-            const chatInput = document.querySelector('[data-testid="stChatInput"] textarea');
+            const chatInput = doc.querySelector('[data-testid="stChatInput"] textarea');
             if (chatInput) chatInput.focus();
         }, 150);
     }
