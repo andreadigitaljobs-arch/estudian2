@@ -4637,6 +4637,8 @@ components.html("""
 </button>
 
 <script>
+    const btn = document.getElementById('scrollBtn');
+    
     // ROBUST FIX: Try All Possible Scroll Containers
     btn.onclick = () => {
         const targets = [
