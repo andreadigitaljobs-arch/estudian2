@@ -3796,16 +3796,16 @@ with tab_quiz:
         # But we keep indentation logic.
         
         if res_quiz:
-             if st.button("🔄 ACTUALIZAR RESULTADOS (Corrección de IA)", use_container_width=True, type="primary"):
-                     with st.spinner("Consolidando cambios..."):
-                         try:
-                             new_res = assistant.refine_quiz_results(st.session_state['quiz_results'], st.session_state['quiz_chat'])
-                             st.session_state['quiz_results'] = new_res
-                             st.success("¡Hecho!")
-                             time.sleep(0.5)
-                             st.rerun()
-                         except Exception as e:
-                             st.error(f"Error: {e}")
+            if st.button("🔄 ACTUALIZAR RESULTADOS (Corrección de IA)", use_container_width=True, type="primary"):
+                with st.spinner("Consolidando cambios..."):
+                    try:
+                        new_res = assistant.refine_quiz_results(st.session_state['quiz_results'], st.session_state['quiz_chat'])
+                        st.session_state['quiz_results'] = new_res
+                        st.success("¡Hecho!")
+                        time.sleep(0.5)
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Error: {e}")
 
             # Spacer
             st.write("")
