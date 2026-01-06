@@ -3693,13 +3693,40 @@ with tab_quiz:
                         st.toast("¡Copiado!", icon='📋')
             
             # --- RESULTS DISPLAY ---
-            # Visual Display (Simplified: Direct Explanations)
             
+            # V143: SMART SORTING & PREVIEW
+            # 1. Try to detect "Question X" or "Pregunta X" to restore order
+            import re
+            def extract_q_num(text):
+                # Search for "Question 5" or "Pregunta 5"
+                match = re.search(r'(?:Question|Pregunta)\s+(\d+)', text, re.IGNORECASE)
+                if match:
+                    return int(match.group(1))
+                return 9999 # Push to end if not found
+            
+            # Sort the list in-place
+            try:
+                # Only sort if we detect numbers in at least one
+                if any(extract_q_num(r['full']) != 9999 for r in res_quiz):
+                    res_quiz.sort(key=lambda x: extract_q_num(x['full']))
+            except Exception as e:
+                print(f"Sort Error: {e}")
+
             for i, res in enumerate(res_quiz):
-                # PERMANENT VIEW (No Expanders)
-                with st.container(border=True):
-                    # Header (Smaller Font)
-                    st.markdown(f"**🔹 Pregunta {i+1}**")
+                # V143: RICH PREVIEW (User Request: "Leer desde afuera")
+                # Extract a snippet for the title
+                full_txt = res['full']
+                
+                # Try to find the actual question text (usually after "Question X" line)
+                # Or just take the first 60 chars of the text body
+                clean_preview = full_txt.replace("**", "").replace("###", "").strip()[:60] + "..."
+                
+                # Detect the Real Number again for display
+                real_num = extract_q_num(full_txt)
+                display_num = str(real_num) if real_num != 9999 else str(i+1)
+                
+                # USE EXPANDER (User wants to see structure)
+                with st.expander(f"🔹 **P{display_num}:** {clean_preview}", expanded=True):
                     
                     if 'img_obj' in res and res['img_obj']:
                         c_img, c_ans = st.columns([0.35, 0.65], gap="medium")
@@ -3709,7 +3736,6 @@ with tab_quiz:
                              except:
                                  st.caption("Imagen no disponible")
                         with c_ans:
-                             # Clean up newlines for compact view if needed, but Markdown usually handles it
                              st.markdown(res['full'])
                     else:
                          st.markdown(res['full'])
