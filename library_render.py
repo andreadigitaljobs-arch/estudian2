@@ -462,10 +462,13 @@ def render_library(assistant):
                 
                 with c2:
                     # RENAME LOGIC
-                    # V139: Show FULL NAME (User Request) - Trusted User Input
-                    # We still handle extension hiding if standard text file for cleanliness
+                    # V141 Fix: Prevent appending "fake extensions" (text after last dot) causing duplication
                     name_root, name_ext = os.path.splitext(f['name'])
-                    display_name_edit = name_root if name_ext.lower() in ['.txt', '.md', '.pdf'] else f['name']
+                    valid_exts = ['.txt', '.md', '.pdf']
+                    is_valid_ext = name_ext.lower() in valid_exts
+                    
+                    # If valid extension, hide it. If not (e.g. "Plan de Mkt."), show full name.
+                    display_name_edit = name_root if is_valid_ext else f['name']
                     
                     ren_key = f"ren_file_{f['id']}"
                     if st.session_state.get(ren_key):
@@ -474,8 +477,11 @@ def render_library(assistant):
                             
                             col_s, col_c = st.columns([1, 1])
                             if col_s.button("💾", key=f"sav_{ren_key}", help="Guardar", use_container_width=True):
-                                # Re-attach extension
-                                final_name = new_name_input + name_ext if name_ext else new_name_input
+                                # Only re-attach extension if we actually hid it
+                                if is_valid_ext:
+                                    final_name = new_name_input + name_ext
+                                else:
+                                    final_name = new_name_input
                                 
                                 # Rename first
                                 if rename_file(f['id'], final_name):
