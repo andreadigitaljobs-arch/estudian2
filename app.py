@@ -2821,7 +2821,7 @@ with tab_lib:
 # --- BATCH SYSTEM FOLDER CHECK (Prevention of "Popping" folders) ---
 if st.session_state.get('current_course_id'):
     c_id_check = st.session_state['current_course_id']
-    from database import get_units, create_unit
+    from db_handler import get_units, create_unit
     
     # Check what exists BEFORE rendering tabs
     existing_units = get_units(c_id_check)
