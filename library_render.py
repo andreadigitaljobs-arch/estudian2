@@ -599,14 +599,40 @@ def render_library(assistant):
                              all_units = get_units(current_course_id, fetch_all=True)
                              target_opts = {u['name']: u['id'] for u in all_units if u['id'] != current_unit_id}
                              
-                                     # actually selectbox state IS available in callback.
-                                     # But let's keep it simple for action button. The TOGGLE is the one usually needing double clicks.
+                             if not target_opts:
+                                 st.caption("No hay otras carpetas.")
+                             else:
+                                 sel_target = st.selectbox("Destino:", list(target_opts.keys()), key=f"sel_mov_{f['id']}_{token}")
+                                 
+                                 if st.button("Confirmar Mover", key=f"conf_mov_{f['id']}_{token}"):
                                      target_id = target_opts[sel_target]
                                      if move_file(f['id'], target_id):
                                          st.toast(f"Archivo movido a '{sel_target}'")
-                                         st.session_state[move_key_mode] = False # Close
+                                         st.session_state[move_key_mode] = False
+                                         st.session_state.get_files.clear()
+                                         get_files.clear()
                                          st.rerun()
-                            
+                                     else: st.error("Error al mover")
+
+                        # --- ELIMINAR ARCHIVO (V155 Fixed) ---
+                        st.divider() # Safety separator
+                        del_key_mode = f"del_mode_{f['id']}_{token}"
+                        
+                        def toggle_del_vis(k):
+                             st.session_state[k] = not st.session_state.get(k, False)
+
+                        btn_label = "❌ Cancelar" if st.session_state.get(del_key_mode) else "🗑️ Eliminar"
+                        if st.button(btn_label, key=f"btn_del_t_{f['id']}_{token}", on_click=toggle_del_vis, args=(del_key_mode,), use_container_width=True):
+                             pass
+                        
+                        if st.session_state.get(del_key_mode):
+                             st.warning("¿Borrar definitivamente?")
+                             if st.button("🔥 SÍ, BORRAR", key=f"go_del_{f['id']}_{token}", use_container_width=True, type="primary"):
+                                 if delete_file(f['id']):
+                                     st.session_state.get_files.clear()
+                                     get_files.clear()
+                                     st.toast("Archivo eliminado")
+                                     st.rerun()
                         if st.button("👨🏻‍🏫 Hablar con Profe", key=f"btn_tutor_{f['id']}_{token}", use_container_width=True):
                             st.session_state['chat_context_file'] = f
                             if 'user' in st.session_state:
