@@ -2865,7 +2865,7 @@ with tab1:
             # --- MEMORY SAFETY CHECK (TRAFFIC CONTROL) ---
             total_size_bytes = sum(f.size for f in uploaded_files)
             total_size_mb = total_size_bytes / (1024 * 1024)
-            SAFE_RAM_LIMIT_MB = 400 # 400MB: The "Sweet Spot" for stability
+            SAFE_RAM_LIMIT_MB = 1000 # Increased to 1GB for User Request
             
             if total_size_mb > SAFE_RAM_LIMIT_MB:
                 st.error(
