@@ -265,12 +265,17 @@ class Transcriber:
                      if progress_callback: 
                          progress_callback(f"🤖 Transcribiendo Parte {i+1} de {total_chunks}...", 0.3 + (0.6 * (i/total_chunks)))
                      
-                     # Process this chunk
-                     chunk_text = self.transcribe_file(chunk_path) # Pass callback? No, conflict with outer loop visual. 
-                     # Or we can pass a lambda wrapper? too complex. Just strict text.
-                     # Wait, I want streaming for chunks too.
-                     # Let's pass a modified callback that doesn't reset progress but updates text?
-                     # For simplicity, no inner streaming visual for chunks, just Block updates.
+                     # Smart Callback Wrapper for seamless progress
+                     def chunk_cb(msg, p):
+                         if progress_callback:
+                             # Map inner progress (0.0-1.0) to outer slot
+                             base_p = 0.3 + (0.6 * (i / total_chunks))
+                             slot_size = 0.6 / total_chunks
+                             global_p = base_p + (p * slot_size)
+                             progress_callback(f"P{i+1}/{total_chunks}: {msg}", global_p)
+
+                     # Process this chunk with streaming!
+                     chunk_text = self.transcribe_file(chunk_path, progress_callback=chunk_cb)
                      
                      full_transcript.append(chunk_text)
                      
