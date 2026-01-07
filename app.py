@@ -51,11 +51,19 @@ st.markdown("""
     }
     
     /* Ensure Header itself is visible if it was hidden */
+    /* Ensure Header background is hidden but allow arrow to be seen */
     header[data-testid="stHeader"] {
-        visibility: visible !important;
-        opacity: 1 !important;
-        display: block !important;
+        visibility: hidden !important;
+        background-color: transparent !important;
     }
+    
+    /* Hide the top decoration bar (colorful line) */
+    header[data-testid="stHeader"]::before {
+        display: none !important;
+    }
+    
+    /* Hide the hamburger menu if user wants it clean */
+    /* .stApp header .stMainMenu { visibility: hidden; } */
 </style>
 """, unsafe_allow_html=True)
 
