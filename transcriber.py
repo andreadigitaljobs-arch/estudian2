@@ -99,7 +99,16 @@ class Transcriber:
         
         prompt = """
         TRANSCRIPCIÓN EDITORIAL EXPERTA (OBLIGATORIO: SOLAMENTE ESPAÑOL):
-        Tu tarea es transcribir el audio a ESPAÑOL con ortografía PERFECTA (tildes, signos ¿ ¡, puntuación). Está PROHIBIDO generar texto en Inglés.
+        Tu tarea es transcribir el audio a ESPAÑOL con ortografía PERFECTA.
+        
+        👥 DIARIZACIÓN INTELIGENTE (IMPORTANTE):
+        - SI ES UN MONÓLOGO: Usa párrafos normales.
+        - SI HAY CONVERSACIÓN: Identifica y separa a los hablantes.
+          - Usa formato de guión: **Hablante 1:** "..."
+          - Si puedes inferir el rol (ej: "Profesor", "Estudiante", "Entrevistador"), USALO como nombre.
+          - EJEMPLO: 
+            **Profesora:** Buenos días.
+            **Alumno:** Hola profe, tenía una duda.
 
         SISTEMA DE RESALTADO DE UNIDADES MENTALES (MODO ESTUDIO V9.0):
         REGLA PLATINO: NO GRITES VISUALMENTE.
