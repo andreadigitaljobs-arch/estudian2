@@ -165,36 +165,22 @@ class Transcriber:
             return response.text
             
         else:
-            # ORIGINAL AUDIO FLOW
-            audio_path = "temp_audio.wav"
+            # ORIGINAL AUDIO FLOW (Simplified V170)
+            # Use a unique temp name to avoid collisions
+            safe_name = "".join([c for c in os.path.basename(video_path) if c.isalnum()])
+            audio_path = f"temp_audio_{safe_name}.wav"
             try:
-            future_to_chunk = {
-                executor.submit(process_single_chunk, i, chunk): i 
-                for i, chunk in enumerate(chunks)
-            }
-            
-            for future in concurrent.futures.as_completed(future_to_chunk):
-                idx, text = future.result()
-                results[idx] = text
-                completed_count += 1
+                print(f"🔊 Procesando AUDIO Standard: {video_path}")
+                self.extract_audio(video_path, audio_path)
                 
-                # Update progress
-                if progress_callback:
-                    # Progress from 0.3 to 0.95 based on completion
-                    current_prog = 0.3 + (0.65 * (completed_count / total_chunks))
-                    progress_callback(f"Completado {completed_count}/{total_chunks}...", current_prog)
-            
-        # Clean up main temp audio
-        if os.path.exists(temp_audio_path):
-            os.remove(temp_audio_path)
-            
-        final_text = "\n\n".join(results)
-        
-        output_txt_path = f"{base_name}_transcripcion.txt"
-        with open(output_txt_path, "w", encoding="utf-8") as f:
-            f.write(final_text)
-            
-        if progress_callback: progress_callback("¡Listo!", 1.0)
-        
-        return output_txt_path
+                # Gemini 2.0 Flash / 1.5 Pro handles large files via File API.
+                # No need to chunk unless > 11 hours.
+                return self.transcribe_file(audio_path)
+            except Exception as e:
+                print(f"Audio Flow Error: {e}")
+                return f"[ERROR] No se pudo procesar el audio: {e}"
+            finally:
+                if os.path.exists(audio_path):
+                    try: os.remove(audio_path)
+                    except: pass
 
