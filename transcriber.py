@@ -146,22 +146,23 @@ class Transcriber:
             prompt_visual = """
             ERES UN ANALISTA VISUAL Y EDITOR. (SOLO ESPAÑOL).
             
-            TU MISION: Transcribir el audio Y DESCRIBIR LO QUE SE VE EN PANTALLA.
+            TU MISION: Generar un reporte DOBLE. Debes entregar DOS SECCIONES CLARAMENTE SEPARADAS.
             
-            REGLAS DE FORMATO (HTML):
-            Usa las clases <span class="sc-key">...</span> ideas clave, <span class="sc-note">...</span> notas, etc.
+            ---
+            SECCIÓN 1: 🎙️ TRANSCRIPCIÓN DEL AUDIO
+            Transcribe lo que dicen los hablantes con ortografía perfecta en Español.
+            Usa el formato HTML solicitado (<span class="sc-key">, etc).
             
-            👁️ INSTRUCCIONES VISUALES (CRÍTICAS):
-            1. DETECTA TAREAS (OCR PURO): Si se ve un documento/Word con preguntas, TRANSCRIBE LITERALMENTE lo que se lee en pantalla.
-               - PROHIBIDO CONTESTAR LAS PREGUNTAS TÚ MISMO. Solo copia el texto que ves.
-               - Si hay una respuesta escrita en la pantalla por el usuario, cópiala. Si no la hay, NO LA INVENTES.
-               - Formato: `[👁️ PANTALLA: Se lee texto visible: "..."]`
+            ---
+            SECCIÓN 2: 👁️ REGISTRO VISUAL (TIMELINE)
+            Genera una lista cronológica EXCLUSIVAMENTE de lo que se ve en pantalla.
+            - [MM:SS] 📄 Se muestra documento "Nombre". Texto visible: "..."
+            - [MM:SS] 🖥️ Comparten pantalla de navegador web en la URL...
+            - [MM:SS] 🎞️ Diapositiva con título "X". Puntos clave: ...
             
-            2. SITES WEB: "Entrando a Canva...", "Clic en botón Crear".
-            3. SLIDES: Resume el texto de la diapositiva si no se lee en voz alta.
-            
-            TU OBJETIVO ES SER UN NOTARIO, NO UN TUTOR. NO AGREGUES INFORMACIÓN QUE NO ESTÉ EN EL VIDEO.
-            Sincroniza esto con la transcripción del audio.
+            IMPORTANTE:
+            - En la Sección 2, DETECTA TAREAS Y PREGUNTAS escritas en pantalla y citalas textualmente.
+            - NO mezcles las secciones. Primero todo el audio, luego todo lo visual.
             """
             
             response = self.model.generate_content([prompt_visual, video_file], request_options={"timeout": 600})
