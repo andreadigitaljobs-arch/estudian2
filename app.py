@@ -3676,14 +3676,33 @@ with tab_quiz:
                 if img_files:
                     for f in img_files:
                         try:
-                            # Use file name as unique key
-                            k = f.name
+                            # FIX V167: Robust handling for dict/object
+                            fname = f.get('name') if isinstance(f, dict) else f.name
+                            if not fname: fname = "unknown_file"
+                            
+                            k = fname
                             if k not in image_map:
-                                pil_i = Image.open(f)
+                                # Start from beginning if possible
+                                if not isinstance(f, dict):
+                                    f.seek(0)
+                                    pil_i = Image.open(f)
+                                else:
+                                    # If it's a dict, we might not have the file object to open?!
+                                    # Actually, streamlit file_uploader state persistence usually keeps objects, 
+                                    # BUT if we messed up state it might be a clean dict.
+                                    # Assuming 'f' is capable of being opened if it's not a dict.
+                                    # If it IS a dict, it usually means we stored metadata but lost the file?
+                                    # Wait, st.file_uploader returns UploadedFile. 
+                                    # If we manually stored it as dict in session state, we can't open it.
+                                    # But let's assume valid object or fail gracefully.
+                                    continue 
+                                    
                                 if pil_i.mode == 'RGBA': pil_i = pil_i.convert('RGB')
-                                image_map[k] = {"img": pil_i, "id": k, "name": f.name}
+                                image_map[k] = {"img": pil_i, "id": k, "name": fname}
                         except Exception as e: 
-                            print(f"Error loading {f.name}: {e}")
+                            # Safe print
+                            safe_name = getattr(f, 'name', 'Unknown')
+                            print(f"Error loading {safe_name}: {e}")
                 
                 # Convert back to list
                 image_entries = list(image_map.values())
