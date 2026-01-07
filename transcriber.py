@@ -149,9 +149,22 @@ class Transcriber:
             TU MISION: Generar un reporte DOBLE. Debes entregar DOS SECCIONES CLARAMENTE SEPARADAS.
             
             ---
-            SECCIÓN 1: 🎙️ TRANSCRIPCIÓN DEL AUDIO
-            Transcribe lo que dicen los hablantes con ortografía perfecta en Español.
-            Usa el formato HTML solicitado (<span class="sc-key">, etc).
+            SECCIÓN 1: 🎙️ TRANSCRIPCIÓN DEL AUDIO (FORMATO EDITORIAL)
+            Transcribe el audio ESTRUCTURÁNDOLO con Títulos Markdown (##), Subtítulos (###) y párrafos claros.
+            
+            SISTEMA DE RESALTADO OBLIGATORIO (MODO ESTUDIO):
+            
+            🧠 1. CONCEPTO DE "UNIDAD MENTAL" (Mental Units):
+               - PROHIBIDO resaltar palabras huérfanas o artículos. Resalta frases completas con sentido.
+            
+            🎨 2. CÓDIGO DE COLORES (Usa estas clases HTML exactas):
+            🔴 <span class="sc-base">...</span> -> SOLO DEFINICIONES ("¿Qué es X?").
+            🟣 <span class="sc-key">...</span> -> IDEAS CENTRALES y PREMISAS.
+            🟡 <span class="sc-data">...</span> -> ESTRUCTURA ("Paso 1", "Primero") y DATOS Numéricos.
+            🔵 <span class="sc-example">...</span> -> EJEMPLOS (Historias, Marcas).
+            🟢 <span class="sc-note">...</span> -> MATICES, Advertencias o Excepciones.
+            
+            REGLA: El texto debe verse limpio, profesional y fácil de estudiar.
             
             ---
             SECCIÓN 2: 👁️ REGISTRO VISUAL (TIMELINE)
@@ -161,8 +174,8 @@ class Transcriber:
             - [MM:SS] 🎞️ Diapositiva con título "X". Puntos clave: ...
             
             IMPORTANTE:
-            - En la Sección 2, DETECTA TAREAS Y PREGUNTAS escritas en pantalla y citalas textualmente.
-            - NO mezcles las secciones. Primero todo el audio, luego todo lo visual.
+            - En la Sección 2, DETECTA TAREAS Y PREGUNTAS escritas en pantalla con OCR PURO.
+            - NO mezcles las secciones.
             """
             
             response = self.model.generate_content([prompt_visual, video_file], request_options={"timeout": 600})
