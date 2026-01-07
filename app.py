@@ -3516,17 +3516,48 @@ with tab_quiz:
                     
                     if 'current_course_id' in st.session_state and st.session_state['current_course_id']:
                          from db_handler import get_units
-                         units_ctx = get_units(st.session_state['current_course_id'])
+                         # FIX V166: Fetch ALL units (recursive) to allow subfolder selection
+                         units_ctx = get_units(st.session_state['current_course_id'], fetch_all=True)
                          
-                         # Create Map
-                         # We use a list with a special first item
+                         # --- HIERARCHY BUILDER ---
+                         # 1. Map ID -> Unit
+                         u_map = {u['id']: u for u in units_ctx}
+                         # 2. Map Parent -> Children
+                         p_map = {}
+                         for u in units_ctx:
+                             pid = u.get('parent_id')
+                             if pid not in p_map: p_map[pid] = []
+                             p_map[pid].append(u)
+                         
+                         # 3. Flatten Recursive List with Indentation
+                         flat_options = []
+                         
+                         def add_to_list(parent_id, depth=0):
+                             children = p_map.get(parent_id, [])
+                             # Sort by name
+                             children.sort(key=lambda x: x['name'])
+                             
+                             for child in children:
+                                 # Indent based on depth
+                                 prefix = "└─ " * depth if depth > 0 else ""
+                                 folder_icon = "📂" if depth > 0 else "📁"
+                                 label = f"{prefix}{folder_icon} {child['name']}"
+                                 
+                                 flat_options.append({"label": label, "id": child['id']})
+                                 
+                                 # Recurse
+                                 add_to_list(child['id'], depth + 1)
+                         
+                         # Start with Roots (parent_id is None)
+                         add_to_list(None)
+                         
+                         # --- UI ---
                          ctx_options = ["📚 Toda la Biblioteca (Recomendado)"]
                          unit_map_ctx = {}
                          
-                         for u in units_ctx:
-                             label = f"📁 {u['name']}"
-                             ctx_options.append(label)
-                             unit_map_ctx[label] = u['id']
+                         for item in flat_options:
+                             ctx_options.append(item['label'])
+                             unit_map_ctx[item['label']] = item['id']
                              
                          sel_ctx = st.selectbox("Carpeta de Referencia:", ctx_options, key=f"sel_ctx_{q_key}", help="Si tu quiz es de un tema específico, selecciona su carpeta para mayor precisión.")
                          
