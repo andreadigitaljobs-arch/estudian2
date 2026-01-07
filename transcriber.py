@@ -152,11 +152,15 @@ class Transcriber:
             Usa las clases <span class="sc-key">...</span> ideas clave, <span class="sc-note">...</span> notas, etc.
             
             👁️ INSTRUCCIONES VISUALES (CRÍTICAS):
-            1. DETECTA TAREAS: Si se ve un documento/Word con preguntas/respuestas, TRANSCRIBE EL TEXTO VISUAL EXACTO.
-               - Formato: `[👁️ PANTALLA: Se ve la pregunta "X"... Respuesta visible: "Y"]`
+            1. DETECTA TAREAS (OCR PURO): Si se ve un documento/Word con preguntas, TRANSCRIBE LITERALMENTE lo que se lee en pantalla.
+               - PROHIBIDO CONTESTAR LAS PREGUNTAS TÚ MISMO. Solo copia el texto que ves.
+               - Si hay una respuesta escrita en la pantalla por el usuario, cópiala. Si no la hay, NO LA INVENTES.
+               - Formato: `[👁️ PANTALLA: Se lee texto visible: "..."]`
+            
             2. SITES WEB: "Entrando a Canva...", "Clic en botón Crear".
             3. SLIDES: Resume el texto de la diapositiva si no se lee en voz alta.
             
+            TU OBJETIVO ES SER UN NOTARIO, NO UN TUTOR. NO AGREGUES INFORMACIÓN QUE NO ESTÉ EN EL VIDEO.
             Sincroniza esto con la transcripción del audio.
             """
             

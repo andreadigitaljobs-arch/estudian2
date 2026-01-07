@@ -3021,7 +3021,8 @@ with tab1:
                                         st.toast(f"✅ Listo: {final_name}") 
                                         st.session_state['transcript_history'].append({"name": custom_n, "text": trans_text})
                                     
-                                    if os.path.exists(txt_path): os.remove(txt_path)
+                                    # Cleanup handled by logic
+                                    # if os.path.exists(txt_path): os.remove(txt_path) # DEPRECATED V174
                                     success = True
                                     time.sleep(2) # Micro-pause between files
                                     
