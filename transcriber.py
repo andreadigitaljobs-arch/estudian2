@@ -35,10 +35,22 @@ class Transcriber:
         if not self.check_ffmpeg():
             raise RuntimeError("ffmpeg not found. Please install ffmpeg and add it to your PATH.")
         
-        # Extract audio to wav (pcm_s16le is standard)
+        # Extract audio to MP3 (Much smaller/faster than WAV)
+        # Using libmp3lame or similar. If not available, we could try aac.
+        # But for portability, let's try standard mp3 or just small wav?
+        # Actually, standard WAV 16k mono is ~100MB/hour. Not THAT bad. 
+        # But MP3 64k is ~30MB. 3x faster upload.
+        
+        # Let's switch to .mp3 output
+        if not output_audio_path.endswith(".mp3"):
+            output_audio_path = os.path.splitext(output_audio_path)[0] + ".mp3"
+            
         command = [
-            "ffmpeg", "-i", video_path, "-vn", "-acodec", "pcm_s16le", "-ar", "16000", "-ac", "1", "-y", output_audio_path
+            "ffmpeg", "-i", video_path, "-vn", 
+            "-acodec", "libmp3lame", "-q:a", "4", # Variable bitrate quality 4 (good/fast)
+            "-y", output_audio_path
         ]
+        # Fallback to copy if libmp3lame fails? No, usually present.
         subprocess.run(command, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         return output_audio_path
 
@@ -187,7 +199,7 @@ class Transcriber:
             # ORIGINAL AUDIO FLOW (Simplified V170)
             # Use a unique temp name to avoid collisions
             safe_name = "".join([c for c in os.path.basename(video_path) if c.isalnum()])
-            audio_path = f"temp_audio_{safe_name}.wav"
+            audio_path = f"temp_audio_{safe_name}.mp3"
             try:
                 if progress_callback: progress_callback("🔊 Extrayendo audio (Ultra-rápido)...", 0.1)
                 print(f"🔊 Procesando AUDIO Standard: {video_path}")
