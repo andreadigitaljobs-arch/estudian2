@@ -91,18 +91,35 @@ def render_library(assistant):
                      # Create ZIP in Memory
                      zip_buffer = io.BytesIO()
                      with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zf:
-                         for item in files_data:
-                             # Clean names
-                             safe_unit = "".join([c for c in item['unit'] if c.isalnum() or c in (' ', '_', '-')]).strip()
+                         # Prepare Regex for Cleaning
+                        import re
+                        clean_pattern = re.compile(r'<[^>]+>')
+                        
+                        for item in files_data:
+                             # Clean Content (Remove HTML tags like <span class="sc-key">)
+                             raw_txt = item['content'] or ""
+                             # Remove HTML
+                             clean_txt = clean_pattern.sub('', raw_txt)
+                             
+                             # FIX: Allow slashes for subfolders in Unit Path
+                             # item['unit'] now contains "Folder/Subfolder"
+                             # We sanitize components but keep structure
+                             
+                             unit_parts = item['unit'].split('/')
+                             safe_parts = ["".join([c for c in p if c.isalnum() or c in (' ', '_', '-')]).strip() for p in unit_parts]
+                             safe_unit_path = "/".join(safe_parts)
+                             
                              safe_file = "".join([c for c in item['name'] if c.isalnum() or c in (' ', '_', '-', '.')]).strip()
+                             
                              if not safe_file.lower().endswith(('.txt', '.md')):
                                  safe_file += ".txt"
                                  
                              # Path inside zip: Unit/File
-                             zip_path = f"{safe_unit}/{safe_file}"
+                             # Ensure forward slashes for ZIP spec
+                             zip_path = f"{safe_unit_path}/{safe_file}"
                              
                              # Write
-                             zf.writestr(zip_path, item['content'])
+                             zf.writestr(zip_path, clean_txt)
                      
                      zip_buffer.seek(0)
                      

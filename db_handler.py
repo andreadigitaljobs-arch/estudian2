@@ -262,12 +262,24 @@ def get_full_course_backup(course_id):
     """
     supabase = init_supabase()
     try:
-        # 1. Get Units to map names
-        units = supabase.table("units").select("id, name").eq("course_id", course_id).execute().data
+        # 1. Get Units to map names recursively
+        units = supabase.table("units").select("id, name, parent_id").eq("course_id", course_id).execute().data
         if not units: return []
         
-        unit_map = {u['id']: u['name'] for u in units}
-        unit_ids = list(unit_map.keys())
+        # Build Path Map
+        # 1. Dict Access
+        u_dict = {u['id']: u for u in units}
+        
+        # 2. Recursive Path Builder
+        def get_path(uid):
+            if uid not in u_dict: return "Unknown"
+            curr = u_dict[uid]
+            if curr.get('parent_id'):
+                return f"{get_path(curr['parent_id'])}/{curr['name']}"
+            return curr['name']
+            
+        unit_path_map = {u['id']: get_path(u['id']) for u in units}
+        unit_ids = list(unit_path_map.keys())
         
         # 2. Get Files with Content (Heavy Fetch)
         # We need content_text
@@ -284,7 +296,7 @@ def get_full_course_backup(course_id):
             # Only export TEXT files or MARKDOWN
             # If type is 'text' or it has content
             if f.get('content_text'):
-                uname = unit_map.get(f['unit_id'], "Sin Unidad")
+                uname = unit_path_map.get(f['unit_id'], "Sin Unidad")
                 all_files.append({
                     "name": f['name'],
                     "content": f['content_text'],
