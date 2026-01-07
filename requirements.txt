@@ -6,4 +6,4 @@ Pillow
 streamlit-paste-button
 python-docx
 markdown
-# TRIGGER_V176_FORMAT_RULES_RESTORED
+# TRIGGER_V177_ADD_PCT_TEXT

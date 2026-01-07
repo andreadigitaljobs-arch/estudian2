@@ -2974,7 +2974,8 @@ with tab1:
                                     
                                     def update_ui(msg, prog):
                                         # Update both text and bar
-                                        status_text.markdown(f"**⚡ {msg}**")
+                                        pct = int(prog * 100)
+                                        status_text.markdown(f"**⚡ {msg} ({pct}%)**")
                                         progress_bar.progress(prog)
                                     
                                     # Process
