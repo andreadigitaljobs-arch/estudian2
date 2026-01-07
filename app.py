@@ -3510,7 +3510,6 @@ with tab_quiz:
                 use_context = st.checkbox("🔗 Vincular imágenes con el texto (Contexto)", value=False, key=f"chk_ctx_{q_key}", help="Si activas esto, el texto y las imágenes se enviarán JUNTOS para responder. Si no, se analizan por separado.")
 
                 if total_items > 0:
-                if total_items > 0:
                     # --- CONFIGURACIÓN DE CONTEXTO (NUEVO V162) ---
                     st.markdown("##### 🧠 Fuente de Conocimiento")
                     st.caption("Selecciona qué información debe estudiar la IA para responderte.")
