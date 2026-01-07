@@ -62,17 +62,25 @@ class Transcriber:
         subprocess.run(command, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         return output_audio_path
 
-    def chunk_audio(self, audio_path, chunk_length_sec=600): # 10 minutes default
+    def chunk_audio(self, audio_path, chunk_length_sec=2400): # 40 minutes (Safe for 8k token output)
         """Splits audio into chunks."""
-        base_name, _ = os.path.splitext(audio_path)
-        chunk_pattern = f"{base_name}_part%03d.wav"
+        base_name, ext = os.path.splitext(audio_path)
+        if not ext: ext = ".mp3"
         
-        # Check duration first just to see if splitting is actually needed? 
-        # Actually ffmpeg segment handles it gracefully (produces 1 file if short).
-        # But to be consistent with previous logic, let's just run the segment command.
+        # Output pattern matching input extension
+        chunk_pattern = f"{base_name}_part%03d{ext}"
         
+        # Use our robust FFmpeg path
+        if not self.check_ffmpeg():
+             # Try system fallback if check failed (unlikely if extract worked)
+             exe = "ffmpeg"
+        else:
+             # We need to re-import or use the global/class var. 
+             # Since FFMPEG_EXE is global in this file (see top), just use it.
+             exe = FFMPEG_EXE
+
         command = [
-            "ffmpeg", "-i", audio_path, 
+            exe, "-i", audio_path, 
             "-f", "segment", 
             "-segment_time", str(chunk_length_sec), 
             "-c", "copy", 
@@ -84,8 +92,8 @@ class Transcriber:
         subprocess.run(command, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         
         # Find the generated files
-        # The pattern has %03d, so glob looks like base_name + "_part*.wav"
-        search_pattern = f"{base_name}_part*.wav"
+        # The pattern has %03d, so glob looks like base_name + "_part*" + ext
+        search_pattern = f"{base_name}_part*{ext}"
         chunks = sorted(glob.glob(search_pattern))
         return chunks
 
@@ -244,12 +252,35 @@ class Transcriber:
                 print(f"🔊 Procesando AUDIO Standard: {video_path}")
                 self.extract_audio(video_path, audio_path)
                 
-                # Gemini 2.0 Flash / 1.5 Pro handles large files via File API.
-                # No need to chunk unless > 11 hours.
-                if progress_callback: progress_callback("🤖 Transcribiendo audio con IA...", 0.4)
-                result = self.transcribe_file(audio_path, progress_callback=progress_callback)
+                # ALWAYS Chunk if needed (Safe approach for long output > 45 mins)
+                # Gemini output limit is ~8k tokens (approx 45 mins of dense speech max).
+                # To be safe, we chunk every 30-40 mins.
+                if progress_callback: progress_callback("✂️ Verificando duración y segmentando...", 0.2)
+                chunks = self.chunk_audio(audio_path, chunk_length_sec=2400) # 40 mins
+                
+                full_transcript = []
+                total_chunks = len(chunks)
+                
+                for i, chunk_path in enumerate(chunks):
+                     if progress_callback: 
+                         progress_callback(f"🤖 Transcribiendo Parte {i+1} de {total_chunks}...", 0.3 + (0.6 * (i/total_chunks)))
+                     
+                     # Process this chunk
+                     chunk_text = self.transcribe_file(chunk_path) # Pass callback? No, conflict with outer loop visual. 
+                     # Or we can pass a lambda wrapper? too complex. Just strict text.
+                     # Wait, I want streaming for chunks too.
+                     # Let's pass a modified callback that doesn't reset progress but updates text?
+                     # For simplicity, no inner streaming visual for chunks, just Block updates.
+                     
+                     full_transcript.append(chunk_text)
+                     
+                     # Cleanup chunk
+                     try: os.remove(chunk_path)
+                     except: pass
+                
                 if progress_callback: progress_callback("✅ ¡Listo!", 1.0)
-                return result
+                final_result = "\n\n".join(full_transcript)
+                return final_result
             except Exception as e:
                 print(f"Audio Flow Error: {e}")
                 return f"[ERROR] No se pudo procesar el audio: {e}"
