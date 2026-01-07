@@ -7,4 +7,4 @@ streamlit-paste-button
 python-docx
 markdown
 imageio-ffmpeg
-# TRIGGER_V190_OPTIMIZE_MEMORY
+# TRIGGER_V191_SMALLER_CHUNKS

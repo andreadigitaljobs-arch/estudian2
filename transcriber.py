@@ -253,31 +253,35 @@ class Transcriber:
                 self.extract_audio(video_path, audio_path)
                 
                 # ALWAYS Chunk if needed (Safe approach for long output > 45 mins)
-                # Gemini output limit is ~8k tokens (approx 45 mins of dense speech max).
-                # To be safe, we chunk every 30-40 mins.
+                # Gemini output limit is ~8k tokens. 
+                # 40 mins was pushing it. 20 mins (1200s) is SAFE.
                 if progress_callback: progress_callback("✂️ Verificando duración y segmentando...", 0.2)
-                chunks = self.chunk_audio(audio_path, chunk_length_sec=2400) # 40 mins
+                chunks = self.chunk_audio(audio_path, chunk_length_sec=1200) # 20 mins
                 
                 full_transcript = []
                 total_chunks = len(chunks)
                 
                 for i, chunk_path in enumerate(chunks):
-                     if progress_callback: 
-                         progress_callback(f"🤖 Transcribiendo Parte {i+1} de {total_chunks}...", 0.3 + (0.6 * (i/total_chunks)))
-                     
-                     # Smart Callback Wrapper for seamless progress
-                     def chunk_cb(msg, p):
-                         if progress_callback:
-                             # Map inner progress (0.0-1.0) to outer slot
-                             base_p = 0.3 + (0.6 * (i / total_chunks))
-                             slot_size = 0.6 / total_chunks
-                             global_p = base_p + (p * slot_size)
-                             progress_callback(f"P{i+1}/{total_chunks}: {msg}", global_p)
+                     try:
+                         if progress_callback: 
+                             progress_callback(f"🤖 Transcribiendo Parte {i+1} de {total_chunks}...", 0.3 + (0.6 * (i/total_chunks)))
+                         
+                         # Smart Callback Wrapper for seamless progress
+                         def chunk_cb(msg, p):
+                             if progress_callback:
+                                 # Map inner progress (0.0-1.0) to outer slot
+                                 base_p = 0.3 + (0.6 * (i / total_chunks))
+                                 slot_size = 0.6 / total_chunks
+                                 global_p = base_p + (p * slot_size)
+                                 progress_callback(f"P{i+1}/{total_chunks}: {msg}", global_p)
 
-                     # Process this chunk with streaming!
-                     chunk_text = self.transcribe_file(chunk_path, progress_callback=chunk_cb)
+                         # Process this chunk with streaming!
+                         chunk_text = self.transcribe_file(chunk_path, progress_callback=chunk_cb)
+                         full_transcript.append(chunk_text)
                      
-                     full_transcript.append(chunk_text)
+                     except Exception as e:
+                         print(f"Error in chunk {i}: {e}")
+                         full_transcript.append(f"\n\n[ERROR DE SISTEMA: La Parte {i+1} falló. Razón: {e}]\n\n")
                      
                      # Cleanup chunk
                      try: os.remove(chunk_path)
