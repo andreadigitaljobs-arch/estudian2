@@ -449,17 +449,53 @@ def get_unit_context(unit_id):
     """
     supabase = init_supabase()
     try:
-        # Get unit name for labeling
-        u_res = supabase.table("units").select("name").eq("id", unit_id).single().execute()
-        u_name = u_res.data['name'] if u_res.data else "Unknown Unit"
+    try:
+        # 1. Get Target Unit Info (to find course_id)
+        target = supabase.table("units").select("id, course_id, name").eq("id", unit_id).single().execute()
+        if not target.data: return ""
         
-        # Get files
-        files = supabase.table("library_files").select("name, content_text").eq("unit_id", unit_id).execute().data
+        c_id = target.data['course_id']
+        root_name = target.data['name']
         
-        unit_text = ""
+        # 2. Get ALL units for this course to build tree
+        all_units = supabase.table("units").select("id, parent_id, name").eq("course_id", c_id).execute().data
+        
+        # 3. Find Descendants
+        # iterative expansion
+        valid_ids = {unit_id} # Set for fast lookup
+        
+        # Simple loop to separate generations (crude but effective for shallow trees)
+        # Better: Build adjacency list
+        parent_map = {}
+        for u in all_units:
+            pid = u.get('parent_id')
+            if pid:
+                if pid not in parent_map: parent_map[pid] = []
+                parent_map[pid].append(u)
+        
+        # BFS/DFS
+        queue = [unit_id]
+        while queue:
+            curr = queue.pop(0)
+            children = parent_map.get(curr, [])
+            for child in children:
+                valid_ids.add(child['id'])
+                queue.append(child['id'])
+        
+        # 4. Fetch files for ALL valid units
+        files = supabase.table("library_files").select("name, content_text, unit_id").in_("unit_id", list(valid_ids)).execute().data
+        
+        # 5. Compile Text
+        # Create a map for unit names to be nice
+        unit_names = {u['id']: u['name'] for u in all_units}
+        
+        unit_text = f"--- CONTENIDO DE CARPETA MAESTRA: {root_name} (Incluyendo Subcarpetas) ---\n"
+        
         for f in files:
             if f['content_text']:
-                unit_text += f"\n--- ARCHIVO: {u_name}/{f['name']} ---\n{f['content_text']}\n"
+                u_sub_name = unit_names.get(f['unit_id'], "Unknown")
+                unit_text += f"\n--- ARCHIVO: {u_sub_name}/{f['name']} ---\n{f['content_text']}\n"
+                
         return unit_text
     except: return ""
 
