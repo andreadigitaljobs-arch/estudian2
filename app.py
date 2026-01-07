@@ -2986,7 +2986,8 @@ with tab1:
                                     # I need to align the call here.
                                     # Since I removed chunking logic in V170 for simplicity, we just call:
                                     
-                                    trans_text = transcriber.process_video(temp_path, visual_mode=use_visual)
+                                    # Process (Updated V170: Pass visual_mode & PRESERVE progress_callback for V173)
+                                    trans_text = transcriber.process_video(temp_path, visual_mode=use_visual, progress_callback=update_ui)
                                     
                                     # The new process_video returns TEXT directly, not a path!
                                     # (Review transcriber.py: return response.text or full_text)

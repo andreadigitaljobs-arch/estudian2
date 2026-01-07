@@ -114,34 +114,33 @@ class Transcriber:
         
         return response.text
 
-    def process_video(self, video_path, visual_mode=False):
+    def process_video(self, video_path, visual_mode=False, progress_callback=None):
         """Orchestrates the conversion and transcription process."""
         self.visual_mode = visual_mode # Store for prompt usage
         
         # LOGIC FOR VISUAL MODE:
-        # If Visual Mode is ON, we CANNOT extract audio only. We must upload the VIDEO.
-        # However, video upload allows up to 2GB files usually on Gemini 1.5 Pro.
-        # For 'Flash', video support is good too.
-        
         if visual_mode:
+            if progress_callback: progress_callback("🚀 Subiendo video a la Nube de IA (Esto depende de tu internet)...", 0.05)
             print(f"👁️ Procesando VIDEO MULTIMODAL: {video_path}")
+            
             # DIRECT VIDEO UPLOAD
-            # Warning: This depends on Internet speed.
             video_file = genai.upload_file(video_path)
             
-            # Wait for processing? Usually File API handles it.
-            # But for video specifically, State needs to be ACTIVE.
+            # Wait for processing
             import time
+            dots = 0
             while video_file.state.name == "PROCESSING":
+                dots = (dots + 1) % 4
+                if progress_callback: progress_callback(f"🧠 La IA está analizando el video{'.' * dots}", 0.15)
                 time.sleep(2)
                 video_file = genai.get_file(video_file.name)
                 
             if video_file.state.name == "FAILED":
+                if progress_callback: progress_callback("❌ Error: Falló el procesamiento del video.", 0.0)
                 raise ValueError("Video processing failed in Gemini.")
                 
             # Generate
-            # We reuse transcribe_file logic but pass the video_file object?
-            # Adjust transcribe_file to accept object or just call generate here to avoid breaking signature.
+            if progress_callback: progress_callback("👁️ Generando Análisis Visual y Transcripción... (Paciencia)", 0.4)
             
             # Use the specialized prompt directly here to be safe
             prompt_visual = """
@@ -162,6 +161,8 @@ class Transcriber:
             """
             
             response = self.model.generate_content([prompt_visual, video_file], request_options={"timeout": 600})
+            
+            if progress_callback: progress_callback("✅ ¡Análisis Completado!", 1.0)
             return response.text
             
         else:
