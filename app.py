@@ -3800,7 +3800,8 @@ with tab_quiz:
                 
                 # 4. Clean visible text (Hide tags)
                 # We hide the metadata tags from the UI body so it looks clean
-                clean_body = re.sub(r'\[\[.*?\]\]', '', full_txt).strip()
+                # FIX V160: Use DOTALL to match newlines inside tags
+                clean_body = re.sub(r'\[\[.*?\]\]', '', full_txt, flags=re.DOTALL).strip()
                 
                 # USE EXPANDER (User wants to see structure)
                 with st.expander(f"🔹 **P{display_num}:** {snippet}", expanded=True):
