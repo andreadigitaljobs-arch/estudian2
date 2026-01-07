@@ -255,14 +255,44 @@ def render_library(assistant):
         st.markdown("##### 📁 Carpetas")
         cols = st.columns(3)
         
-        # V110: Fetch Counts efficiently
-        file_counts = get_course_file_counts(current_course_id)
+        # V158: Recursive counts
+        all_units_struct = get_units(current_course_id, fetch_all=True)
+        direct_counts = get_course_file_counts(current_course_id)
+        
+        # Build Tree Calc
+        rec_counts = direct_counts.copy()
+        
+        # 1. Map parent -> children
+        parent_map = {}
+        for u in all_units_struct:
+             pid = u.get('parent_id')
+             if pid:
+                 if pid not in parent_map: parent_map[pid] = []
+                 parent_map[pid].append(u['id'])
+        
+        # 2. Recursive Summer
+        # We use memoization to avoid re-walking
+        memo = {}
+        def get_total(uid):
+             if uid in memo: return memo[uid]
+             
+             total = direct_counts.get(uid, 0)
+             children = parent_map.get(uid, [])
+             for child_id in children:
+                 total += get_total(child_id)
+             
+             memo[uid] = total
+             return total
+
+        # 3. Pre-calc for current view
+        # We only strictly need it for the subfolders we are displaying
         
         for i, unit in enumerate(subfolders):
             with cols[i % 3]:
                 # Dynamic Label
-                count = file_counts.get(unit['id'], 0)
-                label = f"📁 {unit['name']} ({count})" if count > 0 else f"📁 {unit['name']}"
+                # Use recursive count if > 0
+                r_count = get_total(unit['id'])
+                label = f"📁 {unit['name']} ({r_count})" if r_count > 0 else f"📁 {unit['name']}"
                 
                 if st.button(label, key=f"btn_unit_{unit['id']}", use_container_width=True):
                     st.session_state['lib_current_unit_id'] = unit['id']
