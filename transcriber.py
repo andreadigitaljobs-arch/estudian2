@@ -81,7 +81,7 @@ class Transcriber:
         chunks = sorted(glob.glob(search_pattern))
         return chunks
 
-    def transcribe_file(self, audio_file_path):
+    def transcribe_file(self, audio_file_path, progress_callback=None):
         """Transcribes using Gemini 2.0 Flash."""
         # Check standard file size limits if needed, but Gemini API usually handles direct upload via File API
         # actually for 2.0 Flash we should use the File API for audio.
@@ -118,7 +118,21 @@ class Transcriber:
         ESTRUCTURA: Usa títulos Markdown (##, ###) y listas (-).
         """
         
-        response = self.model.generate_content([prompt, audio_file])
+        # STREAMING MODE (V180)
+        # response = self.model.generate_content([prompt, audio_file])
+        response_stream = self.model.generate_content([prompt, audio_file], stream=True)
+        
+        final_text = []
+        chk = 0
+        for chunk in response_stream:
+             if hasattr(chunk, 'text'):
+                 final_text.append(chunk.text)
+                 chk += 1
+                 if progress_callback:
+                     # Fake progress animation
+                     progress_callback(f"📝 Escribiendo Parte {chk}...", 0.5)
+
+        return "".join(final_text)
         
         # Cleanup remote file? usually good practice but let's keep it simple first
         # audio_file.delete() # library might not have delete on object directly depending on version, check docs
@@ -208,7 +222,7 @@ class Transcriber:
                 # Gemini 2.0 Flash / 1.5 Pro handles large files via File API.
                 # No need to chunk unless > 11 hours.
                 if progress_callback: progress_callback("🤖 Transcribiendo audio con IA...", 0.4)
-                result = self.transcribe_file(audio_path)
+                result = self.transcribe_file(audio_path, progress_callback=progress_callback)
                 if progress_callback: progress_callback("✅ ¡Listo!", 1.0)
                 return result
             except Exception as e:
