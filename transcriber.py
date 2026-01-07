@@ -141,9 +141,11 @@ class Transcriber:
         [ETIQUETA DE CONTROL: (Lógica Semántica V6.0)]
 
         ESTRUCTURA OBLIGATORIA (IMPORTANTE):
-        1. USA TÍTULOS MARKDOWN (## Título, ### Subtítulo) para separar temas. ¡NO ENTREGUES UN MURO DE TEXTO!
-        2. Aplica los COLORES HTML solicitados cuando corresponda (definiciones, claves, datos).
-        3. Separa párrafos claramente.
+        ESTRUCTURA OBLIGATORIA (IMPORTANTE):
+        1. USA TÍTULOS MARKDOWN (##) SOLO para cambios drásticos de tema. ¡No interrumpas oraciones con títulos!
+        2. PARRAFOS LIMPIOS: Es OBLIGATORIO dejar una línea en blanco entre cada párrafo. 
+        3. No entregues bloques de texto pegados. Aire y legibilidad.
+        4. Aplica los colores HTML solicitados a frases clave.
         """
         
         # STREAMING MODE (V180)
