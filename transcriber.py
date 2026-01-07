@@ -4,6 +4,11 @@ import subprocess
 import google.generativeai as genai
 import math
 import glob
+try:
+    import imageio_ffmpeg
+    FFMPEG_EXE = imageio_ffmpeg.get_ffmpeg_exe()
+except ImportError:
+    FFMPEG_EXE = "ffmpeg"
 
 class Transcriber:
     def __init__(self, api_key, model_name="gemini-2.0-flash", cache_breaker="V6"):
@@ -25,32 +30,35 @@ class Transcriber:
     def check_ffmpeg(self):
         """Checks if ffmpeg is available."""
         try:
-            subprocess.run(["ffmpeg", "-version"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
+            subprocess.run([FFMPEG_EXE, "-version"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
             return True
-        except (subprocess.CalledProcessError, FileNotFoundError):
+        except (subprocess.CalledProcessError, FileNotFoundError, OSError):
             return False
 
     def extract_audio(self, video_path, output_audio_path):
         """Extracts audio from video using ffmpeg."""
         if not self.check_ffmpeg():
-            raise RuntimeError("ffmpeg not found. Please install ffmpeg and add it to your PATH.")
+             # Last ditch effort: try "ffmpeg" literally
+             try:
+                 subprocess.run(["ffmpeg", "-version"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                 # If we are here, system ffmpeg exists but imageio failed?
+                 exe_to_use = "ffmpeg"
+             except:
+                 raise RuntimeError(f"FFmpeg not found at {FFMPEG_EXE} nor in PATH. System error.")
+        else:
+             exe_to_use = FFMPEG_EXE
         
-        # Extract audio to MP3 (Much smaller/faster than WAV)
-        # Using libmp3lame or similar. If not available, we could try aac.
-        # But for portability, let's try standard mp3 or just small wav?
-        # Actually, standard WAV 16k mono is ~100MB/hour. Not THAT bad. 
-        # But MP3 64k is ~30MB. 3x faster upload.
-        
-        # Let's switch to .mp3 output
+        # Audio to MP3
         if not output_audio_path.endswith(".mp3"):
             output_audio_path = os.path.splitext(output_audio_path)[0] + ".mp3"
             
         command = [
-            "ffmpeg", "-i", video_path, "-vn", 
-            "-acodec", "libmp3lame", "-q:a", "4", # Variable bitrate quality 4 (good/fast)
+            exe_to_use, "-i", video_path, "-vn", 
+            "-acodec", "libmp3lame", "-q:a", "4", 
             "-y", output_audio_path
         ]
-        # Fallback to copy if libmp3lame fails? No, usually present.
+        
+        # Use shell=False for security, but ensure path with spaces works
         subprocess.run(command, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         return output_audio_path
 

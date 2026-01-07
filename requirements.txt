@@ -6,4 +6,5 @@ Pillow
 streamlit-paste-button
 python-docx
 markdown
-# TRIGGER_V182_FIX_STREAM_CRASH
+imageio-ffmpeg
+# TRIGGER_V183_FIX_FFMPEG_PATH
