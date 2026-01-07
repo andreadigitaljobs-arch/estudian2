@@ -449,7 +449,6 @@ def get_unit_context(unit_id):
     """
     supabase = init_supabase()
     try:
-    try:
         # 1. Get Target Unit Info (to find course_id)
         target = supabase.table("units").select("id, course_id, name").eq("id", unit_id).single().execute()
         if not target.data: return ""
