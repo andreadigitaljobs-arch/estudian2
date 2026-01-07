@@ -189,12 +189,16 @@ class Transcriber:
             safe_name = "".join([c for c in os.path.basename(video_path) if c.isalnum()])
             audio_path = f"temp_audio_{safe_name}.wav"
             try:
+                if progress_callback: progress_callback("🔊 Extrayendo audio (Ultra-rápido)...", 0.1)
                 print(f"🔊 Procesando AUDIO Standard: {video_path}")
                 self.extract_audio(video_path, audio_path)
                 
                 # Gemini 2.0 Flash / 1.5 Pro handles large files via File API.
                 # No need to chunk unless > 11 hours.
-                return self.transcribe_file(audio_path)
+                if progress_callback: progress_callback("🤖 Transcribiendo audio con IA...", 0.4)
+                result = self.transcribe_file(audio_path)
+                if progress_callback: progress_callback("✅ ¡Listo!", 1.0)
+                return result
             except Exception as e:
                 print(f"Audio Flow Error: {e}")
                 return f"[ERROR] No se pudo procesar el audio: {e}"

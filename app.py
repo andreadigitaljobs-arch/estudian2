@@ -2856,11 +2856,11 @@ with tab1:
         uploaded_files = st.file_uploader("Upload", type=['mp4', 'mov', 'avi', 'mkv', 'mp3', 'wav', 'm4a', 'flac', 'ogg', 'opus', 'waptt', 'aac', 'wma'], accept_multiple_files=True, key=st.session_state['transcriptor_key'], label_visibility="collapsed")
         
         if uploaded_files:
-            # VISUAL MODE TOGGLE (V172)
-            st.caption("Opciones de Procesamiento:")
-            use_visual = st.checkbox("👁️ Activar Análisis Visual de Pantalla (Leer Tareas/Slides)", 
-                                     help="Si activas esto, la IA analizará el video fotograma a fotograma para leer textos, tareas y documentos mostrados en pantalla. Tarda más en procesar pero captura información visual clave.")
-            st.divider()
+            # VISUAL MODE TOGGLE (DISABLED V178: User Request - Too slow/Tokens limit)
+            # st.caption("Opciones de Procesamiento:")
+            # use_visual = st.checkbox(...) 
+            use_visual = False # Hardcoded off for speed
+            # st.divider()
 
             # --- MEMORY SAFETY CHECK (TRAFFIC CONTROL) ---
             total_size_bytes = sum(f.size for f in uploaded_files)
