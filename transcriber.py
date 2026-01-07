@@ -128,12 +128,17 @@ class Transcriber:
         final_text = []
         chk = 0
         for chunk in response_stream:
-             if hasattr(chunk, 'text'):
-                 final_text.append(chunk.text)
-                 chk += 1
-                 if progress_callback:
-                     # Fake progress animation
+            try:
+                # Accessing .text can raise generic errors if blocked
+                txt = chunk.text
+                final_text.append(txt)
+                chk += 1
+                if progress_callback and chk % 5 == 0:
                      progress_callback(f"📝 Escribiendo Parte {chk}...", 0.5)
+            except Exception as e:
+                # Safety filter or other error on this chunk
+                print(f"Stream chunk error: {e}")
+                continue
 
         return "".join(final_text)
         
