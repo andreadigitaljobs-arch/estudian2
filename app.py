@@ -3587,6 +3587,13 @@ with tab_quiz:
                 use_ctx_mode = st.session_state.get('quiz_use_context', False)
                 config_map = st.session_state.get('quiz_file_config', {})
                 
+                # HYDRATE GLOBAL CONTEXT ALWAYS (RAG V159)
+                # This ensures we always have the library context available for the AI
+                gl_ctx = ""
+                try:
+                     gl_ctx, _ = get_global_context()
+                except: pass # Safety fallback
+                
                 # Collect ALL Images
                 all_pil_images = []
                 

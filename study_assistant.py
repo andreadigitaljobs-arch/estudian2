@@ -669,6 +669,10 @@ Google ofrece una capa gratuita generosa, pero limitada.
 
         **💡 POR QUÉ:** [Explicación breve]
 
+        **💡 POR QUÉ:** [Explicación breve]
+        
+        **📚 FUENTE:** [Citar archivo exacto del contexto si aplica, o 'Conocimiento General']
+
         **⛔ NO ES:** [Opcional]
 
         
