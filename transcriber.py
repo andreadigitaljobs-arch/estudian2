@@ -115,7 +115,10 @@ class Transcriber:
 
         [ETIQUETA DE CONTROL: (Lógica Semántica V6.0)]
 
-        ESTRUCTURA: Usa títulos Markdown (##, ###) y listas (-).
+        ESTRUCTURA OBLIGATORIA (IMPORTANTE):
+        1. USA TÍTULOS MARKDOWN (## Título, ### Subtítulo) para separar temas. ¡NO ENTREGUES UN MURO DE TEXTO!
+        2. Aplica los COLORES HTML solicitados cuando corresponda (definiciones, claves, datos).
+        3. Separa párrafos claramente.
         """
         
         # STREAMING MODE (V180)
