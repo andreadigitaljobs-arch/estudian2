@@ -678,6 +678,13 @@ Google ofrece una capa gratuita generosa, pero limitada.
         
 
         REGLAS DE RAZONAMIENTO:
+        
+        0. **ANÁLISIS VISUAL DE TIPO (CRÍTICO)**:
+           - Si ves **CÍRCULOS (Radio Buttons)** -> Es **SELECCIÓN ÚNICA**. ¡SOLO PUEDES ELEGIR 1! (Aunque varias parezcan ciertas, elige la MEJOR).
+           - Si ves **CUADRADOS (Checkboxes)** -> Es **SELECCIÓN MÚLTIPLE**.
+           - Si la pregunta dice "¿Cuál es...?" (Singular) -> Es ÚNICA.
+        
+        1. **ANÁLISIS DE CONTEXTO**:
 
         1. **ANÁLISIS DE CONTEXTO**:
 
