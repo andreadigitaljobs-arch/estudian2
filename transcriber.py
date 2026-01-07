@@ -114,48 +114,60 @@ class Transcriber:
         
         return response.text
 
-    def process_video(self, video_path, progress_callback=None, chunk_length_sec=600):
-        """
-        Orchestrates the entire flow for one video using Parallel Processing.
-        """
-        import concurrent.futures
+    def process_video(self, video_path, visual_mode=False):
+        """Orchestrates the conversion and transcription process."""
+        self.visual_mode = visual_mode # Store for prompt usage
         
-        video_name = os.path.basename(video_path)
-        base_name, _ = os.path.splitext(video_name)
+        # LOGIC FOR VISUAL MODE:
+        # If Visual Mode is ON, we CANNOT extract audio only. We must upload the VIDEO.
+        # However, video upload allows up to 2GB files usually on Gemini 1.5 Pro.
+        # For 'Flash', video support is good too.
         
-        if progress_callback: progress_callback(f"Extrayendo audio de {video_name}...", 0.1)
-        
-        temp_audio_path = f"temp_{base_name}.wav"
-        try:
-            self.extract_audio(video_path, temp_audio_path)
-        except RuntimeError as e:
-            return f"Error: {str(e)}"
-
-        if progress_callback: progress_callback(f"Dividiendo audio de {video_name}...", 0.2)
-        
-        # Chunking
-        chunks = self.chunk_audio(temp_audio_path, chunk_length_sec=chunk_length_sec)
-        
-        total_chunks = len(chunks)
-        results = [None] * total_chunks
-        completed_count = 0
-        
-        # Helper to process single chunk and return index to maintain order
-        def process_single_chunk(index, chunk_path):
+        if visual_mode:
+            print(f"👁️ Procesando VIDEO MULTIMODAL: {video_path}")
+            # DIRECT VIDEO UPLOAD
+            # Warning: This depends on Internet speed.
+            video_file = genai.upload_file(video_path)
+            
+            # Wait for processing? Usually File API handles it.
+            # But for video specifically, State needs to be ACTIVE.
+            import time
+            while video_file.state.name == "PROCESSING":
+                time.sleep(2)
+                video_file = genai.get_file(video_file.name)
+                
+            if video_file.state.name == "FAILED":
+                raise ValueError("Video processing failed in Gemini.")
+                
+            # Generate
+            # We reuse transcribe_file logic but pass the video_file object?
+            # Adjust transcribe_file to accept object or just call generate here to avoid breaking signature.
+            
+            # Use the specialized prompt directly here to be safe
+            prompt_visual = """
+            ERES UN ANALISTA VISUAL Y EDITOR. (SOLO ESPAÑOL).
+            
+            TU MISION: Transcribir el audio Y DESCRIBIR LO QUE SE VE EN PANTALLA.
+            
+            REGLAS DE FORMATO (HTML):
+            Usa las clases <span class="sc-key">...</span> ideas clave, <span class="sc-note">...</span> notas, etc.
+            
+            👁️ INSTRUCCIONES VISUALES (CRÍTICAS):
+            1. DETECTA TAREAS: Si se ve un documento/Word con preguntas/respuestas, TRANSCRIBE EL TEXTO VISUAL EXACTO.
+               - Formato: `[👁️ PANTALLA: Se ve la pregunta "X"... Respuesta visible: "Y"]`
+            2. SITES WEB: "Entrando a Canva...", "Clic en botón Crear".
+            3. SLIDES: Resume el texto de la diapositiva si no se lee en voz alta.
+            
+            Sincroniza esto con la transcripción del audio.
+            """
+            
+            response = self.model.generate_content([prompt_visual, video_file], request_options={"timeout": 600})
+            return response.text
+            
+        else:
+            # ORIGINAL AUDIO FLOW
+            audio_path = "temp_audio.wav"
             try:
-                text = self.transcribe_file(chunk_path)
-                # Cleanup individual chunk immediately
-                if chunk_path != temp_audio_path and os.path.exists(chunk_path):
-                    os.remove(chunk_path)
-                return index, text
-            except Exception as e:
-                return index, f"[MOTOR_V99] Error en parte {index+1}: {str(e)}"
-
-        if progress_callback: progress_callback(f"Transcribiendo {total_chunks} partes en paralelo...", 0.3)
-
-        # Execute in parallel with 3 workers to balance speed vs rate limits
-        with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
-            # Submit all tasks
             future_to_chunk = {
                 executor.submit(process_single_chunk, i, chunk): i 
                 for i, chunk in enumerate(chunks)

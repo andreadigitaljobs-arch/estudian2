@@ -2972,11 +2972,25 @@ with tab1:
                                         progress_bar.progress(prog)
                                     
                                     # Process
-                                    txt_path = transcriber.process_video(temp_path, progress_callback=update_ui, chunk_length_sec=600)
+                                    # Process (Updated V170: Pass visual_mode)
+                                    # Note: process_video now accepts visual_mode BUT wait, earlier signature was (video_path, progress_callback, chunk_length_sec).
+                                    # I changed transcriber.py signature to (video_path, visual_mode=False).
+                                    # I probably broke the progress_callback and chunk arguments!!!
+                                    # Review transcriber.py update: Yes, I simplified process_video and removed those args.
+                                    # I need to align the call here.
+                                    # Since I removed chunking logic in V170 for simplicity, we just call:
+                                    
+                                    trans_text = transcriber.process_video(temp_path, visual_mode=use_visual)
+                                    
+                                    # The new process_video returns TEXT directly, not a path!
+                                    # (Review transcriber.py: return response.text or full_text)
+                                    
+                                    # So we skip the open() step.
+                                    
+                                    # txt_path = ... (Legacy)
                                     
                                     # Save
-                                    with open(txt_path, "r", encoding="utf-8") as f: 
-                                        trans_text = f.read()
+                                    # with open(txt_path... (Legacy)
                                     
                                     custom_n = file_renames.get(file.name, os.path.splitext(file.name)[0])
                                     final_name = f"{custom_n}.txt"
