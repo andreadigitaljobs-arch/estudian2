@@ -3510,8 +3510,34 @@ with tab_quiz:
                 use_context = st.checkbox("🔗 Vincular imágenes con el texto (Contexto)", value=False, key=f"chk_ctx_{q_key}", help="Si activas esto, el texto y las imágenes se enviarán JUNTOS para responder. Si no, se analizan por separado.")
 
                 if total_items > 0:
+                if total_items > 0:
+                    # --- CONFIGURACIÓN DE CONTEXTO (NUEVO V162) ---
+                    st.markdown("##### 🧠 Fuente de Conocimiento")
+                    st.caption("Selecciona qué información debe estudiar la IA para responderte.")
+                    
+                    if 'current_course_id' in st.session_state and st.session_state['current_course_id']:
+                         from db_handler import get_units
+                         units_ctx = get_units(st.session_state['current_course_id'])
+                         
+                         # Create Map
+                         # We use a list with a special first item
+                         ctx_options = ["📚 Toda la Biblioteca (Recomendado)"]
+                         unit_map_ctx = {}
+                         
+                         for u in units_ctx:
+                             label = f"📁 {u['name']}"
+                             ctx_options.append(label)
+                             unit_map_ctx[label] = u['id']
+                             
+                         sel_ctx = st.selectbox("Carpeta de Referencia:", ctx_options, key=f"sel_ctx_{q_key}", help="Si tu quiz es de un tema específico, selecciona su carpeta para mayor precisión.")
+                         
+                         # Store selection in session state via key, but we need ID for logic
+                         st.session_state[f'quiz_ctx_unit_id_{q_key}'] = unit_map_ctx.get(sel_ctx) # None if "Toda"
+                    
+                    st.divider()
+
                     # --- MANUAL CONFIG TABLE ---
-                    st.markdown("##### ⚙️ Configuración de Preguntas (Opcional)")
+                    st.markdown("##### ⚙️ Configuración de IA (Opcional)")
                     st.caption("Si la IA se confunde, ayúdale seleccionando el tipo exacto de cada imagen.")
                     
                     # 1. Build Data List
@@ -3587,11 +3613,21 @@ with tab_quiz:
                 use_ctx_mode = st.session_state.get('quiz_use_context', False)
                 config_map = st.session_state.get('quiz_file_config', {})
                 
-                # HYDRATE GLOBAL CONTEXT ALWAYS (RAG V159)
+                # HYDRATE GLOBAL CONTEXT ALWAYS (RAG V159 + V162 Focus Mode)
                 # This ensures we always have the library context available for the AI
                 gl_ctx = ""
                 try:
-                     gl_ctx, _ = get_global_context()
+                     # Check if specific unit is selected
+                     target_unit_id = st.session_state.get(f'quiz_ctx_unit_id_{q_key}')
+                     
+                     if target_unit_id:
+                         # 📁 Focus Mode: Only get text from this unit
+                         from db_handler import get_unit_context
+                         gl_ctx = get_unit_context(target_unit_id)
+                         status.info(f"🧠 Usando CONTEXTO ENFOCADO (Carpeta Seleccionada)")
+                     else:
+                         # 📚 Global Mode: All text
+                         gl_ctx, _ = get_global_context()
                 except: pass # Safety fallback
                 
                 # Collect ALL Images
