@@ -2947,7 +2947,8 @@ with tab1:
                     # User Request: "Procesar 40 videos de 3 en 3 automáticamente"
                     all_files = uploaded_files
                     total_files = len(all_files)
-                    BATCH_SIZE = 3
+                    # Reduce Batch Size to 1 to prevent Memory Overload with 700MB videos
+                    BATCH_SIZE = 1
                     
                     for start_idx in range(0, total_files, BATCH_SIZE):
                         batch = all_files[start_idx : start_idx + BATCH_SIZE]
@@ -2955,13 +2956,19 @@ with tab1:
                         total_batches = (total_files + BATCH_SIZE - 1) // BATCH_SIZE
                         
                         # Update Status for Lote
-                        status_text.markdown(f"**🚀 Procesando Lote {batch_num} de {total_batches}** (Archivos {start_idx+1} al {min(start_idx+BATCH_SIZE, total_files)})")
+                        status_text.markdown(f"**🚀 Procesando Archivo {batch_num} de {total_files}**")
                         
                         for file in batch:
                             t_unit_id = selected_unit_id 
                             
                             temp_path = file.name
-                            with open(temp_path, "wb") as f: f.write(file.getbuffer())
+                            # Memory-Safe Write (Chunk by Chunk) to avoid RAM duplication
+                            with open(temp_path, "wb") as f:
+                                # Write in 4MB chunks
+                                while True:
+                                    chunk = file.read(4 * 1024 * 1024)
+                                    if not chunk: break
+                                    f.write(chunk)
                             
                             # RETRY LOGIC (Quota Protection)
                             max_retries = 3
