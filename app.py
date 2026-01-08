@@ -2036,88 +2036,89 @@ with st.sidebar:
     st.markdown('<div class="aesthetic-sep"></div>', unsafe_allow_html=True)
 
     # --- 2. HISTORIAL DE CHATS ---
-    if 'current_chat_session' not in st.session_state:
-        st.session_state['current_chat_session'] = None
-    with st.expander("🗂️ Historial de Chats", expanded=True):
-        # Create New
-        if st.button("➕ Nuevo chat", use_container_width=True):
-            new_sess = create_chat_session(st.session_state['user'].id, "Nuevo chat")
-            if new_sess:
-                st.session_state['current_chat_session'] = new_sess
-                st.session_state['tutor_chat_history'] = [] # Reset for new chat
-                st.session_state['redirect_target_name'] = "Tutoría 1 a 1" # Explicit Redirect
-                st.session_state['force_chat_tab'] = True # Force switch
-                
-                # UPDATE URL
-                try:
-                    if hasattr(st, 'query_params'):
-                        st.query_params['chat_id'] = str(new_sess['id'])
-                    else:
-                        st.experimental_set_query_params(chat_id=str(new_sess['id']))
-                except: pass
-                
-                st.rerun()
+    if st.session_state.get('user'):
+        if 'current_chat_session' not in st.session_state:
+            st.session_state['current_chat_session'] = None
+        with st.expander("🗂️ Historial de Chats", expanded=True):
+            # Create New
+            if st.button("➕ Nuevo chat", use_container_width=True):
+                new_sess = create_chat_session(st.session_state['user'].id, "Nuevo chat")
+                if new_sess:
+                    st.session_state['current_chat_session'] = new_sess
+                    st.session_state['tutor_chat_history'] = [] # Reset for new chat
+                    st.session_state['redirect_target_name'] = "Tutoría 1 a 1" # Explicit Redirect
+                    st.session_state['force_chat_tab'] = True # Force switch
+                    
+                    # UPDATE URL
+                    try:
+                        if hasattr(st, 'query_params'):
+                            st.query_params['chat_id'] = str(new_sess['id'])
+                        else:
+                            st.experimental_set_query_params(chat_id=str(new_sess['id']))
+                    except: pass
+                    
+                    st.rerun()
 
-        # List Sessions
-        sessions = get_chat_sessions(st.session_state['user'].id)
+            # List Sessions
+            sessions = get_chat_sessions(st.session_state['user'].id)
         
-        # Determine active ID for highlighting
-        active_id = st.session_state['current_chat_session']['id'] if st.session_state['current_chat_session'] else None
+            # Determine active ID for highlighting
+            active_id = st.session_state['current_chat_session']['id'] if st.session_state['current_chat_session'] else None
 
-        # LIMIT TO TOP 1 (Minimalist)
-        visible_sessions = sessions[:1]
-        
-        for sess in visible_sessions:
-            # Highlight active session button style could be done via key or custom CSS, 
-            # for now standard buttons.
-            # Truncate name to prevent fat buttons
-            display_name = sess['name']
-            if len(display_name) > 28:
-                display_name = display_name[:25] + "..."
-                
-            label = f"📝 {display_name}"
-            if active_id == sess['id']:
-                label = f"🟢 {display_name}"
+            # LIMIT TO TOP 1 (Minimalist)
+            visible_sessions = sessions[:1]
             
-            if st.button(label, key=f"sess_{sess['id']}", use_container_width=True):
-                st.session_state['current_chat_session'] = sess
-                st.session_state['tutor_chat_history'] = [] # Force reload
-                st.session_state['redirect_target_name'] = "Tutoría 1 a 1" # Explicit Redirect
-                st.session_state['force_chat_tab'] = True # Force switch
+            for sess in visible_sessions:
+                # Highlight active session button style could be done via key or custom CSS, 
+                # for now standard buttons.
+                # Truncate name to prevent fat buttons
+                display_name = sess['name']
+                if len(display_name) > 28:
+                    display_name = display_name[:25] + "..."
+                    
+                label = f"📝 {display_name}"
+                if active_id == sess['id']:
+                    label = f"🟢 {display_name}"
                 
-                # TRACK FOOTPRINT
-                update_user_footprint(st.session_state['user'].id, {
-                    "type": "chat",
-                    "title": sess['name'],
-                    "target_id": sess['id'],
-                    "subtitle": "Continuar conversación"
-                })
-                
-                # UPDATE URL
-                try:
-                    if hasattr(st, 'query_params'):
-                        st.query_params['chat_id'] = str(sess['id'])
-                    else:
-                        st.experimental_set_query_params(chat_id=str(sess['id']))
-                except: pass
-                
-                st.rerun()
+                if st.button(label, key=f"sess_{sess['id']}", use_container_width=True):
+                    st.session_state['current_chat_session'] = sess
+                    st.session_state['tutor_chat_history'] = [] # Force reload
+                    st.session_state['redirect_target_name'] = "Tutoría 1 a 1" # Explicit Redirect
+                    st.session_state['force_chat_tab'] = True # Force switch
+                    
+                    # TRACK FOOTPRINT
+                    update_user_footprint(st.session_state['user'].id, {
+                        "type": "chat",
+                        "title": sess['name'],
+                        "target_id": sess['id'],
+                        "subtitle": "Continuar conversación"
+                    })
+                    
+                    # UPDATE URL
+                    try:
+                        if hasattr(st, 'query_params'):
+                            st.query_params['chat_id'] = str(sess['id'])
+                        else:
+                            st.experimental_set_query_params(chat_id=str(sess['id']))
+                    except: pass
+                    
+                    st.rerun()
 
-        # VIEW ALL BUTTON ALWAYS VISIBLE
-        if True:
-            if st.button("📂 Ver todo el historial...", help="Ir al panel de gestión completo", use_container_width=True):
-                st.session_state['redirect_target_name'] = "Inicio"
-                st.session_state['force_chat_tab'] = True
-                st.session_state['dashboard_mode'] = 'history' # Activate History View in Dashboard
-                st.rerun()
+            # VIEW ALL BUTTON ALWAYS VISIBLE
+            if True:
+                if st.button("📂 Ver todo el historial...", help="Ir al panel de gestión completo", use_container_width=True):
+                    st.session_state['redirect_target_name'] = "Inicio"
+                    st.session_state['force_chat_tab'] = True
+                    st.session_state['dashboard_mode'] = 'history' # Activate History View in Dashboard
+                    st.rerun()
 
-        # Management for Active Session
-        if st.session_state['current_chat_session']:
-            st.caption("Gestionar Actual:")
-            new_name = st.text_input("Renombrar:", value=st.session_state['current_chat_session']['name'], key="rename_chat_input")
-            if new_name != st.session_state['current_chat_session']['name']:
-                # Save immediately on change (Enter)
-                rename_chat_session(st.session_state['current_chat_session']['id'], new_name)
+            # Management for Active Session
+            if st.session_state['current_chat_session']:
+                st.caption("Gestionar Actual:")
+                new_name = st.text_input("Renombrar:", value=st.session_state['current_chat_session']['name'], key="rename_chat_input")
+                if new_name != st.session_state['current_chat_session']['name']:
+                    # Save immediately on change (Enter)
+                    rename_chat_session(st.session_state['current_chat_session']['id'], new_name)
                 st.session_state['current_chat_session']['name'] = new_name # Valid local update
                 st.rerun()
             
@@ -2137,53 +2138,56 @@ with st.sidebar:
                 st.rerun()
 
         # --- BULK DELETE (GESTIÓN MASIVA) ---
-        with st.expander("🗑️ Gestión Masiva", expanded=False):
-            # 1. Multi-Select with Invisible Uniqueness Hack
-            # User wants clean names, but Streamlit merges duplicates.
-            # Solution: Append zero-width spaces to duplicates.
-            
-            valid_sessions = [s for s in sessions if s and 'name' in s]
-            
-            # Pre-calc unique labels
-            name_counts = {}
-            processed_sessions = []
-            for s in valid_sessions:
-                original_name = s['name']
-                count = name_counts.get(original_name, 0)
-                # Append invisible characters equal to the count count
-                invisible_suffix = "\u200b" * count
-                s['unique_label'] = f"{original_name}{invisible_suffix}"
-                processed_sessions.append(s)
-                name_counts[original_name] = count + 1
-
-            sel_sessions = st.multiselect(
-                "Seleccionar chats:", 
-                options=processed_sessions,
-                format_func=lambda x: x['unique_label'],
-                key="bulk_chat_select",
-                placeholder="Elige para borrar..."
-            )
-            
-            if sel_sessions:
-                if st.button(f"Eliminar {len(sel_sessions)} chats", type="primary", use_container_width=True):
-                    success_count = 0
-                    deleted_ids = []
-                    for s in sel_sessions:
-                        if delete_chat_session(s['id']):
-                            success_count += 1
-                            deleted_ids.append(s['id'])
+        if st.session_state.get('user'):
+            with st.expander("🗑️ Gestión Masiva", expanded=False):
+                # 1. Multi-Select with Invisible Uniqueness Hack
+                # User wants clean names, but Streamlit merges duplicates.
+                # Solution: Append zero-width spaces to duplicates.
+                
+                # Check if sessions exists (safety)
+                if 'sessions' in locals():
+                    valid_sessions = [s for s in sessions if s and 'name' in s]
                     
-                    if success_count > 0:
-                        st.success(f"¡{success_count} chats borrados!")
-                        
-                        # Reset current if deleted
-                        curr = st.session_state.get('current_chat_session')
-                        if curr and curr['id'] in deleted_ids:
-                             st.session_state['current_chat_session'] = None
-                             st.session_state['tutor_chat_history'] = []
-                        
-                        time.sleep(0.5)
-                        st.rerun()
+                    # Pre-calc unique labels
+                    name_counts = {}
+                    processed_sessions = []
+                    for s in valid_sessions:
+                        original_name = s['name']
+                        count = name_counts.get(original_name, 0)
+                        # Append invisible characters equal to the count count
+                        invisible_suffix = "\u200b" * count
+                        s['unique_label'] = f"{original_name}{invisible_suffix}"
+                        processed_sessions.append(s)
+                        name_counts[original_name] = count + 1
+
+                    sel_sessions = st.multiselect(
+                        "Seleccionar chats:", 
+                        options=processed_sessions,
+                        format_func=lambda x: x['unique_label'],
+                        key="bulk_chat_select",
+                        placeholder="Elige para borrar..."
+                    )
+                    
+                    if sel_sessions:
+                        if st.button(f"Eliminar {len(sel_sessions)} chats", type="primary", use_container_width=True):
+                            success_count = 0
+                            deleted_ids = []
+                            for s in sel_sessions:
+                                if delete_chat_session(s['id']):
+                                    success_count += 1
+                                    deleted_ids.append(s['id'])
+                            
+                            if success_count > 0:
+                                st.success(f"¡{success_count} chats borrados!")
+                                
+                                # Reset current if deleted
+                                curr = st.session_state.get('current_chat_session')
+                                if curr and curr['id'] in deleted_ids:
+                                     st.session_state['current_chat_session'] = None
+                                     st.session_state['tutor_chat_history'] = []
+                                
+                                time.sleep(0.5)
+                                st.rerun()
 
     st.markdown('<div class="aesthetic-sep"></div>', unsafe_allow_html=True)
 
