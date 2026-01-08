@@ -23,8 +23,19 @@ def play_sound(mode='success'):
         }
         sound_url = sounds.get(mode, sounds['success'])
         
-        # Native Streamlit Autoplay (Hidden)
+        # Native Streamlit Autoplay (Hidden via CSS)
         # requires streamlit >= 1.29
+        
+        # Hide the player!
+        st.markdown("""
+            <style>
+                /* Hide the intrusive audio player */
+                div[data-testid="stAudio"] {
+                    display: none;
+                }
+            </style>
+        """, unsafe_allow_html=True)
+        
         st.audio(sound_url, format="audio/mp3", autoplay=True)
         
         # Fallback: JavaScript (Double Tap)
