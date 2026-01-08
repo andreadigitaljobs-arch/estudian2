@@ -28,7 +28,7 @@ from db_handler import (
     get_chat_sessions, create_chat_session, rename_chat_session, delete_chat_session, 
     get_dashboard_stats, update_user_nickname, get_recent_chats, check_and_update_streak, 
     get_user_footprint, init_supabase, update_last_course, 
-    save_chat_message, get_chat_messages, get_file_content, get_course_files, delete_file, get_course_full_context, upload_file_v2,
+    save_chat_message, get_chat_messages, get_file_content, get_course_files, delete_file, get_course_full_context,
     get_user_memory, save_user_memory, upload_file_to_db
 )
 
@@ -2895,7 +2895,7 @@ with tab1:
             selected_unit_id = None
             
             if c_id:
-                from db_handler import get_units, create_unit, upload_file_to_db, get_files
+                # from db_handler import get_units (Available Global)
                 # RECURSIVE UNITS FETCH
                 units = get_units(c_id, fetch_all=True) # Fetch ALL folders
                 if units:
