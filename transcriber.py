@@ -97,7 +97,7 @@ class Transcriber:
         chunks = sorted(glob.glob(search_pattern))
         return chunks
 
-    def transcribe_file(self, audio_file_path, progress_callback=None):
+    def transcribe_file(self, audio_file_path, progress_callback=None, is_continuation=False):
         """Transcribes using Gemini 2.0 Flash."""
         # Check standard file size limits if needed, but Gemini API usually handles direct upload via File API
         # actually for 2.0 Flash we should use the File API for audio.
@@ -105,46 +105,57 @@ class Transcriber:
         audio_file = genai.upload_file(audio_file_path)
         
         
-        prompt = """
-        TRANSCRIPCIÓN EDITORIAL EXPERTA (OBLIGATORIO: SOLAMENTE ESPAÑOL):
-        Tu tarea es transcribir el audio a ESPAÑOL con ortografía PERFECTA.
-        
-        👥 DIARIZACIÓN INTELIGENTE (IMPORTANTE):
-        - SI ES UN MONÓLOGO: Usa párrafos normales.
-        - SI HAY CONVERSACIÓN: Identifica y separa a los hablantes.
-          - Usa formato de guión: **Hablante 1:** "..."
-          - Si puedes inferir el rol (ej: "Profesor", "Estudiante", "Entrevistador"), USALO como nombre.
-          - EJEMPLO: 
-            **Profesora:** Buenos días.
-            **Alumno:** Hola profe, tenía una duda.
+        if not is_continuation:
+            # --- STANDARD HEADER PROMPT (Starts the conversation/text) ---
+            prompt = """
+            TRANSCRIPCIÓN EDITORIAL EXPERTA (OBLIGATORIO: SOLAMENTE ESPAÑOL):
+            Tu tarea es transcribir el audio a ESPAÑOL con ortografía PERFECTA.
+            
+            👥 DIARIZACIÓN INTELIGENTE (IMPORTANTE):
+            - SI ES UN MONÓLOGO: Usa párrafos normales.
+            - SI HAY CONVERSACIÓN: Identifica y separa a los hablantes.
+              - Usa formato de guión: **Hablante 1:** "..."
+              - Si puedes inferir el rol (ej: "Profesor", "Estudiante", "Entrevistador"), USALO como nombre.
 
-        SISTEMA DE RESALTADO DE UNIDADES MENTALES (MODO ESTUDIO V9.0):
-        REGLA PLATINO: NO GRITES VISUALMENTE.
+            SISTEMA DE RESALTADO DE UNIDADES MENTALES (MODO ESTUDIO V9.0):
+            REGLA PLATINO: NO GRITES VISUALMENTE.
 
-        🧠 1. CONCEPTO DE "UNIDAD MENTAL" (Mental Units):
-           - PROHIBIDO resaltar palabras huérfanas ("estrategia", "online").
-           - Resalta bloques de significado: "<span class="sc-key">estrategia enfocada a resultados</span>".
+            🧠 1. CONCEPTO DE "UNIDAD MENTAL" (Mental Units):
+               - PROHIBIDO resaltar palabras huérfanas ("estrategia", "online").
+               - Resalta bloques de significado: "<span class="sc-key">estrategia enfocada a resultados</span>".
 
-        🎨 2. JERARQUÍA ESTRICTA:
-        🔴 ROJO (<span class="sc-base">...</span>) -> SOLO DEFINICIONES TIPO EXAMEN ("¿Qué es?").
-        🟣 PÚRPURA (<span class="sc-key">...</span>) -> IDEA ANCLA / CONCLUSIÓN (Resumen mental).
-        🟡 AMARILLO (<span class="sc-data">...</span>) -> ESTRUCTURA (Paso 1, Fase 2) y DATOS.
-        🔵 AZUL (<span class="sc-example">...</span>) -> EJEMPLOS (Marcas, casos).
-        🟢 VERDE (<span class="sc-note">...</span>) -> MATICES (Ojo con...).
+            🎨 2. JERARQUÍA ESTRICTA:
+            🔴 ROJO (<span class="sc-base">...</span>) -> SOLO DEFINICIONES TIPO EXAMEN ("¿Qué es?").
+            🟣 PÚRPURA (<span class="sc-key">...</span>) -> IDEA ANCLA / CONCLUSIÓN (Resumen mental).
+            🟡 AMARILLO (<span class="sc-data">...</span>) -> ESTRUCTURA (Paso 1, Fase 2) y DATOS.
+            🔵 AZUL (<span class="sc-example">...</span>) -> EJEMPLOS (Marcas, casos).
+            🟢 VERDE (<span class="sc-note">...</span>) -> MATICES (Ojo con...).
 
-        TEST DE CALIDAD V9:
-        - ¿Hay rojos que no son definiciones? -> BÓRRALOS.
-        - ¿Está "Paso 1" en Amarillo? -> SI NO, CORRIGE.
+            TEST DE CALIDAD V9:
+            - ¿Hay rojos que no son definiciones? -> BÓRRALOS.
+            - ¿Está "Paso 1" en Amarillo? -> SI NO, CORRIGE.
 
+            [ETIQUETA DE CONTROL: (Lógica Semántica V6.0)]
 
-
-        [ETIQUETA DE CONTROL: (Lógica Semántica V6.0)]
-
-        ESTRUCTURA OBLIGATORIA (IMPORTANTE):
-        1. USA TÍTULOS MARKDOWN (## Título, ### Subtítulo) para separar temas. ¡NO ENTREGUES UN MURO DE TEXTO!
-        2. Aplica los COLORES HTML solicitados cuando corresponda (definiciones, claves, datos).
-        3. Separa párrafos claramente.
-        """
+            ESTRUCTURA OBLIGATORIA (IMPORTANTE):
+            1. USA TÍTULOS MARKDOWN (## Título, ### Subtítulo) para separar temas.
+            2. Aplica los COLORES HTML solicitados.
+            3. Separa párrafos claramente.
+            """
+        else:
+            # --- CONTINUATION PROMPT (Seamless flow) ---
+            prompt = """
+            TRANSCRIPCIÓN DE CONTINUIDAD (MANTÉN EL FLUJO):
+            Esta es la continuación de una grabación larga.
+            
+            REGLAS DE ORO (V196):
+            1. ⛔ PROHIBIDO PONER TÍTULOS, ENCABEZADOS o INTRODUCCIONES (Ni "Continuación...", ni "Parte 2", ni "## Título").
+            2. ⛔ PROHIBIDO RESUMIR lo anterior.
+            3. ✅ EMPIEZA DIRECTAMENTE con la siguiente palabra/frase del diálogo, como si no hubiera corte.
+            4. MANTÉN EL MISMO FORMATO de Diarización (**Hablante X:**) y Colores HTML (<span class="sc-key">...).
+            
+            Tu objetivo es que el texto se una con la parte anterior INVISIBLEMENTE.
+            """
         
         # STREAMING MODE (V180)
         # response = self.model.generate_content([prompt, audio_file])
@@ -276,7 +287,7 @@ class Transcriber:
                                  progress_callback(f"P{i+1}/{total_chunks}: {msg}", global_p)
 
                          # Process this chunk with streaming!
-                         chunk_text = self.transcribe_file(chunk_path, progress_callback=chunk_cb)
+                         chunk_text = self.transcribe_file(chunk_path, progress_callback=chunk_cb, is_continuation=(i > 0))
                          full_transcript.append(chunk_text)
                      
                      except Exception as e:
