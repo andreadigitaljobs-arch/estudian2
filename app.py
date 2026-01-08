@@ -2201,7 +2201,7 @@ with st.sidebar:
     if not st.session_state.get('user'):
         st.stop()
     current_user_id = st.session_state['user'].id
-    db_courses = get_user_courses(current_user_id)
+    db_courses = get_user_courses(current_user_id) or [] # V199 Fix: Default to list
     course_names = [c['name'] for c in db_courses]
     course_map = {c['name']: c['id'] for c in db_courses}
     if not course_names: course_names = []
