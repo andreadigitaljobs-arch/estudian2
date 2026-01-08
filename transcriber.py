@@ -144,6 +144,7 @@ class Transcriber:
             """
         else:
             # --- CONTINUATION PROMPT (Seamless flow) ---
+            prompt = """
             TRANSCRIPCIÓN DE CONTINUIDAD (MANTÉN EL FLUJO):
             Esta es la continuación de una grabación larga.
             
