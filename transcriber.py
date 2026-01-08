@@ -167,6 +167,13 @@ class Transcriber:
             try:
                 # Accessing .text can raise generic errors if blocked
                 txt = chunk.text
+                
+                # V203 Fix: Auto-close tags PER CHUNK to prevent bleeding
+                open_spans = txt.count("<span")
+                close_spans = txt.count("</span>")
+                if open_spans > close_spans:
+                    txt += "</span>" * (open_spans - close_spans)
+                
                 final_text.append(txt)
                 chk += 1
                 if progress_callback and chk % 5 == 0:
@@ -176,16 +183,7 @@ class Transcriber:
                 print(f"Stream chunk error: {e}")
                 continue
 
-        full_text = "".join(final_text)
-        
-        # V202 Fix: Auto-close unclosed tags (User reported Green Bleed)
-        open_spans = full_text.count("<span")
-        close_spans = full_text.count("</span>")
-        if open_spans > close_spans:
-            needed = open_spans - close_spans
-            full_text += "</span>" * needed
-            
-        return full_text
+        return "".join(final_text)
         
         # Cleanup remote file? usually good practice but let's keep it simple first
         # audio_file.delete() # library might not have delete on object directly depending on version, check docs
