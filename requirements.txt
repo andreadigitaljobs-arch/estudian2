@@ -7,4 +7,4 @@ streamlit-paste-button
 python-docx
 markdown
 imageio-ffmpeg
-# TRIGGER_V191_SMALLER_CHUNKS
+# TRIGGER_V192_CLEAN_COPY

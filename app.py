@@ -3117,7 +3117,14 @@ with tab1:
                       # JS COPY COMPONENT (Fixed positioning)
                       import json
                       import streamlit.components.v1 as components
-                      safe_txt = json.dumps(item['text'])
+                      import re
+                      
+                      # Clean HTML (<span...>) for clipboard
+                      raw_txt = item['text']
+                      # Keep Markdown (**, ##) but remove HTML tags
+                      clean_txt = re.sub(r'<[^>]+>', '', raw_txt)
+                      safe_txt = json.dumps(clean_txt)
+                      
                       html_cp = f"""
                     <html>
                     <body style="margin:0; padding:0; background: transparent;">
