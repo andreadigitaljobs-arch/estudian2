@@ -6,10 +6,16 @@ import uuid
 from transcriber import Transcriber
 
 # Helper: Play Sound
-def play_success_sound():
+def play_sound(mode='success'):
     try:
-        # Subtle "Glass Ping" sound
-        sound_url = "https://assets.mixkit.co/sfx/preview/mixkit-software-interface-start-2574.mp3"
+        # Sounds
+        sounds = {
+            'start': "https://assets.mixkit.co/sfx/preview/mixkit-sci-fi-click-900.mp3", # Blip
+            'success': "https://assets.mixkit.co/sfx/preview/mixkit-software-interface-start-2574.mp3", # Ping
+            'error': "https://assets.mixkit.co/sfx/preview/mixkit-click-error-1110.mp3" # Error (Optional)
+        }
+        sound_url = sounds.get(mode, sounds['success'])
+        
         html_code = f"""
         <audio autoplay style="display:none;">
             <source src="{sound_url}" type="audio/mpeg">
@@ -2956,6 +2962,9 @@ with tab1:
                          file_renames[uf.name] = new_n
             
             if st.button("▶️ Iniciar Transcripción Inteligente", type="primary", key="btn_start_transcription", use_container_width=True, disabled=(not selected_unit_id)):
+                # V207: Start Sound (Blip)
+                play_sound('start')
+                
                 if not selected_unit_id:
                     st.error("Error: Carpeta no seleccionada.")
                 else:
@@ -3055,7 +3064,7 @@ with tab1:
                                         st.toast(f"✅ Listo: {final_name}") 
                                         st.session_state['transcript_history'].append({"name": custom_n, "text": trans_text})
                                         # V206: Play Sound
-                                        play_success_sound()
+                                        play_sound('success')
                                     
                                     # Cleanup handled by logic
                                     # if os.path.exists(txt_path): os.remove(txt_path) # DEPRECATED V174
