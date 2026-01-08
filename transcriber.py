@@ -144,17 +144,16 @@ class Transcriber:
             """
         else:
             # --- CONTINUATION PROMPT (Seamless flow) ---
-            prompt = """
             TRANSCRIPCIÓN DE CONTINUIDAD (MANTÉN EL FLUJO):
             Esta es la continuación de una grabación larga.
             
-            REGLAS DE ORO (V196):
-            1. ⛔ PROHIBIDO PONER TÍTULOS, ENCABEZADOS o INTRODUCCIONES (Ni "Continuación...", ni "Parte 2", ni "## Título").
-            2. ⛔ PROHIBIDO RESUMIR lo anterior.
-            3. ✅ EMPIEZA DIRECTAMENTE con la siguiente palabra/frase del diálogo, como si no hubiera corte.
-            4. MANTÉN EL MISMO FORMATO de Diarización (**Hablante X:**) y Colores HTML (<span class="sc-key">...).
+            REGLAS DE ORO (V200):
+            1. ⛔ PROHIBIDO PONER TÍTULOS o ENCABEZADOS (Ni "Parte 2", ni "## Título").
+            2. ✅ EMPIEZA DIRECTAMENTE con la siguiente frase del diálogo.
+            3. ✅ MANTÉN LOS PÁRRAFOS Y SALTOS DE LÍNEA: El texto NO debe verse como un bloque gigante.
+            4. ✅ RESPETA LA DIARIZACIÓN (**Hablante X:**).
             
-            Tu objetivo es que el texto se una con la parte anterior INVISIBLEMENTE.
+            Tu objetivo es continuar la transcripción de manera natural, legible y ordenada.
             """
         
         # STREAMING MODE (V180)
