@@ -3,6 +3,7 @@ import os
 print("DEBUG: LOADING V72 - SYNTAX FIXED")
 import glob
 import uuid
+import gc # Trigger V215: RAM Safety
 from transcriber import Transcriber
 
 # Helper: Play Sound
@@ -3085,6 +3086,9 @@ with tab1:
 
                             # Cleanup Temp
                             if os.path.exists(temp_path): os.remove(temp_path)
+                            
+                            # V215: Explicit Memory Cleanup for 500MB+ files
+                            gc.collect()
                         
                         # Update Global Progress
                         progress_bar.progress(min((start_idx + BATCH_SIZE) / total_files, 1.0))
