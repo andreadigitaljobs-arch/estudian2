@@ -6,63 +6,12 @@ import uuid
 from transcriber import Transcriber
 
 # Helper: Play Sound
+# Helper: Play Sound
 def play_sound(mode='success'):
-    try:
-        # Base64 Sounds (Short & Fast)
-        # Blip (Short Click)
-        b64_start = "data:audio/mp3;base64,SUQzBAAAAAAAI1RTSV******" # (truncated for brevity in prompt, will use real short base64 or URL if base64 too long)
-        # Actually base64 is too long for this chat context without external file.
-        # Let's stick to URLs but use st.audio(autoplay=True) which works better.
-        # If user has no internet for mixkit, that's the issue.
-        # Let's use a very reliable CDN or stay with URL for now but Native Player.
-        
-        sounds = {
-            'start': "https://assets.mixkit.co/sfx/preview/mixkit-sci-fi-click-900.mp3",
-            'success': "https://assets.mixkit.co/sfx/preview/mixkit-software-interface-start-2574.mp3",
-            'error': "https://assets.mixkit.co/sfx/preview/mixkit-click-error-1110.mp3"
-        }
-        sound_url = sounds.get(mode, sounds['success'])
-        
-        # Native Streamlit Autoplay (Hidden via CSS)
-        # requires streamlit >= 1.29
-        
-        # Hide the player!
-        st.markdown("""
-            <style>
-                /* Ghost Mode: Hide visual player but keep it in DOM for autoplay */
-                div[data-testid="stAudio"] {
-                    opacity: 0 !important;
-                    height: 0 !important;
-                    width: 0px !important;
-                    overflow: hidden !important;
-                    position: fixed !important; 
-                    z-index: -1 !important;
-                    pointer-events: none !important;
-                }
-            </style>
-        """, unsafe_allow_html=True)
-        
-        st.audio(sound_url, format="audio/mp3", autoplay=True)
-        
-        # Fallback: JavaScript (Double Tap)
-        html_code = f"""
-        <audio autoplay style="display:none;">
-            <source src="{sound_url}" type="audio/mpeg">
-        </audio>
-        <script>
-            // Aggressive Play
-            var audio = document.querySelector("audio");
-            if(audio) {{
-                audio.volume = 1.0;
-                audio.play().catch(e => console.log("Audio Error:", e));
-            }}
-        </script>
-        """
-        import streamlit.components.v1 as components
-        components.html(html_code, height=0, width=0)
-        
-    except Exception as e:
-        print(f"Sound Error: {e}")
+    pass # Disabled V212 due to browser blocking and UI glitches
+    
+    # Previous attempts (Native, Iframe) caused white flashes or didn't play.
+    # Reverted to silent mode for stability.
 from study_assistant import StudyAssistant
 from PIL import Image, ImageGrab
 import shutil
