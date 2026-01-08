@@ -29,9 +29,15 @@ def play_sound(mode='success'):
         # Hide the player!
         st.markdown("""
             <style>
-                /* Hide the intrusive audio player */
+                /* Ghost Mode: Hide visual player but keep it in DOM for autoplay */
                 div[data-testid="stAudio"] {
-                    display: none;
+                    opacity: 0 !important;
+                    height: 0 !important;
+                    width: 0px !important;
+                    overflow: hidden !important;
+                    position: fixed !important; 
+                    z-index: -1 !important;
+                    pointer-events: none !important;
                 }
             </style>
         """, unsafe_allow_html=True)
