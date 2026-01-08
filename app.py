@@ -2990,14 +2990,21 @@ with tab1:
                         for file in batch:
                             t_unit_id = selected_unit_id 
                             
-                            temp_path = file.name
-                            # Memory-Safe Write (Chunk by Chunk) to avoid RAM duplication
-                            with open(temp_path, "wb") as f:
-                                # Write in 4MB chunks
-                                while True:
-                                    chunk = file.read(4 * 1024 * 1024)
-                                    if not chunk: break
-                                    f.write(chunk)
+                            # V217: Defensive File Handling (UUID + Guard)
+                            safe_ext = os.path.splitext(file.name)[1]
+                            temp_path = f"temp_upload_{uuid.uuid4()}{safe_ext}"
+                            
+                            try:
+                                # Memory-Safe Write (Chunk by Chunk) to avoid RAM duplication
+                                with open(temp_path, "wb") as f:
+                                    # Write in 4MB chunks
+                                    while True:
+                                        chunk = file.read(4 * 1024 * 1024)
+                                        if not chunk: break
+                                        f.write(chunk)
+                            except Exception as e:
+                                st.error(f"❌ Error CRÍTICO escribiendo disco: {e}")
+                                continue
                             
                             # RETRY LOGIC (Quota Protection)
                             max_retries = 3
