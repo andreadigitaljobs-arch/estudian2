@@ -2233,9 +2233,17 @@ with st.sidebar:
     # --- 4. ESPACIO DE TRABAJO ---
     st.markdown("#### 📂 Espacio de Trabajo")
     st.caption("Diplomado Actual:")
-    if not st.session_state.get('user'):
+    user = st.session_state.get('user')
+    if not user:
         st.stop()
-    current_user_id = st.session_state['user'].id
+    
+    # Robust ID Extraction (Dict or Object)
+    current_user_id = user.get('id') if isinstance(user, dict) else getattr(user, 'id', None)
+    
+    if not current_user_id:
+        st.error("Error de Sesión: Usuario inválido.")
+        st.stop()
+
     db_courses = get_user_courses(current_user_id) or [] # V199 Fix: Default to list
     course_names = [c['name'] for c in db_courses]
     course_map = {c['name']: c['id'] for c in db_courses}
