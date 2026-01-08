@@ -8,29 +8,44 @@ from transcriber import Transcriber
 # Helper: Play Sound
 def play_sound(mode='success'):
     try:
-        # Sounds
+        # Base64 Sounds (Short & Fast)
+        # Blip (Short Click)
+        b64_start = "data:audio/mp3;base64,SUQzBAAAAAAAI1RTSV******" # (truncated for brevity in prompt, will use real short base64 or URL if base64 too long)
+        # Actually base64 is too long for this chat context without external file.
+        # Let's stick to URLs but use st.audio(autoplay=True) which works better.
+        # If user has no internet for mixkit, that's the issue.
+        # Let's use a very reliable CDN or stay with URL for now but Native Player.
+        
         sounds = {
-            'start': "https://assets.mixkit.co/sfx/preview/mixkit-sci-fi-click-900.mp3", # Blip
-            'success': "https://assets.mixkit.co/sfx/preview/mixkit-software-interface-start-2574.mp3", # Ping
-            'error': "https://assets.mixkit.co/sfx/preview/mixkit-click-error-1110.mp3" # Error (Optional)
+            'start': "https://assets.mixkit.co/sfx/preview/mixkit-sci-fi-click-900.mp3",
+            'success': "https://assets.mixkit.co/sfx/preview/mixkit-software-interface-start-2574.mp3",
+            'error': "https://assets.mixkit.co/sfx/preview/mixkit-click-error-1110.mp3"
         }
         sound_url = sounds.get(mode, sounds['success'])
         
+        # Native Streamlit Autoplay (Hidden)
+        # requires streamlit >= 1.29
+        st.audio(sound_url, format="audio/mp3", autoplay=True)
+        
+        # Fallback: JavaScript (Double Tap)
         html_code = f"""
         <audio autoplay style="display:none;">
             <source src="{sound_url}" type="audio/mpeg">
         </audio>
         <script>
+            // Aggressive Play
             var audio = document.querySelector("audio");
             if(audio) {{
-                audio.volume = 0.5;
-                audio.play().catch(e => console.log("Audio autoplay blocked"));
+                audio.volume = 1.0;
+                audio.play().catch(e => console.log("Audio Error:", e));
             }}
         </script>
         """
         import streamlit.components.v1 as components
         components.html(html_code, height=0, width=0)
-    except: pass
+        
+    except Exception as e:
+        print(f"Sound Error: {e}")
 from study_assistant import StudyAssistant
 from PIL import Image, ImageGrab
 import shutil
