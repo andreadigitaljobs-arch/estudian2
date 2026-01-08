@@ -28,7 +28,7 @@ from db_handler import (
     get_dashboard_stats, update_user_nickname, get_recent_chats, check_and_update_streak, 
     get_user_footprint, init_supabase, update_last_course, 
     save_chat_message, get_chat_messages, get_file_content, get_course_files, delete_file, get_course_full_context, upload_file_v2,
-    get_user_memory, save_user_memory
+    get_user_memory, save_user_memory, upload_file_to_db
 )
 
 
