@@ -4,6 +4,7 @@ import time
 import os
 import base64
 import pandas as pd
+import re
 # V85 - Nuclear Rename
 from db_handler import get_units, create_unit, upload_file_to_db, get_files, delete_file, rename_file, rename_unit, delete_unit, create_chat_session, save_chat_message, search_library, update_user_footprint, get_course_files, move_file, get_course_file_counts, move_file_up, move_file_down, ensure_unit_numbering
 
@@ -551,7 +552,9 @@ def render_library(assistant):
                         import streamlit.components.v1 as components
                         import json
                         
-                        safe_json = json.dumps(safe_content)
+                        # Clean HTML (<span...>) for Clipboard (User Request V192 Library Copy)
+                        clean_content = re.sub(r'<[^>]+>', '', safe_content)
+                        safe_json = json.dumps(clean_content)
                         # JS Component
                         # We use an iframe, so we need to ensure clipboard access is allowed.
                         # Usually standard button click works.
