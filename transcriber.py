@@ -176,7 +176,16 @@ class Transcriber:
                 print(f"Stream chunk error: {e}")
                 continue
 
-        return "".join(final_text)
+        full_text = "".join(final_text)
+        
+        # V202 Fix: Auto-close unclosed tags (User reported Green Bleed)
+        open_spans = full_text.count("<span")
+        close_spans = full_text.count("</span>")
+        if open_spans > close_spans:
+            needed = open_spans - close_spans
+            full_text += "</span>" * needed
+            
+        return full_text
         
         # Cleanup remote file? usually good practice but let's keep it simple first
         # audio_file.delete() # library might not have delete on object directly depending on version, check docs
