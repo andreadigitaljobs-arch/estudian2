@@ -7,4 +7,4 @@ streamlit-paste-button
 python-docx
 markdown
 imageio-ffmpeg
-# TRIGGER_V205_LINE_LEVEL_SAFETY
+# TRIGGER_V206_SOUND_ALERTS

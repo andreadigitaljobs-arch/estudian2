@@ -4,6 +4,27 @@ print("DEBUG: LOADING V72 - SYNTAX FIXED")
 import glob
 import uuid
 from transcriber import Transcriber
+
+# Helper: Play Sound
+def play_success_sound():
+    try:
+        # Subtle "Glass Ping" sound
+        sound_url = "https://assets.mixkit.co/sfx/preview/mixkit-software-interface-start-2574.mp3"
+        html_code = f"""
+        <audio autoplay style="display:none;">
+            <source src="{sound_url}" type="audio/mpeg">
+        </audio>
+        <script>
+            var audio = document.querySelector("audio");
+            if(audio) {{
+                audio.volume = 0.5;
+                audio.play().catch(e => console.log("Audio autoplay blocked"));
+            }}
+        </script>
+        """
+        import streamlit.components.v1 as components
+        components.html(html_code, height=0, width=0)
+    except: pass
 from study_assistant import StudyAssistant
 from PIL import Image, ImageGrab
 import shutil
@@ -3033,6 +3054,8 @@ with tab1:
                                     if saved:
                                         st.toast(f"✅ Listo: {final_name}") 
                                         st.session_state['transcript_history'].append({"name": custom_n, "text": trans_text})
+                                        # V206: Play Sound
+                                        play_success_sound()
                                     
                                     # Cleanup handled by logic
                                     # if os.path.exists(txt_path): os.remove(txt_path) # DEPRECATED V174
