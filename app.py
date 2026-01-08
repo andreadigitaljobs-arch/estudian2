@@ -13,6 +13,28 @@ def play_sound(mode='success'):
     
     # Previous attempts (Native, Iframe) caused white flashes or didn't play.
     # Reverted to silent mode for stability.
+
+# --- CRASH LOGGER (V218) ---
+CRASH_LOG_FILE = "crash_log.txt"
+def log_debug(msg):
+    try:
+        ts = datetime.datetime.now().strftime("%H:%M:%S")
+        with open(CRASH_LOG_FILE, "a", encoding="utf-8") as f:
+            f.write(f"[{ts}] {msg}\n")
+    except: pass # Never crash the logger
+
+# --- CRASH REPORT UI ---
+if os.path.exists(CRASH_LOG_FILE):
+    with st.expander("🐞 Debug & Crash Log (Últimos eventos)", expanded=False):
+        try:
+            with open(CRASH_LOG_FILE, "r", encoding="utf-8") as f:
+                lines = f.readlines()
+                st.code("".join(lines[-20:]), language="text") # Show last 20 lines
+            
+            if st.button("Limpiar Log"):
+                os.remove(CRASH_LOG_FILE)
+                st.rerun()
+        except: st.error("No se pudo leer el log.")
 from study_assistant import StudyAssistant
 from PIL import Image, ImageGrab
 import shutil
@@ -2986,6 +3008,7 @@ with tab1:
                         
                         # Update Status for Lote
                         status_text.markdown(f"**🚀 Procesando Archivo {batch_num} de {total_files}**")
+                        log_debug(f"--- BATCH {batch_num} START ---")
                         
                         for file in batch:
                             t_unit_id = selected_unit_id 
@@ -2993,16 +3016,20 @@ with tab1:
                             # V217: Defensive File Handling (UUID + Guard)
                             safe_ext = os.path.splitext(file.name)[1]
                             temp_path = f"temp_upload_{uuid.uuid4()}{safe_ext}"
+                            log_debug(f"Procesando: {file.name} -> {temp_path} ({file.size} bytes)")
                             
                             try:
                                 # Memory-Safe Write (Chunk by Chunk) to avoid RAM duplication
+                                log_debug("Inicio escritura disco...")
                                 with open(temp_path, "wb") as f:
                                     # Write in 4MB chunks
                                     while True:
                                         chunk = file.read(4 * 1024 * 1024)
                                         if not chunk: break
                                         f.write(chunk)
+                                log_debug("Escritura disco OK.")
                             except Exception as e:
+                                log_debug(f"ERROR ESCRITURA: {e}")
                                 st.error(f"❌ Error CRÍTICO escribiendo disco: {e}")
                                 continue
                             
@@ -3022,16 +3049,9 @@ with tab1:
                                         progress_bar.progress(prog)
                                     
                                     # Process
-                                    # Process (Updated V170: Pass visual_mode)
-                                    # Note: process_video now accepts visual_mode BUT wait, earlier signature was (video_path, progress_callback, chunk_length_sec).
-                                    # I changed transcriber.py signature to (video_path, visual_mode=False).
-                                    # I probably broke the progress_callback and chunk arguments!!!
-                                    # Review transcriber.py update: Yes, I simplified process_video and removed those args.
-                                    # I need to align the call here.
-                                    # Since I removed chunking logic in V170 for simplicity, we just call:
-                                    
-                                    # Process (Updated V170: Pass visual_mode & PRESERVE progress_callback for V173)
+                                    log_debug(f"Iniciando transcriber.process_video (Intento {attempt+1})")
                                     trans_text = transcriber.process_video(temp_path, visual_mode=use_visual, progress_callback=update_ui)
+                                    log_debug("Transcriber success.")
                                     
                                     # The new process_video returns TEXT directly, not a path!
                                     # (Review transcriber.py: return response.text or full_text)
