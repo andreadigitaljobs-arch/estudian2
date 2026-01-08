@@ -93,10 +93,9 @@ def render_library(assistant):
                      zip_buffer = io.BytesIO()
                      with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zf:
                          # Prepare Regex for Cleaning
-                         # import re # REMOVED: Global import used
                          clean_pattern = re.compile(r'<[^>]+>')
                         
-                        for item in files_data:
+                         for item in files_data:
                              # Clean Content (Remove HTML tags like <span class="sc-key">)
                              raw_txt = item['content'] or ""
                              # Remove HTML
