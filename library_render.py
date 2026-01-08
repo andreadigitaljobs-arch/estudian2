@@ -552,7 +552,11 @@ def render_library(assistant):
                         import json
                         
                         # Clean HTML (<span...>) for Clipboard (User Request V192 Library Copy)
+                        # V197: Also strip Markdown symbols (** ##)
                         clean_content = re.sub(r'<[^>]+>', '', safe_content)
+                        clean_content = re.sub(r'^#+\s*', '', clean_content, flags=re.MULTILINE)
+                        clean_content = re.sub(r'\*\*|__|\*', '', clean_content)
+                        
                         safe_json = json.dumps(clean_content)
                         # JS Component
                         # We use an iframe, so we need to ensure clipboard access is allowed.

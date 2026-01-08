@@ -3121,8 +3121,13 @@ with tab1:
                       
                       # Clean HTML (<span...>) for clipboard
                       raw_txt = item['text']
-                      # Keep Markdown (**, ##) but remove HTML tags
+                      # 1. Remove HTML
                       clean_txt = re.sub(r'<[^>]+>', '', raw_txt)
+                      # 2. Remove Markdown Headers (## Title)
+                      clean_txt = re.sub(r'^#+\s*', '', clean_txt, flags=re.MULTILINE)
+                      # 3. Remove Bold/Italic (**text**, *text*)
+                      clean_txt = re.sub(r'\*\*|__|\*', '', clean_txt)
+                      
                       safe_txt = json.dumps(clean_txt)
                       
                       html_cp = f"""
