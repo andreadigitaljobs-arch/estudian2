@@ -3008,6 +3008,11 @@ with tab1:
                                     # with open(txt_path... (Legacy)
                                     
                                     custom_n = file_renames.get(file.name, os.path.splitext(file.name)[0])
+                                    
+                                    # V198 Fix: Sanitize filename (remove slashes/colons from dates)
+                                    # User reported error with "2024/11/06 18:00"
+                                    custom_n = custom_n.replace("/", "-").replace("\\", "-").replace(":", "-").replace("|", "-")
+                                    
                                     final_name = f"{custom_n}.txt"
                                     
                                     # ROBUST UPLOAD: Retry with timestamp if fails (likely duplicate)
