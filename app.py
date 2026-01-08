@@ -2898,19 +2898,27 @@ with tab1:
             # st.divider()
 
             # --- MEMORY SAFETY CHECK (TRAFFIC CONTROL) ---
+            # --- MEMORY SAFETY CHECK (TRAFFIC CONTROL) ---
             total_size_bytes = sum(f.size for f in uploaded_files)
             total_size_mb = total_size_bytes / (1024 * 1024)
-            SAFE_RAM_LIMIT_MB = 1000 # Increased to 1GB for User Request
+            SAFE_RAM_LIMIT_MB = 1500 # Hard Limit (Server Protection)
+            WARNING_LIMIT_MB = 500   # User Experience Limit (Avoid "Oh no")
             
             if total_size_mb > SAFE_RAM_LIMIT_MB:
                 st.error(
-                    f"🛡️ **LÍMITE DE ESTABILIDAD ({total_size_mb:.0f} MB / {SAFE_RAM_LIMIT_MB} MB)**\n\n"
-                    f"Para evitar que la app se rompa (Over Capacity), mantén tus subidas por debajo de **400 MB** en total.\n"
-                    f"Es mejor subir en tandas pequeñas que reiniciar el servidor a cada rato.\n\n"
-                    f"👉 **ACCIÓN:** Haz clic en la 'X' en la lista de arriba hasta que este mensaje desaparezca.", 
-                    icon="🚦"
+                    f"⛔ **LÍMITE EXCEDIDO ({total_size_mb:.0f} MB)**\n\n"
+                    f"El servidor no puede procesar más de {SAFE_RAM_LIMIT_MB} MB de golpe.\n"
+                    f"👉 **Solución:** Sube los archivos en grupos más pequeños (ej: de 3 en 3).", 
+                    icon="🛑"
                 )
                 st.stop() # Force execution stop
+            elif total_size_mb > WARNING_LIMIT_MB:
+                st.warning(
+                    f"⚠️ **ZONA DE RIESGO ({total_size_mb:.0f} MB)**\n\n"
+                    f"Estás subiendo muchos megas. Si ves la pantalla de 'Oh no', reduce la cantidad.\n"
+                    f"Consejo: Convierte videos pesados a MP3 antes de subir para ir más rápido.",
+                    icon="⚖️"
+                )
 
             # --- FOLDER SELECTION ---
             c_id = st.session_state.get('current_course_id')
@@ -2976,6 +2984,7 @@ with tab1:
             # --- RENAME FEATURE ---
             file_renames = {}
             if uploaded_files:
+                st.caption(f"💡 **Modo Lote:** {len(uploaded_files)} archivos en cola. Se procesarán uno por uno en la carpeta seleccionada.")
                 with st.expander("✍🏻 Renombrar archivos (Opcional)", expanded=True):
                     for i, uf in enumerate(uploaded_files):
                          base = os.path.splitext(uf.name)[0]
