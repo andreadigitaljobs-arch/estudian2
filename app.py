@@ -2950,6 +2950,19 @@ with tab1:
             else:
                 st.warning("⚠️ Por favor selecciona un diplomado en la barra lateral.")
 
+            # V208: Sound on Upload Complete
+            if 'last_upload_count' not in st.session_state:
+                st.session_state['last_upload_count'] = 0
+            
+            curr_count = len(uploaded_files)
+            if curr_count > st.session_state['last_upload_count']:
+                # New file arrived!
+                play_sound('start')
+                st.session_state['last_upload_count'] = curr_count
+            elif curr_count < st.session_state['last_upload_count']:
+                # Files removed, just sync
+                st.session_state['last_upload_count'] = curr_count
+
             st.info(f"📂 {len(uploaded_files)} archivo(s) cargado(s).")
             
             # --- RENAME FEATURE ---
