@@ -311,18 +311,19 @@ st.markdown("""
     }
     
     /* --- SYNC LAYOUT STABILITY (Prevent FOUC) --- */
-    /* REMOVE ALL PADDING & MARGINS - NUCLEAR OPTION */
+    /* REMOVE ALL PADDING & MARGINS - SUPER NUCLEAR OPTION */
     .block-container {
-        padding-top: 1rem !important; /* Keep slight padding for aesthetics */
+        padding-top: 0rem !important;
         padding-bottom: 2rem !important;
-        margin-top: -60px !important; /* FORCE UP */
+        margin-top: -120px !important; /* MASSIVE FORCE UP */
+        transform: translateY(-20px); /* Visual shift */
         max-width: 100% !important;
     }
     
     /* Target the main content wrapper specifically */
     div[data-testid="stAppViewContainer"] > section[data-testid="stMain"] > div.block-container {
         padding-top: 0rem !important;
-        margin-top: -60px !important;
+        margin-top: -120px !important;
     }
 
     /* Hide the top decoration bar completely */
