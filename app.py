@@ -3050,9 +3050,6 @@ with tab_home:
                  st.session_state['redirect_target_name'] = "Zona Quiz"
                  st.session_state['force_chat_tab'] = True
                  st.rerun()
-                                st.rerun()
-            else:
-                st.info("Sin archivos aún", icon="📂")
 
     else:
         st.info("Selecciona o crea un Diplomado en la barra lateral para ver tus estadísticas.")
