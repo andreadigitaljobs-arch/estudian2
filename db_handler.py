@@ -1029,7 +1029,7 @@ def search_global(user_id, course_id, query_text):
 
 def get_weekly_activity(user_id, course_id):
     """
-    Returns a pandas DataFrame with 'Date', 'Type' (Files/Chats), 'Count' for the last 7 days.
+    Returns a pandas DataFrame with 'Date', 'Type' (Files/Chats), 'Count' for the last 30 days.
     """
     import pandas as pd
     from datetime import datetime, timedelta
@@ -1037,17 +1037,18 @@ def get_weekly_activity(user_id, course_id):
     
     data = []
     today = datetime.utcnow().date()
-    dates = [(today - timedelta(days=i)).isoformat() for i in range(6, -1, -1)] # Last 7 days
+    # Expand to 30 days for better visuals
+    range_days = 30
+    dates = [(today - timedelta(days=i)).isoformat() for i in range(range_days - 1, -1, -1)]
     
     try:
-        # 1. Fetch Files created in last 7 days for this course
-        # First get unit IDs as usual
+        start_date = dates[0] + "T00:00:00"
+        
+        # 1. Fetch Files (Last 30 days)
+        # Get unit IDs for course
         units = supabase.table("units").select("id").eq("course_id", course_id).execute().data
         unit_ids = [u['id'] for u in units] if units else []
         
-        start_date = dates[0] + "T00:00:00"
-        
-        # Files Query
         if unit_ids:
             res_files = supabase.table("library_files") \
                 .select("created_at") \
@@ -1059,7 +1060,7 @@ def get_weekly_activity(user_id, course_id):
                 d = f['created_at'][:10]
                 data.append({"Date": d, "Activity": "Archivos"})
 
-        # Chats Query
+        # 2. Fetch Chats (Last 30 days)
         res_chats = supabase.table("chat_sessions") \
             .select("created_at") \
             .eq("user_id", user_id) \
@@ -1070,16 +1071,36 @@ def get_weekly_activity(user_id, course_id):
             d = c['created_at'][:10]
             data.append({"Date": d, "Activity": "Chats"})
             
+        # Create complete timeline to avoid gaps
         df = pd.DataFrame(data)
-        if df.empty:
-            # Return empty struct with correct columns
-            return pd.DataFrame({"Date": dates, "Activity": "Ninguna", "Count": 0})
-            
-        # Group by Date and Activity
-        df['Count'] = 1
-        grouped = df.groupby(['Date', 'Activity']).count().reset_index()
-        return grouped
         
+        # If completely empty, make a dummy "zero" entry for today so chart renders flat but valid
+        if df.empty:
+            df = pd.DataFrame([{"Date": today.isoformat(), "Activity": "Archivos"}, {"Date": today.isoformat(), "Activity": "Chats"}])
+            df = df[0:0] # Empty it back out but keep columns? No, better to just return structured zeros
+            
+        # Grouping Logic
+        if not df.empty:
+            df['Count'] = 1
+            # Group by Date and Activity
+            grouped = df.groupby(['Date', 'Activity']).count().reset_index()
+            
+            # Pivot to fill missing dates with 0
+            pivot = grouped.pivot(index='Date', columns='Activity', values='Count').fillna(0)
+            
+            # Reindex to ensure all 30 days are present
+            idx = pd.Index(dates, name='Date')
+            pivot = pivot.reindex(idx, fill_value=0).reset_index()
+            
+            # Unpivot back for Streamlit simple charts if needed, OR keep wide for Area Chart
+            # Streamlit Area Chart likes Wide format for colors.
+            # Columns: Date, Archivos, Chats
+            return pivot
+        else:
+             # Return empty DataFrame with structure
+             return pd.DataFrame({"Date": dates, "Archivos": [0]*range_days, "Chats": [0]*range_days})
+
     except Exception as e:
         print(f"Activity Error: {e}")
-        return pd.DataFrame()
+        # Return mostly empty structure
+        return pd.DataFrame({"Date": dates, "Archivos": [0]*range_days, "Chats": [0]*range_days})

@@ -2990,13 +2990,22 @@ with tab_home:
 
         st.write("") 
 
-        # 3. WEEKLY ACTIVITY CHART (Visual Impact)
-        with st.expander("📊 Tu Actividad Semanal", expanded=True):
-             act_df = get_weekly_activity(st.session_state['user'].id, current_c_id)
-             if not act_df.empty:
-                st.bar_chart(act_df, x="Date", y="Count", color="Activity", stack=False)
-             else:
-                st.markdown("*No hay actividad reciente.*")
+        # 3. ACTIVITY CHART (Visual Impact)
+        with st.expander("📊 Tu Actividad (Últimos 30 días)", expanded=True):
+             try:
+                 act_df = get_weekly_activity(st.session_state['user'].id, current_c_id)
+                 if not act_df.empty:
+                    # Set Index to Date for correct X-axis
+                    if 'Date' in act_df.columns:
+                        act_df = act_df.set_index('Date')
+                    
+                    # Custom colors: Purple for files, Orange for Chats
+                    st.area_chart(act_df, color=["#4B22DD", "#FF9800"], use_container_width=True)
+                 else:
+                    st.markdown("*No hay actividad reciente.*")
+             except Exception as e:
+                 print(e)
+                 st.info("No se pudo cargar la actividad.")
 
         st.write("")
 
