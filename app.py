@@ -1376,8 +1376,8 @@ if not st.session_state['user']:
             [data-testid="column"]:last-child {
                 display: flex;
                 flex-direction: column;
-                justify-content: center;
-                margin-top: -80px;
+                justify-content: flex-start;
+                margin-top: -200px;
             }
             </style>
             <div id="login_anchor"></div>
@@ -1387,8 +1387,8 @@ if not st.session_state['user']:
         
         logo_html = ""
         if logo_b64:
-             # Height 280px. Adjusted margins: -120px Top (Raised higher), -50px Bottom
-             logo_html = f'<img src="data:image/png;base64,{logo_b64}" style="height: 280px; width: auto; max-width: 100%; display: block; margin: -120px auto -50px auto;">'
+             # Height 280px. Adjusted margins: -180px Top (Much higher), -50px Bottom
+             logo_html = f'<img src="data:image/png;base64,{logo_b64}" style="height: 280px; width: auto; max-width: 100%; display: block; margin: -180px auto -50px auto;">'
         
         # Title: "Vamos a estudiar" - Title lifted closer to logo, inputs compensated
         st.markdown(f'<div style="text-align: center; margin-bottom: 30px; margin-top: 0px;"><div style="display: flex; align-items: center; justify-content: center; margin-bottom: -20px;">{logo_html}</div><div class="messimo-title" style="margin-top: -30px; color: #4B22DD;">¡Vamos a estudiar!</div></div>', unsafe_allow_html=True)
