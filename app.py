@@ -905,33 +905,7 @@ if not st.session_state['user']:
     import datetime
     import base64
     
-    # --- HUNTER-KILLER: FORCE REMOVE SCROLLER ON LOGIN SCREEN ---
-    components.html("""
-    <script>
-        const root = window.parent.document;
-        
-        // 1. CLEANUP OLD SCROLLERS
-        if (window.parent.estudian2_scroller_interval) clearInterval(window.parent.estudian2_scroller_interval);
-        const oldScroller = root.getElementById('estudian2_nuclear_scroller');
-        if (oldScroller) oldScroller.remove();
-        
-        // 2. ERASE NAVIGATION ARROWS (V231/V223) ON LOGIN SCREEN
-        const killArrows = () => {
-             const arrowIds = ['v231_auth_elevator', 'v223_global_elevator', 'v222_nav_elevator'];
-             arrowIds.forEach(id => {
-                 const el = root.getElementById(id);
-                 if (el) el.remove();
-             });
-        };
-        
-        // Run immediately and persistently during login interaction
-        killArrows();
-        const arrowKiller = setInterval(killArrows, 500);
-        
-        // Stop killing after 10s (optional, but keeps it clean)
-        // setTimeout(() => clearInterval(arrowKiller), 10000); 
-    </script>
-    """, height=0)
+
 
     # --- HELPER: ASSETS ---
     @st.cache_data
@@ -1063,8 +1037,8 @@ if not st.session_state['user']:
         
         /* 2. ALIGNMENT CONTAINER */
         .main .block-container {{
-            padding-top: 2rem !important; /* Some padding for internal spacing */
-            margin-top: -10rem !important; /* NEGATIVE MARGIN: Pull entire app UP */
+            padding-top: 4rem !important; /* Balanced Padding */
+            margin-top: 0px !important; /* Reset Margin */
             padding-bottom: 5vh !important;
             max_width: 1200px !important;
             display: flex;
@@ -1331,6 +1305,28 @@ if not st.session_state['user']:
         # Sign up button/link
         st.markdown('<div style="text-align: center; color: #6b7280; font-size: 0.9rem; margin-top: 15px;">¿No tienes una cuenta? <span style="color: #4B22DD; font-weight: 600;">Regístrate</span></div>', unsafe_allow_html=True)
 
+
+    # --- HUNTER-KILLER: MOVED TO BOTTOM (V236) TO PREVENT LAYOUT SHIFT ---
+    components.html("""
+    <script>
+        const root = window.parent.document;
+        // 1. CLEANUP OLD SCROLLERS
+        if (window.parent.estudian2_scroller_interval) clearInterval(window.parent.estudian2_scroller_interval);
+        const oldScroller = root.getElementById('estudian2_nuclear_scroller');
+        if (oldScroller) oldScroller.remove();
+        
+        // 2. ERASE NAVIGATION ARROWS ON LOGIN
+        const killArrows = () => {
+             const arrowIds = ['v231_auth_elevator', 'v223_global_elevator', 'v222_nav_elevator'];
+             arrowIds.forEach(id => {
+                 const el = root.getElementById(id);
+                 if (el) el.remove();
+             });
+        };
+        killArrows();
+        const arrowKiller = setInterval(killArrows, 500);
+    </script>
+    """, height=0)
 
     st.stop()
 
