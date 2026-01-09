@@ -449,9 +449,10 @@ if 'user' not in st.session_state:
 cookie_manager = stx.CookieManager()
 
 # --- AUTO-LOGIN CHECK ---
-if not st.session_state['user'] and not st.session_state.get('force_logout') and not st.query_params.get('logout'):
+# Only skip auto-login if user explicitly logged out (force_logout flag)
+if not st.session_state['user'] and not st.session_state.get('force_logout'):
     # Try to get token from cookie
-    # We use REFERSH TOKEN for long-term persistence (simpler than session reconstruction)
+    # We use REFRESH TOKEN for long-term persistence (simpler than session reconstruction)
     try:
         time.sleep(0.1)
         refresh_token = cookie_manager.get("supabase_refresh_token")
@@ -464,12 +465,16 @@ if not st.session_state['user'] and not st.session_state.get('force_logout') and
                  st.session_state['supabase_session'] = res.session
                  # CRITICAL FIX: Update cookie with NEW refresh token to keep chain alive
                  cookie_manager.set("supabase_refresh_token", res.session.refresh_token, expires_at=datetime.datetime.now() + datetime.timedelta(days=30))
-                 st.success("⚡ Sesión restaurada. Actualizando...")
-                 time.sleep(2) # Allow cookie to set
+                 print(f"✅ Auto-login successful for: {res.user.email}")
+                 time.sleep(1) # Allow cookie to set
                  st.rerun()
                  
     except Exception as e:
         print(f"Auto-login failed: {e}")
+
+# Clear force_logout flag after it's been checked (one-time use)
+if st.session_state.get('force_logout'):
+    st.session_state['force_logout'] = False
 
 # --- SCROLLBAR & OVERFLOW CONTROL (Conditional) ---
 is_login_view = st.session_state.get('user') is None
