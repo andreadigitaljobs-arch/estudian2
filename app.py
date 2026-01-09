@@ -840,7 +840,7 @@ THEME_CSS = """
 </style>
 """
 st.markdown(THEME_CSS, unsafe_allow_html=True)
-st.toast("DEBUG: V227 Cargado (Modo Escopeta) 🔫", icon="🛠️")
+st.toast("DEBUG: V229 ACTIVADO (Modo Nuclear) ☢️", icon="⚠️")
 
 
 
@@ -916,43 +916,40 @@ components.html("""
             return btn;
         };
 
-        // 4. SCROLL LOGIC (V227 - "The Shotgun Pro")
-        // We don't know exactly which container has the scrollbar in Cloud,
-        // so we scroll ALL likely candidates.
-        const scrollAll = (topValue) => {
-            const targets = [
-                doc.querySelector('[data-testid="stAppViewContainer"]'),
-                doc.querySelector('section.main'), 
-                doc.documentElement,
-                doc.body
-            ];
+        // 4. SCROLL LOGIC (V229 - "The Nuclear Option")
+        // If targeted scrolling fails, we find ANYTHING that looks scrollable and move it.
+        const scrollNuclear = (toBottom) => {
+            console.log("☢️ Nuclear Scroll Activated");
+            const val = toBottom ? 9999999 : 0;
+            const behavior = 'smooth'; 
             
-            console.log("🛗 [Elevator] Scrolling...");
+            // A. Try Window First
+            try { window.parent.scrollTo({ top: val, behavior: behavior }); } catch(e){}
+
+            // B. Scan DOM for Scrollable Containers
+            const all = doc.querySelectorAll('*');
+            let moved = 0;
             
-            // 1. Scroll Elements
-            targets.forEach(t => {
-                if (t) {
-                     try {
-                        t.scrollTo({ top: topValue, behavior: 'smooth' });
-                     } catch(e) { console.log("Err:", e); }
+            all.forEach(el => {
+                // Check if element has content overflowing
+                if (el.scrollHeight > el.clientHeight) {
+                    const style = window.parent.getComputedStyle(el);
+                    // Check if it is set to scroll
+                    if (style.overflowY === 'scroll' || style.overflowY === 'auto' || style.overflow === 'auto') {
+                         el.scrollTo({ top: val, behavior: behavior });
+                         moved++;
+                    }
                 }
             });
-            
-            // 2. Scroll Window (Fallback)
-            try {
-                window.parent.scrollTo({ top: topValue, behavior: 'smooth' });
-            } catch(e) {}
+            console.log(`☢️ Moved ${moved} containers.`);
         };
 
         const scrollUp = () => {
-             scrollAll(0);
+             scrollNuclear(false);
         };
 
         const scrollDown = () => {
-             // Find max height among targets to know where "bottom" is
-             const t = doc.querySelector('[data-testid="stAppViewContainer"]') || doc.body;
-             const h = t.scrollHeight || 100000;
-             scrollAll(h);
+             scrollNuclear(true);
         };
 
         // 5. BUILD
