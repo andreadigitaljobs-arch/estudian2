@@ -909,19 +909,27 @@ if not st.session_state['user']:
     components.html("""
     <script>
         const root = window.parent.document;
-        // 1. Clear Interval
+        
+        // 1. CLEANUP OLD SCROLLERS
         if (window.parent.estudian2_scroller_interval) clearInterval(window.parent.estudian2_scroller_interval);
+        const oldScroller = root.getElementById('estudian2_nuclear_scroller');
+        if (oldScroller) oldScroller.remove();
         
-        // 2. Kill Button Immediately
-        const btn = root.getElementById('estudian2_nuclear_scroller');
-        if (btn) btn.remove();
+        // 2. ERASE NAVIGATION ARROWS (V231/V223) ON LOGIN SCREEN
+        const killArrows = () => {
+             const arrowIds = ['v231_auth_elevator', 'v223_global_elevator', 'v222_nav_elevator'];
+             arrowIds.forEach(id => {
+                 const el = root.getElementById(id);
+                 if (el) el.remove();
+             });
+        };
         
-        // 3. Watch and Kill (Extra Security for 5 seconds)
-        const killer = setInterval(() => {
-             const b = root.getElementById('estudian2_nuclear_scroller');
-             if (b) b.remove();
-        }, 50);
-        setTimeout(() => clearInterval(killer), 5000);
+        // Run immediately and persistently during login interaction
+        killArrows();
+        const arrowKiller = setInterval(killArrows, 500);
+        
+        // Stop killing after 10s (optional, but keeps it clean)
+        // setTimeout(() => clearInterval(arrowKiller), 10000); 
     </script>
     """, height=0)
 
@@ -1055,7 +1063,7 @@ if not st.session_state['user']:
         
         /* 2. ALIGNMENT CONTAINER */
         .main .block-container {{
-            padding-top: 5rem !important; 
+            padding-top: 2rem !important; 
             padding-bottom: 5vh !important;
             max_width: 1200px !important;
             display: flex;
