@@ -528,10 +528,10 @@ components.html(f"""
                 height: 100% !important;
             }}
             
-            /* Clean Layout (Always Active) */
+            /* Clean Layout (Always Active) - FORCE CONTENT UP */
             .block-container {{
                 padding-top: 0px !important;
-                margin-top: 0px !important;
+                margin-top: -80px !important;
                 max-width: 100% !important;
                 padding-bottom: 100px !important; /* Ensure space for chat input */
             }}
