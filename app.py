@@ -3286,6 +3286,7 @@ with tab1:
                         # Update Status for Lote
                         status_text.markdown(f"**🚀 Procesando Archivo {batch_num} de {total_files}**")
                         log_debug(f"--- BATCH {batch_num} START ---")
+                        st.write(f"DEBUG: Iniciando batch {batch_num}, archivos en batch: {len(batch)}")
                         
                         for file in batch:
                             t_unit_id = selected_unit_id 
@@ -3396,7 +3397,11 @@ with tab1:
                                     time.sleep(10)
                                     attempt += 1
                                 except Exception as e:
-                                    st.error(f"❌ Error fatal en {file.name}: {e}")
+                                    error_msg = f"❌ Error fatal en {file.name}: {str(e)}"
+                                    st.error(error_msg)
+                                    log_debug(f"EXCEPTION: {error_msg}")
+                                    import traceback
+                                    st.code(traceback.format_exc())
                                     attempt = max_retries # Abort this file
                                 finally:
                                     pass
