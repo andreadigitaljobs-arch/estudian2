@@ -2285,10 +2285,10 @@ with st.sidebar:
             </style>
         """, unsafe_allow_html=True)
 
-    # --- V256: DEPLOYMENT VERIFIER ---
+    # --- V257: DEPLOYMENT VERIFIER ---
     st.markdown("""
         <div style="position: fixed; bottom: 10px; left: 10px; opacity: 0.4; font-size: 10px; color: #888; z-index: 100;">
-            Build V256 (Progress Sync)
+            Build V257 (Fix)
         </div>
     """, unsafe_allow_html=True)
 
@@ -3266,20 +3266,6 @@ with tab1:
                 if not selected_unit_id:
                     st.error("Error: Carpeta no seleccionada.")
                 else:
-                    # --- V256: INITIALIZE PROGRESS STATE ---
-                    if 'transcription_progress_msg' not in st.session_state:
-                        st.session_state['transcription_progress_msg'] = 'Iniciando...'
-                    if 'transcription_progress_pct' not in st.session_state:
-                        st.session_state['transcription_progress_pct'] = 0
-                    
-                    # Inject state into DOM
-                    st.markdown(f"""
-                        <script>
-                            window.parent.document.body.setAttribute('data-transcription-message', '{st.session_state['transcription_progress_msg']}');
-                            window.parent.document.body.setAttribute('data-transcription-percentage', '{st.session_state['transcription_progress_pct']}');
-                        </script>
-                    """, unsafe_allow_html=True)
-                    
                     progress_bar = st.progress(0)
                     status_text = st.empty()
                     import time
@@ -3339,17 +3325,17 @@ with tab1:
                                         status_text.markdown(f"**⚡ {msg} ({pct}%)**")
                                         progress_bar.progress(prog)
                                         
-                                        # --- V256: UPDATE SESSION STATE FOR SMART LOADER ---
-                                        st.session_state['transcription_progress_msg'] = msg
-                                        st.session_state['transcription_progress_pct'] = pct
-                                        
-                                        # Push to DOM immediately
-                                        st.markdown(f"""
-                                            <script>
-                                                window.parent.document.body.setAttribute('data-transcription-message', '{msg.replace("'", "\\'")}');
-                                                window.parent.document.body.setAttribute('data-transcription-percentage', '{pct}');
-                                            </script>
-                                        """, unsafe_allow_html=True)
+                                        # --- V257: SIMPLIFIED UPDATE ---
+                                        try:
+                                            msg_clean = msg.replace("'", "")
+                                            components.html(f"""
+                                                <script>
+                                                    window.parent.document.body.setAttribute('data-transcription-message', '{msg_clean}');
+                                                    window.parent.document.body.setAttribute('data-transcription-percentage', '{pct}');
+                                                </script>
+                                            """, height=0)
+                                        except:
+                                            pass
                                     
                                     # Process
                                     log_debug(f"Iniciando transcriber.process_video (Intento {attempt+1})")
