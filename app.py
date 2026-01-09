@@ -89,7 +89,7 @@ st.markdown("""
                 #estudian2_cute_loader {
                     position: fixed;
                     top: 0; left: 0; width: 100%; height: 100%;
-                    background: rgba(248, 249, 254, 0.95);
+                    background: rgba(248, 249, 254, 0.82); /* More subtle */
                     display: flex;
                     flex-direction: column;
                     justify-content: center;
@@ -97,19 +97,20 @@ st.markdown("""
                     z-index: 999999999;
                     opacity: 0;
                     pointer-events: none;
-                    transition: opacity 0.3s ease;
+                    transition: opacity 0.2s ease; /* Snappier transition */
+                    backdrop-filter: blur(3px); /* Glassmorphism feel */
                 }
                 #estudian2_cute_loader.active {
                     opacity: 1;
                     pointer-events: auto;
                 }
                 .cute-spinner {
-                    width: 32px;
-                    height: 32px;
-                    border: 4px solid rgba(75, 34, 221, 0.1);
-                    border-top: 4px solid #4B22DD;
+                    width: 30px;
+                    height: 30px;
+                    border: 3.5px solid rgba(75, 34, 221, 0.1);
+                    border-top: 3.5px solid #4B22DD;
                     border-radius: 50%;
-                    animation: cute-spin 0.7s linear infinite;
+                    animation: cute-spin 0.6s linear infinite; /* Faster spin */
                 }
                 .cute-text {
                     margin-top: 15px;
@@ -130,17 +131,19 @@ st.markdown("""
         loader.innerHTML = '<div class="cute-spinner"></div><div class="cute-text">Cargando...</div>';
         root.body.appendChild(loader);
 
-        // --- 4. REVEAL LOGIC (Reactive) ---
+        // --- 4. REVEAL LOGIC (Reactive & Snappy) ---
         const syncLoader = () => {
             const state = appNode.getAttribute('data-test-script-state');
             if (state === 'running') {
                 loader.classList.add('active');
             } else {
+                // Near-instant reveal when idle
                 setTimeout(() => {
-                    if (appNode.getAttribute('data-test-script-state') !== 'running') {
+                    const currentState = appNode.getAttribute('data-test-script-state');
+                    if (currentState !== 'running') {
                         loader.classList.remove('active');
                     }
-                }, 400);
+                }, 50); 
             }
         };
 
