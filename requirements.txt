@@ -7,4 +7,4 @@ streamlit-paste-button
 python-docx
 markdown
 imageio-ffmpeg
-# TRIGGER_V248_SNAPPY_LOADER
+# TRIGGER_V249_HYBRID_SNAPPY_LOADER

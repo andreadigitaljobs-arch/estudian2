@@ -64,53 +64,51 @@ st.set_page_config(
     initial_sidebar_state="expanded" if st.session_state.get('user') else "collapsed"
 )
 
-# --- V247: ULTRA-PERSISTENT CUTE LOADER (STATE REACTIVE) ---
-# We inject this into the main document to ensure it survives every Streamlit rerun.
-st.markdown("""
-<div id="estudian2_style_injector" style="display:none;"></div>
+# --- V249: HYBRID SNAPPY LOADER (RE-FIXED) ---
+components.html("""
 <script>
     (function() {
         const root = window.parent.document;
         const appNode = root.querySelector('.stApp');
         if (!appNode) return;
-        
-        // --- 1. CLEANUP OLD LOADERS (Avoid accumulation) ---
+
+        // 1. Force Cleanup ensuring no ghost loaders exist
         ['estudian2_cute_loader', 'estudian2_master_loader'].forEach(id => {
             const old = root.getElementById(id);
             if (old) old.remove();
         });
 
-        // --- 2. INJECT CSS ---
-        const styleId = 'estudian2_persistent_css';
+        // 2. Inject Styles (Only once)
+        const styleId = 'estudian2_snappy_css';
         if (!root.getElementById(styleId)) {
             const style = root.createElement('style');
             style.id = styleId;
             style.innerHTML = `
                 #estudian2_cute_loader {
                     position: fixed;
-                    top: 0; left: 0; width: 100%; height: 100%;
-                    background: rgba(248, 249, 254, 0.82); /* More subtle */
+                    top: 0; left: 0; width: 100vw; height: 100vh;
+                    background: rgba(248, 249, 254, 0.85);
                     display: flex;
                     flex-direction: column;
                     justify-content: center;
                     align-items: center;
-                    z-index: 999999999;
+                    z-index: 999999999 !important;
                     opacity: 0;
                     pointer-events: none;
-                    transition: opacity 0.2s ease; /* Snappier transition */
-                    backdrop-filter: blur(3px); /* Glassmorphism feel */
+                    transition: opacity 0.2s ease;
+                    backdrop-filter: blur(3px);
                 }
                 #estudian2_cute_loader.active {
                     opacity: 1;
                     pointer-events: auto;
                 }
                 .cute-spinner {
-                    width: 30px;
-                    height: 30px;
+                    width: 32px;
+                    height: 32px;
                     border: 3.5px solid rgba(75, 34, 221, 0.1);
                     border-top: 3.5px solid #4B22DD;
                     border-radius: 50%;
-                    animation: cute-spin 0.6s linear infinite; /* Faster spin */
+                    animation: cute-spin 0.6s linear infinite;
                 }
                 .cute-text {
                     margin-top: 15px;
@@ -125,37 +123,34 @@ st.markdown("""
             root.head.appendChild(style);
         }
 
-        // --- 3. CREATE LOADER ---
+        // 3. Create Loader Element
         const loader = root.createElement('div');
         loader.id = 'estudian2_cute_loader';
         loader.innerHTML = '<div class="cute-spinner"></div><div class="cute-text">Cargando...</div>';
         root.body.appendChild(loader);
 
-        // --- 4. REVEAL LOGIC (Reactive & Snappy) ---
-        const syncLoader = () => {
+        // 4. Robust State Observer
+        const updateLoader = () => {
             const state = appNode.getAttribute('data-test-script-state');
             if (state === 'running') {
                 loader.classList.add('active');
             } else {
-                // Near-instant reveal when idle
                 setTimeout(() => {
-                    const currentState = appNode.getAttribute('data-test-script-state');
-                    if (currentState !== 'running') {
+                    if (appNode.getAttribute('data-test-script-state') !== 'running') {
                         loader.classList.remove('active');
                     }
-                }, 50); 
+                }, 80); // Small snappy delay
             }
         };
 
-        // Initialize state
-        syncLoader();
-
-        // Observe all state changes
-        const observer = new MutationObserver(syncLoader);
+        const observer = new MutationObserver(updateLoader);
         observer.observe(appNode, { attributes: true, attributeFilter: ['data-test-script-state'] });
+        
+        // Initial check
+        updateLoader();
     })();
 </script>
-""", unsafe_allow_html=True)
+""", height=0)
 
 # --- EMERGENCY SIDEBAR RESCUE (V153: CLEAN UP) ---
 st.markdown("""
