@@ -3337,10 +3337,10 @@ with tab1:
                             batch_num = (start_idx // BATCH_SIZE) + 1
                             total_batches = (total_files + BATCH_SIZE - 1) // BATCH_SIZE
                             
-                             # Update Status for Lote
-                             status_text.markdown(f"**🚀 Procesando Archivo {batch_num} de {total_files}**")
-                             log_debug(f"--- BATCH {batch_num} START ---")
-                             # Clean UI: Removed raw DEBUG print
+                            # Update Status for Lote
+                            status_text.markdown(f"**🚀 Procesando Archivo {batch_num} de {total_files}**")
+                            log_debug(f"--- BATCH {batch_num} START ---")
+                            # Clean UI: Removed raw DEBUG print
                             
                             for file in batch:
                                 t_unit_id = selected_unit_id 
