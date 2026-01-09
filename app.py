@@ -838,7 +838,9 @@ THEME_CSS = """
         transform: translateY(0);
     }
 </style>
+"""
 st.markdown(THEME_CSS, unsafe_allow_html=True)
+
 
 # --- DUAL NAVIGATION ARROWS (V223 - "The Global Elevator") ---
 # MOVED TO TOP to ensure it runs regardless of st.stop() later in the script.
