@@ -315,15 +315,15 @@ st.markdown("""
     .block-container {
         padding-top: 0rem !important;
         padding-bottom: 2rem !important;
-        margin-top: -200px !important; /* ULTRA MASSIVE FORCE UP */
-        transform: translateY(-20px); /* Visual shift */
+        margin-top: -350px !important; /* ULTRA MEGA MASSIVE FORCE UP */
+        transform: translateY(-50px); /* Visual shift */
         max-width: 100% !important;
     }
     
     /* Target the main content wrapper specifically */
     div[data-testid="stAppViewContainer"] > section[data-testid="stMain"] > div.block-container {
         padding-top: 0rem !important;
-        margin-top: -200px !important;
+        margin-top: -350px !important;
     }
 
     /* Hide the top decoration bar completely */
