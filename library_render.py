@@ -397,7 +397,7 @@ def render_library(assistant):
             
             for f in files:
                 # File Row Layout: Icon | Name | Actions
-                r_c1, r_c2, r_c3 = st.columns([0.05, 0.75, 0.2], vertical_alignment="center")
+                r_c1, r_c2, r_c3 = st.columns([0.05, 0.75, 0.2], vertical_alignment="bottom")
                 
                 with r_c1:
                     icon = "📝" if f['type'] == 'text' else "📎"
