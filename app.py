@@ -137,9 +137,7 @@ components.html("""
         const updateLoader = () => {
             const state = appNode.getAttribute('data-test-script-state');
             
-            // --- V253: INTELLIGENT SUPPRESSION ---
-            // If we are transcribing, we want to see the progress bar, not the lilac screen.
-            // We use a body attribute as a flag set from Python.
+            // --- V254: IMPROVED INTELLIGENT SUPPRESSION ---
             const isTranscribing = root.body.getAttribute('data-is-transcribing') === 'true';
 
             if (state === 'running' && !isTranscribing) {
@@ -150,7 +148,7 @@ components.html("""
                     if (currentState !== 'running' || isTranscribing) {
                         loader.classList.remove('active');
                     }
-                }, 80); // Small snappy delay
+                }, 80); 
             }
         };
 
@@ -2248,6 +2246,7 @@ with st.sidebar:
     # LOGIC: Python-Based Toggle (Clean & Synchronous)
     # When toggle is changed, script reruns. We simply inject the hiding CSS if needed.
     if not study_mode:
+        st.markdown("<style>span[style*='background-color'] { background-color: transparent !important; color: inherit !important; border: none !important; padding: 0 !important; }</style>", unsafe_allow_html=True)
         st.markdown("""
             <style>
             .sc-base, .sc-example, .sc-note, .sc-data, .sc-key,
@@ -2260,6 +2259,13 @@ with st.sidebar:
             }
             </style>
         """, unsafe_allow_html=True)
+
+    # --- V254: DEPLOYMENT VERIFIER ---
+    st.markdown("""
+        <div style="position: fixed; bottom: 10px; left: 10px; opacity: 0.4; font-size: 10px; color: #888; z-index: 100;">
+            Build V254.4 (Sync: OK)
+        </div>
+    """, unsafe_allow_html=True)
 
     st.markdown('<div class="aesthetic-sep"></div>', unsafe_allow_html=True)
 
@@ -3235,12 +3241,18 @@ with tab1:
                 if not selected_unit_id:
                     st.error("Error: Carpeta no seleccionada.")
                 else:
-                    # --- V253: ACTIVATE LOADER SUPPRESSION ---
+                    # --- V254: IMMEDIATE LOADER KILL ---
                     st.markdown("""
                         <script>
-                            window.parent.document.body.setAttribute('data-is-transcribing', 'true');
+                            const root = window.parent.document;
+                            root.body.setAttribute('data-is-transcribing', 'true');
+                            const loader = root.getElementById('estudian2_cute_loader');
+                            if (loader) loader.classList.remove('active');
+                            console.log("🚫 Loader Suppressed for Transcription");
                         </script>
                     """, unsafe_allow_html=True)
+                    
+                    st.info("🔄 **Progreso en pantalla:** El cargador lila se ha desactivado temporalmente para que puedas ver el avance.")
 
                     progress_bar = st.progress(0)
                     status_text = st.empty()
@@ -3381,10 +3393,11 @@ with tab1:
                             
                     status_text.success("¡Misión Cumplida! Todos los archivos han sido procesados. 🏁")
                     
-                    # --- V253: DEACTIVATE LOADER SUPPRESSION ---
+                    # --- V254: RESTORE LOADER ---
                     st.markdown("""
                         <script>
                             window.parent.document.body.setAttribute('data-is-transcribing', 'false');
+                            console.log("✅ Loader Restored");
                         </script>
                     """, unsafe_allow_html=True)
 
