@@ -3580,9 +3580,9 @@ with tab1:
                       import json
                       import streamlit.components.v1 as components
                       
-                       # Clean text (User Request V298)
-                       raw_txt = item['text']
-                       clean_txt = clean_markdown(raw_txt)
+                      # Clean text (User Request V298)
+                      raw_txt = item['text']
+                      clean_txt = clean_markdown(raw_txt)
                       
                       safe_txt = json.dumps(clean_txt)
                       
