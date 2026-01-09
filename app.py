@@ -228,8 +228,8 @@ try:
     # Use secrets key by default
     _api_key = st.secrets.get("GEMINI_API_KEY")
     if _api_key:
-         # V280: Switch to Stable 1.5 Flash to fix empty responses
-         transcriber = Transcriber(api_key=_api_key, model_name="gemini-1.5-flash")
+         # V285: Use correct model name for Gemini 1.5 Flash
+         transcriber = Transcriber(api_key=_api_key, model_name="gemini-1.5-flash-latest")
          assistant = StudyAssistant(api_key=_api_key)
     else:
          transcriber = None
