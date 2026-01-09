@@ -3351,6 +3351,7 @@ with tab1:
                             try:
                                 # Memory-Safe Write (Chunk by Chunk) to avoid RAM duplication
                                 log_debug("Inicio escritura disco...")
+                                file.seek(0)  # CRITICAL FIX: Ensure pointer is at start
                                 with open(temp_path, "wb") as f:
                                     # Write in 4MB chunks
                                     while True:
@@ -3394,16 +3395,15 @@ with tab1:
                                     log_debug(f"Iniciando transcriber.process_video (Intento {attempt+1})")
                                     trans_text = transcriber.process_video(temp_path, visual_mode=use_visual, progress_callback=update_ui)
                                     log_debug("Transcriber success.")
+
+                                    # Validation check
+                                    if trans_text.startswith("[ERROR]"):
+                                        raise Exception(trans_text)
                                     
                                     # The new process_video returns TEXT directly, not a path!
                                     # (Review transcriber.py: return response.text or full_text)
                                     
                                     # So we skip the open() step.
-                                    
-                                    # txt_path = ... (Legacy)
-                                    
-                                    # Save
-                                    # with open(txt_path... (Legacy)
                                     
                                     custom_n = file_renames.get(file.name, os.path.splitext(file.name)[0])
                                     
