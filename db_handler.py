@@ -1090,11 +1090,19 @@ def get_weekly_activity(user_id, course_id):
             
             # Reindex to ensure all 30 days are present
             idx = pd.Index(dates, name='Date')
-            pivot = pivot.reindex(idx, fill_value=0).reset_index()
+            pivot = pivot.reindex(idx, fill_value=0)
             
-            # Unpivot back for Streamlit simple charts if needed, OR keep wide for Area Chart
-            # Streamlit Area Chart likes Wide format for colors.
-            # Columns: Date, Archivos, Chats
+            # CRITICAL FIX: Ensure both columns exist for consistent coloring
+            expected_cols = ['Archivos', 'Chats']
+            for col in expected_cols:
+                if col not in pivot.columns:
+                    pivot[col] = 0
+            
+            # Enforce Order: Archivos (Purple), Chats (Orange)
+            pivot = pivot[expected_cols]
+            
+            pivot = pivot.reset_index()
+            
             return pivot
         else:
              # Return empty DataFrame with structure
