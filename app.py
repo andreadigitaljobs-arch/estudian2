@@ -1364,10 +1364,15 @@ if not st.session_state['user']:
 
 
 
-# --- DUAL NAVIGATION ARROWS (V231 - "Authenticated Nuclear Elevator") ---
-# INJECTED HERE to ensure it ONLY runs for logged-in users (after st.stop() above).
-components.html("""
-<script>
+# --- DUAL NAVIGATION ARROWS (V243 - Conditional Visibility) ---
+def inject_navigation_arrows():
+    # Only show arrows on pages with actual scrollable content (all except Inicio)
+    current_tab = st.session_state.get('redirect_target_name', 'Inicio')
+    if current_tab == 'Inicio' and not st.session_state.get('dashboard_mode'):
+        return # Hide on generic Home dashboard to keep it clean
+
+    components.html("""
+    <script>
     const setupElevator = () => {
         const doc = window.parent.document;
         const CONTAINER_ID = 'v231_auth_elevator';
@@ -2070,58 +2075,79 @@ st.markdown(CSS_STYLE, unsafe_allow_html=True)
 # 1. GLOBAL LOADING FIX (Always running)
 components.html("""
 <script>
-    (function() {
         const root = window.parent.document;
         
-        // Inject Base CSS
+        // 1. Inject Styles (Loading Overlay + UI Fixes)
         const style = root.createElement('style');
-        style.id = 'estudian2_nuclear_overlay_kill';
+        style.id = 'estudian2_loading_styles';
         style.innerHTML = `
-            [data-testid="stAppViewBlockContainer"],
-            [data-testid="stAppViewContainer"],
-            [data-testid="stMainViewContainer"],
-            iframe, .stApp, section.main, .block-container {
-                opacity: 1 !important;
-                filter: none !important;
-                transition: none !important;
+            #estudian2_loading_overlay {
+                position: fixed;
+                top: 0; left: 0; width: 100%; height: 100%;
+                background-color: #F8F9FE;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                z-index: 99999999;
+                transition: opacity 0.5s ease;
             }
-            .stApp::before, .stApp::after, 
-            [data-testid="stAppViewContainer"]::before,
-            [data-testid="stAppViewContainer"]::after {
+            .estudian2_spinner {
+                width: 50px;
+                height: 50px;
+                border: 5px solid rgba(75, 34, 221, 0.1);
+                border-top: 5px solid #4B22DD;
+                border-radius: 50%;
+                animation: estudian2_spin 1s linear infinite;
+                margin-top: 20px;
+            }
+            @keyframes estudian2_spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+            .loading-logo {
+                width: 150px;
+                opacity: 0.8;
+            }
+            
+            /* Mask UI while loading to prevent "desprolijo" look */
+            [data-testid="stAppViewContainer"].loading_active {
                 display: none !important;
-                opacity: 0 !important;
-            }
-            /* NUCLEAR SCROLLBAR HIDE (PARENT LEVEL) */
-            ::-webkit-scrollbar {
-                width: 0px !important;
-                background: transparent !important;
-                display: none !important;
-            }
-            html, body {
-                scrollbar-width: none !important;
-                -ms-overflow-style: none !important; 
-                overflow-y: auto !important; /* Keep scrolling, hide bar */
             }
         `;
         if (!root.getElementById(style.id)) root.head.appendChild(style);
 
-        // REAL-TIME VIGILANTE OBSERVER
+        // 2. Create Overlay if it doesn't exist
+        if (!root.getElementById('estudian2_loading_overlay')) {
+            const overlay = root.createElement('div');
+            overlay.id = 'estudian2_loading_overlay';
+            overlay.innerHTML = `
+                <img src="https://e-education.streamlit.app/~/+/media/0a9e7f8b9e6e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8/logo_sidebar.png" class="loading-logo" onerror="this.src='https://cdn-icons-png.flaticon.com/512/3413/3413535.png'">
+                <div class="estudian2_spinner"></div>
+            `;
+            root.body.appendChild(overlay);
+            
+            // Mask the App View initially
+            const app = root.querySelector('[data-testid="stAppViewContainer"]');
+            if (app) app.classList.add('loading_active');
+        }
+
+        // 3. Observer to Kill Loading once "running" state is gone
         const observer = new MutationObserver(() => {
+            const app = root.querySelector('[data-testid="stAppViewContainer"]');
+            const overlay = root.getElementById('estudian2_loading_overlay');
             const state = root.querySelector('.stApp')?.getAttribute('data-test-script-state');
-            if (state === 'running') {
-                const iframes = root.querySelectorAll('iframe');
-                iframes.forEach(i => {
-                    i.style.opacity = '1';
-                    i.style.filter = 'none';
-                });
-                const containers = root.querySelectorAll('[data-testid*="Container"]');
-                containers.forEach(c => {
-                    c.style.opacity = '1';
-                    c.style.filter = 'none';
-                });
+            
+            if (state === 'idle' && overlay) {
+                // Wait a tiny bit for final render
+                setTimeout(() => {
+                    overlay.style.opacity = '0';
+                    if (app) app.classList.remove('loading_active');
+                    setTimeout(() => { if (overlay) overlay.remove(); }, 500);
+                }, 800);
             }
         });
-        observer.observe(root.body, { attributes: true, subtree: true, attributeFilter: ['style', 'data-test-script-state'] });
+        observer.observe(root.body, { attributes: true, subtree: true, attributeFilter: ['data-test-script-state'] });
     })();
 </script>
 """, height=0)
