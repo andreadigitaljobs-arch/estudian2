@@ -1930,6 +1930,16 @@ CSS_STYLE = """
         border: 1px solid #CEEAD6;
     }
 
+
+    /* GLOBAL CONTENT POSITIONING - Move all tabs higher */
+    section.main > div {
+        padding-top: 2rem !important;
+    }
+    
+    [data-testid="stAppViewContainer"] > section.main {
+        padding-top: 2rem !important;
+    }
+
     /* TABS */
 
 
