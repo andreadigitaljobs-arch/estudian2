@@ -2992,7 +2992,7 @@ with tab_home:
 
         # 3. WEEKLY ACTIVITY CHART (Visual Impact)
         with st.expander("📊 Tu Actividad Semanal", expanded=True):
-             act_df = get_weekly_activity(st.session_state['user'].id, st.session_state['current_course']['id'])
+             act_df = get_weekly_activity(st.session_state['user'].id, current_c_id)
              if not act_df.empty:
                 st.bar_chart(act_df, x="Date", y="Count", color="Activity", stack=False)
              else:
@@ -3007,7 +3007,7 @@ with tab_home:
             st.subheader("⏱️ Continuar donde lo dejaste")
             # Smart Continuity Card logic (Existing)
             last_chat = get_recent_chats(st.session_state['user'].id, limit=1)
-            last_file = get_recent_files(st.session_state['current_course']['id'], limit=1)
+            last_file = get_recent_files(current_c_id, limit=1)
 
             if last_chat:
                lc = last_chat[0]
