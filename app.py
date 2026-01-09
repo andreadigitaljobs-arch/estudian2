@@ -1038,7 +1038,7 @@ if not st.session_state['user']:
         /* 2. ALIGNMENT CONTAINER */
         .main .block-container {{
             padding-top: 1rem !important; /* Minimal Spacer */
-            margin-top: -4rem !important; /* Gentle Lift */
+            margin-top: -8rem !important; /* AGGRESSIVE LIFT */
             padding-bottom: 5vh !important;
             max_width: 1200px !important;
             display: flex;
@@ -2139,12 +2139,28 @@ with st.sidebar:
             st.session_state['force_logout'] = True 
             st.session_state['user'] = None
             if 'supabase_session' in st.session_state: del st.session_state['supabase_session']
+            
+            # --- V238: NUCLEAR COOKIE DELETE (JS + PY) ---
             try:
-                # Force delete multiple times to be sure
                 cookie_manager.delete("supabase_refresh_token")
             except: pass
             
-            # Double Rerun strategy for specific stx components issues
+            components.html("""
+            <script>
+                // Hard delete from parent context
+                const killCookie = (name) => {
+                    window.parent.document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:01 GMT; path=/;';
+                    // Also try current context
+                    document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:01 GMT; path=/;';
+                };
+                killCookie('supabase_refresh_token');
+                killCookie('ajs_user_id'); 
+                window.parent.localStorage.clear();
+                window.parent.sessionStorage.clear();
+            </script>
+            """, height=0)
+            
+            time.sleep(0.5)
             st.rerun()
 
     st.markdown('<div class="aesthetic-sep"></div>', unsafe_allow_html=True)
