@@ -117,7 +117,13 @@ def render_library(assistant):
             set_tool('backup')
             st.rerun()
 
-    st.markdown("---") # Thin separator
+    # Custom Separator (Minimalist)
+    # Only show if a tool is active to separate it, otherwise just a thin line or nothing if very tight
+    if st.session_state['lib_active_tool']:
+         st.markdown("---")
+    else:
+         # Ultra thin separator when no tool is open
+         st.markdown("<hr style='margin: 0px 0 10px 0; border: none; border-top: 1px solid #f1f5f9;'>", unsafe_allow_html=True)
 
     # ==========================================
     # 2. ACTION PANEL (Context Specific)
@@ -315,7 +321,7 @@ def render_library(assistant):
     bc_c1, bc_c2 = st.columns([0.85, 0.15])
     with bc_c1:
         # Minimalist path display
-        breadcrumbs_html = f"<div style='color: #94a3b8; font-size: 0.85rem; margin-top: 8px;'>📍 {path_str}</div>"
+        breadcrumbs_html = f"<div style='color: #94a3b8; font-size: 0.85rem; margin-top: 0px;'>📍 {path_str}</div>"
         st.markdown(breadcrumbs_html, unsafe_allow_html=True)
     with bc_c2:
         if crumbs:
