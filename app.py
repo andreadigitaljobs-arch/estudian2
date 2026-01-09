@@ -64,6 +64,82 @@ st.set_page_config(
     initial_sidebar_state="expanded" if st.session_state.get('user') else "collapsed"
 )
 
+# --- V244: ELEGANT LOADING SCREEN (IMMEDIATE MASK) ---
+components.html("""
+<script>
+    (function() {
+        const root = window.parent.document;
+        
+        // 1. Inject Styles
+        const styleId = 'estudian2_loading_css';
+        if (!root.getElementById(styleId)) {
+            const style = root.createElement('style');
+            style.id = styleId;
+            style.innerHTML = `
+                #estudian2_master_loader {
+                    position: fixed;
+                    top: 0; left: 0; width: 100%; height: 100%;
+                    background: #F8F9FE;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                    align-items: center;
+                    z-index: 999999999;
+                    transition: opacity 0.5s ease;
+                }
+                .master-spinner {
+                    width: 60px;
+                    height: 60px;
+                    border: 6px solid rgba(75, 34, 221, 0.1);
+                    border-top: 6px solid #4B22DD;
+                    border-radius: 50%;
+                    animation: mspin 0.8s linear infinite;
+                }
+                @keyframes mspin { to { transform: rotate(360deg); } }
+                .master-logo { width: 180px; margin-bottom: 25px; opacity: 0.9; }
+                
+                /* MASK THE APP UNTIL READY */
+                [data-testid="stAppViewContainer"] {
+                    opacity: 0 !important;
+                    transition: opacity 0.5s ease;
+                }
+                [data-testid="stAppViewContainer"].app_ready {
+                    opacity: 1 !important;
+                }
+            `;
+            root.head.appendChild(style);
+        }
+
+        // 2. Create Overlay
+        if (!root.getElementById('estudian2_master_loader')) {
+            const overlay = root.createElement('div');
+            overlay.id = 'estudian2_master_loader';
+            overlay.innerHTML = `
+                <img src="https://e-education.streamlit.app/~/+/media/0a9e7f8b9e6e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8/logo_sidebar.png" class="master-logo">
+                <div class="master-spinner"></div>
+            `;
+            root.body.appendChild(overlay);
+        }
+
+        // 3. Observer to Reveal
+        const observer = new MutationObserver(() => {
+            const state = root.querySelector('.stApp')?.getAttribute('data-test-script-state');
+            const app = root.querySelector('[data-testid="stAppViewContainer"]');
+            const loader = root.getElementById('estudian2_master_loader');
+            
+            if (state === 'idle' && loader) {
+                setTimeout(() => {
+                    if (app) app.classList.add('app_ready');
+                    loader.style.opacity = '0';
+                    setTimeout(() => { if (loader) loader.remove(); }, 500);
+                }, 1000);
+            }
+        });
+        observer.observe(root.body, { attributes: true, subtree: true, attributeFilter: ['data-test-script-state'] });
+    })();
+</script>
+""", height=0)
+
 # --- EMERGENCY SIDEBAR RESCUE (V153: CLEAN UP) ---
 st.markdown("""
 <style>
@@ -1037,8 +1113,8 @@ if not st.session_state['user']:
         
         /* 2. ALIGNMENT CONTAINER */
         .main .block-container, div[data-testid="stAppViewBlockContainer"] {{
-            padding-top: 0.5rem !important;
-            margin-top: -1.5rem !important; /* SUBTLE LIFT */
+            padding-top: 2rem !important;
+            margin-top: 0rem !important; /* BACK TO NATURAL */
             padding-bottom: 5vh !important;
             max_width: 1200px !important;
             display: flex;
@@ -1215,7 +1291,6 @@ if not st.session_state['user']:
 
 
     # --- JS: NUCLEAR SCROLL LOCK ---
-    import streamlit.components.v1 as components
     components.html("""
         <script>
             function lockScroll() {
@@ -1335,8 +1410,8 @@ if not st.session_state['user']:
             ];
             containers.forEach(c => {
                 if (c) {
-                    c.style.setProperty('margin-top', '-20px', 'important');
-                    c.style.setProperty('padding-top', '5px', 'important');
+                    c.style.setProperty('margin-top', '0px', 'important');
+                    c.style.setProperty('padding-top', '30px', 'important');
                 }
             });
             // Also hide header decoration if visible
@@ -1369,6 +1444,20 @@ def inject_navigation_arrows():
     # Only show arrows on pages with actual scrollable content (all except Inicio)
     current_tab = st.session_state.get('redirect_target_name', 'Inicio')
     if current_tab == 'Inicio' and not st.session_state.get('dashboard_mode'):
+        # --- ULTIMATE KILLER FOR HOME ---
+        components.html("""
+        <script>
+            const doc = window.parent.document;
+            const kill = () => {
+                ['v231_auth_elevator', 'v223_global_elevator', 'v222_nav_elevator'].forEach(id => {
+                    const el = doc.getElementById(id);
+                    if (el) el.remove();
+                });
+            };
+            kill();
+            setInterval(kill, 500);
+        </script>
+        """, height=0)
         return # Hide on generic Home dashboard to keep it clean
 
     components.html("""
@@ -1597,6 +1686,9 @@ if not saved_key and 'api_key_input' not in st.session_state:
 # To avoid complexity, we'll initialize with empty key if needed, or handle it gracefully.
 # Better: Load key, if exists init.
 # --- INITIALIZATION UTILS (Cached) ---
+from transcriber import Transcriber
+from study_assistant import StudyAssistant
+
 @st.cache_resource
 def get_transcriber_engine(key, model_choice="gemini-2.0-flash", breaker="V6"):
     return Transcriber(key, model_name=model_choice, cache_breaker=breaker)
@@ -2067,90 +2159,6 @@ CSS_STYLE = """
 </style>
 """
 st.markdown(CSS_STYLE, unsafe_allow_html=True)
-
-# CSS moved to top (Legacy cleanup)
-
-# --- NUCLEAR UNIVERSAL SCROLLER (DEFINITIVE) ---
-
-# 1. GLOBAL LOADING FIX (Always running)
-components.html("""
-<script>
-        const root = window.parent.document;
-        
-        // 1. Inject Styles (Loading Overlay + UI Fixes)
-        const style = root.createElement('style');
-        style.id = 'estudian2_loading_styles';
-        style.innerHTML = `
-            #estudian2_loading_overlay {
-                position: fixed;
-                top: 0; left: 0; width: 100%; height: 100%;
-                background-color: #F8F9FE;
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-                align-items: center;
-                z-index: 99999999;
-                transition: opacity 0.5s ease;
-            }
-            .estudian2_spinner {
-                width: 50px;
-                height: 50px;
-                border: 5px solid rgba(75, 34, 221, 0.1);
-                border-top: 5px solid #4B22DD;
-                border-radius: 50%;
-                animation: estudian2_spin 1s linear infinite;
-                margin-top: 20px;
-            }
-            @keyframes estudian2_spin {
-                0% { transform: rotate(0deg); }
-                100% { transform: rotate(360deg); }
-            }
-            .loading-logo {
-                width: 150px;
-                opacity: 0.8;
-            }
-            
-            /* Mask UI while loading to prevent "desprolijo" look */
-            [data-testid="stAppViewContainer"].loading_active {
-                display: none !important;
-            }
-        `;
-        if (!root.getElementById(style.id)) root.head.appendChild(style);
-
-        // 2. Create Overlay if it doesn't exist
-        if (!root.getElementById('estudian2_loading_overlay')) {
-            const overlay = root.createElement('div');
-            overlay.id = 'estudian2_loading_overlay';
-            overlay.innerHTML = `
-                <img src="https://e-education.streamlit.app/~/+/media/0a9e7f8b9e6e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8/logo_sidebar.png" class="loading-logo" onerror="this.src='https://cdn-icons-png.flaticon.com/512/3413/3413535.png'">
-                <div class="estudian2_spinner"></div>
-            `;
-            root.body.appendChild(overlay);
-            
-            // Mask the App View initially
-            const app = root.querySelector('[data-testid="stAppViewContainer"]');
-            if (app) app.classList.add('loading_active');
-        }
-
-        // 3. Observer to Kill Loading once "running" state is gone
-        const observer = new MutationObserver(() => {
-            const app = root.querySelector('[data-testid="stAppViewContainer"]');
-            const overlay = root.getElementById('estudian2_loading_overlay');
-            const state = root.querySelector('.stApp')?.getAttribute('data-test-script-state');
-            
-            if (state === 'idle' && overlay) {
-                // Wait a tiny bit for final render
-                setTimeout(() => {
-                    overlay.style.opacity = '0';
-                    if (app) app.classList.remove('loading_active');
-                    setTimeout(() => { if (overlay) overlay.remove(); }, 500);
-                }, 800);
-            }
-        });
-        observer.observe(root.body, { attributes: true, subtree: true, attributeFilter: ['data-test-script-state'] });
-    })();
-</script>
-""", height=0)
 
 # Hidden duplicate button removed.
 # Duplicate button cleanup complete.
