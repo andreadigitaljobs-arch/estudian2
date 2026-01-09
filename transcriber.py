@@ -95,6 +95,12 @@ class Transcriber:
         # The pattern has %03d, so glob looks like base_name + "_part*" + ext
         search_pattern = f"{base_name}_part*{ext}"
         chunks = sorted(glob.glob(search_pattern))
+        if not chunks:
+             # Fallback: maybe it wasn't long enough to split? Return original if exists
+             if os.path.exists(audio_path):
+                 return [audio_path]
+             raise ValueError(f"Error crítico: No se generaron fragmentos de audio. ffmpeg falló silenciosamente.")
+             
         return chunks
 
     def transcribe_file(self, audio_file_path, progress_callback=None, is_continuation=False):
