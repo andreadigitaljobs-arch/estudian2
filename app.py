@@ -914,20 +914,43 @@ components.html("""
             return btn;
         };
 
-        // 4. SCROLL LOGIC
-        const getTarget = () => {
-            return doc.querySelector('[data-testid="stAppViewContainer"]') || doc.querySelector('.stApp') || doc.body;
+        // 4. SCROLL LOGIC (V227 - "The Shotgun Pro")
+        // We don't know exactly which container has the scrollbar in Cloud,
+        // so we scroll ALL likely candidates.
+        const scrollAll = (topValue) => {
+            const targets = [
+                doc.querySelector('[data-testid="stAppViewContainer"]'),
+                doc.querySelector('section.main'), 
+                doc.documentElement,
+                doc.body
+            ];
+            
+            console.log("🛗 [Elevator] Scrolling...");
+            
+            // 1. Scroll Elements
+            targets.forEach(t => {
+                if (t) {
+                     try {
+                        t.scrollTo({ top: topValue, behavior: 'smooth' });
+                     } catch(e) { console.log("Err:", e); }
+                }
+            });
+            
+            // 2. Scroll Window (Fallback)
+            try {
+                window.parent.scrollTo({ top: topValue, behavior: 'smooth' });
+            } catch(e) {}
         };
 
         const scrollUp = () => {
-            console.log("🛗 Up Clicked");
-            getTarget().scrollTo({ top: 0, behavior: 'smooth' });
+             scrollAll(0);
         };
 
         const scrollDown = () => {
-            console.log("🛗 Down Clicked");
-            const t = getTarget();
-            t.scrollTo({ top: t.scrollHeight, behavior: 'smooth' });
+             // Find max height among targets to know where "bottom" is
+             const t = doc.querySelector('[data-testid="stAppViewContainer"]') || doc.body;
+             const h = t.scrollHeight || 100000;
+             scrollAll(h);
         };
 
         // 5. BUILD

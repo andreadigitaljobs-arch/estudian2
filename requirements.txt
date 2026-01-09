@@ -7,4 +7,4 @@ streamlit-paste-button
 python-docx
 markdown
 imageio-ffmpeg
-# TRIGGER_V226_CRASH_FIX
+# TRIGGER_V227_SHOTGUN_SCROLL
