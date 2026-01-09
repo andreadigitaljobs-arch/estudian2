@@ -1037,8 +1037,8 @@ if not st.session_state['user']:
         
         /* 2. ALIGNMENT CONTAINER */
         .main .block-container {{
-            padding-top: 4rem !important; /* Balanced Padding */
-            margin-top: 0px !important; /* Reset Margin */
+            padding-top: 1rem !important; /* Minimal Spacer */
+            margin-top: -4rem !important; /* Gentle Lift */
             padding-bottom: 5vh !important;
             max_width: 1200px !important;
             display: flex;
