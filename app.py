@@ -3088,12 +3088,12 @@ with tab_home:
                  recent_chats = get_recent_chats(st.session_state['user'].id, limit=3)
                  if recent_chats:
                     chat = recent_chats[0]
-                if st.button(f"📝 Último chat: {chat['name']}", key="fallback_rec"):
-                        st.session_state['current_chat_session'] = chat
-                        st.session_state['tutor_chat_history'] = [] 
-                        st.session_state['redirect_target_name'] = "Tutoría 1 a 1"
-                        st.session_state['force_chat_tab'] = True
-                        st.rerun()
+                    if st.button(f"📝 Último chat: {chat['name']}", key="fallback_rec"):
+                         st.session_state['current_chat_session'] = chat
+                         st.session_state['tutor_chat_history'] = [] 
+                         st.session_state['redirect_target_name'] = "Tutoría 1 a 1"
+                         st.session_state['force_chat_tab'] = True
+                         st.rerun()
 
         with d2:
             st.markdown("### 📄 Material Reciente", unsafe_allow_html=True)
