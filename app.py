@@ -1063,12 +1063,12 @@ if not st.session_state['user']:
         
         /* 2. ALIGNMENT CONTAINER */
         .main .block-container {{
-            padding-top: 8rem !important; /* Push down from very top, but stay in upper half */
+            padding-top: 1rem !important; /* SKYSCRAPER MODE: Very close to top */
             padding-bottom: 5vh !important;
             max_width: 1200px !important;
             display: flex;
             flex-direction: column;
-            justify-content: flex-start !important; /* Align to TOP */
+            justify-content: flex-start !important; /* Top Align */
             min-height: 80vh; 
         }}
 
