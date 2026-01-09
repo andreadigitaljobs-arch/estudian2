@@ -3322,6 +3322,7 @@ with tab1:
                     else:
                         progress_bar = st.progress(0)
                         status_text = st.empty()
+                        js_bridge = st.empty() # V295: Dedicated slot for JS bridge to avoid vertical space accumulation
                         import time
                         from google.api_core.exceptions import ResourceExhausted, ServiceUnavailable
                         
@@ -3388,12 +3389,13 @@ with tab1:
                                             # --- V257: SIMPLIFIED UPDATE ---
                                             try:
                                                 msg_clean = msg.replace("'", "")
-                                                components.html(f"""
-                                                    <script>
-                                                        window.parent.document.body.setAttribute('data-transcription-message', '{msg_clean}');
-                                                        window.parent.document.body.setAttribute('data-transcription-percentage', '{pct}');
-                                                    </script>
-                                                """, height=0)
+                                                with js_bridge:
+                                                    components.html(f"""
+                                                        <script>
+                                                            window.parent.document.body.setAttribute('data-transcription-message', '{msg_clean}');
+                                                            window.parent.document.body.setAttribute('data-transcription-percentage', '{pct}');
+                                                        </script>
+                                                    """, height=0)
                                             except:
                                                 pass
                                         
