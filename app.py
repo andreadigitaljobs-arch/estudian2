@@ -2990,17 +2990,34 @@ with tab_home:
 
         st.write("") 
 
-        # 3. ACTIVITY CHART (Visual Impact)
-        with st.expander("📊 Tu Actividad (Últimos 30 días)", expanded=True):
+        # 3. ACTIVITY LOG (Text Based)
+        with st.expander("📅 Tu Historial de Actividad", expanded=True):
              try:
                  act_df = get_weekly_activity(st.session_state['user'].id, current_c_id)
                  if not act_df.empty:
-                    # Set Index to Date for correct X-axis
-                    if 'Date' in act_df.columns:
-                        act_df = act_df.set_index('Date')
+                    # Filter only active days
+                    active_days = act_df[ (act_df['Archivos'] > 0) | (act_df['Chats'] > 0) ].sort_values('Date', ascending=False)
                     
-                    # Custom colors: Purple for files, Orange for Chats
-                    st.area_chart(act_df, color=["#4B22DD", "#FF9800"], use_container_width=True)
+                    if not active_days.empty:
+                        # Summary Header
+                        total_files = int(active_days['Archivos'].sum())
+                        total_chats = int(active_days['Chats'].sum())
+                        st.markdown(f"**Resumen 30 días:** {total_files} Archivos subidos y {total_chats} Sesiones de estudio.")
+                        st.divider()
+                        
+                        # List of Active Days
+                        for index, row in active_days.iterrows():
+                            d_str = row['Date']
+                            f_count = int(row['Archivos'])
+                            c_count = int(row['Chats'])
+                            
+                            details = []
+                            if f_count > 0: details.append(f"{f_count} Archivos 📄")
+                            if c_count > 0: details.append(f"{c_count} Chats 💬")
+                            
+                            st.markdown(f"**📅 {d_str}:** {', '.join(details)}")
+                    else:
+                        st.info("No has tenido actividad en los últimos 30 días.")
                  else:
                     st.markdown("*No hay actividad reciente.*")
              except Exception as e:
