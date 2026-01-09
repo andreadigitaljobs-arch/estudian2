@@ -4878,111 +4878,103 @@ st.markdown("<div id='end_marker' style='height: 1px; width: 1px; visibility: hi
 # Force Reload Triggered
 
 
-# --- FLOATING SCROLL DAEMON (V110 - "Universal Shotgun") ---
-# Strategy: Stop guessing the container name.
-# WE SCROLL EVERYTHING.
-# The script finds *any* element on the page that is scrollable and forces it down.
+# --- DUAL NAVIGATION ARROWS (V221 - "The Elevator") ---
+# Replaces V110 Shotgun. Explicitly targets Streamlit's main scroll container.
 
 import streamlit.components.v1 as components
 
 components.html("""
 <script>
-    const parentDoc = window.parent.document;
+    const doc = window.parent.document;
     
-    // 1. KILL SWITCH (Cleanup)
-    const styleId = 'v110-cleaner';
-    if (!parentDoc.getElementById(styleId)) {
-        const style = parentDoc.createElement('style');
-        style.id = styleId;
-        style.innerHTML = `
-            .float-scroll-btn, .floating-action-btn, .final-scroll-arrow, 
-            #fabSubmitAction, #scrollBtnDirect, #final_v103_scroll_btn, #v105_guardian_btn 
-            { display: none !important; opacity: 0 !important; pointer-events: none !important; }
-        `;
-        parentDoc.head.appendChild(style);
-    }
+    // 1. CLEANUP OLD BUTTONS
+    const oldIds = ['v110_phoenix_arrow', 'v221_nav_container'];
+    oldIds.forEach(id => {
+        const el = doc.getElementById(id);
+        if (el) el.remove();
+    });
 
-    // 2. THE PHOENIX BUTTON (V110)
-    const newId = 'v110_phoenix_arrow'; // New ID to force fresh logic binding
-    // Remove old phoenix if exists (V109)
-    const oldPhoenix = parentDoc.getElementById('v106_phoenix_arrow');
-    if (oldPhoenix) oldPhoenix.remove();
-    
-    let btn = parentDoc.getElementById(newId);
-    
-    if (!btn) {
-        btn = parentDoc.createElement('button');
-        btn.id = newId;
-        btn.innerHTML = '<i class="fas fa-arrow-down"></i>';
-        btn.title = 'Ir al final'; // Tooltip
-        
-        // STYLES
+    // 2. CREATE CONTAINER
+    const navContainer = doc.createElement('div');
+    navContainer.id = 'v221_nav_container';
+    Object.assign(navContainer.style, {
+        position: 'fixed',
+        bottom: '25px',
+        right: '25px',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '12px',
+        zIndex: '999999',
+        pointerEvents: 'auto'
+    });
+
+    // 3. HELPER: CREATE BUTTON
+    const createBtn = (iconClass, title, action) => {
+        const btn = doc.createElement('button');
+        btn.innerHTML = `<i class="${iconClass}"></i>`;
+        btn.title = title;
         Object.assign(btn.style, {
-            position: 'fixed',
-            bottom: '90px',
-            right: '25px',
-            width: '50px',
-            height: '50px',
-            backgroundColor: '#4F46E5',
+            width: '45px',
+            height: '45px',
+            backgroundColor: '#4B22DD', // Brand Purple
             color: 'white',
             borderRadius: '50%',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
             border: 'none',
-            outline: 'none',
-            zIndex: '2147483647',
+            boxShadow: '0 4px 10px rgba(0,0,0,0.2)',
             cursor: 'pointer',
+            fontSize: '20px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: '24px',
-            transition: 'transform 0.2s',
+            transition: 'transform 0.2s, background-color 0.2s'
         });
         
-        // HOVER
-        btn.onmouseenter = () => { btn.style.transform = 'scale(1.1)'; btn.style.backgroundColor = '#4338ca'; };
-        btn.onmouseleave = () => { btn.style.transform = 'scale(1)'; btn.style.backgroundColor = '#4F46E5'; };
-        
-        // CLICK HANDLER (THE SHOTGUN)
-        btn.onclick = () => {
-             const doc = window.parent.document;
-             
-             // 1. Find ALL elements
-             const allElements = doc.querySelectorAll('*');
-             let scrolledSomething = false;
-             
-             allElements.forEach(el => {
-                 // Check if scrollable vertically
-                 if (el.scrollHeight > el.clientHeight && (getComputedStyle(el).overflowY === 'auto' || getComputedStyle(el).overflowY === 'scroll')) {
-                     // SCROLL IT DOWN
-                     el.scrollTop = el.scrollHeight;
-                     scrolledSomething = true;
-                 }
-             });
-             
-             // 2. Fallback: Window Scroll
-             window.parent.scrollTo(0, 999999);
-             
-             // 3. Fallback: Specific Marker
-             const marker = doc.getElementById('end_marker');
-             if (marker) marker.scrollIntoView({behavior: "smooth", block: "end"});
-
-             // 4. Focus Chat (UX)
-             setTimeout(() => {
-                const chatInput = doc.querySelector('[data-testid="stChatInput"] textarea');
-                if (chatInput) chatInput.focus();
-             }, 100);
+        // Hover Effects
+        btn.onmouseenter = () => { 
+            btn.style.transform = 'scale(1.1)'; 
+            btn.style.backgroundColor = '#3a1ab0'; 
+        };
+        btn.onmouseleave = () => { 
+            btn.style.transform = 'scale(1)'; 
+            btn.style.backgroundColor = '#4B22DD'; 
         };
         
-        parentDoc.body.appendChild(btn);
-    }
+        btn.onclick = action;
+        return btn;
+    };
 
-    // FontAwesome
-    if (!parentDoc.getElementById('fa-v6-phoenix')) {
-        const link = parentDoc.createElement('link');
-        link.id = 'fa-v6-phoenix';
+    // 4. SCROLL LOGIC
+    const getScrollContainer = () => {
+        // Modern Streamlit Main Container
+        return doc.querySelector('[data-testid="stAppViewContainer"]') || doc.body; // Fallback
+    };
+
+    // 5. BUTTON ACTIONS
+    const scrollUp = () => {
+        const c = getScrollContainer();
+        c.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const scrollDown = () => {
+        const c = getScrollContainer();
+        c.scrollTo({ top: c.scrollHeight, behavior: 'smooth' });
+    };
+
+    // 6. ASSEMBLE
+    const btnUp = createBtn('fas fa-arrow-up', 'Ir al Inicio', scrollUp);
+    const btnDown = createBtn('fas fa-arrow-down', 'Ir al Final', scrollDown);
+
+    navContainer.appendChild(btnUp);
+    navContainer.appendChild(btnDown);
+    doc.body.appendChild(navContainer);
+
+    // 7. ENSURE FONTAWESOME
+    if (!doc.getElementById('fa-v6-core')) {
+        const link = doc.createElement('link');
+        link.id = 'fa-v6-core';
         link.rel = 'stylesheet';
         link.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css';
-        parentDoc.head.appendChild(link);
+        doc.head.appendChild(link);
     }
 </script>
 """, height=0)
