@@ -347,12 +347,18 @@ def render_library(assistant):
     subfolders = get_units(current_course_id, parent_id=current_unit_id)
     if subfolders:
         st.markdown("##### 📁 Carpetas")
+        
+        # V275: Restore File Counts (User Request)
+        unit_counts = get_course_file_counts(current_course_id)
+        
         f_cols = st.columns(3)
         for i, unit in enumerate(subfolders):
             with f_cols[i % 3]:
                 # Folder Card
-                # Using custom HTML/CSS styled button behavior via Streamlit button
-                if st.button(f"📁 {unit['name']}", key=f"fdir_{unit['id']}", use_container_width=True):
+                count = unit_counts.get(unit['id'], 0)
+                label = f"📁 {unit['name']} ({count})"
+                
+                if st.button(label, key=f"fdir_{unit['id']}", use_container_width=True):
                     st.session_state['lib_current_unit_id'] = unit['id']
                     st.session_state['lib_current_unit_name'] = unit['name']
                     st.session_state['lib_breadcrumbs'].append(unit)
