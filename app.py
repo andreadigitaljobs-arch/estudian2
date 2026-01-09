@@ -136,11 +136,18 @@ components.html("""
         // 4. Robust State Observer
         const updateLoader = () => {
             const state = appNode.getAttribute('data-test-script-state');
-            if (state === 'running') {
+            
+            // --- V253: INTELLIGENT SUPPRESSION ---
+            // If we are transcribing, we want to see the progress bar, not the lilac screen.
+            // We use a body attribute as a flag set from Python.
+            const isTranscribing = root.body.getAttribute('data-is-transcribing') === 'true';
+
+            if (state === 'running' && !isTranscribing) {
                 loader.classList.add('active');
             } else {
                 setTimeout(() => {
-                    if (appNode.getAttribute('data-test-script-state') !== 'running') {
+                    const currentState = appNode.getAttribute('data-test-script-state');
+                    if (currentState !== 'running' || isTranscribing) {
                         loader.classList.remove('active');
                     }
                 }, 80); // Small snappy delay
@@ -3228,6 +3235,13 @@ with tab1:
                 if not selected_unit_id:
                     st.error("Error: Carpeta no seleccionada.")
                 else:
+                    # --- V253: ACTIVATE LOADER SUPPRESSION ---
+                    st.markdown("""
+                        <script>
+                            window.parent.document.body.setAttribute('data-is-transcribing', 'true');
+                        </script>
+                    """, unsafe_allow_html=True)
+
                     progress_bar = st.progress(0)
                     status_text = st.empty()
                     import time
@@ -3366,6 +3380,13 @@ with tab1:
                             time.sleep(10)
                             
                     status_text.success("¡Misión Cumplida! Todos los archivos han sido procesados. 🏁")
+                    
+                    # --- V253: DEACTIVATE LOADER SUPPRESSION ---
+                    st.markdown("""
+                        <script>
+                            window.parent.document.body.setAttribute('data-is-transcribing', 'false');
+                        </script>
+                    """, unsafe_allow_html=True)
 
     # History
     if st.session_state['transcript_history']:
