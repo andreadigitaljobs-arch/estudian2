@@ -326,7 +326,7 @@ if 'user' not in st.session_state:
 cookie_manager = stx.CookieManager()
 
 # --- AUTO-LOGIN CHECK ---
-if not st.session_state['user'] and not st.session_state.get('force_logout'):
+if not st.session_state['user'] and not st.session_state.get('force_logout') and not st.query_params.get('logout'):
     # Try to get token from cookie
     # We use REFERSH TOKEN for long-term persistence (simpler than session reconstruction)
     try:
@@ -1036,14 +1036,14 @@ if not st.session_state['user']:
         }}
         
         /* 2. ALIGNMENT CONTAINER */
-        .main .block-container {{
-            padding-top: 1rem !important; /* Minimal Spacer */
-            margin-top: -8rem !important; /* AGGRESSIVE LIFT */
+        .main .block-container, div[data-testid="stAppViewBlockContainer"] {{
+            padding-top: 0rem !important;
+            margin-top: -14rem !important; /* ATOMIC LIFT */
             padding-bottom: 5vh !important;
             max_width: 1200px !important;
             display: flex;
             flex-direction: column;
-            justify-content: flex-start !important; /* Top Align */
+            justify-content: flex-start !important;
             min-height: 80vh; 
         }}
 
@@ -1324,7 +1324,27 @@ if not st.session_state['user']:
              });
         };
         killArrows();
-        const arrowKiller = setInterval(killArrows, 500);
+        setInterval(killArrows, 500);
+
+        // 3. ATOMIC LIFT (V239): Force Container UP
+        const forceLift = () => {
+            const containers = [
+                root.querySelector('.main .block-container'),
+                root.querySelector('[data-testid="stAppViewBlockContainer"]'),
+                root.querySelector('.block-container')
+            ];
+            containers.forEach(c => {
+                if (c) {
+                    c.style.setProperty('margin-top', '-220px', 'important');
+                    c.style.setProperty('padding-top', '0px', 'important');
+                }
+            });
+            // Also hide header decoration if visible
+            const deco = root.querySelector('[data-testid="stDecoration"]');
+            if (deco) deco.style.display = 'none';
+        };
+        forceLift();
+        setInterval(forceLift, 500);
     </script>
     """, height=0)
 
@@ -2140,21 +2160,22 @@ with st.sidebar:
             st.session_state['user'] = None
             if 'supabase_session' in st.session_state: del st.session_state['supabase_session']
             
-            # --- V238: NUCLEAR COOKIE DELETE (JS + PY) ---
+            # --- V239: QUERY PARAM REDIRECT (KILL AUTO-LOGIN LOOP) ---
+            st.query_params['logout'] = 'true'
+            
+            # Try to delete via cookie manager
             try:
                 cookie_manager.delete("supabase_refresh_token")
             except: pass
             
             components.html("""
             <script>
-                // Hard delete from parent context
                 const killCookie = (name) => {
-                    window.parent.document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:01 GMT; path=/;';
-                    // Also try current context
+                    const domain = window.location.hostname;
                     document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:01 GMT; path=/;';
+                    window.parent.document.cookie = name + '=; expires=Thu, 01 Jan 1970 00:00:01 GMT; path=/;';
                 };
                 killCookie('supabase_refresh_token');
-                killCookie('ajs_user_id'); 
                 window.parent.localStorage.clear();
                 window.parent.sessionStorage.clear();
             </script>
