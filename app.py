@@ -228,7 +228,8 @@ try:
     # Use secrets key by default
     _api_key = st.secrets.get("GEMINI_API_KEY")
     if _api_key:
-         transcriber = Transcriber(api_key=_api_key)
+         # V280: Switch to Stable 1.5 Flash to fix empty responses
+         transcriber = Transcriber(api_key=_api_key, model_name="gemini-1.5-flash")
          assistant = StudyAssistant(api_key=_api_key)
     else:
          transcriber = None
@@ -3339,7 +3340,7 @@ with tab1:
                             # Update Status for Lote
                             status_text.markdown(f"**🚀 Procesando Archivo {batch_num} de {total_files}**")
                             log_debug(f"--- BATCH {batch_num} START ---")
-                            st.write(f"DEBUG: Iniciando batch {batch_num}, archivos en batch: {len(batch)}")
+                            # Removed DEBUG st.write to avoid user confusion
                             
                             for file in batch:
                                 t_unit_id = selected_unit_id 
@@ -3407,6 +3408,10 @@ with tab1:
                                         # Validation check
                                         if trans_text.startswith("[ERROR]"):
                                             raise Exception(trans_text)
+                                            
+                                        # V282: Validate Empty Response (The "Mission Accomplished but Nothing" Bug)
+                                        if not trans_text or len(trans_text.strip()) < 10:
+                                             raise Exception("La IA devolvió una transcripción vacía. Posible error interno o audio silencio.")
                                         
                                         # The new process_video returns TEXT directly, not a path!
                                         # (Review transcriber.py: return response.text or full_text)
