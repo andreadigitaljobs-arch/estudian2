@@ -51,7 +51,7 @@ from db_handler import (
     get_dashboard_stats, update_user_nickname, get_recent_chats, check_and_update_streak, 
     get_user_footprint, init_supabase, update_last_course, 
     save_chat_message, get_chat_messages, get_file_content, get_course_files, delete_file, get_course_full_context,
-    get_user_memory, save_user_memory, upload_file_to_db
+    get_user_memory, save_user_memory, upload_file_to_db, get_last_transcribed_file_name
 )
 
 
@@ -63,6 +63,11 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded" if st.session_state.get('user') else "collapsed"
 )
+
+# --- V252: VISUAL MARKER ---
+if 'v252_marker' not in st.session_state:
+    st.toast("✅ Aplicación Actualizada a V252")
+    st.session_state['v252_marker'] = True
 
 # --- V249: HYBRID SNAPPY LOADER (RE-FIXED) ---
 components.html("""
@@ -253,6 +258,7 @@ if 'quiz_results' not in st.session_state: st.session_state['quiz_results'] = []
 if 'transcript_history' not in st.session_state: st.session_state['transcript_history'] = []
 if 'notes_result' not in st.session_state: st.session_state['notes_result'] = None
 if 'guide_result' not in st.session_state: st.session_state['guide_result'] = None
+if 'last_transcribed_file' not in st.session_state: st.session_state['last_transcribed_file'] = None
 
 if 'pasted_images' not in st.session_state: st.session_state['pasted_images'] = []
 # --- GLOBAL CSS (Prevents FOUC on Logout) ---
@@ -1452,25 +1458,7 @@ if not st.session_state['user']:
 
 # --- DUAL NAVIGATION ARROWS (V243 - Conditional Visibility) ---
 def inject_navigation_arrows():
-    # Only show arrows on pages with actual scrollable content (all except Inicio)
-    current_tab = st.session_state.get('redirect_target_name', 'Inicio')
-    if current_tab == 'Inicio' and not st.session_state.get('dashboard_mode'):
-        # --- ULTIMATE KILLER FOR HOME ---
-        components.html("""
-        <script>
-            const doc = window.parent.document;
-            const kill = () => {
-                ['v231_auth_elevator', 'v223_global_elevator', 'v222_nav_elevator'].forEach(id => {
-                    const el = doc.getElementById(id);
-                    if (el) el.remove();
-                });
-            };
-            kill();
-            setInterval(kill, 500);
-        </script>
-        """, height=0)
-        return # Hide on generic Home dashboard to keep it clean
-
+    # Show arrows on all pages with content
     components.html("""
     <script>
     const setupElevator = () => {
@@ -2176,6 +2164,9 @@ st.markdown(CSS_STYLE, unsafe_allow_html=True)
 
 # Sidebar
 with st.sidebar:
+    # --- V252: FORCE ARROW INJECTION ---
+    inject_navigation_arrows()
+    
     # st.caption("🚀 v3.3 (API Fix)") # Removed per user request
     # --- 1. LOGO & USER ---
     # Left Aligned ("RAS con el resto")
@@ -2475,6 +2466,8 @@ with st.sidebar:
                     st.session_state['current_course'] = nc['name']
                     st.rerun()
     else:
+        if st.session_state.get('current_course') != selected_option:
+            st.session_state['last_transcribed_file'] = None # Reset on change
         st.session_state['current_course'] = selected_option
         st.session_state['current_course_id'] = course_map[selected_option]
         update_last_course(selected_option)
@@ -2677,6 +2670,9 @@ with st.sidebar:
     
     </script>
     """, height=0)
+
+    # --- DUAL NAVIGATION ARROWS ---
+    inject_navigation_arrows()
 
     # --- TABS DEFINITION ---
 # --- TABS DEFINITION ---
@@ -3097,6 +3093,24 @@ with tab1:
                 <span style="font-size: 0.9rem; color: #888; font-weight: 500;">Soporta: MP4, MOV, MP3, WAV, M4A</span>
             </p>
         ''', unsafe_allow_html=True)
+
+        c_id = st.session_state.get('current_course_id')
+        
+        # --- LAST PROCESSED DISPLAY (ALWAYS VISIBLE) ---
+        if st.session_state['last_transcribed_file'] is None and c_id:
+            st.session_state['last_transcribed_file'] = get_last_transcribed_file_name(c_id)
+        
+        if st.session_state['last_transcribed_file']:
+            st.markdown(f"""
+                <div style="background-color: #EBF5FF; border: 2px solid #4B22DD; border-left: 8px solid #4B22DD; padding: 15px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 4px 12px rgba(75, 34, 221, 0.1);">
+                    <div style="color: #4B22DD; font-weight: 800; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px;">
+                        🎯 Último archivo procesado:
+                    </div>
+                    <div style="color: #1a1a1a; font-size: 1.1rem; font-weight: 600;">
+                        {st.session_state['last_transcribed_file']}
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
         
         # Dynamic Key for Uploader Reset
         if 'transcriptor_key' not in st.session_state: st.session_state['transcriptor_key'] = "up1"
@@ -3206,6 +3220,7 @@ with tab1:
                          new_n = st.text_input(f"Nombre para {uf.name}:", value=base, key=f"ren_{i}")
                          file_renames[uf.name] = new_n
             
+
             if st.button("▶️ Iniciar Transcripción Inteligente", type="primary", key="btn_start_transcription", use_container_width=True, disabled=(not selected_unit_id)):
                 # V207: Start Sound (Blip)
                 play_sound('start')
@@ -3313,6 +3328,7 @@ with tab1:
                                     if saved:
                                         st.toast(f"✅ Listo: {final_name}") 
                                         st.session_state['transcript_history'].append({"name": custom_n, "text": trans_text})
+                                        st.session_state['last_transcribed_file'] = custom_n # Update last processed
                                         # V206: Play Sound
                                         play_sound('success')
                                     

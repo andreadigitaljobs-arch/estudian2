@@ -706,6 +706,23 @@ def get_course_files(course_id, type_filter=None):
         print(f"Error fetching course files: {e}")
         return []
 
+def get_last_transcribed_file_name(course_id):
+    """
+    Returns the name of the last successfully transcribed file for a given course.
+    """
+    files = get_course_files(course_id, type_filter="transcript")
+    if files:
+        # get_course_files already orders by created_at desc
+        # We need to remove the .txt extension and numbering if present for clean display
+        import re
+        raw_name = files[0]['name']
+        # Remove extension
+        name = os.path.splitext(raw_name)[0]
+        # Remove leading "01. " numbering if present
+        name = re.sub(r'^\d+\.\s*', '', name)
+        return name
+    return None
+
 def upload_file_v2(unit_id, filename, content, f_type="note"):
     """
     Saves a file to the database (library_files).
