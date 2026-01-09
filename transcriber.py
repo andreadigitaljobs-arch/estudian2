@@ -11,7 +11,7 @@ except ImportError:
     FFMPEG_EXE = "ffmpeg"
 
 class Transcriber:
-    def __init__(self, api_key, model_name="gemini-2.0-flash", cache_breaker="V6"):
+    def __init__(self, api_key, model_name="gemini-1.5-flash", cache_breaker="V7"):
         genai.configure(api_key=api_key)
         self.sync_id = f"TRANS_V6_PRECISION_{cache_breaker}"
         
@@ -95,6 +95,13 @@ class Transcriber:
         # The pattern has %03d, so glob looks like base_name + "_part*" + ext
         search_pattern = f"{base_name}_part*{ext}"
         chunks = sorted(glob.glob(search_pattern))
+        
+        # V290: Robust Fallback
+        if not chunks:
+             if os.path.exists(audio_path):
+                 return [audio_path]
+             raise RuntimeError("Error crítico: FFmpeg no generó fragmentos de audio.")
+             
         return chunks
 
     def transcribe_file(self, audio_file_path, progress_callback=None, is_continuation=False):

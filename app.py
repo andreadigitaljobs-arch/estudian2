@@ -228,7 +228,8 @@ try:
     # Use secrets key by default
     _api_key = st.secrets.get("GEMINI_API_KEY")
     if _api_key:
-         transcriber = Transcriber(api_key=_api_key)
+         # V290: Explicitly use Stable 1.5 Flash
+         transcriber = Transcriber(api_key=_api_key, model_name="gemini-1.5-flash-latest")
          assistant = StudyAssistant(api_key=_api_key)
     else:
          transcriber = None
@@ -3336,10 +3337,10 @@ with tab1:
                             batch_num = (start_idx // BATCH_SIZE) + 1
                             total_batches = (total_files + BATCH_SIZE - 1) // BATCH_SIZE
                             
-                            # Update Status for Lote
-                            status_text.markdown(f"**🚀 Procesando Archivo {batch_num} de {total_files}**")
-                            log_debug(f"--- BATCH {batch_num} START ---")
-                            st.write(f"DEBUG: Iniciando batch {batch_num}, archivos en batch: {len(batch)}")
+                             # Update Status for Lote
+                             status_text.markdown(f"**🚀 Procesando Archivo {batch_num} de {total_files}**")
+                             log_debug(f"--- BATCH {batch_num} START ---")
+                             # Clean UI: Removed raw DEBUG print
                             
                             for file in batch:
                                 t_unit_id = selected_unit_id 
@@ -3407,6 +3408,10 @@ with tab1:
                                         # Validation check
                                         if trans_text.startswith("[ERROR]"):
                                             raise Exception(trans_text)
+                                            
+                                        # V290: Strict Anti-Silent-Failure Check
+                                        if not trans_text or len(trans_text.strip()) < 20:
+                                             raise Exception("La IA devolvió una transcripción vacía. Es posible que el audio no se haya procesado correctamente o esté en silencio.")
                                         
                                         # The new process_video returns TEXT directly, not a path!
                                         # (Review transcriber.py: return response.text or full_text)
