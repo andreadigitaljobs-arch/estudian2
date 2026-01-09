@@ -4,7 +4,6 @@ print("DEBUG: LOADING V72 - SYNTAX FIXED")
 import glob
 import uuid
 import gc # Trigger V215: RAM Safety
-import datetime  # V286: Move before log_debug usage
 from transcriber import Transcriber
 
 # Helper: Play Sound
@@ -40,6 +39,7 @@ from study_assistant import StudyAssistant
 from PIL import Image, ImageGrab
 import shutil
 import time
+import datetime
 import markdown
 import streamlit.components.v1 as components
 import extra_streamlit_components as stx  # --- PERSISTENCE ---
@@ -228,8 +228,7 @@ try:
     # Use secrets key by default
     _api_key = st.secrets.get("GEMINI_API_KEY")
     if _api_key:
-         # V285: Use correct model name for Gemini 1.5 Flash
-         transcriber = Transcriber(api_key=_api_key, model_name="gemini-1.5-flash-latest")
+         transcriber = Transcriber(api_key=_api_key)
          assistant = StudyAssistant(api_key=_api_key)
     else:
          transcriber = None
@@ -3340,7 +3339,7 @@ with tab1:
                             # Update Status for Lote
                             status_text.markdown(f"**🚀 Procesando Archivo {batch_num} de {total_files}**")
                             log_debug(f"--- BATCH {batch_num} START ---")
-                            # Removed DEBUG st.write to avoid user confusion
+                            st.write(f"DEBUG: Iniciando batch {batch_num}, archivos en batch: {len(batch)}")
                             
                             for file in batch:
                                 t_unit_id = selected_unit_id 
@@ -3408,10 +3407,6 @@ with tab1:
                                         # Validation check
                                         if trans_text.startswith("[ERROR]"):
                                             raise Exception(trans_text)
-                                            
-                                        # V282: Validate Empty Response (The "Mission Accomplished but Nothing" Bug)
-                                        if not trans_text or len(trans_text.strip()) < 10:
-                                             raise Exception("La IA devolvió una transcripción vacía. Posible error interno o audio silencio.")
                                         
                                         # The new process_video returns TEXT directly, not a path!
                                         # (Review transcriber.py: return response.text or full_text)

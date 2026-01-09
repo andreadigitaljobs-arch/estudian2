@@ -1,2 +1,16 @@
 [server]
-maxUploadSize = 1000
+maxUploadSize = 2000
+enableCORS = false
+enableXsrfProtection = false
+
+[theme]
+base = "light"
+primaryColor = "#4B22DD"
+backgroundColor = "#F8F9FE"
+secondaryBackgroundColor = "#FFFFFF"
+textColor = "#1A1A1A"
+font = "sans serif"
+
+[client]
+showErrorDetails = true
+toolbarMode = "viewer"
