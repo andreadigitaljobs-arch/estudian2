@@ -4,6 +4,7 @@ print("DEBUG: LOADING V72 - SYNTAX FIXED")
 import glob
 import uuid
 import gc # Trigger V215: RAM Safety
+import datetime  # V286: Move before log_debug usage
 from transcriber import Transcriber
 
 # Helper: Play Sound
@@ -39,7 +40,6 @@ from study_assistant import StudyAssistant
 from PIL import Image, ImageGrab
 import shutil
 import time
-import datetime
 import markdown
 import streamlit.components.v1 as components
 import extra_streamlit_components as stx  # --- PERSISTENCE ---
