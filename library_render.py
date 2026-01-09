@@ -331,27 +331,6 @@ def render_library(assistant):
                 st.session_state['lib_active_tool'] = None
                 st.rerun()
 
-    # --- V298: BROWSER CLIPBOARD BRIDGE ---
-    if st.session_state.get('lib_copy_trigger'):
-        text_to_copy = st.session_state['lib_copy_trigger']
-        st.session_state['lib_copy_trigger'] = None # Reset
-        
-        import json
-        js_text = json.dumps(text_to_copy)
-        components.html(f"""
-            <script>
-                (function() {{
-                    const text = {js_text};
-                    navigator.clipboard.writeText(text).then(() => {{
-                        // Success toast handled by server rerun/toast
-                    }}).catch(err => {{
-                        console.error("Clipboard Error:", err);
-                    }});
-                }})();
-            </script>
-        """, height=0)
-        st.toast("📋 ¡Texto limpio copiado al portapapeles!")
-
     # ==========================================
     # 3. BREADCRUMBS & NAVIGATION
     # ==========================================
@@ -445,12 +424,79 @@ def render_library(assistant):
                             
                         st.divider()
                         
-                        # --- CLEAN COPY BUTTON (User Request V298) ---
-                        if st.button("📋 Copiar Texto Limpio", key=f"cp_{f['id']}", help="Copia el contenido sin símbolos extraños (#, *, @, etc)"):
-                            raw_txt = f.get('content') or f.get('content_text') or ""
-                            clean_txt = clean_markdown_v3(raw_txt)
-                            st.session_state['lib_copy_trigger'] = clean_txt
-                            st.rerun()
+                        # --- CLEAN COPY BUTTON (ROBUST V299) ---
+                        raw_txt = f.get('content') or f.get('content_text') or ""
+                        clean_txt = clean_markdown_v3(raw_txt)
+                        
+                        import json
+                        safe_txt = json.dumps(clean_txt)
+                        
+                        components.html(f"""
+                        <html>
+                        <body style="margin:0; padding:0; display:flex; justify-content:center;">
+                            <script>
+                            function copyToClipboard() {{
+                                const text = {safe_txt};
+                                const btn = document.getElementById('copyBtn');
+                                
+                                function showSuccess() {{
+                                    btn.innerHTML = '✅ Copiado';
+                                    btn.style.borderColor = '#10b981';
+                                    btn.style.color = '#10b981';
+                                    setTimeout(() => {{
+                                        btn.innerHTML = '📋 Copiar Texto';
+                                        btn.style.borderColor = '#e2e8f0';
+                                        btn.style.color = '#64748b';
+                                    }}, 2000);
+                                }}
+
+                                // Plan A: Modern API
+                                if (navigator.clipboard && window.isSecureContext) {{
+                                    navigator.clipboard.writeText(text).then(showSuccess).catch(err => fallbackCopy(text));
+                                }} else {{
+                                    fallbackCopy(text);
+                                }}
+
+                                function fallbackCopy(text) {{
+                                    const textArea = document.createElement("textarea");
+                                    textArea.value = text;
+                                    textArea.style.position = "fixed";
+                                    textArea.style.left = "-9999px";
+                                    textArea.style.top = "0";
+                                    document.body.appendChild(textArea);
+                                    textArea.focus();
+                                    textArea.select();
+                                    try {{
+                                        const successful = document.execCommand('copy');
+                                        if (successful) showSuccess();
+                                    }} catch (err) {{
+                                        console.error('Fallback failed', err);
+                                    }}
+                                    document.body.removeChild(textArea);
+                                }}
+                            }}
+                            </script>
+                            <button id="copyBtn" onclick="copyToClipboard()" style="
+                                width: 100%;
+                                background: white;
+                                border: 1px solid #e2e8f0;
+                                border-radius: 8px;
+                                padding: 8px 16px;
+                                color: #64748b;
+                                font-size: 14px;
+                                font-family: sans-serif;
+                                cursor: pointer;
+                                transition: all 0.2s;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                gap: 8px;
+                            ">
+                                📋 Copiar Texto
+                            </button>
+                        </body>
+                        </html>
+                        """, height=45)
                             
                         # Move Logic could go here (Simplified for now)
         else:

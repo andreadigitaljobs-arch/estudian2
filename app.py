@@ -3591,12 +3591,35 @@ with tab1:
                     <body style="margin:0; padding:0; background: transparent;">
                         <script>
                         function copyT() {{
-                            navigator.clipboard.writeText({safe_txt}).then(function() {{
-                                const b = document.getElementById('btn');
+                            const text = {safe_txt};
+                            const b = document.getElementById('btn');
+                            
+                            function done() {{
                                 b.innerText = '✅';
-                                b.style.color = '#4625b8';
+                                b.style.color = '#10b981';
                                 setTimeout(() => {{ b.innerText = '📄'; b.style.color = '#888'; }}, 2000);
-                            }});
+                            }}
+
+                            // Plan A
+                            if (navigator.clipboard && window.isSecureContext) {{
+                                navigator.clipboard.writeText(text).then(done).catch(err => fallback(text));
+                            }} else {{
+                                fallback(text);
+                            }}
+
+                            function fallback(text) {{
+                                const t = document.createElement("textarea");
+                                t.value = text;
+                                t.style.position = "fixed";
+                                t.style.left = "-9999px";
+                                document.body.appendChild(t);
+                                t.focus();
+                                t.select();
+                                try {{
+                                    if(document.execCommand('copy')) done();
+                                }} catch (err) {{}}
+                                document.body.removeChild(t);
+                            }}
                         }}
                         </script>
                         <div style="display: flex; justify-content: flex-end; padding-top: 5px;">
