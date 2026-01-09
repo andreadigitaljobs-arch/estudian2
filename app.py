@@ -1703,12 +1703,27 @@ def get_out_dir(sub_folder=""):
 
 # --- HELPER FUNCTIONS (MOVED TO TOP FOR SCOPE) ---
 def clean_markdown(text):
-    """Removes basic markdown syntax for clean copying."""
+    """Removes all markdown baggage for a perfect clean copy (V3)."""
     import re
-    text = re.sub(r'^#+\s*', '', text, flags=re.MULTILINE) # Headers
-    text = re.sub(r'\*\*|__', '', text) # Bold
-    text = re.sub(r'\*|_', '', text) # Italics
-    text = re.sub(r'^[\*\-]\s+', '', text, flags=re.MULTILINE) # Bullets
+    if not text: return ""
+    # 1. Remove HTML tags
+    text = re.sub(r'<[^>]*>', '', text)
+    # 2. Headers #
+    text = re.sub(r'^#+\s*', '', text, flags=re.MULTILINE)
+    # 3. Bold/Italic ** * __ _
+    text = re.sub(r'(\*\*|__|\*|_)', '', text)
+    # 4. Bullets / Lists
+    text = re.sub(r'^[ \t]*[\*\-\+]\s+', '', text, flags=re.MULTILINE)
+    # 5. Blockquotes >
+    text = re.sub(r'^>\s*', '', text, flags=re.MULTILINE)
+    # 6. Links [text](url) -> text
+    text = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', text)
+    # 7. Code blocks `
+    text = text.replace("`", "")
+    # 8. @ symbols
+    text = text.replace("@", "")
+    # 9. Excessive empty lines
+    text = re.sub(r'\n{3,}', '\n\n', text)
     return text.strip()
 
 def copy_to_clipboard(text):
@@ -3564,16 +3579,10 @@ with tab1:
                       # JS COPY COMPONENT (Fixed positioning)
                       import json
                       import streamlit.components.v1 as components
-                      import re
                       
-                      # Clean HTML (<span...>) for clipboard
-                      raw_txt = item['text']
-                      # 1. Remove HTML
-                      clean_txt = re.sub(r'<[^>]+>', '', raw_txt)
-                      # 2. Remove Markdown Headers (## Title)
-                      clean_txt = re.sub(r'^#+\s*', '', clean_txt, flags=re.MULTILINE)
-                      # 3. Remove Bold/Italic (**text**, *text*)
-                      clean_txt = re.sub(r'\*\*|__|\*', '', clean_txt)
+                       # Clean text (User Request V298)
+                       raw_txt = item['text']
+                       clean_txt = clean_markdown(raw_txt)
                       
                       safe_txt = json.dumps(clean_txt)
                       
