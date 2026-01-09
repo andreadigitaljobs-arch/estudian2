@@ -1063,13 +1063,13 @@ if not st.session_state['user']:
         
         /* 2. ALIGNMENT CONTAINER */
         .main .block-container {{
-            padding-top: 2rem !important; 
+            padding-top: 8rem !important; /* Push down from very top, but stay in upper half */
             padding-bottom: 5vh !important;
             max_width: 1200px !important;
             display: flex;
             flex-direction: column;
-            justify-content: center !important; /* Force Center */
-            min-height: 80vh; /* Ensure full height for centering */
+            justify-content: flex-start !important; /* Align to TOP */
+            min-height: 80vh; 
         }}
 
         /* GLOBAL SCROLL KILLER REMOVED */
