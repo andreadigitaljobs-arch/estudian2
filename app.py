@@ -840,6 +840,8 @@ THEME_CSS = """
 </style>
 """
 st.markdown(THEME_CSS, unsafe_allow_html=True)
+st.toast("DEBUG: V227 Cargado (Modo Escopeta) 🔫", icon="🛠️")
+
 
 
 # --- DUAL NAVIGATION ARROWS (V223 - "The Global Elevator") ---
