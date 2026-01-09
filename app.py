@@ -310,21 +310,27 @@ st.markdown("""
         --border-color: #E3E4EA;
     }
     
-    /* --- SYNC LAYOUT STABILITY (Prevent FOUC) --- */
-    /* REMOVE ALL PADDING & MARGINS - SUPER NUCLEAR OPTION */
-    .block-container {
+    /* --- SYNC LAYOUT STABILITY (Prevent FOUC & Fix Login) --- */
+    /* Only apply aggressive negative margins when LOGGED IN */
+    """ + (f"""
+    .block-container {{
         padding-top: 0rem !important;
         padding-bottom: 2rem !important;
-        margin-top: -550px !important; /* ULTRA MEGA SUPER DUPER MASSIVE FORCE UP */
-        transform: translateY(-100px); /* Visual shift */
-        max-width: 100% !important;
-    }
-    
-    /* Target the main content wrapper specifically */
-    div[data-testid="stAppViewContainer"] > section[data-testid="stMain"] > div.block-container {
-        padding-top: 0rem !important;
         margin-top: -550px !important;
-    }
+        transform: translateY(-100px);
+        max-width: 100% !important;
+    }}
+    div[data-testid="stAppViewContainer"] > section[data-testid="stMain"] > div.block-container {{
+        margin-top: -550px !important;
+    }}
+    """ if st.session_state.get('user') else f"""
+    .block-container {{
+        padding-top: 4rem !important;
+        margin-top: 0px !important;
+        transform: none;
+        max-width: 100% !important;
+    }}
+    """) + """
 
     /* Hide the top decoration bar completely */
     header {
@@ -332,15 +338,18 @@ st.markdown("""
         display: none !important;
     }
     
+    /* HIDE LOADING SPINNERS / ARROWS */
+    .stSpinner, [data-testid="stStatusWidget"] {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+    }
+    
     /* Remove gap at top */
     div.stApp {
         margin-top: 0px !important;
     }
-    header {
-        visibility: hidden !important;
-        display: none !important;
-    }
-    
+
     /* DYNAMIC: FREEZE SCROLL & HIDE SIDEBAR ON LOGIN */
     """ + ("""
     .stApp, section.main, .block-container, [data-testid="stAppViewContainer"], html, body {
@@ -3095,11 +3104,34 @@ with tab_home:
                          st.session_state['force_chat_tab'] = True
                          st.rerun()
 
+            # --- MOVED ACTIONS TO LEFT COLUMN TO FILL SPACE ---
+            st.write("---")
+            st.markdown("### 🚀 Acciones Rápidas", unsafe_allow_html=True)
+            
+            ac1, ac2 = st.columns(2)
+            with ac1:
+                with st.container(border=True):
+                    st.markdown("**📂 Biblioteca**")
+                    if st.button("Ver Todo", use_container_width=True, type="primary", key="btn_goto_lib"):
+                        st.session_state['redirect_target_name'] = "Biblioteca"
+                        st.session_state['force_chat_tab'] = True 
+                        st.rerun()
+            
+            with ac2:
+                with st.container(border=True):
+                    st.markdown("**➕ Subir**")
+                    if st.button("Nuevo Archivo", use_container_width=True, key="btn_upload_new"):
+                        st.session_state['redirect_target_name'] = "Biblioteca"
+                        st.session_state['force_chat_tab'] = True
+                        st.session_state['lib_auto_open_upload'] = True
+                        st.rerun()
+
         with d2:
             st.markdown("### 📄 Material Reciente", unsafe_allow_html=True)
             st.caption("Tus últimos archivos")
             
-            recent_files = get_recent_files(current_c_id, limit=3)
+            # INCREASED LIMIT TO 6 TO FILL HEIGHT
+            recent_files = get_recent_files(current_c_id, limit=6)
             
             if recent_files:
                 for f in recent_files:
@@ -3116,10 +3148,10 @@ with tab_home:
                             st.markdown(f"<div style='font-size: 20px; text-align: center;'>{icon_emoji}</div>", unsafe_allow_html=True)
                             
                         with col_info:
-                            display_name = f['name'][:30] + "..." if len(f['name']) > 30 else f['name']
+                            display_name = f['name'][:25] + "..." if len(f['name']) > 25 else f['name']
                             st.markdown(f"**{display_name}**")
-                            date_only = f['created_at'].split('T')[0] if f.get('created_at') else "Reciente"
-                            st.caption(f"{date_only}")
+                            # date_only = f['created_at'].split('T')[0] if f.get('created_at') else "Reciente"
+                            # st.caption(f"{date_only}")
                             
                         with col_act:
                             if st.button("▶", key=f"open_file_{f['id']}", use_container_width=True):
@@ -3128,24 +3160,6 @@ with tab_home:
                                 st.rerun()
             else:
                 st.info("Sin archivos aún", icon="📂")
-            
-            st.write("")
-            st.markdown("### 🚀 Acciones", unsafe_allow_html=True)
-            
-            with st.container(border=True):
-                st.markdown("**Biblioteca**")
-                if st.button("📂 Ver Todo", use_container_width=True, type="primary", key="btn_goto_lib"):
-                    st.session_state['redirect_target_name'] = "Biblioteca"
-                    st.session_state['force_chat_tab'] = True 
-                    st.rerun()
-            
-            with st.container(border=True):
-                st.markdown("**Subir**")
-                if st.button("➕ Nuevo", use_container_width=True, key="btn_upload_new"):
-                    st.session_state['redirect_target_name'] = "Biblioteca"
-                    st.session_state['force_chat_tab'] = True
-                    st.session_state['lib_auto_open_upload'] = True
-                    st.rerun()
 
     else:
         st.info("Selecciona o crea un Diplomado en la barra lateral para ver tus estadísticas.")
