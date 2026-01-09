@@ -841,6 +841,132 @@ THEME_CSS = """
 """
 st.markdown(THEME_CSS, unsafe_allow_html=True)
 
+# --- DUAL NAVIGATION ARROWS (V223 - "The Global Elevator") ---
+# MOVED TO TOP to ensure it runs regardless of st.stop() later in the script.
+# Uses robust MutationObserver logic from V222.
+import streamlit.components.v1 as components
+
+components.html("""
+<script>
+    const setupElevator = () => {
+        const doc = window.parent.document;
+        const CONTAINER_ID = 'v223_global_elevator';
+        
+        console.log("🛗 [Elevator V223] Global Init...");
+
+        // 1. CLEANUP (Remove any old versions)
+        const oldIds = ['v110_phoenix_arrow', 'v221_nav_container', 'v222_nav_elevator', CONTAINER_ID];
+        oldIds.forEach(id => {
+            const el = doc.getElementById(id);
+            if (el) el.remove();
+        });
+
+        // 2. CREATE CONTAINER
+        const navContainer = doc.createElement('div');
+        navContainer.id = CONTAINER_ID;
+        Object.assign(navContainer.style, {
+            position: 'fixed',
+            bottom: '30px',
+            right: '25px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '15px',
+            zIndex: '2147483647', // Max Int
+            pointerEvents: 'auto',
+            filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.3))'
+        });
+
+        // 3. BUTTON FACTORY
+        const createBtn = (iconClass, title, action, color) => {
+            const btn = doc.createElement('button');
+            btn.innerHTML = `<i class="${iconClass}"></i>`;
+            btn.title = title;
+            Object.assign(btn.style, {
+                width: '48px',
+                height: '48px',
+                backgroundColor: color,
+                color: 'white',
+                borderRadius: '50%',
+                border: '2px solid rgba(255,255,255,0.2)',
+                cursor: 'pointer',
+                fontSize: '22px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+            });
+            
+            // Hover
+            btn.onmouseenter = () => { 
+                btn.style.transform = 'scale(1.15) translateY(-2px)'; 
+                btn.style.boxShadow = '0 8px 15px rgba(0,0,0,0.3)';
+            };
+            btn.onmouseleave = () => { 
+                btn.style.transform = 'scale(1)'; 
+                btn.style.boxShadow = 'none';
+            };
+            
+            btn.onclick = (e) => {
+                e.stopPropagation(); // Prevent bubbling
+                action();
+            };
+            return btn;
+        };
+
+        // 4. SCROLL LOGIC
+        const getTarget = () => {
+            return doc.querySelector('[data-testid="stAppViewContainer"]') || doc.querySelector('.stApp') || doc.body;
+        };
+
+        const scrollUp = () => {
+            console.log("🛗 Up Clicked");
+            getTarget().scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        const scrollDown = () => {
+            console.log("🛗 Down Clicked");
+            const t = getTarget();
+            t.scrollTo({ top: t.scrollHeight, behavior: 'smooth' });
+        };
+
+        // 5. BUILD
+        const btnUp = createBtn('fas fa-arrow-up', 'Inicio', scrollUp, '#4B22DD');
+        const btnDown = createBtn('fas fa-arrow-down', 'Final', scrollDown, '#4B22DD');
+
+        navContainer.appendChild(btnUp);
+        navContainer.appendChild(btnDown);
+
+        // 6. INJECT (Aggressive)
+        doc.body.appendChild(navContainer);
+        console.log("🛗 [Elevator V223] Mounted to Body");
+
+        // 7. ENSURE CSS
+        if (!doc.getElementById('fa-v6-core')) {
+            const link = doc.createElement('link');
+            link.id = 'fa-v6-core';
+            link.rel = 'stylesheet';
+            link.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css';
+            doc.head.appendChild(link);
+        }
+    };
+
+    // 8. PERSISTENCE DAEMON
+    setTimeout(setupElevator, 500); 
+    setTimeout(setupElevator, 2500); 
+
+    const observer = new MutationObserver((mutations) => {
+        const doc = window.parent.document;
+        if (!doc.getElementById('v223_global_elevator')) {
+            console.log("🛗 [Elevator] Lost! Re-mounting...");
+            setupElevator();
+        }
+    });
+    
+    observer.observe(window.parent.document.body, { childList: true });
+
+</script>
+""", height=0)
+
 if st.session_state.get('force_logout'):
     components.html("""
     <script>
@@ -4878,130 +5004,4 @@ st.markdown("<div id='end_marker' style='height: 1px; width: 1px; visibility: hi
 # Force Reload Triggered
 
 
-# --- DUAL NAVIGATION ARROWS (V222 - "The Persistent Elevator") ---
-# Uses MutationObserver to ensure buttons stay mounted even after Streamlit re-renders.
 
-import streamlit.components.v1 as components
-
-components.html("""
-<script>
-    const setupElevator = () => {
-        const doc = window.parent.document;
-        const CONTAINER_ID = 'v222_nav_elevator';
-        
-        console.log("🛗 [Elevator V222] Initializing...");
-
-        // 1. CLEANUP (Remove any old versions)
-        const oldIds = ['v110_phoenix_arrow', 'v221_nav_container', CONTAINER_ID];
-        oldIds.forEach(id => {
-            const el = doc.getElementById(id);
-            if (el) el.remove();
-        });
-
-        // 2. CREATE CONTAINER
-        const navContainer = doc.createElement('div');
-        navContainer.id = CONTAINER_ID;
-        Object.assign(navContainer.style, {
-            position: 'fixed',
-            bottom: '30px',
-            right: '25px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '15px',
-            zIndex: '2147483647', // Max Int
-            pointerEvents: 'auto',
-            filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.3))'
-        });
-
-        // 3. BUTTON FACTORY
-        const createBtn = (iconClass, title, action, color) => {
-            const btn = doc.createElement('button');
-            btn.innerHTML = `<i class="${iconClass}"></i>`;
-            btn.title = title;
-            Object.assign(btn.style, {
-                width: '48px',
-                height: '48px',
-                backgroundColor: color,
-                color: 'white',
-                borderRadius: '50%',
-                border: '2px solid rgba(255,255,255,0.2)',
-                cursor: 'pointer',
-                fontSize: '22px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
-            });
-            
-            // Hover
-            btn.onmouseenter = () => { 
-                btn.style.transform = 'scale(1.15) translateY(-2px)'; 
-                btn.style.boxShadow = '0 8px 15px rgba(0,0,0,0.3)';
-            };
-            btn.onmouseleave = () => { 
-                btn.style.transform = 'scale(1)'; 
-                btn.style.boxShadow = 'none';
-            };
-            
-            btn.onclick = (e) => {
-                e.stopPropagation(); // Prevent bubbling
-                action();
-            };
-            return btn;
-        };
-
-        // 4. SCROLL LOGIC
-        const getTarget = () => {
-            return doc.querySelector('[data-testid="stAppViewContainer"]') || doc.querySelector('.stApp') || doc.body;
-        };
-
-        const scrollUp = () => {
-            console.log("🛗 Up Clicked");
-            getTarget().scrollTo({ top: 0, behavior: 'smooth' });
-        };
-
-        const scrollDown = () => {
-            console.log("🛗 Down Clicked");
-            const t = getTarget();
-            t.scrollTo({ top: t.scrollHeight, behavior: 'smooth' });
-        };
-
-        // 5. BUILD
-        const btnUp = createBtn('fas fa-arrow-up', 'Inicio', scrollUp, '#4B22DD');
-        const btnDown = createBtn('fas fa-arrow-down', 'Final', scrollDown, '#4B22DD');
-
-        navContainer.appendChild(btnUp);
-        navContainer.appendChild(btnDown);
-
-        // 6. INJECT (Aggressive)
-        doc.body.appendChild(navContainer);
-        console.log("🛗 [Elevator V222] Mounted to Body");
-
-        // 7. ENSURE CSS
-        if (!doc.getElementById('fa-v6-core')) {
-            const link = doc.createElement('link');
-            link.id = 'fa-v6-core';
-            link.rel = 'stylesheet';
-            link.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css';
-            doc.head.appendChild(link);
-        }
-    };
-
-    // 8. PERSISTENCE DAEMON
-    // If Streamlit wipes the body or re-renders, we put it back.
-    setTimeout(setupElevator, 500); // Initial delay
-    setTimeout(setupElevator, 2000); // Safety check
-
-    // Observer to watch for accidental removal
-    const observer = new MutationObserver((mutations) => {
-        const doc = window.parent.document;
-        if (!doc.getElementById('v222_nav_elevator')) {
-            console.log("🛗 [Elevator] Lost! Re-mounting...");
-            setupElevator();
-        }
-    });
-    
-    observer.observe(window.parent.document.body, { childList: true });
-
-</script>
-""", height=0)
