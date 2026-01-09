@@ -979,3 +979,107 @@ def move_file_down(unit_id, file_id):
     
     get_files.clear() # FORCE UI UPDATE
     return True
+
+# --- DASHBOARD V2 ANALYTICS ---
+
+def search_global(user_id, course_id, query_text):
+    """
+    Searches across Files and Chats for the dashboard.
+    Returns a unified list of results: [{'type': 'file'|'chat', 'id': '...', 'name': '...', 'preview': '...'}]
+    """
+    supabase = init_supabase()
+    results = []
+    
+    try:
+        # 1. Search Files (Name or Content)
+        # Get unit IDs for course
+        units = supabase.table("units").select("id").eq("course_id", course_id).execute().data
+        if units:
+            unit_ids = [u['id'] for u in units]
+            
+            # Search Name
+            res_name = supabase.table("library_files").select("id, name, unit_id, type").in_("unit_id", unit_ids).ilike("name", f"%{query_text}%").limit(5).execute()
+            
+            for f in res_name.data:
+                results.append({
+                    "type": "file", 
+                    "id": f['id'], 
+                    "name": f['name'], 
+                    "unit_id": f['unit_id'],
+                    "icon": "📄" if f['type'] == 'text' else "📎",
+                    "preview": "Archivo en biblioteca"
+                })
+
+        # 2. Search Chats (Name)
+        res_chats = supabase.table("chat_sessions").select("id, name, created_at").eq("user_id", user_id).ilike("name", f"%{query_text}%").limit(5).execute()
+        
+        for c in res_chats.data:
+            results.append({
+                "type": "chat",
+                "id": c['id'],
+                "name": c['name'],
+                "icon": "💬",
+                "preview": f"Chat iniciado el {c['created_at'][:10]}"
+            })
+            
+        return results
+    except Exception as e:
+        print(f"Global Search Error: {e}")
+        return []
+
+def get_weekly_activity(user_id, course_id):
+    """
+    Returns a pandas DataFrame with 'Date', 'Type' (Files/Chats), 'Count' for the last 7 days.
+    """
+    import pandas as pd
+    from datetime import datetime, timedelta
+    supabase = init_supabase()
+    
+    data = []
+    today = datetime.utcnow().date()
+    dates = [(today - timedelta(days=i)).isoformat() for i in range(6, -1, -1)] # Last 7 days
+    
+    try:
+        # 1. Fetch Files created in last 7 days for this course
+        # First get unit IDs as usual
+        units = supabase.table("units").select("id").eq("course_id", course_id).execute().data
+        unit_ids = [u['id'] for u in units] if units else []
+        
+        start_date = dates[0] + "T00:00:00"
+        
+        # Files Query
+        if unit_ids:
+            res_files = supabase.table("library_files") \
+                .select("created_at") \
+                .in_("unit_id", unit_ids) \
+                .gte("created_at", start_date) \
+                .execute()
+            
+            for f in res_files.data:
+                d = f['created_at'][:10]
+                data.append({"Date": d, "Activity": "Archivos"})
+
+        # Chats Query
+        res_chats = supabase.table("chat_sessions") \
+            .select("created_at") \
+            .eq("user_id", user_id) \
+            .gte("created_at", start_date) \
+            .execute()
+            
+        for c in res_chats.data:
+            d = c['created_at'][:10]
+            data.append({"Date": d, "Activity": "Chats"})
+            
+        df = pd.DataFrame(data)
+        if df.empty:
+            # Return empty struct with correct columns
+            return pd.DataFrame({"Date": dates, "Activity": "Ninguna", "Count": 0})
+            
+        # Group by Date and Activity
+        df['Count'] = 1
+        grouped = df.groupby(['Date', 'Activity']).count().reset_index()
+        return grouped
+        
+    except Exception as e:
+        print(f"Activity Error: {e}")
+        return pd.DataFrame()

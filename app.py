@@ -51,7 +51,8 @@ from db_handler import (
     get_dashboard_stats, update_user_nickname, get_recent_chats, check_and_update_streak, 
     get_user_footprint, init_supabase, update_last_course, 
     save_chat_message, get_chat_messages, get_file_content, get_course_files, delete_file, get_course_full_context,
-    get_user_memory, save_user_memory, upload_file_to_db, get_last_transcribed_file_name, get_recent_files
+    get_user_memory, save_user_memory, upload_file_to_db, get_last_transcribed_file_name, get_recent_files,
+    search_global, get_weekly_activity
 )
 
 
@@ -2931,232 +2932,124 @@ with tab_home:
             st.warning("No se encontraron chats.")
             
     elif current_c_id:
-        # --- MODERN DASHBOARD VIEW (V260) ---
-        stats = get_dashboard_stats(current_c_id, st.session_state['user'].id)
-        streak = check_and_update_streak(st.session_state['user'])
+        # --- DASHBOARD V2: THE PREMIUM EXPERIENCE ---
         
-        # --- CARDS CSS ---
-        st.markdown("""
-        <style>
-        .dash-card {
-            background-color: white;
-            border-radius: 16px;
-            padding: 24px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-            display: flex;
-            align-items: center;
-            border: 1px solid #F0F0F0;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-            margin-bottom: 10px;
-        }
-        .dash-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 30px rgba(0,0,0,0.08);
-        }
-        .dash-icon {
-            font-size: 2rem;
-            margin-right: 20px;
-            width: 50px;
-            height: 50px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 12px;
-        }
-        .dash-content {
-            flex-grow: 1;
-        }
-        .dash-value {
-            font-size: 1.8rem;
-            font-weight: 800;
-            color: #1A1A1A;
-            margin: 0;
-            line-height: 1.0;
-        }
-        .dash-label {
-            font-size: 0.9rem;
-            color: #666;
-            font-weight: 500;
-            margin: 5px 0 0 0;
-        }
-        </style>
-        """, unsafe_allow_html=True)
+        # 1. UNIVERSAL SEARCH HERO
+        st.markdown("<h2 style='text-align: center; color: #4B22DD;'>¿Qué quieres aprender hoy?</h2>", unsafe_allow_html=True)
+        search_q = st.text_input("🔍 Busca archivos, chats o carpetas...", placeholder="Ej: Historia del Arte, Ecuaciones, Resumen...", label_visibility="collapsed")
         
-        # Gamification Msg
-        streak_msg = "¡Sigue así!"
-        if streak >= 3: streak_msg = "🔥 ¡Estás en llamas!"
-        if streak >= 7: streak_msg = "👑 ¡Leyenda!"
+        if search_q:
+            results = search_global(st.session_state['user'].id, st.session_state['current_course']['id'], search_q)
+            if results:
+                st.markdown(f"##### 🎯 Resultados para: '{search_q}'")
+                for r in results:
+                    with st.container(border=True):
+                        c1, c2 = st.columns([0.85, 0.15])
+                        c1.markdown(f"**{r['icon']} {r['name']}**  \n<small style='color:grey'>{r['preview']}</small>", unsafe_allow_html=True)
+                        if c2.button("Ir", key=f"go_{r['id']}"):
+                            # Simple Navigation Logic
+                            if r['type'] == 'chat':
+                                # Restore chat logic
+                                st.session_state['current_chat_session'] = {'id': r['id'], 'name': r['name']}
+                                st.session_state['tutor_chat_history'] = []
+                                st.session_state['redirect_target_name'] = "Tutoría 1 a 1"
+                                st.session_state['force_chat_tab'] = True
+                                
+                                # Update URL if possible
+                                try:
+                                    if hasattr(st, 'query_params'): st.query_params['chat_id'] = str(r['id'])
+                                    else: st.experimental_set_query_params(chat_id=str(r['id']))
+                                except: pass
+                                
+                                st.rerun()
+                            elif r['type'] == 'file':
+                                # Jump to Library (Requires logic, for now just toast)
+                                st.toast(f"Ve a la Biblioteca > {r['name']}")
+            else:
+                st.info("No encontramos nada. Intenta otra palabra clave.")
+            st.divider()
+
+        # 2. KEY METRICS & INSIGHTS ROW
+        stats = get_dashboard_stats(st.session_state['current_course']['id'], st.session_state['user'].id)
         
-        # --- CARDS ROW ---
-        c1, c2, c3 = st.columns(3)
+        m1, m2, m3 = st.columns([1, 1, 2])
+        m1.metric("📚 Archivos", stats.get('files', 0), delta="Total")
+        m2.metric("💬 Chats", stats.get('chats', 0), delta="Sesiones")
         
-        with c1:
-            st.markdown(f"""
-            <div class="dash-card">
-                <div class="dash-icon" style="background: #EEF2FF; color: #4B22DD;">📚</div>
-                <div class="dash-content">
-                    <p class="dash-value">{stats['files']}</p>
-                    <p class="dash-label">Archivos</p>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        with c2:
-            st.markdown(f"""
-            <div class="dash-card">
-                <div class="dash-icon" style="background: #FFF4E5; color: #FF9800;">💬</div>
-                <div class="dash-content">
-                    <p class="dash-value">{stats['chats']}</p>
-                    <p class="dash-label">Sesiones</p>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+        with m3:
+            # AI Insight Card (Mockup logic for now)
+            files_count = stats.get('files', 0)
+            if files_count > 5:
+                msg = "🔥 ¡Vas muy bien! Tienes una buena base de conocimientos."
+            elif files_count > 0:
+                msg = "💡 Sube más archivos para que la IA sea más inteligente."
+            else:
+                msg = "🚀 Empieza subiendo tu primer PDF en la Biblioteca."
             
-        with c3:
-            st.markdown(f"""
-            <div class="dash-card">
-                <div class="dash-icon" style="background: #E0F2F1; color: #009688;">🔥</div>
-                <div class="dash-content">
-                    <p class="dash-value">{streak}</p>
-                    <p class="dash-label">{streak_msg}</p>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+            st.info(f"**Insight Diario:**\n\n{msg}", icon="🤖")
 
-        st.markdown(" <br> ", unsafe_allow_html=True)
+        st.write("") 
 
-        # --- MAIN CONTENT ROW ---
-        d1, d2 = st.columns([0.5, 0.5])
+        # 3. WEEKLY ACTIVITY CHART (Visual Impact)
+        with st.expander("📊 Tu Actividad Semanal", expanded=True):
+             act_df = get_weekly_activity(st.session_state['user'].id, st.session_state['current_course']['id'])
+             if not act_df.empty:
+                st.bar_chart(act_df, x="Date", y="Count", color="Activity", stack=False)
+             else:
+                st.markdown("*No hay actividad reciente.*")
+
+        st.write("")
+
+        # 4. RECENT & ACTIONS SPLIT
+        d1, d2 = st.columns([0.65, 0.35])
         
         with d1:
-            # --- SMART CONTINUITY CARD ---
-            st.markdown("### 🕰️ Continuar donde lo dejaste", unsafe_allow_html=True)
-            st.caption("Retoma tu última actividad")
-            
-            # Load Footprint
-            curr_user = st.session_state['user']
-            footprint = curr_user.user_metadata.get('smart_footprint') if curr_user.user_metadata else None
-            
-            # Helper to render the card
-            def render_smart_card(icon, title, subtitle, btn_label, on_click_fn):
-                 # Styled Container
-                 with st.container(border=True):
-                     c_icon, c_info, c_btn = st.columns([0.15, 0.6, 0.25])
-                     with c_icon:
-                         st.markdown(f"<div style='font-size: 30px; text-align: center;'>{icon}</div>", unsafe_allow_html=True)
-                     with c_info:
-                         st.markdown(f"**{title}**")
-                         st.caption(subtitle)
-                     with c_btn:
-                         st.write("") # Spacer
-                         if st.button(btn_label, use_container_width=True, type="primary", key=f"smart_{title[:10]}"):
-                             on_click_fn()
-                             st.rerun()
+            st.subheader("⏱️ Continuar donde lo dejaste")
+            # Smart Continuity Card logic (Existing)
+            last_chat = get_recent_chats(st.session_state['user'].id, limit=1)
+            last_file = get_recent_files(st.session_state['current_course']['id'], limit=1)
 
-            if footprint:
-                 ftype = footprint.get('type')
-                 ftitle = footprint.get('title', 'Actividad Reciente')
-                 fsub = footprint.get('subtitle', 'Retomar actividad')
-                 ftarget = footprint.get('target_id')
-                 
-                 if ftype == 'chat':
-                     def go_chat():
-                         # Re-fetch session data (mock object minimal)
-                         st.session_state['current_chat_session'] = {'id': ftarget, 'name': ftitle}
-                         st.session_state['tutor_chat_history'] = []
-                         st.session_state['redirect_target_name'] = "Tutoría 1 a 1"
-                         st.session_state['force_chat_tab'] = True
-                         
-                         # UPDATE URL
-                         try:
-                             if hasattr(st, 'query_params'):
-                                 st.query_params['chat_id'] = str(ftarget)
-                             else:
-                                 st.experimental_set_query_params(chat_id=str(ftarget))
-                         except: pass
-                     
-                     render_smart_card("💬", f"Chat: {ftitle}", "Estabas conversando con tu asistente", "Retomar", go_chat)
-                     
-                 elif ftype == 'unit':
-                     def go_unit():
-                         st.session_state['redirect_target_name'] = "Biblioteca"
-                         st.session_state['force_chat_tab'] = True
-                         st.session_state['lib_current_unit_id'] = ftarget
-                         st.session_state['lib_current_unit_name'] = ftitle
-                         st.session_state['lib_breadcrumbs'] = [{'id': ftarget, 'name': ftitle}]
-                         
-                     render_smart_card("📂", f"Carpeta: {ftitle}", "Estabas explorando archivos aquí", "Ir", go_unit)
-                     
-                 else:
-                     # Fallback for unknown types
-                     st.info(f"Última actividad: {ftitle}")
-                     
-            else:
-                 # Fallback to Recents if no footprint (First run)
-                 st.info("Explora la app para generar tu tarjeta de viaje. 🚀")
-                 recent_chats = get_recent_chats(st.session_state['user'].id, limit=3)
-                 if recent_chats:
-                    chat = recent_chats[0]
-                    if st.button(f"📝 Último chat: {chat['name']}", key="fallback_rec"):
-                         st.session_state['current_chat_session'] = chat
-                         st.session_state['tutor_chat_history'] = [] 
-                         st.session_state['redirect_target_name'] = "Tutoría 1 a 1"
-                         st.session_state['force_chat_tab'] = True
-                         st.rerun()
-
-            # --- MOVED ACTIONS TO LEFT COLUMN TO FILL SPACE ---
-            st.write("---")
-            st.markdown("### 🚀 Acciones Rápidas", unsafe_allow_html=True)
-            
-            ac1, ac2 = st.columns(2)
-            with ac1:
-                with st.container(border=True):
-                    st.markdown("**📂 Biblioteca**")
-                    if st.button("Ver Todo", use_container_width=True, type="primary", key="btn_goto_lib"):
-                        st.session_state['redirect_target_name'] = "Biblioteca"
-                        st.session_state['force_chat_tab'] = True 
-                        st.rerun()
-            
-            with ac2:
-                with st.container(border=True):
-                    st.markdown("**➕ Subir**")
-                    if st.button("Nuevo Archivo", use_container_width=True, key="btn_upload_new"):
-                        st.session_state['redirect_target_name'] = "Biblioteca"
+            if last_chat:
+               lc = last_chat[0]
+               with st.container(border=True):
+                   st.markdown(f"**💬 Último Chat:** {lc['name']}")
+                   st.caption(f"Hace un momento • {lc['created_at'][:10]}")
+                   if st.button("Reanudar Conversación ➔", key="btn_resume_dash_2"):
+                        st.session_state['current_chat_session'] = lc
+                        st.session_state['tutor_chat_history'] = []
+                        st.session_state['redirect_target_name'] = "Tutoría 1 a 1"
                         st.session_state['force_chat_tab'] = True
-                        st.session_state['lib_auto_open_upload'] = True
                         st.rerun()
+            elif last_file:
+                 lf = last_file[0]
+                 with st.container(border=True):
+                     st.markdown(f"**📄 Subiste:** {lf['name']}")
+                     st.caption("Ve a la biblioteca para estudiarlo.")
+            else:
+                st.markdown("""
+                <div style="background:#F0F2F6; padding:20px; border-radius:10px; text-align:center;">
+                    <p style="margin:0; color:#555;">No hay actividad reciente.</p> 
+                    <small>¡Empieza un chat o sube algo!</small>
+                </div>
+                """, unsafe_allow_html=True)
 
         with d2:
-            st.markdown("### 📄 Material Reciente", unsafe_allow_html=True)
-            st.caption("Tus últimos archivos")
-            
-            # INCREASED LIMIT TO 6 TO FILL HEIGHT
-            recent_files = get_recent_files(current_c_id, limit=6)
-            
-            if recent_files:
-                for f in recent_files:
-                    with st.container(border=True):
-                        col_icon, col_info, col_act = st.columns([0.15, 0.6, 0.25])
-                        
-                        ftype = f.get('type', 'unknown')
-                        icon_emoji = "📄"
-                        if ftype == 'transcript': icon_emoji = "📹"
-                        elif ftype == 'note': icon_emoji = "📝"
-                        elif ftype == 'pdf': icon_emoji = "📕"
-                        
-                        with col_icon:
-                            st.markdown(f"<div style='font-size: 20px; text-align: center;'>{icon_emoji}</div>", unsafe_allow_html=True)
-                            
-                        with col_info:
-                            display_name = f['name'][:25] + "..." if len(f['name']) > 25 else f['name']
-                            st.markdown(f"**{display_name}**")
-                            # date_only = f['created_at'].split('T')[0] if f.get('created_at') else "Reciente"
-                            # st.caption(f"{date_only}")
-                            
-                        with col_act:
-                            if st.button("▶", key=f"open_file_{f['id']}", use_container_width=True):
-                                st.session_state['redirect_target_name'] = "Biblioteca"
-                                st.session_state['force_chat_tab'] = True
+            st.subheader("⚡ Acciones Rápidas")
+            if st.button("✨ Nuevo Chat", use_container_width=True):
+                 st.session_state['current_chat_session'] = None
+                 st.session_state['tutor_chat_history'] = []
+                 st.session_state['redirect_target_name'] = "Tutoría 1 a 1"
+                 st.session_state['force_chat_tab'] = True
+                 st.rerun()
+            if st.button("📤 Subir Archivo", use_container_width=True):
+                 st.session_state['redirect_target_name'] = "Biblioteca"
+                 st.session_state['force_chat_tab'] = True
+                 st.session_state['lib_auto_open_upload'] = True
+                 st.rerun()
+            if st.button("📝 Crear Quiz", use_container_width=True):
+                 st.session_state['redirect_target_name'] = "Zona Quiz"
+                 st.session_state['force_chat_tab'] = True
+                 st.rerun()
                                 st.rerun()
             else:
                 st.info("Sin archivos aún", icon="📂")
