@@ -1063,7 +1063,8 @@ if not st.session_state['user']:
         
         /* 2. ALIGNMENT CONTAINER */
         .main .block-container {{
-            padding-top: 1rem !important; /* SKYSCRAPER MODE: Very close to top */
+            padding-top: 2rem !important; /* Some padding for internal spacing */
+            margin-top: -10rem !important; /* NEGATIVE MARGIN: Pull entire app UP */
             padding-bottom: 5vh !important;
             max_width: 1200px !important;
             display: flex;
