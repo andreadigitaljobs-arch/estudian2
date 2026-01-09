@@ -127,26 +127,42 @@ components.html("""
             root.head.appendChild(style);
         }
 
-        // 3. Create Loader Element
+        // 3. Create Loader Element with Progress Support
         const loader = root.createElement('div');
         loader.id = 'estudian2_cute_loader';
-        loader.innerHTML = '<div class="cute-spinner"></div><div class="cute-text">Cargando...</div>';
+        loader.innerHTML = `
+            <div class="cute-spinner"></div>
+            <div class="cute-text" id="loader-main-text">Cargando...</div>
+            <div class="cute-text" id="loader-progress-text" style="margin-top: 10px; font-size: 18px; font-weight: 700;"></div>
+        `;
         root.body.appendChild(loader);
+        
+        // --- V255: SMART PROGRESS TRACKER ---
+        window.updateTranscriptionProgress = (message, percentage) => {
+            const mainText = root.getElementById('loader-main-text');
+            const progressText = root.getElementById('loader-progress-text');
+            if (mainText) mainText.textContent = message;
+            if (progressText) progressText.textContent = percentage !== null ? `${percentage}%` : '';
+        };
 
         // 4. Robust State Observer
         const updateLoader = () => {
             const state = appNode.getAttribute('data-test-script-state');
             
-            // --- V254: IMPROVED INTELLIGENT SUPPRESSION ---
-            const isTranscribing = root.body.getAttribute('data-is-transcribing') === 'true';
-
-            if (state === 'running' && !isTranscribing) {
+            // --- V255: ALWAYS SHOW LOADER WHEN RUNNING ---
+            // We no longer suppress it; instead we update its content dynamically
+            if (state === 'running') {
                 loader.classList.add('active');
             } else {
                 setTimeout(() => {
                     const currentState = appNode.getAttribute('data-test-script-state');
-                    if (currentState !== 'running' || isTranscribing) {
+                    if (currentState !== 'running') {
                         loader.classList.remove('active');
+                        // Reset text
+                        const mainText = root.getElementById('loader-main-text');
+                        const progressText = root.getElementById('loader-progress-text');
+                        if (mainText) mainText.textContent = 'Cargando...';
+                        if (progressText) progressText.textContent = '';
                     }
                 }, 80); 
             }
@@ -2260,10 +2276,10 @@ with st.sidebar:
             </style>
         """, unsafe_allow_html=True)
 
-    # --- V254: DEPLOYMENT VERIFIER ---
+    # --- V255: DEPLOYMENT VERIFIER ---
     st.markdown("""
         <div style="position: fixed; bottom: 10px; left: 10px; opacity: 0.4; font-size: 10px; color: #888; z-index: 100;">
-            Build V254.4 (Sync: OK)
+            Build V255 (Smart Loader)
         </div>
     """, unsafe_allow_html=True)
 
@@ -3241,19 +3257,6 @@ with tab1:
                 if not selected_unit_id:
                     st.error("Error: Carpeta no seleccionada.")
                 else:
-                    # --- V254: IMMEDIATE LOADER KILL ---
-                    st.markdown("""
-                        <script>
-                            const root = window.parent.document;
-                            root.body.setAttribute('data-is-transcribing', 'true');
-                            const loader = root.getElementById('estudian2_cute_loader');
-                            if (loader) loader.classList.remove('active');
-                            console.log("🚫 Loader Suppressed for Transcription");
-                        </script>
-                    """, unsafe_allow_html=True)
-                    
-                    st.info("🔄 **Progreso en pantalla:** El cargador lila se ha desactivado temporalmente para que puedas ver el avance.")
-
                     progress_bar = st.progress(0)
                     status_text = st.empty()
                     import time
@@ -3312,6 +3315,15 @@ with tab1:
                                         pct = int(prog * 100)
                                         status_text.markdown(f"**⚡ {msg} ({pct}%)**")
                                         progress_bar.progress(prog)
+                                        
+                                        # --- V255: UPDATE SMART LOADER ---
+                                        components.html(f"""
+                                            <script>
+                                                if (window.parent.updateTranscriptionProgress) {{
+                                                    window.parent.updateTranscriptionProgress("{msg}", {pct});
+                                                }}
+                                            </script>
+                                        """, height=0)
                                     
                                     # Process
                                     log_debug(f"Iniciando transcriber.process_video (Intento {attempt+1})")
@@ -3392,14 +3404,6 @@ with tab1:
                             time.sleep(10)
                             
                     status_text.success("¡Misión Cumplida! Todos los archivos han sido procesados. 🏁")
-                    
-                    # --- V254: RESTORE LOADER ---
-                    st.markdown("""
-                        <script>
-                            window.parent.document.body.setAttribute('data-is-transcribing', 'false');
-                            console.log("✅ Loader Restored");
-                        </script>
-                    """, unsafe_allow_html=True)
 
     # History
     if st.session_state['transcript_history']:
