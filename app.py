@@ -137,13 +137,22 @@ components.html("""
         `;
         root.body.appendChild(loader);
         
-        // --- V255: SMART PROGRESS TRACKER ---
+        // --- V256: SMART PROGRESS TRACKER WITH POLLING ---
         window.updateTranscriptionProgress = (message, percentage) => {
             const mainText = root.getElementById('loader-main-text');
             const progressText = root.getElementById('loader-progress-text');
             if (mainText) mainText.textContent = message;
             if (progressText) progressText.textContent = percentage !== null ? `${percentage}%` : '';
         };
+        
+        // Poll for progress updates from session state
+        setInterval(() => {
+            const progressMsg = root.body.getAttribute('data-transcription-message');
+            const progressPct = root.body.getAttribute('data-transcription-percentage');
+            if (progressMsg || progressPct) {
+                window.updateTranscriptionProgress(progressMsg || 'Procesando...', progressPct ? parseInt(progressPct) : null);
+            }
+        }, 500);
 
         // 4. Robust State Observer
         const updateLoader = () => {
@@ -2276,10 +2285,10 @@ with st.sidebar:
             </style>
         """, unsafe_allow_html=True)
 
-    # --- V255: DEPLOYMENT VERIFIER ---
+    # --- V256: DEPLOYMENT VERIFIER ---
     st.markdown("""
         <div style="position: fixed; bottom: 10px; left: 10px; opacity: 0.4; font-size: 10px; color: #888; z-index: 100;">
-            Build V255 (Smart Loader)
+            Build V256 (Progress Sync)
         </div>
     """, unsafe_allow_html=True)
 
@@ -3257,6 +3266,20 @@ with tab1:
                 if not selected_unit_id:
                     st.error("Error: Carpeta no seleccionada.")
                 else:
+                    # --- V256: INITIALIZE PROGRESS STATE ---
+                    if 'transcription_progress_msg' not in st.session_state:
+                        st.session_state['transcription_progress_msg'] = 'Iniciando...'
+                    if 'transcription_progress_pct' not in st.session_state:
+                        st.session_state['transcription_progress_pct'] = 0
+                    
+                    # Inject state into DOM
+                    st.markdown(f"""
+                        <script>
+                            window.parent.document.body.setAttribute('data-transcription-message', '{st.session_state['transcription_progress_msg']}');
+                            window.parent.document.body.setAttribute('data-transcription-percentage', '{st.session_state['transcription_progress_pct']}');
+                        </script>
+                    """, unsafe_allow_html=True)
+                    
                     progress_bar = st.progress(0)
                     status_text = st.empty()
                     import time
@@ -3316,14 +3339,17 @@ with tab1:
                                         status_text.markdown(f"**⚡ {msg} ({pct}%)**")
                                         progress_bar.progress(prog)
                                         
-                                        # --- V255: UPDATE SMART LOADER ---
-                                        components.html(f"""
+                                        # --- V256: UPDATE SESSION STATE FOR SMART LOADER ---
+                                        st.session_state['transcription_progress_msg'] = msg
+                                        st.session_state['transcription_progress_pct'] = pct
+                                        
+                                        # Push to DOM immediately
+                                        st.markdown(f"""
                                             <script>
-                                                if (window.parent.updateTranscriptionProgress) {{
-                                                    window.parent.updateTranscriptionProgress("{msg}", {pct});
-                                                }}
+                                                window.parent.document.body.setAttribute('data-transcription-message', '{msg.replace("'", "\\'")}');
+                                                window.parent.document.body.setAttribute('data-transcription-percentage', '{pct}');
                                             </script>
-                                        """, height=0)
+                                        """, unsafe_allow_html=True)
                                     
                                     # Process
                                     log_debug(f"Iniciando transcriber.process_video (Intento {attempt+1})")
