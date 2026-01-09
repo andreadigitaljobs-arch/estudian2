@@ -87,7 +87,7 @@ components.html("""
                 #estudian2_cute_loader {
                     position: fixed;
                     top: 0; left: 0; width: 100vw; height: 100vh;
-                    background: rgba(248, 249, 254, 0.85);
+                    background: #F2FAF7; /* Solid Light Mint Green - Fixes ghosting */
                     display: flex;
                     flex-direction: column;
                     justify-content: center;
@@ -95,8 +95,7 @@ components.html("""
                     z-index: 999999999 !important;
                     opacity: 0;
                     pointer-events: none;
-                    transition: opacity 0.2s ease;
-                    backdrop-filter: blur(3px);
+                    transition: opacity 0.25s ease;
                 }
                 #estudian2_cute_loader.active {
                     opacity: 1;
