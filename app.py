@@ -2939,7 +2939,7 @@ with tab_home:
         search_q = st.text_input("🔍 Busca archivos, chats o carpetas...", placeholder="Ej: Historia del Arte, Ecuaciones, Resumen...", label_visibility="collapsed")
         
         if search_q:
-            results = search_global(st.session_state['user'].id, st.session_state['current_course']['id'], search_q)
+            results = search_global(st.session_state['user'].id, current_c_id, search_q)
             if results:
                 st.markdown(f"##### 🎯 Resultados para: '{search_q}'")
                 for r in results:
@@ -2970,7 +2970,7 @@ with tab_home:
             st.divider()
 
         # 2. KEY METRICS & INSIGHTS ROW
-        stats = get_dashboard_stats(st.session_state['current_course']['id'], st.session_state['user'].id)
+        stats = get_dashboard_stats(current_c_id, st.session_state['user'].id)
         
         m1, m2, m3 = st.columns([1, 1, 2])
         m1.metric("📚 Archivos", stats.get('files', 0), delta="Total")
