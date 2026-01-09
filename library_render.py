@@ -14,6 +14,31 @@ from db_handler import (
     get_course_file_counts, move_file_up, move_file_down, ensure_unit_numbering,
     get_full_course_backup 
 )
+import streamlit.components.v1 as components
+
+def clean_markdown_v3(text):
+    """Removes all markdown baggage for a perfect copy."""
+    import re
+    if not text: return ""
+    # Remove HTML tags
+    text = re.sub(r'<[^>]*>', '', text)
+    # Headers #
+    text = re.sub(r'^#+\s*', '', text, flags=re.MULTILINE)
+    # Bold/Italic ** * __ _
+    text = re.sub(r'(\*\*|__|\*|_)', '', text)
+    # Bullets / Lists
+    text = re.sub(r'^[ \t]*[\*\-\+]\s+', '', text, flags=re.MULTILINE)
+    # Blockquotes >
+    text = re.sub(r'^>\s*', '', text, flags=re.MULTILINE)
+    # Links [text](url) -> text
+    text = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', text)
+    # Code blocks `
+    text = text.replace("`", "")
+    # Strange symbols mentioned by user: @
+    text = text.replace("@", "")
+    # Remove excessive empty lines
+    text = re.sub(r'\n{3,}', '\n\n', text)
+    return text.strip()
 
 def render_library(assistant):
     """
@@ -306,6 +331,27 @@ def render_library(assistant):
                 st.session_state['lib_active_tool'] = None
                 st.rerun()
 
+    # --- V298: BROWSER CLIPBOARD BRIDGE ---
+    if st.session_state.get('lib_copy_trigger'):
+        text_to_copy = st.session_state['lib_copy_trigger']
+        st.session_state['lib_copy_trigger'] = None # Reset
+        
+        import json
+        js_text = json.dumps(text_to_copy)
+        components.html(f"""
+            <script>
+                (function() {{
+                    const text = {js_text};
+                    navigator.clipboard.writeText(text).then(() => {{
+                        // Success toast handled by server rerun/toast
+                    }}).catch(err => {{
+                        console.error("Clipboard Error:", err);
+                    }});
+                }})();
+            </script>
+        """, height=0)
+        st.toast("📋 ¡Texto limpio copiado al portapapeles!")
+
     # ==========================================
     # 3. BREADCRUMBS & NAVIGATION
     # ==========================================
@@ -395,6 +441,15 @@ def render_library(assistant):
                              
                         if st.button("🗑️ Eliminar", key=f"del_{f['id']}"):
                             delete_file(f['id'])
+                            st.rerun()
+                            
+                        st.divider()
+                        
+                        # --- CLEAN COPY BUTTON (User Request V298) ---
+                        if st.button("📋 Copiar Texto Limpio", key=f"cp_{f['id']}", help="Copia el contenido sin símbolos extraños (#, *, @, etc)"):
+                            raw_txt = f.get('content') or f.get('content_text') or ""
+                            clean_txt = clean_markdown_v3(raw_txt)
+                            st.session_state['lib_copy_trigger'] = clean_txt
                             st.rerun()
                             
                         # Move Logic could go here (Simplified for now)
