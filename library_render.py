@@ -85,7 +85,7 @@ def render_library(assistant):
         return "primary" if st.session_state['lib_active_tool'] == tool_name else "secondary"
 
     with t_c1:
-        if st.button("🏠 Inicio", use_container_width=True, help="Ir a la carpeta raíz"):
+        if st.button("📂 Raíz", use_container_width=True, help="Ir a la carpeta principal"):
             st.session_state['lib_current_unit_id'] = None
             st.session_state['lib_current_unit_name'] = None
             st.session_state['lib_breadcrumbs'] = []
@@ -315,7 +315,9 @@ def render_library(assistant):
     # Simple Breadcrumb UI
     bc_c1, bc_c2 = st.columns([0.8, 0.2])
     with bc_c1:
-        st.markdown(f"**Ubicación:** `{path_str}`")
+        # Minimalist path display
+        breadcrumbs_html = f"<span style='color: #64748b; font-size: 0.9rem;'>{path_str}</span>"
+        st.markdown(breadcrumbs_html, unsafe_allow_html=True)
     with bc_c2:
         if crumbs:
             if st.button("⬅️ Atrás", use_container_width=True):
