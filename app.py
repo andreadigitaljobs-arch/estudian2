@@ -64,60 +64,74 @@ st.set_page_config(
     initial_sidebar_state="expanded" if st.session_state.get('user') else "collapsed"
 )
 
-# --- V246: PERSISTENT CUTE LOADER (STATE REACTIVE) ---
-# This script injects a minimalist loader into the parent window that shows up every time Streamlit is 'running'.
-components.html("""
+# --- V247: ULTRA-PERSISTENT CUTE LOADER (STATE REACTIVE) ---
+# We inject this into the main document to ensure it survives every Streamlit rerun.
+st.markdown("""
+<div id="estudian2_style_injector" style="display:none;"></div>
 <script>
     (function() {
         const root = window.parent.document;
         const appNode = root.querySelector('.stApp');
-        if (!appNode || root.getElementById('estudian2_cute_loader')) return;
+        if (!appNode) return;
         
-        const style = root.createElement('style');
-        style.id = 'estudian2_cute_loader_css';
-        style.innerHTML = `
-            #estudian2_cute_loader {
-                position: fixed;
-                top: 0; left: 0; width: 100%; height: 100%;
-                background: rgba(248, 249, 254, 0.9);
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-                align-items: center;
-                z-index: 2147483647;
-                opacity: 0;
-                pointer-events: none;
-                transition: opacity 0.3s ease;
-            }
-            #estudian2_cute_loader.active {
-                opacity: 1;
-                pointer-events: auto;
-            }
-            .cute-spinner {
-                width: 30px;
-                height: 30px;
-                border: 3px solid rgba(75, 34, 221, 0.1);
-                border-top: 3px solid #4B22DD;
-                border-radius: 50%;
-                animation: cute-spin 0.7s linear infinite;
-            }
-            .cute-text {
-                margin-top: 12px;
-                color: #4B22DD;
-                font-family: sans-serif;
-                font-size: 13px;
-                font-weight: 500;
-            }
-            @keyframes cute-spin { to { transform: rotate(360deg); } }
-        `;
-        root.head.appendChild(style);
+        // --- 1. CLEANUP OLD LOADERS (Avoid accumulation) ---
+        ['estudian2_cute_loader', 'estudian2_master_loader'].forEach(id => {
+            const old = root.getElementById(id);
+            if (old) old.remove();
+        });
 
+        // --- 2. INJECT CSS ---
+        const styleId = 'estudian2_persistent_css';
+        if (!root.getElementById(styleId)) {
+            const style = root.createElement('style');
+            style.id = styleId;
+            style.innerHTML = `
+                #estudian2_cute_loader {
+                    position: fixed;
+                    top: 0; left: 0; width: 100%; height: 100%;
+                    background: rgba(248, 249, 254, 0.95);
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                    align-items: center;
+                    z-index: 999999999;
+                    opacity: 0;
+                    pointer-events: none;
+                    transition: opacity 0.3s ease;
+                }
+                #estudian2_cute_loader.active {
+                    opacity: 1;
+                    pointer-events: auto;
+                }
+                .cute-spinner {
+                    width: 32px;
+                    height: 32px;
+                    border: 4px solid rgba(75, 34, 221, 0.1);
+                    border-top: 4px solid #4B22DD;
+                    border-radius: 50%;
+                    animation: cute-spin 0.7s linear infinite;
+                }
+                .cute-text {
+                    margin-top: 15px;
+                    color: #4B22DD;
+                    font-family: 'Segoe UI', sans-serif;
+                    font-size: 14px;
+                    font-weight: 500;
+                    letter-spacing: 0.5px;
+                }
+                @keyframes cute-spin { to { transform: rotate(360deg); } }
+            `;
+            root.head.appendChild(style);
+        }
+
+        // --- 3. CREATE LOADER ---
         const loader = root.createElement('div');
         loader.id = 'estudian2_cute_loader';
         loader.innerHTML = '<div class="cute-spinner"></div><div class="cute-text">Cargando...</div>';
         root.body.appendChild(loader);
 
-        const observer = new MutationObserver(() => {
+        // --- 4. REVEAL LOGIC (Reactive) ---
+        const syncLoader = () => {
             const state = appNode.getAttribute('data-test-script-state');
             if (state === 'running') {
                 loader.classList.add('active');
@@ -126,13 +140,19 @@ components.html("""
                     if (appNode.getAttribute('data-test-script-state') !== 'running') {
                         loader.classList.remove('active');
                     }
-                }, 300);
+                }, 400);
             }
-        });
+        };
+
+        // Initialize state
+        syncLoader();
+
+        // Observe all state changes
+        const observer = new MutationObserver(syncLoader);
         observer.observe(appNode, { attributes: true, attributeFilter: ['data-test-script-state'] });
     })();
 </script>
-""", height=0)
+""", unsafe_allow_html=True)
 
 # --- EMERGENCY SIDEBAR RESCUE (V153: CLEAN UP) ---
 st.markdown("""
