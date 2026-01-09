@@ -1931,13 +1931,20 @@ CSS_STYLE = """
     }
 
 
+
     /* GLOBAL CONTENT POSITIONING - Move all tabs higher */
     section.main > div {
-        padding-top: 2rem !important;
+        padding-top: 0.5rem !important;
     }
     
     [data-testid="stAppViewContainer"] > section.main {
-        padding-top: 2rem !important;
+        padding-top: 0.5rem !important;
+    }
+    
+    /* Additional targeting for block container */
+    .block-container {
+        padding-top: 0.5rem !important;
+        margin-top: 0 !important;
     }
 
     /* TABS */
