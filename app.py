@@ -3344,6 +3344,10 @@ with tab1:
                             for file in batch:
                                 t_unit_id = selected_unit_id 
                                 
+                                # CHECK TRANSCRIBER EARLY
+                                if transcriber is None:
+                                    raise Exception("El motor de IA no está conectado. Verifica tu API Key.")
+
                                 # V217: Defensive File Handling (UUID + Guard)
                                 safe_ext = os.path.splitext(file.name)[1]
                                 temp_path = f"temp_upload_{uuid.uuid4()}{safe_ext}"
@@ -3394,6 +3398,9 @@ with tab1:
                                         
                                         # Process
                                         log_debug(f"Iniciando transcriber.process_video (Intento {attempt+1})")
+                                        # FORCE GC
+                                        gc.collect()
+
                                         trans_text = transcriber.process_video(temp_path, visual_mode=use_visual, progress_callback=update_ui)
                                         log_debug("Transcriber success.")
 
@@ -3449,7 +3456,7 @@ with tab1:
                                         status_text.warning(f"⚠️ Servidor ocupado. Reintentando en 10s...")
                                         time.sleep(10)
                                         attempt += 1
-                                    except Exception as e:
+                                    except BaseException as e:
                                         error_msg = f"❌ Error fatal en {file.name}: {str(e)}"
                                         st.error(error_msg)
                                         log_debug(f"EXCEPTION: {error_msg}")
@@ -3458,9 +3465,11 @@ with tab1:
                                         attempt = max_retries # Abort this file
                                     finally:
                                         pass
-    
+
                                 # Cleanup Temp
-                                if os.path.exists(temp_path): os.remove(temp_path)
+                                if os.path.exists(temp_path): 
+                                    try: os.remove(temp_path)
+                                    except: pass
                                 
                                 # V215: Explicit Memory Cleanup for 500MB+ files
                                 gc.collect()
@@ -3474,8 +3483,8 @@ with tab1:
                                 time.sleep(10)
                                 
                         status_text.success("¡Misión Cumplida! Todos los archivos han sido procesados. 🏁")
-                except Exception as e:
-                    st.error(f"💥 Error Fatal en la aplicación: {e}")
+                except BaseException as e:
+                    st.error(f"💥 Error Fatal en la aplicación (Nivel Sistema): {e}")
                     import traceback
                     st.code(traceback.format_exc())
                     log_debug(f"FATAL APP CRASH: {traceback.format_exc()}")
