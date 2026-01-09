@@ -1038,7 +1038,7 @@ if not st.session_state['user']:
         /* 2. ALIGNMENT CONTAINER */
         .main .block-container, div[data-testid="stAppViewBlockContainer"] {{
             padding-top: 0rem !important;
-            margin-top: -7rem !important; /* CALIBRATED LIFT */
+            margin-top: -4rem !important; /* CENTERED LIFT */
             padding-bottom: 5vh !important;
             max_width: 1200px !important;
             display: flex;
@@ -1335,7 +1335,7 @@ if not st.session_state['user']:
             ];
             containers.forEach(c => {
                 if (c) {
-                    c.style.setProperty('margin-top', '-110px', 'important');
+                    c.style.setProperty('margin-top', '-60px', 'important');
                     c.style.setProperty('padding-top', '0px', 'important');
                 }
             });
