@@ -304,23 +304,22 @@ def render_library(assistant):
     # 3. BREADCRUMBS & NAVIGATION
     # ==========================================
     
-    st.write("") # Spacer
-    
     # Breadcrumb Logic
     crumbs = st.session_state['lib_breadcrumbs']
-    path_str = "🏠 Raíz"
+    path_str = "Raíz" # Removed emoji from string to be cleaner with icon next to it
     for c in crumbs:
         path_str += f" > {c['name']}"
-    
-    # Simple Breadcrumb UI
-    bc_c1, bc_c2 = st.columns([0.8, 0.2])
+
+    # Minimalist Breadcrumbs (Compact)
+    # No extra spacers to keep it thin
+    bc_c1, bc_c2 = st.columns([0.85, 0.15])
     with bc_c1:
         # Minimalist path display
-        breadcrumbs_html = f"<span style='color: #64748b; font-size: 0.9rem;'>{path_str}</span>"
+        breadcrumbs_html = f"<div style='color: #94a3b8; font-size: 0.85rem; margin-top: 8px;'>📍 {path_str}</div>"
         st.markdown(breadcrumbs_html, unsafe_allow_html=True)
     with bc_c2:
         if crumbs:
-            if st.button("⬅️ Atrás", use_container_width=True):
+            if st.button("⬅️ Atrás", use_container_width=True, key="back_nav_btn"):
                 st.session_state['lib_breadcrumbs'].pop()
                 if st.session_state['lib_breadcrumbs']:
                     last = st.session_state['lib_breadcrumbs'][-1]
@@ -331,7 +330,8 @@ def render_library(assistant):
                     st.session_state['lib_current_unit_name'] = None
                 st.rerun()
 
-    st.divider()
+    # Minimal Separator instead of thick Divider
+    st.markdown("<hr style='margin: 5px 0 15px 0; border: none; border-top: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
 
     # ==========================================
     # 4. CONTENT GRID (Folders & Files)
