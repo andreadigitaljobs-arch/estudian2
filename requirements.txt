@@ -7,4 +7,4 @@ streamlit-paste-button
 python-docx
 markdown
 imageio-ffmpeg
-# TRIGGER_V241_CENTER_LIFT
+# TRIGGER_V242_SUBTLE_LIFT
