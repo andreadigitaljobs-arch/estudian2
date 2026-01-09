@@ -707,6 +707,31 @@ def get_course_files(course_id, type_filter=None):
         print(f"Error fetching course files: {e}")
         return []
 
+def get_recent_files(course_id, limit=5):
+    """
+    Fetches the most recently created files for a course (Dashboard).
+    """
+    supabase = init_supabase()
+    try:
+        # 1. Get all unit IDs
+        units = supabase.table("units").select("id").eq("course_id", course_id).execute().data
+        if not units: return []
+        
+        unit_ids = [u['id'] for u in units]
+        
+        # 2. Query files
+        res = supabase.table("library_files") \
+            .select("id, name, type, created_at, unit_id") \
+            .in_("unit_id", unit_ids) \
+            .order("created_at", desc=True) \
+            .limit(limit) \
+            .execute()
+            
+        return res.data
+    except Exception as e:
+        print(f"Error fetching recent files: {e}")
+        return []
+
 def get_last_transcribed_file_name(course_id):
     """
     Returns the name of the last successfully transcribed file for a given course.

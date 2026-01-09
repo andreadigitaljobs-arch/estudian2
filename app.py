@@ -51,7 +51,7 @@ from db_handler import (
     get_dashboard_stats, update_user_nickname, get_recent_chats, check_and_update_streak, 
     get_user_footprint, init_supabase, update_last_course, 
     save_chat_message, get_chat_messages, get_file_content, get_course_files, delete_file, get_course_full_context,
-    get_user_memory, save_user_memory, upload_file_to_db, get_last_transcribed_file_name
+    get_user_memory, save_user_memory, upload_file_to_db, get_last_transcribed_file_name, get_recent_files
 )
 
 
@@ -2922,50 +2922,160 @@ with tab_home:
             st.warning("No se encontraron chats.")
             
     elif current_c_id:
-        # --- STANDARD DASHBOARD VIEW ---
+        # --- MODERN DASHBOARD VIEW (V260) ---
         stats = get_dashboard_stats(current_c_id, st.session_state['user'].id)
-        
-        # Calculate Real Streak
         streak = check_and_update_streak(st.session_state['user'])
         
-        # Gamification Messages
+        # --- CARDS CSS ---
+        st.markdown("""
+        <style>
+        .dash-card {
+            background-color: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            border: 1px solid #F0F0F0;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            margin-bottom: 10px;
+        }
+        .dash-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+        }
+        .dash-icon {
+            font-size: 2rem;
+            margin-right: 20px;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+        }
+        .dash-content {
+            flex-grow: 1;
+        }
+        .dash-value {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #1A1A1A;
+            margin: 0;
+            line-height: 1.0;
+        }
+        .dash-label {
+            font-size: 0.9rem;
+            color: #666;
+            font-weight: 500;
+            margin: 5px 0 0 0;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+        
+        # Gamification Msg
         streak_msg = "¡Sigue así!"
         if streak >= 3: streak_msg = "🔥 ¡Estás en llamas!"
         if streak >= 7: streak_msg = "👑 ¡Leyenda!"
         
-        # Metrics Row
-        m1, m2, m3 = st.columns(3)
-        m1.metric("📚 Archivos", stats['files'], delta="Recursos totales")
-        m2.metric("💬 Sesiones", stats['chats'], delta="Conversaciones")
-        m3.metric("🔥 Racha", f"{streak} Día{'s' if streak != 1 else ''}", delta=streak_msg)
+        # --- CARDS ROW ---
+        c1, c2, c3 = st.columns(3)
         
-        st.divider()
+        with c1:
+            st.markdown(f"""
+            <div class="dash-card">
+                <div class="dash-icon" style="background: #EEF2FF; color: #4B22DD;">📚</div>
+                <div class="dash-content">
+                    <p class="dash-value">{stats['files']}</p>
+                    <p class="dash-label">Archivos</p>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
         
-        # Visuals Row
-        d1, d2 = st.columns([0.6, 0.4])
+        with c2:
+            st.markdown(f"""
+            <div class="dash-card">
+                <div class="dash-icon" style="background: #FFF4E5; color: #FF9800;">💬</div>
+                <div class="dash-content">
+                    <p class="dash-value">{stats['chats']}</p>
+                    <p class="dash-label">Sesiones</p>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+        with c3:
+            st.markdown(f"""
+            <div class="dash-card">
+                <div class="dash-icon" style="background: #E0F2F1; color: #009688;">🔥</div>
+                <div class="dash-content">
+                    <p class="dash-value">{streak}</p>
+                    <p class="dash-label">{streak_msg}</p>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        st.markdown(" <br> ", unsafe_allow_html=True)
+
+        # --- MAIN CONTENT ROW ---
+        d1, d2 = st.columns([0.65, 0.35])
         
         with d1:
-            st.markdown("##### 📊 Tu Biblioteca")
-            # Simple Bar Chart of File Types
-            chart_data = pd.DataFrame.from_dict(stats['file_types'], orient='index', columns=['Cantidad'])
-            st.bar_chart(chart_data)
+            st.markdown("### 📄 Material Reciente", unsafe_allow_html=True)
+            st.caption("Tus últimos archivos añadidos")
             
+            recent_files = get_recent_files(current_c_id, limit=4)
+            
+            if recent_files:
+                for f in recent_files:
+                    with st.container(border=True):
+                        col_icon, col_info, col_act = st.columns([0.1, 0.65, 0.25])
+                        
+                        # Determine Icon
+                        ftype = f.get('type', 'unknown')
+                        icon_emoji = "📄"
+                        if ftype == 'transcript': icon_emoji = "📹"
+                        elif ftype == 'note': icon_emoji = "📝"
+                        elif ftype == 'pdf': icon_emoji = "📕"
+                        
+                        with col_icon:
+                            st.markdown(f"<div style='font-size: 24px; text-align: center;'>{icon_emoji}</div>", unsafe_allow_html=True)
+                            
+                        with col_info:
+                            st.markdown(f"**{f['name']}**")
+                            # Format date nicely
+                            date_only = f['created_at'].split('T')[0] if f.get('created_at') else "Reciente"
+                            st.caption(f"Añadido: {date_only}")
+                            
+                        with col_act:
+                            st.write("")
+                            if st.button("Abrir", key=f"open_file_{f['id']}", use_container_width=True):
+                                # Redirect Logic
+                                st.session_state['redirect_target_name'] = "Biblioteca"
+                                st.session_state['force_chat_tab'] = True
+                                st.rerun()
+            else:
+                st.info("Aún no tienes material. ¡Sube algo para empezar!", icon="📂")
+
         with d2:
-            st.markdown("##### 🚀 Acciones Rápidas")
+            st.markdown("### 🚀 Acciones", unsafe_allow_html=True)
             st.write("")
-            if st.button("📂 Ir a Biblioteca", use_container_width=True):
-                st.session_state['redirect_target_name'] = "Biblioteca"
-                st.session_state['force_chat_tab'] = True 
-                st.rerun()
             
-            st.write("")
-            if st.button("➕ Subir Archivo Nuevo", use_container_width=True):
-                st.session_state['redirect_target_name'] = "Biblioteca"
-                st.session_state['force_chat_tab'] = True
-                st.session_state['lib_auto_open_upload'] = True
-                st.rerun()
-        
-        st.divider()
+            with st.container(border=True):
+                st.markdown("**Biblioteca Completa**")
+                st.caption("Gestiona todo tu contenido")
+                if st.button("📂 Ir a Biblioteca", use_container_width=True, type="primary"):
+                    st.session_state['redirect_target_name'] = "Biblioteca"
+                    st.session_state['force_chat_tab'] = True 
+                    st.rerun()
+            
+            with st.container(border=True):
+                st.markdown("**Nuevo Recurso**")
+                st.caption("Sube PDFs, Audios o Videos")
+                if st.button("➕ Subir Archivo", use_container_width=True):
+                    st.session_state['redirect_target_name'] = "Biblioteca"
+                    st.session_state['force_chat_tab'] = True
+                    st.session_state['lib_auto_open_upload'] = True
+                    st.rerun()
         
         st.divider()
         
