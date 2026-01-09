@@ -315,7 +315,7 @@ st.markdown("""
     .block-container {
         padding-top: 0rem !important;
         padding-bottom: 2rem !important;
-        margin-top: -120px !important; /* MASSIVE FORCE UP */
+        margin-top: -200px !important; /* ULTRA MASSIVE FORCE UP */
         transform: translateY(-20px); /* Visual shift */
         max-width: 100% !important;
     }
@@ -323,7 +323,7 @@ st.markdown("""
     /* Target the main content wrapper specifically */
     div[data-testid="stAppViewContainer"] > section[data-testid="stMain"] > div.block-container {
         padding-top: 0rem !important;
-        margin-top: -120px !important;
+        margin-top: -200px !important;
     }
 
     /* Hide the top decoration bar completely */
