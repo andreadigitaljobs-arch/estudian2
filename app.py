@@ -1377,7 +1377,7 @@ if not st.session_state['user']:
                 display: flex;
                 flex-direction: column;
                 justify-content: flex-start;
-                margin-top: -200px;
+                margin-top: -230px;
             }
             </style>
             <div id="login_anchor"></div>
