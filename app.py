@@ -173,6 +173,11 @@ components.html("""
                         const progressText = root.getElementById('loader-progress-text');
                         if (mainText) mainText.textContent = 'Cargando...';
                         if (progressText) progressText.textContent = '';
+                        
+                        // --- V298: CRITICAL CLEANUP ---
+                        // Remove ghost attributes to prevent "¡Listo!" showing on next run
+                        root.body.removeAttribute('data-transcription-message');
+                        root.body.removeAttribute('data-transcription-percentage');
                     }
                 }, 80); 
             }
