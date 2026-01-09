@@ -98,7 +98,7 @@ components.html("""
                     flex-direction: column;
                     justify-content: center;
                     align-items: center;
-                    z-index: 999999999 !important;
+                    z-index: 2147483647 !important; /* V299: Match max elevators */
                     opacity: 0;
                     pointer-events: none;
                     transition: opacity 0.25s ease;
@@ -163,11 +163,18 @@ components.html("""
             // We no longer suppress it; instead we update its content dynamically
             if (state === 'running') {
                 loader.classList.add('active');
+                // V299: Hide Navigation Arrows
+                const elevator = root.getElementById('v231_auth_elevator');
+                if (elevator) elevator.style.display = 'none';
             } else {
                 setTimeout(() => {
                     const currentState = appNode.getAttribute('data-test-script-state');
                     if (currentState !== 'running') {
                         loader.classList.remove('active');
+                        // V299: Show Navigation Arrows
+                        const elevator = root.getElementById('v231_auth_elevator');
+                        if (elevator) elevator.style.display = 'flex';
+
                         // Reset text
                         const mainText = root.getElementById('loader-main-text');
                         const progressText = root.getElementById('loader-progress-text');
