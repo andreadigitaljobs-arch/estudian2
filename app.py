@@ -3312,167 +3312,173 @@ with tab1:
             
 
             if st.button("▶️ Iniciar Transcripción Inteligente", type="primary", key="btn_start_transcription", use_container_width=True, disabled=(not selected_unit_id)):
-                # V207: Start Sound (Blip)
-                play_sound('start')
-                
-                if not selected_unit_id:
-                    st.error("Error: Carpeta no seleccionada.")
-                else:
-                    progress_bar = st.progress(0)
-                    status_text = st.empty()
-                    import time
-                    from google.api_core.exceptions import ResourceExhausted, ServiceUnavailable
+                try:
+                    # V207: Start Sound (Blip)
+                    play_sound('start')
                     
-                    # --- SMART BATCH LOGIC ---
-                    # User Request: "Procesar 40 videos de 3 en 3 automáticamente"
-                    all_files = uploaded_files
-                    total_files = len(all_files)
-                    # Reduce Batch Size to 1 to prevent Memory Overload with 700MB videos
-                    BATCH_SIZE = 1
-                    
-                    for start_idx in range(0, total_files, BATCH_SIZE):
-                        batch = all_files[start_idx : start_idx + BATCH_SIZE]
-                        batch_num = (start_idx // BATCH_SIZE) + 1
-                        total_batches = (total_files + BATCH_SIZE - 1) // BATCH_SIZE
+                    if not selected_unit_id:
+                        st.error("Error: Carpeta no seleccionada.")
+                    else:
+                        progress_bar = st.progress(0)
+                        status_text = st.empty()
+                        import time
+                        from google.api_core.exceptions import ResourceExhausted, ServiceUnavailable
                         
-                        # Update Status for Lote
-                        status_text.markdown(f"**🚀 Procesando Archivo {batch_num} de {total_files}**")
-                        log_debug(f"--- BATCH {batch_num} START ---")
-                        st.write(f"DEBUG: Iniciando batch {batch_num}, archivos en batch: {len(batch)}")
+                        # --- SMART BATCH LOGIC ---
+                        # User Request: "Procesar 40 videos de 3 en 3 automáticamente"
+                        all_files = uploaded_files
+                        total_files = len(all_files)
+                        # Reduce Batch Size to 1 to prevent Memory Overload with 700MB videos
+                        BATCH_SIZE = 1
                         
-                        for file in batch:
-                            t_unit_id = selected_unit_id 
+                        for start_idx in range(0, total_files, BATCH_SIZE):
+                            batch = all_files[start_idx : start_idx + BATCH_SIZE]
+                            batch_num = (start_idx // BATCH_SIZE) + 1
+                            total_batches = (total_files + BATCH_SIZE - 1) // BATCH_SIZE
                             
-                            # V217: Defensive File Handling (UUID + Guard)
-                            safe_ext = os.path.splitext(file.name)[1]
-                            temp_path = f"temp_upload_{uuid.uuid4()}{safe_ext}"
-                            log_debug(f"Procesando: {file.name} -> {temp_path} ({file.size} bytes)")
+                            # Update Status for Lote
+                            status_text.markdown(f"**🚀 Procesando Archivo {batch_num} de {total_files}**")
+                            log_debug(f"--- BATCH {batch_num} START ---")
+                            st.write(f"DEBUG: Iniciando batch {batch_num}, archivos en batch: {len(batch)}")
                             
-                            try:
-                                # Memory-Safe Write (Chunk by Chunk) to avoid RAM duplication
-                                log_debug("Inicio escritura disco...")
-                                file.seek(0)  # CRITICAL FIX: Ensure pointer is at start
-                                with open(temp_path, "wb") as f:
-                                    # Write in 4MB chunks
-                                    while True:
-                                        chunk = file.read(4 * 1024 * 1024)
-                                        if not chunk: break
-                                        f.write(chunk)
-                                log_debug("Escritura disco OK.")
-                            except Exception as e:
-                                log_debug(f"ERROR ESCRITURA: {e}")
-                                st.error(f"❌ Error CRÍTICO escribiendo disco: {e}")
-                                continue
-                            
-                            # RETRY LOGIC (Quota Protection)
-                            max_retries = 3
-                            success = False
-                            attempt = 0
-                            
-                            while attempt < max_retries and not success:
+                            for file in batch:
+                                t_unit_id = selected_unit_id 
+                                
+                                # V217: Defensive File Handling (UUID + Guard)
+                                safe_ext = os.path.splitext(file.name)[1]
+                                temp_path = f"temp_upload_{uuid.uuid4()}{safe_ext}"
+                                log_debug(f"Procesando: {file.name} -> {temp_path} ({file.size} bytes)")
+                                
                                 try:
-                                    status_text.markdown(f"**⚡ Transcribiendo: {file.name}...**")
-                                    
-                                    def update_ui(msg, prog):
-                                        # Update both text and bar
-                                        pct = int(prog * 100)
-                                        status_text.markdown(f"**⚡ {msg} ({pct}%)**")
-                                        progress_bar.progress(prog)
+                                    # Memory-Safe Write (Chunk by Chunk) to avoid RAM duplication
+                                    log_debug("Inicio escritura disco...")
+                                    file.seek(0)  # CRITICAL FIX: Ensure pointer is at start
+                                    with open(temp_path, "wb") as f:
+                                        # Write in 4MB chunks
+                                        while True:
+                                            chunk = file.read(4 * 1024 * 1024)
+                                            if not chunk: break
+                                            f.write(chunk)
+                                    log_debug("Escritura disco OK.")
+                                except Exception as e:
+                                    log_debug(f"ERROR ESCRITURA: {e}")
+                                    st.error(f"❌ Error CRÍTICO escribiendo disco: {e}")
+                                    continue
+                                
+                                # RETRY LOGIC (Quota Protection)
+                                max_retries = 3
+                                success = False
+                                attempt = 0
+                                
+                                while attempt < max_retries and not success:
+                                    try:
+                                        status_text.markdown(f"**⚡ Transcribiendo: {file.name}...**")
                                         
-                                        # --- V257: SIMPLIFIED UPDATE ---
-                                        try:
-                                            msg_clean = msg.replace("'", "")
-                                            components.html(f"""
-                                                <script>
-                                                    window.parent.document.body.setAttribute('data-transcription-message', '{msg_clean}');
-                                                    window.parent.document.body.setAttribute('data-transcription-percentage', '{pct}');
-                                                </script>
-                                            """, height=0)
-                                        except:
-                                            pass
-                                    
-                                    # Process
-                                    log_debug(f"Iniciando transcriber.process_video (Intento {attempt+1})")
-                                    trans_text = transcriber.process_video(temp_path, visual_mode=use_visual, progress_callback=update_ui)
-                                    log_debug("Transcriber success.")
+                                        def update_ui(msg, prog):
+                                            # Update both text and bar
+                                            pct = int(prog * 100)
+                                            status_text.markdown(f"**⚡ {msg} ({pct}%)**")
+                                            progress_bar.progress(prog)
+                                            
+                                            # --- V257: SIMPLIFIED UPDATE ---
+                                            try:
+                                                msg_clean = msg.replace("'", "")
+                                                components.html(f"""
+                                                    <script>
+                                                        window.parent.document.body.setAttribute('data-transcription-message', '{msg_clean}');
+                                                        window.parent.document.body.setAttribute('data-transcription-percentage', '{pct}');
+                                                    </script>
+                                                """, height=0)
+                                            except:
+                                                pass
+                                        
+                                        # Process
+                                        log_debug(f"Iniciando transcriber.process_video (Intento {attempt+1})")
+                                        trans_text = transcriber.process_video(temp_path, visual_mode=use_visual, progress_callback=update_ui)
+                                        log_debug("Transcriber success.")
 
-                                    # Validation check
-                                    if trans_text.startswith("[ERROR]"):
-                                        raise Exception(trans_text)
-                                    
-                                    # The new process_video returns TEXT directly, not a path!
-                                    # (Review transcriber.py: return response.text or full_text)
-                                    
-                                    # So we skip the open() step.
-                                    
-                                    custom_n = file_renames.get(file.name, os.path.splitext(file.name)[0])
-                                    
-                                    # V198 Fix: Sanitize filename (remove slashes/colons from dates)
-                                    # User reported error with "2024/11/06 18:00"
-                                    custom_n = custom_n.replace("/", "-").replace("\\", "-").replace(":", "-").replace("|", "-")
-                                    
-                                    final_name = f"{custom_n}.txt"
-                                    
-                                    # ROBUST UPLOAD: Retry with timestamp if fails (likely duplicate)
-                                    saved = upload_file_to_db(t_unit_id, final_name, trans_text, "transcript")
-                                    if not saved:
-                                        # Retry with suffix
-                                        import time
-                                        suffix = int(time.time())
-                                        final_name_retry = f"{custom_n}_{suffix}.txt"
-                                        saved = upload_file_to_db(t_unit_id, final_name_retry, trans_text, "transcript")
+                                        # Validation check
+                                        if trans_text.startswith("[ERROR]"):
+                                            raise Exception(trans_text)
+                                        
+                                        # The new process_video returns TEXT directly, not a path!
+                                        # (Review transcriber.py: return response.text or full_text)
+                                        
+                                        # So we skip the open() step.
+                                        
+                                        custom_n = file_renames.get(file.name, os.path.splitext(file.name)[0])
+                                        
+                                        # V198 Fix: Sanitize filename (remove slashes/colons from dates)
+                                        # User reported error with "2024/11/06 18:00"
+                                        custom_n = custom_n.replace("/", "-").replace("\\", "-").replace(":", "-").replace("|", "-")
+                                        
+                                        final_name = f"{custom_n}.txt"
+                                        
+                                        # ROBUST UPLOAD: Retry with timestamp if fails (likely duplicate)
+                                        saved = upload_file_to_db(t_unit_id, final_name, trans_text, "transcript")
+                                        if not saved:
+                                            # Retry with suffix
+                                            import time
+                                            suffix = int(time.time())
+                                            final_name_retry = f"{custom_n}_{suffix}.txt"
+                                            saved = upload_file_to_db(t_unit_id, final_name_retry, trans_text, "transcript")
+                                            
+                                            if saved:
+                                                st.toast(f"⚠️ Nombre duplicado. Guardado como: {final_name_retry}", icon="📝")
+                                                final_name = final_name_retry
+                                            else:
+                                                st.error(f"❌ Error CRÍTICO: No se pudo guardar '{custom_n}' en la base de datos.")
                                         
                                         if saved:
-                                            st.toast(f"⚠️ Nombre duplicado. Guardado como: {final_name_retry}", icon="📝")
-                                            final_name = final_name_retry
-                                        else:
-                                            st.error(f"❌ Error CRÍTICO: No se pudo guardar '{custom_n}' en la base de datos.")
-                                    
-                                    if saved:
-                                        st.toast(f"✅ Listo: {final_name}") 
-                                        st.session_state['transcript_history'].append({"name": custom_n, "text": trans_text})
-                                        st.session_state['last_transcribed_file'] = custom_n # Update last processed
-                                        # V206: Play Sound
-                                        play_sound('success')
-                                    
-                                    # Cleanup handled by logic
-                                    # if os.path.exists(txt_path): os.remove(txt_path) # DEPRECATED V174
-                                    success = True
-                                    time.sleep(2) # Micro-pause between files
-                                    
-                                except ResourceExhausted:
-                                    status_text.warning(f"⏳ **Alcalzamos el límite de IA (Quota).** Esperando 60 segundos para enfriar motores...")
-                                    time.sleep(65) # Wait out the minute limit
-                                    attempt += 1
-                                except ServiceUnavailable:
-                                    status_text.warning(f"⚠️ Servidor ocupado. Reintentando en 10s...")
-                                    time.sleep(10)
-                                    attempt += 1
-                                except Exception as e:
-                                    error_msg = f"❌ Error fatal en {file.name}: {str(e)}"
-                                    st.error(error_msg)
-                                    log_debug(f"EXCEPTION: {error_msg}")
-                                    import traceback
-                                    st.code(traceback.format_exc())
-                                    attempt = max_retries # Abort this file
-                                finally:
-                                    pass
-
-                            # Cleanup Temp
-                            if os.path.exists(temp_path): os.remove(temp_path)
+                                            st.toast(f"✅ Listo: {final_name}") 
+                                            st.session_state['transcript_history'].append({"name": custom_n, "text": trans_text})
+                                            st.session_state['last_transcribed_file'] = custom_n # Update last processed
+                                            # V206: Play Sound
+                                            play_sound('success')
+                                        
+                                        # Cleanup handled by logic
+                                        # if os.path.exists(txt_path): os.remove(txt_path) # DEPRECATED V174
+                                        success = True
+                                        time.sleep(2) # Micro-pause between files
+                                        
+                                    except ResourceExhausted:
+                                        status_text.warning(f"⏳ **Alcalzamos el límite de IA (Quota).** Esperando 60 segundos para enfriar motores...")
+                                        time.sleep(65) # Wait out the minute limit
+                                        attempt += 1
+                                    except ServiceUnavailable:
+                                        status_text.warning(f"⚠️ Servidor ocupado. Reintentando en 10s...")
+                                        time.sleep(10)
+                                        attempt += 1
+                                    except Exception as e:
+                                        error_msg = f"❌ Error fatal en {file.name}: {str(e)}"
+                                        st.error(error_msg)
+                                        log_debug(f"EXCEPTION: {error_msg}")
+                                        import traceback
+                                        st.code(traceback.format_exc())
+                                        attempt = max_retries # Abort this file
+                                    finally:
+                                        pass
+    
+                                # Cleanup Temp
+                                if os.path.exists(temp_path): os.remove(temp_path)
+                                
+                                # V215: Explicit Memory Cleanup for 500MB+ files
+                                gc.collect()
                             
-                            # V215: Explicit Memory Cleanup for 500MB+ files
-                            gc.collect()
-                        
-                        # Update Global Progress
-                        progress_bar.progress(min((start_idx + BATCH_SIZE) / total_files, 1.0))
-                        
-                        # Inter-Batch Cooldown (Be nice to API)
-                        if start_idx + BATCH_SIZE < total_files:
-                            status_text.info(f"☕ Tomando un respiro de 10s antes del siguiente lote...")
-                            time.sleep(10)
+                            # Update Global Progress
+                            progress_bar.progress(min((start_idx + BATCH_SIZE) / total_files, 1.0))
                             
-                    status_text.success("¡Misión Cumplida! Todos los archivos han sido procesados. 🏁")
+                            # Inter-Batch Cooldown (Be nice to API)
+                            if start_idx + BATCH_SIZE < total_files:
+                                status_text.info(f"☕ Tomando un respiro de 10s antes del siguiente lote...")
+                                time.sleep(10)
+                                
+                        status_text.success("¡Misión Cumplida! Todos los archivos han sido procesados. 🏁")
+                except Exception as e:
+                    st.error(f"💥 Error Fatal en la aplicación: {e}")
+                    import traceback
+                    st.code(traceback.format_exc())
+                    log_debug(f"FATAL APP CRASH: {traceback.format_exc()}")
 
     # History
     if st.session_state['transcript_history']:
