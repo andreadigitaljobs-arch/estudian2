@@ -3017,20 +3017,95 @@ with tab_home:
         st.markdown(" <br> ", unsafe_allow_html=True)
 
         # --- MAIN CONTENT ROW ---
-        d1, d2 = st.columns([0.65, 0.35])
+        d1, d2 = st.columns([0.5, 0.5])
         
         with d1:
-            st.markdown("### 📄 Material Reciente", unsafe_allow_html=True)
-            st.caption("Tus últimos archivos añadidos")
+            # --- SMART CONTINUITY CARD ---
+            st.markdown("### 🕰️ Continuar donde lo dejaste", unsafe_allow_html=True)
+            st.caption("Retoma tu última actividad")
             
-            recent_files = get_recent_files(current_c_id, limit=4)
+            # Load Footprint
+            curr_user = st.session_state['user']
+            footprint = curr_user.user_metadata.get('smart_footprint') if curr_user.user_metadata else None
+            
+            # Helper to render the card
+            def render_smart_card(icon, title, subtitle, btn_label, on_click_fn):
+                 # Styled Container
+                 with st.container(border=True):
+                     c_icon, c_info, c_btn = st.columns([0.15, 0.6, 0.25])
+                     with c_icon:
+                         st.markdown(f"<div style='font-size: 30px; text-align: center;'>{icon}</div>", unsafe_allow_html=True)
+                     with c_info:
+                         st.markdown(f"**{title}**")
+                         st.caption(subtitle)
+                     with c_btn:
+                         st.write("") # Spacer
+                         if st.button(btn_label, use_container_width=True, type="primary", key=f"smart_{title[:10]}"):
+                             on_click_fn()
+                             st.rerun()
+
+            if footprint:
+                 ftype = footprint.get('type')
+                 ftitle = footprint.get('title', 'Actividad Reciente')
+                 fsub = footprint.get('subtitle', 'Retomar actividad')
+                 ftarget = footprint.get('target_id')
+                 
+                 if ftype == 'chat':
+                     def go_chat():
+                         # Re-fetch session data (mock object minimal)
+                         st.session_state['current_chat_session'] = {'id': ftarget, 'name': ftitle}
+                         st.session_state['tutor_chat_history'] = []
+                         st.session_state['redirect_target_name'] = "Tutoría 1 a 1"
+                         st.session_state['force_chat_tab'] = True
+                         
+                         # UPDATE URL
+                         try:
+                             if hasattr(st, 'query_params'):
+                                 st.query_params['chat_id'] = str(ftarget)
+                             else:
+                                 st.experimental_set_query_params(chat_id=str(ftarget))
+                         except: pass
+                     
+                     render_smart_card("💬", f"Chat: {ftitle}", "Estabas conversando con tu asistente", "Retomar", go_chat)
+                     
+                 elif ftype == 'unit':
+                     def go_unit():
+                         st.session_state['redirect_target_name'] = "Biblioteca"
+                         st.session_state['force_chat_tab'] = True
+                         st.session_state['lib_current_unit_id'] = ftarget
+                         st.session_state['lib_current_unit_name'] = ftitle
+                         st.session_state['lib_breadcrumbs'] = [{'id': ftarget, 'name': ftitle}]
+                         
+                     render_smart_card("📂", f"Carpeta: {ftitle}", "Estabas explorando archivos aquí", "Ir", go_unit)
+                     
+                 else:
+                     # Fallback for unknown types
+                     st.info(f"Última actividad: {ftitle}")
+                     
+            else:
+                 # Fallback to Recents if no footprint (First run)
+                 st.info("Explora la app para generar tu tarjeta de viaje. 🚀")
+                 recent_chats = get_recent_chats(st.session_state['user'].id, limit=3)
+                 if recent_chats:
+                    chat = recent_chats[0]
+                if st.button(f"📝 Último chat: {chat['name']}", key="fallback_rec"):
+                        st.session_state['current_chat_session'] = chat
+                        st.session_state['tutor_chat_history'] = [] 
+                        st.session_state['redirect_target_name'] = "Tutoría 1 a 1"
+                        st.session_state['force_chat_tab'] = True
+                        st.rerun()
+
+        with d2:
+            st.markdown("### 📄 Material Reciente", unsafe_allow_html=True)
+            st.caption("Tus últimos archivos")
+            
+            recent_files = get_recent_files(current_c_id, limit=3)
             
             if recent_files:
                 for f in recent_files:
                     with st.container(border=True):
-                        col_icon, col_info, col_act = st.columns([0.1, 0.65, 0.25])
+                        col_icon, col_info, col_act = st.columns([0.15, 0.6, 0.25])
                         
-                        # Determine Icon
                         ftype = f.get('type', 'unknown')
                         icon_emoji = "📄"
                         if ftype == 'transcript': icon_emoji = "📹"
@@ -3038,122 +3113,39 @@ with tab_home:
                         elif ftype == 'pdf': icon_emoji = "📕"
                         
                         with col_icon:
-                            st.markdown(f"<div style='font-size: 24px; text-align: center;'>{icon_emoji}</div>", unsafe_allow_html=True)
+                            st.markdown(f"<div style='font-size: 20px; text-align: center;'>{icon_emoji}</div>", unsafe_allow_html=True)
                             
                         with col_info:
-                            st.markdown(f"**{f['name']}**")
-                            # Format date nicely
+                            display_name = f['name'][:30] + "..." if len(f['name']) > 30 else f['name']
+                            st.markdown(f"**{display_name}**")
                             date_only = f['created_at'].split('T')[0] if f.get('created_at') else "Reciente"
-                            st.caption(f"Añadido: {date_only}")
+                            st.caption(f"{date_only}")
                             
                         with col_act:
-                            st.write("")
-                            if st.button("Abrir", key=f"open_file_{f['id']}", use_container_width=True):
-                                # Redirect Logic
+                            if st.button("▶", key=f"open_file_{f['id']}", use_container_width=True):
                                 st.session_state['redirect_target_name'] = "Biblioteca"
                                 st.session_state['force_chat_tab'] = True
                                 st.rerun()
             else:
-                st.info("Aún no tienes material. ¡Sube algo para empezar!", icon="📂")
-
-        with d2:
-            st.markdown("### 🚀 Acciones", unsafe_allow_html=True)
+                st.info("Sin archivos aún", icon="📂")
+            
             st.write("")
+            st.markdown("### 🚀 Acciones", unsafe_allow_html=True)
             
             with st.container(border=True):
-                st.markdown("**Biblioteca Completa**")
-                st.caption("Gestiona todo tu contenido")
-                if st.button("📂 Ir a Biblioteca", use_container_width=True, type="primary"):
+                st.markdown("**Biblioteca**")
+                if st.button("📂 Ver Todo", use_container_width=True, type="primary", key="btn_goto_lib"):
                     st.session_state['redirect_target_name'] = "Biblioteca"
                     st.session_state['force_chat_tab'] = True 
                     st.rerun()
             
             with st.container(border=True):
-                st.markdown("**Nuevo Recurso**")
-                st.caption("Sube PDFs, Audios o Videos")
-                if st.button("➕ Subir Archivo", use_container_width=True):
+                st.markdown("**Subir**")
+                if st.button("➕ Nuevo", use_container_width=True, key="btn_upload_new"):
                     st.session_state['redirect_target_name'] = "Biblioteca"
                     st.session_state['force_chat_tab'] = True
                     st.session_state['lib_auto_open_upload'] = True
                     st.rerun()
-        
-        st.divider()
-        
-        # --- SMART CONTINUITY CARD ---
-        st.markdown("##### 🕰️ Continuar donde lo dejaste")
-        
-        # Load Footprint
-        curr_user = st.session_state['user']
-        footprint = curr_user.user_metadata.get('smart_footprint') if curr_user.user_metadata else None
-        
-        # Helper to render the card
-        def render_smart_card(icon, title, subtitle, btn_label, on_click_fn):
-             # Styled Container
-             with st.container(border=True):
-                 c_icon, c_info, c_btn = st.columns([0.15, 0.65, 0.2])
-                 with c_icon:
-                     st.markdown(f"<div style='font-size: 30px; text-align: center;'>{icon}</div>", unsafe_allow_html=True)
-                 with c_info:
-                     st.markdown(f"**{title}**")
-                     st.caption(subtitle)
-                 with c_btn:
-                     st.write("") # Spacer
-                     if st.button(btn_label, use_container_width=True, type="primary"):
-                         on_click_fn()
-                         st.rerun()
-
-        if footprint:
-             ftype = footprint.get('type')
-             ftitle = footprint.get('title', 'Actividad Reciente')
-             fsub = footprint.get('subtitle', 'Retomar actividad')
-             ftarget = footprint.get('target_id')
-             
-             if ftype == 'chat':
-                 def go_chat():
-                     # Re-fetch session data (mock object minimal)
-                     st.session_state['current_chat_session'] = {'id': ftarget, 'name': ftitle}
-                     st.session_state['tutor_chat_history'] = []
-                     st.session_state['redirect_target_name'] = "Tutoría 1 a 1"
-                     st.session_state['force_chat_tab'] = True
-                     
-                     # UPDATE URL
-                     try:
-                         if hasattr(st, 'query_params'):
-                             st.query_params['chat_id'] = str(ftarget)
-                         else:
-                             st.experimental_set_query_params(chat_id=str(ftarget))
-                     except: pass
-                 
-                 render_smart_card("💬", f"Chat: {ftitle}", "Estabas conversando con tu asistente", "Retomar Chat", go_chat)
-                 
-             elif ftype == 'unit':
-                 def go_unit():
-                     st.session_state['redirect_target_name'] = "Biblioteca"
-                     st.session_state['force_chat_tab'] = True
-                     st.session_state['lib_current_unit_id'] = ftarget
-                     st.session_state['lib_current_unit_name'] = ftitle
-                     # Breadcrumbs might be tricky to reconstruct perfectly without query, 
-                     # but we can set simple path
-                     st.session_state['lib_breadcrumbs'] = [{'id': ftarget, 'name': ftitle}]
-                     
-                 render_smart_card("📂", f"Carpeta: {ftitle}", "Estabas explorando archivos aquí", "Ir a Carpeta", go_unit)
-                 
-             else:
-                 # Fallback for unknown types
-                 st.info(f"Última actividad: {ftitle}")
-                 
-        else:
-             # Fallback to Recents if no footprint (First run)
-             st.info("Explora la app para generar tu tarjeta de viaje. 🚀")
-             recent_chats = get_recent_chats(st.session_state['user'].id, limit=3) # Keep fallback just in case
-             if recent_chats:
-                chat = recent_chats[0]
-                if st.button(f"📝 Último chat: {chat['name']}", key="fallback_rec"):
-                        st.session_state['current_chat_session'] = chat
-                        st.session_state['tutor_chat_history'] = [] 
-                        st.session_state['redirect_target_name'] = "Tutoría 1 a 1"
-                        st.session_state['force_chat_tab'] = True
-                        st.rerun()
 
     else:
         st.info("Selecciona o crea un Diplomado en la barra lateral para ver tus estadísticas.")
