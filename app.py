@@ -87,7 +87,7 @@ components.html("""
                 #estudian2_cute_loader {
                     position: fixed;
                     top: 0; left: 0; width: 100vw; height: 100vh;
-                    background: #F2FAF7; /* Solid Light Mint Green - Fixes ghosting */
+                    background: #F6F3FF; /* Clean Light Lilac - Solid masking */
                     display: flex;
                     flex-direction: column;
                     justify-content: center;
