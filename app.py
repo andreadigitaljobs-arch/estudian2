@@ -5,6 +5,14 @@ import glob
 import uuid
 import gc # Trigger V215: RAM Safety
 
+# --- PAGE CONFIG MUST BE FIRST ---
+st.set_page_config(
+    page_title="E-Education",
+    page_icon="assets/favicon.jpg",
+    layout="wide",
+    initial_sidebar_state="expanded" if st.session_state.get('user') else "collapsed"
+)
+
 # --- SAFETY BRAKE: PREVENT INFINITE LOOPS ---
 import time
 now_ts = time.time()
@@ -76,13 +84,6 @@ from db_handler import (
 
 
 
-# --- PAGE CONFIG MUST BE FIRST ---
-st.set_page_config(
-    page_title="E-Education",
-    page_icon="assets/favicon.jpg",
-    layout="wide",
-    initial_sidebar_state="expanded" if st.session_state.get('user') else "collapsed"
-)
 
 # --- V252: VISUAL MARKER ---
 if 'v316_marker' not in st.session_state:
