@@ -184,6 +184,80 @@ def render_library_v2(assistant):
         st.session_state['lib_auto_open_upload'] = False
         # Optional: Toast to confirm
         # st.toast("Modo de subida activado")
+    
+    # V328: BATCH ANALYSIS TRIGGER
+    if st.session_state.get('trigger_batch_analysis'):
+        st.session_state['trigger_batch_analysis'] = False
+        
+        selected_ids = list(st.session_state.get('selected_files_for_chat', set()))
+        if selected_ids:
+            with st.spinner(f"Analizando {len(selected_ids)} archivos..."):
+                from db_handler import create_chat_session, save_chat_message, get_file_content
+                
+                # Get user
+                user = st.session_state.get('user')
+                if user:
+                    try:
+                        # Fetch all selected files
+                        file_contents = []
+                        file_names = []
+                        
+                        for file_id in selected_ids:
+                            content = get_file_content(file_id)
+                            if content:
+                                # Get file name from files list
+                                current_unit_id = st.session_state.get('lib_current_unit_id')
+                                if current_unit_id:
+                                    files = get_files(current_unit_id)
+                                    file_obj = next((f for f in files if f['id'] == file_id), None)
+                                    if file_obj:
+                                        file_names.append(file_obj['name'])
+                                        file_contents.append(f"--- ARCHIVO: {file_obj['name']} ---\n{content}")
+                        
+                        if file_contents:
+                            # Create combined prompt
+                            combined_content = "\n\n".join(file_contents)
+                            
+                            # Create session title
+                            if len(file_names) == 1:
+                                session_title = f"📄 {file_names[0]}"
+                            elif len(file_names) <= 3:
+                                session_title = f"📚 {', '.join(file_names)}"
+                            else:
+                                session_title = f"📚 {', '.join(file_names[:2])} (+{len(file_names)-2} más)"
+                            
+                            # Create chat session
+                            session_id = create_chat_session(user.id, session_title)
+                            
+                            if session_id:
+                                # Save user message
+                                user_message = f"Por favor, analiza estos {len(file_names)} archivos relacionados y proporciona:\n1. Un resumen individual de cada archivo\n2. Las conexiones y relaciones entre los contenidos\n3. Un análisis integrado del tema completo\n\n{combined_content}"
+                                save_chat_message(session_id, "user", user_message)
+                                
+                                # Generate AI response
+                                try:
+                                    prompt = f"Eres un tutor académico experto. Analiza los siguientes {len(file_names)} archivos relacionados y proporciona:\n1. Un resumen claro de cada archivo\n2. Las conexiones y relaciones entre los contenidos\n3. Un análisis integrado y conclusiones\n\n{combined_content}"
+                                    ai_response = assistant.model.generate_content(prompt)
+                                    ai_text = ai_response.text
+                                    save_chat_message(session_id, "assistant", ai_text)
+                                    
+                                    st.success(f"✅ Chat creado exitosamente: **{session_title}**")
+                                    st.info("💬 Ve al **Historial de Chats** para ver el análisis completo")
+                                    
+                                    # Clear selection
+                                    st.session_state['selected_files_for_chat'] = set()
+                                except Exception as e:
+                                    st.error(f"❌ Error al generar análisis: {str(e)}")
+                                    st.info("💬 El chat fue creado. Ve al **Historial de Chats** para continuar")
+                            else:
+                                st.error("❌ Error al crear sesión de chat")
+                        else:
+                            st.warning("⚠️ No se pudo cargar el contenido de los archivos seleccionados")
+                    except Exception as e:
+                        st.error(f"❌ Error crítico: {str(e)}")
+                else:
+                    st.error("❌ Error: Usuario no autenticado")
+
 
     # ==========================================
     # 1. TOOLBAR (Minimalist Top Menu)
@@ -499,12 +573,37 @@ def render_library_v2(assistant):
     if current_unit_id:
         files = get_files(current_unit_id)
         if files:
-            st.markdown(f"##### 📄 Archivos ({len(files)})")
+            # V328: Multi-File Selection State
+            if 'selected_files_for_chat' not in st.session_state:
+                st.session_state['selected_files_for_chat'] = set()
+            
+            # Header with file count and batch actions
+            col_header, col_actions = st.columns([0.7, 0.3])
+            with col_header:
+                st.markdown(f"##### 📄 Archivos ({len(files)})")
+            
+            with col_actions:
+                selected_count = len(st.session_state['selected_files_for_chat'])
+                if selected_count > 0:
+                    if st.button(f"🤖 Analizar {selected_count} archivo{'s' if selected_count > 1 else ''}", 
+                                key="batch_analyze", use_container_width=True, type="primary"):
+                        # Batch analysis logic (implemented below)
+                        st.session_state['trigger_batch_analysis'] = True
+                        st.rerun()
+            
+            
             
             for f in files:
-                # File Row Layout: Icon | Name | Actions
-                # File Row Layout: Icon | Name | Actions | Spacer (V324 Fix: 4 cols to avoid CSS collision)
-                r_c1, r_c2, r_c3, r_spacer = st.columns([0.05, 0.75, 0.15, 0.05], vertical_alignment="bottom")
+                # V328: File Row Layout: Checkbox | Icon | Name | Actions | Spacer
+                r_check, r_c1, r_c2, r_c3, r_spacer = st.columns([0.05, 0.05, 0.70, 0.15, 0.05], vertical_alignment="bottom")
+                
+                with r_check:
+                    # Checkbox for multi-file selection
+                    is_selected = f['id'] in st.session_state['selected_files_for_chat']
+                    if st.checkbox("", value=is_selected, key=f"select_{f['id']}", label_visibility="collapsed"):
+                        st.session_state['selected_files_for_chat'].add(f['id'])
+                    else:
+                        st.session_state['selected_files_for_chat'].discard(f['id'])
                 
                 with r_c1:
                     icon = "📝" if f['type'] == 'text' else "📎"
