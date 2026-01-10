@@ -576,7 +576,8 @@ def create_chat_session(user_id, name="Nuevo Chat"):
     try:
         data = {"user_id": user_id, "name": name}
         res = supabase.table("chat_sessions").insert(data).execute()
-        return res.data[0] if res.data else None
+        # Return the session ID, not the full object
+        return res.data[0]['id'] if res.data else None
     except Exception as e:
         print(f"Error creating chat session: {e}")
         return None
