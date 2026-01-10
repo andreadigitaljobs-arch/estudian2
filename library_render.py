@@ -134,15 +134,26 @@ def render_library_v2(assistant):
     }
     
     /* COLOR HACK: Filter on the BUTTON element effectively rotates the emoji color */
+    
     /* Target ODD columns (1st, 3rd) -> Greenish */
-    div[data-testid="column"]:nth-of-type(odd) div.stButton > button {
-        filter: hue-rotate(80deg); 
-    }
-    /* Target EVEN columns (2nd) -> Purple */
-    div[data-testid="column"]:nth-of-type(even) div.stButton > button {
-        filter: hue-rotate(240deg); 
+    /* Support both old and new Streamlit column identifiers */
+    div[data-testid="column"]:nth-of-type(odd) div.stButton > button,
+    div[data-testid="stColumn"]:nth-of-type(odd) div.stButton > button {
+        filter: hue-rotate(80deg) !important; 
     }
     
+    /* Target EVEN columns (2nd) -> Purple */
+    div[data-testid="column"]:nth-of-type(even) div.stButton > button,
+    div[data-testid="stColumn"]:nth-of-type(even) div.stButton > button {
+        filter: hue-rotate(240deg) !important; 
+    }
+    
+    /* Ensure Icon Size is forced (in case previous rule was weak) */
+    div.stButton > button::first-line {
+        font-size: 90px !important;
+        line-height: 2.2 !important; 
+    }
+
     /* Prevent text color shifting? 
        Black (0,0,0) rotated is still Black.
        White (255,255,255) rotated is still White.
