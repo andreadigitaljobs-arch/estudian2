@@ -93,14 +93,20 @@ def render_library_v2(assistant):
     
     # --- CSS for Windows-Style Explorer (Transparent Buttons, Big Icons) ---
     st.markdown("""
-    <style>
-    /* --- FOLDER ICON STYLE (SNIPER MODE V3 - ROBUST) --- */
+    /* --- FOLDER ICON STYLE (UNIVERSAL - V4) --- */
     
-    /* PRIMARY SELECTOR: Target 3-column grids typical of the library */
-    /* We remove strict 'stMain' and 'last-child' constraints to be more permissive */
+    /* 
+       Targeting: 
+       1. Blocks that have at least 3 columns (likely our folder grid).
+       2. We use multiple selectors for 'column' to cover Streamlit versions (stColumn vs column).
+       3. We use multiple button nesting selectors.
+    */
     
+    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="column"]:nth-child(3)) button[kind="secondary"],
+    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(3)) button[kind="secondary"],
     div[data-testid="stHorizontalBlock"]:has(> div[data-testid="column"]:nth-child(3)) div.stButton > button[kind="secondary"],
-    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="column"]:nth-child(3)) button[kind="secondary"] {
+    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(3)) div.stButton > button[kind="secondary"] 
+    {
         background-color: transparent !important;
         border: 1px solid transparent !important;
         border-radius: 12px !important;
@@ -121,9 +127,12 @@ def render_library_v2(assistant):
         white-space: pre-wrap !important;
     }
     
-    /* CONTENT INJECTION ( The Folder Link ) */
+    /* CONTENT INJECTION (The Folder Icon) */
+    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="column"]:nth-child(3)) button[kind="secondary"]::before,
+    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(3)) button[kind="secondary"]::before,
     div[data-testid="stHorizontalBlock"]:has(> div[data-testid="column"]:nth-child(3)) div.stButton > button[kind="secondary"]::before,
-    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="column"]:nth-child(3)) button[kind="secondary"]::before {
+    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(3)) div.stButton > button[kind="secondary"]::before
+    {
         content: "📁" !important;
         font-size: 100px !important;
         display: block !important;
@@ -131,8 +140,9 @@ def render_library_v2(assistant):
         margin-bottom: 0px !important;
     }
     
-    /* HOVER BIT */
-    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="column"]:nth-child(3)) button[kind="secondary"]:hover {
+    /* HOVER EFFECT */
+    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="column"]:nth-child(3)) button[kind="secondary"]:hover,
+    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(3)) button[kind="secondary"]:hover {
         background-color: #e6f3ff !important;
         border: 1px solid rgba(0, 120, 215, 0.2) !important;
         transform: translateY(-2px);
@@ -140,12 +150,14 @@ def render_library_v2(assistant):
     }
     
     /* COLOR FILTERS (ODD is Greenish) */
-    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="column"]:nth-child(3)) div[data-testid="column"]:nth-of-type(odd) button[kind="secondary"] {
+    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="column"]:nth-child(3)) div[data-testid="column"]:nth-of-type(odd) button[kind="secondary"],
+    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(3)) div[data-testid="stColumn"]:nth-of-type(odd) button[kind="secondary"] {
         filter: hue-rotate(80deg) !important; 
     }
     
     /* COLOR FILTERS (EVEN is Purple) */
-    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="column"]:nth-child(3)) div[data-testid="column"]:nth-of-type(even) button[kind="secondary"] {
+    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="column"]:nth-child(3)) div[data-testid="column"]:nth-of-type(even) button[kind="secondary"],
+    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(3)) div[data-testid="stColumn"]:nth-of-type(even) button[kind="secondary"] {
         filter: hue-rotate(240deg) !important; 
     }
     </style>
