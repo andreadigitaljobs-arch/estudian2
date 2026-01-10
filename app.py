@@ -66,12 +66,12 @@ st.set_page_config(
 )
 
 # --- V252: VISUAL MARKER ---
-if 'v315_marker' not in st.session_state:
-    st.toast("✅ Aplicación Actualizada a V315 (Clean Text)")
-    st.session_state['v315_marker'] = True
+if 'v316_marker' not in st.session_state:
+    # st.toast("✅ Aplicación Actualizada a V316")
+    st.session_state['v316_marker'] = True
 
-# --- EMERGENCY VERSION CHECK ---
-st.success("🚨 SI VES ESTO, ESTÁS EN LA VERSIÓN V3.1.5 (Clean Text) 🚨")
+# Banner removed - Deployment Verified
+
 
 # --- V249: HYBRID SNAPPY LOADER (RE-FIXED) ---
 components.html("""
@@ -4889,7 +4889,7 @@ with tab_tutor:
             with st.sidebar:
                 st.header("Estudan2 🧠")
                 st.caption("Tu asistente de estudio con IA")
-                st.caption("v3.1.5 (Clean Text ✨)")
+                st.caption("v3.1.6 (Stable ✨)")
                 
                 # --- SIDEBAR AUTH DISPLAY ---
                 if st.session_state.get('authenticated'):
