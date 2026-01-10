@@ -155,13 +155,23 @@ def handle_input_and_response(current_sess, assistant, get_global_context):
     prompt = st.chat_input(f"Pregunta sobre {current_sess['name']}...", key="main_chat_input")
     
     if prompt:
-        # Save User Message
+        # A. Visual Feedback (Immediate)
+        with st.chat_message("user"):
+            st.markdown(prompt)
+
+        # B. Save & Update State
         save_chat_message(current_sess['id'], "user", prompt)
         st.session_state['tutor_chat_history'].append({"role": "user", "content": prompt})
         
-        # Trigger AI
-        st.session_state['trigger_ai_response'] = True
-        st.rerun()
+        # C. Generate Response IMMEDIATELY (No Rerun)
+        # We set the trigger just in case, but we call it now.
+        generate_ai_response(current_sess, assistant, get_global_context)
+        
+        # D. Optional: Rerun only after everything is done to clean up? 
+        # Actually, let's NOT rerun. Streamlit 1.25+ handles chat_input reset.
+        # But we need to update the history view for the Next interaction.
+        # Since we just displayed the user bubble and AI bubble manually (in generate_ai_response),
+        # the screen looks correct.
 
 def generate_ai_response(current_sess, assistant, get_global_context):
     """Generates the AI response using the assistant instance."""

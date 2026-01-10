@@ -4869,11 +4869,8 @@ if 'tutor_chat_history' not in st.session_state: st.session_state['tutor_chat_hi
 
 with tab_tutor:
     try:
-        st.warning("🔄 (DEBUG) Iniciando carga de Chat Interface...", icon="🛠️")
         from chat_interface import render_chat_interface
-        st.info("ℹ️ Módulo importado. Renderizando UI...", icon="🖥️")
         render_chat_interface(assistant, get_global_context)
-        st.success("✅ UI Renderizada correctamente (Si ves esto, el código terminó).", icon="🏁")
     except Exception as e:
         st.error(f"❌ Error crítico cargando el chat: {e}")
         st.write("Intenta recargar la página. Si persiste, contacta a soporte.")
