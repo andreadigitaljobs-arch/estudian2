@@ -1635,19 +1635,34 @@ def inject_navigation_arrows():
         const scrollUp = () => { scrollNuclear(false); };
         const scrollDown = () => { scrollNuclear(true); };
 
-        // 5. BUILD
-        // 5. REMOVED BY USER REQUEST (V327)
-        // const btnUp = createBtn('fas fa-arrow-up', 'Inicio', scrollUp, '#4B22DD');
-        // const btnDown = createBtn('fas fa-arrow-down', 'Final', scrollDown, '#4B22DD');
+        // 5. RESTORED & HIDDEN INITIALLY (V328)
+        const btnUp = createBtn('fas fa-arrow-up', 'Inicio', scrollUp, '#4B22DD');
+        const btnDown = createBtn('fas fa-arrow-down', 'Final', scrollDown, '#4B22DD');
 
-        // navContainer.appendChild(btnUp);
-        // navContainer.appendChild(btnDown);
+        navContainer.appendChild(btnUp);
+        navContainer.appendChild(btnDown);
+        
+        // HIDE INITIALLY until App Loaded
+        navContainer.style.opacity = '0';
+        navContainer.style.transition = 'opacity 0.5s ease';
 
         // 6. INJECT
         doc.body.appendChild(navContainer);
         console.log("🛗 [Elevator V231] Mounted to Body");
 
-        // 7. ENSURE CSS
+        // 7. REVEAL LOGIC
+        const checkReady = () => {
+            // Check if main content is loaded (Streamlit specific)
+            const main = doc.querySelector('.main');
+            if (main && main.clientHeight > 100) {
+                 navContainer.style.opacity = '1';
+            } else {
+                 setTimeout(checkReady, 300);
+            }
+        };
+        setTimeout(checkReady, 1000);
+        
+        // 8. ENSURE CSS
         if (!doc.getElementById('fa-v6-core')) {
             const link = doc.createElement('link');
             link.id = 'fa-v6-core';
@@ -1657,8 +1672,7 @@ def inject_navigation_arrows():
         }
     };
 
-    setTimeout(setupElevator, 1000); 
-    setTimeout(setupElevator, 3000); 
+    setTimeout(setupElevator, 1500); # Delayed start 
 </script>
 """, height=0)
 
@@ -4886,7 +4900,7 @@ with tab_tutor:
             with st.sidebar:
                 st.header("Estudan2 🧠")
                 st.caption("Tu asistente de estudio con IA")
-                st.caption("v3.2.7 (No Arrows 👻)")
+                st.caption("v3.2.8 (Smart Arrows 🎯)")
                 
                 # --- SIDEBAR AUTH DISPLAY ---
                 if st.session_state.get('authenticated'):
