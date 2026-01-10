@@ -685,37 +685,48 @@ def render_library_v2(assistant):
                                  file_content = f.get('content') or f.get('content_text') or "Sin contenido"
                                  file_name = f['name']
                                  
-                                 # Create new chat session
-                                 user_id = st.session_state.get('user_id')
-                                 session_title = f"📄 {file_name}"
-                                 session_id = create_chat_session(user_id, session_title)
+                                 # Get user ID from authenticated session
+                                 user = st.session_state.get('user')
+                                 if not user:
+                                     st.error("❌ Error: Usuario no autenticado")
+                                     st.stop()
                                  
-                                 if session_id:
-                                     # Save user's request for summary
-                                     user_message = f"Por favor, dame un resumen detallado de este archivo:\n\n{file_content}"
-                                     save_chat_message(session_id, "user", user_message)
+                                 user_id = user.id
+                                 session_title = f"📄 {file_name}"
+                                 
+                                 try:
+                                     session_id = create_chat_session(user_id, session_title)
                                      
-                                     # Generate AI response
-                                     try:
-                                         ai_response = assistant.send_message(
-                                             f"Eres un tutor académico experto. Analiza el siguiente contenido y proporciona un resumen claro y estructurado:\n\n{file_content}"
-                                         )
-                                         ai_text = ai_response.text
-                                         save_chat_message(session_id, "assistant", ai_text)
+                                     if session_id:
+                                         # Save user's request for summary
+                                         user_message = f"Por favor, dame un resumen detallado de este archivo:\n\n{file_content}"
+                                         save_chat_message(session_id, "user", user_message)
                                          
-                                         # Navigate to chat history with this session active
-                                         st.session_state['active_chat_session_id'] = session_id
-                                         st.session_state['selected_tab'] = "Historial de Chats"
-                                         st.success(f"✅ Chat creado: {session_title}")
-                                         st.rerun()
-                                     except Exception as e:
-                                         st.error(f"❌ Error al generar resumen: {str(e)}")
-                                         # Still navigate to chat even if AI fails
-                                         st.session_state['active_chat_session_id'] = session_id
-                                         st.session_state['selected_tab'] = "Historial de Chats"
-                                         st.rerun()
-                                 else:
-                                     st.error("❌ Error al crear sesión de chat")
+                                         # Generate AI response
+                                         try:
+                                             ai_response = assistant.send_message(
+                                                 f"Eres un tutor académico experto. Analiza el siguiente contenido y proporciona un resumen claro y estructurado:\n\n{file_content}"
+                                             )
+                                             ai_text = ai_response.text
+                                             save_chat_message(session_id, "assistant", ai_text)
+                                             
+                                             # Navigate to chat history with this session active
+                                             st.session_state['active_chat_session_id'] = session_id
+                                             st.session_state['selected_tab'] = "Historial de Chats"
+                                             st.success(f"✅ Chat creado: {session_title}")
+                                             st.rerun()
+                                         except Exception as e:
+                                             st.error(f"❌ Error al generar resumen: {str(e)}")
+                                             # Still navigate to chat even if AI fails
+                                             st.session_state['active_chat_session_id'] = session_id
+                                             st.session_state['selected_tab'] = "Historial de Chats"
+                                             st.rerun()
+                                     else:
+                                         st.error("❌ Error al crear sesión de chat (ID nulo)")
+                                 except Exception as e:
+                                     st.error(f"❌ Error crítico: {str(e)}")
+                                     import traceback
+                                     st.code(traceback.format_exc())
                              
                              
                         if st.button("🗑️ Eliminar", key=f"del_{f['id']}"):
