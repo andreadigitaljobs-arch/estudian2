@@ -509,100 +509,84 @@ def render_library_v2(assistant):
                         # V320: Robust Editor Logic
                         content_to_save = None
                         
-                        if QUILL_AVAILABLE:
-                            # 1. QUILL EDITOR (WYSIWYG)
-                            # We check if we have html content from previous step or specific format
-                            # Quill likes HTML.
-                            
-                            # Initialize key in session state if needed to prevent reload issues?
-                            # st_quill maintains its own state usually.
-                            
-                            # Toolbar configuration
-                            toolbar = [
-                                ["bold", "italic", "underline", "strike"],
-                                [{"header": [1, 2, 3, False]}],
-                                [{"list": "ordered"}, {"list": "bullet"}],
-                                [{"indent": "-1"}, {"indent": "+1"}],
-                                ["clean"]
-                            ]
-                            
-                            st.caption("📝 Editor Visual (Quill)")
-                            
-                            # We use html=True to handle the html_content we converted from markdown
-                            # or just use file_content if it was already html? 
-                            # 'html_content' variable was created above from markdown.markdown(file_content)
-                            
-                            # quill_content will be the *new* content.
-                            quill_content = st_quill(
-                                value=html_content, 
-                                placeholder="Escribe aquí...", 
-                                html=True, 
-                                toolbar=toolbar,
-                                key=f"quill_{f['id']}"
-                            )
-                            
-                            # If quill_content changes, we update our local var
-                            # Note: st_quill returns the HTML string content.
-                            if quill_content:
+                        # V324: ISOLATE EDITOR IN FORM TO PREVENT RELOADS
+                        # Using st.form prevents Streamlit from rerunning on every keystroke in Quill
+                        
+                        editor_form_key = f"form_edit_{f['id']}"
+                        
+                        with st.form(key=editor_form_key):
+                            if QUILL_AVAILABLE:
+                                # Toolbar configuration
+                                toolbar = [
+                                    ["bold", "italic", "underline", "strike"],
+                                    [{"header": [1, 2, 3, False]}],
+                                    [{"list": "ordered"}, {"list": "bullet"}],
+                                    [{"indent": "-1"}, {"indent": "+1"}],
+                                    ["clean"]
+                                ]
+                                
+                                st.caption("📝 Editor Visual (Quill) - Presiona 'Guardar' al terminar")
+                                
+                                # quill_content will be captured only on form submit? 
+                                # Actually st_quill inside form updates on submit.
+                                quill_content = st_quill(
+                                    value=html_content, 
+                                    placeholder="Escribe aquí...", 
+                                    html=True, 
+                                    toolbar=toolbar,
+                                    key=f"quill_{f['id']}"
+                                )
                                 content_to_save = quill_content
                             else:
-                                # If empty/loading, might use original
-                                # But if user deletes everything, it sends "". 
-                                # st_quill returns None on first load sometimes?
-                                content_to_save = quill_content
+                                st.caption("📝 Editor de Texto (Modo Seguro)")
+                                clean_text = clean_markdown_v3(file_content)
+                                txt_content = st.text_area("Contenido", value=clean_text, height=500, key=f"txt_{f['id']}")
+                                content_to_save = txt_content
 
-                        else:
-                            # 2. FALLBACK EDITOR (Text Area)
-                            st.caption("📝 Editor de Texto (Modo Seguro)")
-                            st.info("⚠️ Editor visual no disponible. Usando editor estándar.")
+                            # Form Buttons
+                            col_save, col_cancel = st.columns([1, 1])
+                            with col_save:
+                                submit_save = st.form_submit_button("💾 Guardar Cambios", type="primary", use_container_width=True)
                             
-                            # We use the CLEAN markdown (no asterisks) for better editing
-                            clean_text = clean_markdown_v3(file_content)
-                            
-                            txt_content = st.text_area(
-                                "Contenido", 
-                                value=clean_text, 
-                                height=500,
-                                key=f"txt_{f['id']}"
-                            )
-                            content_to_save = txt_content
+                            with col_cancel:
+                                # Cancel button in form submits too, but we handle logic below
+                                submit_cancel = st.form_submit_button("❌ Cancelar", use_container_width=True)
                         
-                        
-                        # --- SAVE BUTTONS ---
-                        col_save, col_cancel = st.columns([1, 1])
-                        with col_save:
-                            if st.button("💾 Guardar Cambios", key=f"save_{f['id']}", type="primary", use_container_width=True):
-                                
-                                # Verification: Did we get content?
-                                # Quill might return None on init. Text Area returns string.
-                                if content_to_save is None:
-                                    # Fallback to original HTML (no changes detected yet, or init)
-                                    # If user clicked save immediately without touching quill
-                                    if QUILL_AVAILABLE:
-                                         content_to_save = html_content 
-                                    else:
-                                         content_to_save = clean_markdown_v3(file_content)
+                        # LOGIC AFTER FORM SUBMISSION
+                        if submit_save:
+                            # 1. Validation
+                            if content_to_save is None:
+                                if QUILL_AVAILABLE: content_to_save = html_content 
+                                else: content_to_save = clean_markdown_v3(file_content)
 
-                                # Final Debug
-                                # print(f"Saving (Type: {type(content_to_save)}): {str(content_to_save)[:20]}...")
+                            # 2. HTML CLEANING (Fix "Giant Jump" issue)
+                            # Quill often adds <p><br></p> for empty lines. When updated back to DB -> converted again -> Giant space.
+                            # We strip excessive empty paragraphs.
+                            if isinstance(content_to_save, str):
+                                # Replace multiple empty paragraphs with single break or nothing
+                                # Regex: (<p><br></p>)+ -> <p><br></p>
+                                import re
+                                # Normalize empty paragraphs
+                                cleaned = re.sub(r'(<p><br></p>){2,}', '<p><br></p>', content_to_save)
+                                # Fix potential double wrapping if any
+                                content_to_save = cleaned
 
-                                result = update_file_content(f['id'], content_to_save)
-                                if result is True:
-                                    st.success("✅ Guardado exitosamente")
-                                    st.session_state[edit_key] = False
-                                    # Cleanup keys
-                                    if f"quill_{f['id']}" in st.session_state: del st.session_state[f"quill_{f['id']}"]
-                                    if f"txt_{f['id']}" in st.session_state: del st.session_state[f"txt_{f['id']}"]
-                                    
-                                    time.sleep(0.5)
-                                    st.rerun()
-                                else:
-                                    st.error(f"❌ Error al guardar: {result}")
-                        
-                        with col_cancel:
-                            if st.button("❌ Cancelar", key=f"cancel_{f['id']}", use_container_width=True):
+                            result = update_file_content(f['id'], content_to_save)
+                            if result is True:
+                                st.success("✅ Guardado exitosamente")
                                 st.session_state[edit_key] = False
+                                # Cleanup keys
+                                if f"quill_{f['id']}" in st.session_state: del st.session_state[f"quill_{f['id']}"]
+                                if f"txt_{f['id']}" in st.session_state: del st.session_state[f"txt_{f['id']}"]
+                                
+                                time.sleep(0.5)
                                 st.rerun()
+                            else:
+                                st.error(f"❌ Error al guardar: {result}")
+                        
+                        if submit_cancel:
+                            st.session_state[edit_key] = False
+                            st.rerun()
                     else:
                         # View mode: Expander with formatted content
                         with st.expander("Ver contenido"):
