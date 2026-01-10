@@ -3246,6 +3246,15 @@ with tab1:
         # Dynamic Key for Uploader Reset
         if 'transcriptor_key' not in st.session_state: st.session_state['transcriptor_key'] = "up1"
         
+        # --- RESET BUTTON (V3.3.22) ---
+        # Allows user to clear the persistent file
+        c_refresh_1, c_refresh_2 = st.columns([0.75, 0.25])
+        with c_refresh_2:
+            if st.button("♻️ Limpiar", help="Borrar archivo seleccionado para subir uno nuevo", key="btn_clear_uploader", use_container_width=True):
+                 import uuid
+                 st.session_state['transcriptor_key'] = str(uuid.uuid4())
+                 st.rerun()
+        
         # File Uploader
         # Added .waptt (WhatsApp), .opus, .aac, .wma
         uploaded_files = st.file_uploader("Upload", type=['mp4', 'mov', 'avi', 'mkv', 'mp3', 'wav', 'm4a', 'flac', 'ogg', 'opus', 'waptt', 'aac', 'wma'], accept_multiple_files=True, key=st.session_state['transcriptor_key'], label_visibility="collapsed")
@@ -4899,7 +4908,7 @@ with tab_tutor:
             with st.sidebar:
                 st.header("Estudan2 🧠")
                 st.caption("Tu asistente de estudio con IA")
-                st.caption("v3.3.21 (Sniper Mode 🎯)")
+                st.caption("v3.3.22 (Refresh Mode ♻️)")
                 
                 # --- SIDEBAR AUTH DISPLAY ---
                 if st.session_state.get('authenticated'):
