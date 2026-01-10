@@ -436,7 +436,7 @@ def update_file_content(file_id, new_content):
         get_files.clear()  # Invalidate cache
         return True
     except Exception as e:
-        print(f"Error updating file content: {e}")
+        print(f"DEBUG: Error updating file content (ID {file_id}): {e}") # V318 Debug
         return False
 
 
