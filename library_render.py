@@ -472,12 +472,14 @@ def render_library_v2(assistant):
                                    help="Aplica formato inteligente (párrafos, títulos)"):
                             with st.spinner("Formateando con IA..."):
                                 formatted_text = format_transcript_with_ai(file_content, assistant)
-                                if update_file_content(f['id'], formatted_text):
-                                    st.success("✅ Texto formateado")
-                                    time.sleep(0.5)
-                                    st.rerun()
-                                else:
-                                    st.error("Error al guardar")
+                                result = update_file_content(f['id'], formatted_text)
+                            if result is True:
+                                st.success("✨ Formateado con éxito")
+                                st.session_state[edit_key] = False
+                                time.sleep(0.5)
+                                st.rerun()
+                            else:
+                                st.error(f"❌ Error al guardar formato: {result}")
                     
                     # Display content (editable or read-only)
                     if st.session_state[edit_key]:
@@ -580,7 +582,8 @@ def render_library_v2(assistant):
                                 # DEBUG:
                                 # print(f"Saving File {f['id']}: {str(content_to_save)[:50]}...")
                                 
-                                if update_file_content(f['id'], content_to_save):
+                                result = update_file_content(f['id'], content_to_save)
+                                if result is True:
                                     st.success("✅ Guardado exitosamente")
                                     st.session_state[edit_key] = False
                                     if editor_key in st.session_state:
@@ -588,7 +591,7 @@ def render_library_v2(assistant):
                                     time.sleep(0.5)
                                     st.rerun()
                                 else:
-                                    st.error(f"❌ Error al guardar (ID: {f['id']})")
+                                    st.error(f"❌ Error al guardar: {result}")
                         
                         with col_cancel:
                             if st.button("❌ Cancelar", key=f"cancel_{f['id']}", use_container_width=True):
