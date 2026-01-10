@@ -3393,9 +3393,17 @@ with tab1:
                                             if not chunk: break
                                             f.write(chunk)
                                     log_debug("Escritura disco OK.")
+                                    
+                                    # V302: Memory Optimization for Large Files
+                                    import gc
+                                    gc.collect()
+                                    
                                 except Exception as e:
                                     log_debug(f"ERROR ESCRITURA: {e}")
                                     st.error(f"❌ Error CRÍTICO escribiendo disco: {e}")
+                                    # Cleanup if write failed
+                                    if os.path.exists(temp_path):
+                                        os.remove(temp_path)
                                     continue
                                 
                                 # RETRY LOGIC (Quota Protection)
@@ -3429,7 +3437,12 @@ with tab1:
                                         # Process
                                         log_debug(f"Iniciando transcriber.process_video (Intento {attempt+1})")
                                         # FORCE GC
+                                        import gc
                                         gc.collect()
+
+                                        # Determine visual mode
+                                        is_video = safe_ext.lower() in ['.mp4', '.mov', '.avi', '.mkv']
+                                        use_visual = (is_video and st.session_state.get('visual_mode', False))
 
                                         trans_text = transcriber.process_video(temp_path, visual_mode=use_visual, progress_callback=update_ui)
                                         log_debug("Transcriber success.")
