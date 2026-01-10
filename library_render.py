@@ -93,57 +93,71 @@ def render_library_v2(assistant):
     
     # --- CSS for Windows-Style Explorer (Transparent Buttons, Big Icons) ---
     st.markdown("""
-    <style>
     /* Target buttons inside the main app area */
     div.stButton > button {
         background-color: transparent !important;
         border: 1px solid transparent !important;
         border-radius: 8px !important;
-        color: #202124 !important; /* DARK TEXT for readability */
+        color: #202124 !important; /* Dark Text */
         
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
-        justify-content: flex-start !important;
+        justify-content: flex-start !important; /* Start from top to keep icon fixed pos */
         text-align: center !important;
         
-        padding: 0px !important;
+        padding: 10px 4px !important; /* Tighter padding */
         width: 100%;
-        height: 110px !important;
+        height: auto !important;
+        min-height: 120px !important; /* Allow growing but sufficient for icon */
         
         box-shadow: none !important;
         font-family: 'Segoe UI', sans-serif !important;
         font-size: 14px !important;
-        line-height: 1.2 !important;
+        line-height: 1.1 !important;
         white-space: pre-wrap !important;
         overflow: visible !important;
     }
     
-    /* BIG ICON MAGIC: Target the Folder Emoji (First Line) */
+    /* BIG ICON MAGIC: Target the Folder Emoji */
     div.stButton > button::first-line {
-        font-size: 64px !important; /* Huge Folder Icon */
-        line-height: 1.1 !important;
+        font-size: 72px !important; /* MASSIVE ICON */
+        line-height: 1.0 !important;
+        margin-bottom: 10px !important; /* Attempt to push text down, though first-line is tricky */
+        display: block !important;
     }
 
-    /* Hover Effect */
+    /* Windows 11 Style Hover/Selection */
     div.stButton > button:hover {
-        background-color: rgba(0, 0, 0, 0.05) !important;
-        border-color: rgba(0, 0, 0, 0.1) !important;
+        background-color: #e6f3ff !important; /* Win11 Selection Blue */
+        border: 1px solid rgba(0, 120, 215, 0.1) !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05) !important;
+        transform: translateY(-1px); /* Micro-interaction */
     }
     
-    /* COLOR HACK: Vibrancy + Tint */
+    div.stButton > button:active {
+        background-color: #cce8ff !important;
+        border-color: rgba(0, 120, 215, 0.3) !important;
+        transform: scale(0.98);
+    }
     
-    /* Even buttons: Purple Tone */
+    /* Remove default focus ring or style it */
+    div.stButton > button:focus {
+        border-color: #0078d4 !important;
+        color: #202124 !important;
+    }
+    
+    /* COLOR HACK remains same */
     div[data-testid="column"]:nth-of-type(even) div.stButton > button::first-line {
         filter: hue-rotate(260deg) saturate(2);
     } 
-    
     div[data-testid="column"]:nth-of-type(even) div.stButton > button {
         filter: hue-rotate(240deg); 
     }
     div[data-testid="column"]:nth-of-type(odd) div.stButton > button {
-        filter: hue-rotate(0deg); /* Keep Yellow/Greenish natural */
+        filter: hue-rotate(0deg); 
     }
+    /* Invert hue shift on text for even columns if needed, but keeping simple for now */
     </style>
     """, unsafe_allow_html=True)
 
@@ -152,6 +166,12 @@ def render_library_v2(assistant):
     if not current_course_id:
         st.info("👈 Selecciona un Diplomado en la barra lateral para ver su Biblioteca.")
         return
+
+    # ... (rest of function) ... 
+
+    # LATER IN THE CODE (Adjust Label Generation logic)
+    # We need to target the Loop:
+
 
     # --- STATE INITIALIZATION ---
     if 'lib_current_unit_id' not in st.session_state: st.session_state['lib_current_unit_id'] = None
@@ -454,12 +474,11 @@ def render_library_v2(assistant):
         f_cols = st.columns(3)
         for i, unit in enumerate(subfolders):
             with f_cols[i % 3]:
-                # Folder Card (Big Icon Style)
+                # Folder Card (Massive Icon Style)
                 count = unit_counts.get(unit['id'], 0)
-                # We use newlines to separate the big icon from text
-                # 📁
-                # Name (count)
-                label = f"📁\n\n{unit['name']} ({count})"
+                # TIGHTER LAYOUT: Single newline to separate icon from text
+                # We rely on CSS block display for first-line to handle separation now
+                label = f"📁\n{unit['name']} ({count})"
                 
                 if st.button(label, key=f"fdir_{unit['id']}", use_container_width=True):
                     st.session_state['lib_current_unit_id'] = unit['id']
