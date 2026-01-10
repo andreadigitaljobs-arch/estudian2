@@ -505,89 +505,96 @@ def render_library_v2(assistant):
                         
                         safe_content = json.dumps(html_content)
                         
-                        # CKEditor 5 (Free, Force Refresh V312)
-                        import time
-                        ts = int(time.time())
+                        # Render Editor (Quill or Fallback)
                         
-                        editor_html = f"""
-                        <!DOCTYPE html>
-                        <html>
-                        <head>
-                            <meta charset="UTF-8">
-                            <script src="https://cdn.ckeditor.com/ckeditor5/40.0.0/classic/ckeditor.js?v={ts}"></script>
-                            <style>
-                                body {{ margin: 0; padding: 10px; font-family: sans-serif; }}
-                                #editor {{ min-height: 400px; }}
-                                .ck-editor__editable {{ min-height: 400px; }}
-                            </style>
-                        </head>
-                        <body>
-                            <div id="editor"></div>
-                            <script>
-                                console.log("Initializing CKEditor V312...");
-                                ClassicEditor
-                                    .create(document.querySelector('#editor'), {{
-                                        toolbar: ['undo', 'redo', '|', 'bold', 'italic', 'underline', '|', 'heading', '|', 'bulletedList', 'numberedList', '|', 'removeFormat']
-                                    }})
-                                    .then(editor => {{
-                                        // Set initial content
-                                        editor.setData({safe_content});
-                                        
-                                        // Send updates to Streamlit
-                                        editor.model.document.on('change:data', () => {{
-                                            const content = editor.getData();
-                                            window.parent.postMessage({{
-                                                type: 'streamlit:setComponentValue',
-                                                value: content
-                                            }}, '*');
-                                        }});
-                                    }})
-                                    .catch(error => {{
-                                        console.error('CKEditor error:', error);
-                                    }});
-                            </script>
-                        </body>
-                        </html>
-                        """
+                        # V320: Robust Editor Logic
+                        content_to_save = None
                         
-                        # Render editor and capture output (Changed height to force re-render)
-                        # Render editor and capture output (Changed height to force re-render)
-                        # We use 'default' because initially it might be None if user hasn't typed anything yet,
-                        # but we want to start identifying it.
-                        edited_content = components.html(editor_html, height=551, scrolling=True)
+                        if QUILL_AVAILABLE:
+                            # 1. QUILL EDITOR (WYSIWYG)
+                            # We check if we have html content from previous step or specific format
+                            # Quill likes HTML.
+                            
+                            # Initialize key in session state if needed to prevent reload issues?
+                            # st_quill maintains its own state usually.
+                            
+                            # Toolbar configuration
+                            toolbar = [
+                                ["bold", "italic", "underline", "strike"],
+                                [{"header": [1, 2, 3, False]}],
+                                [{"list": "ordered"}, {"list": "bullet"}],
+                                [{"indent": "-1"}, {"indent": "+1"}],
+                                ["clean"]
+                            ]
+                            
+                            st.caption("📝 Editor Visual (Quill)")
+                            
+                            # We use html=True to handle the html_content we converted from markdown
+                            # or just use file_content if it was already html? 
+                            # 'html_content' variable was created above from markdown.markdown(file_content)
+                            
+                            # quill_content will be the *new* content.
+                            quill_content = st_quill(
+                                value=html_content, 
+                                placeholder="Escribe aquí...", 
+                                html=True, 
+                                toolbar=toolbar,
+                                key=f"quill_{f['id']}"
+                            )
+                            
+                            # If quill_content changes, we update our local var
+                            # Note: st_quill returns the HTML string content.
+                            if quill_content:
+                                content_to_save = quill_content
+                            else:
+                                # If empty/loading, might use original
+                                # But if user deletes everything, it sends "". 
+                                # st_quill returns None on first load sometimes?
+                                content_to_save = quill_content
+
+                        else:
+                            # 2. FALLBACK EDITOR (Text Area)
+                            st.caption("📝 Editor de Texto (Modo Seguro)")
+                            st.info("⚠️ Editor visual no disponible. Usando editor estándar.")
+                            
+                            # We use the CLEAN markdown (no asterisks) for better editing
+                            clean_text = clean_markdown_v3(file_content)
+                            
+                            txt_content = st.text_area(
+                                "Contenido", 
+                                value=clean_text, 
+                                height=500,
+                                key=f"txt_{f['id']}"
+                            )
+                            content_to_save = txt_content
                         
-                        # Update session state if content changed
-                        # IMPORTANT: components.html returns None if no message received yet.
-                        if edited_content is not None:
-                            st.session_state[editor_key] = edited_content
                         
+                        # --- SAVE BUTTONS ---
                         col_save, col_cancel = st.columns([1, 1])
                         with col_save:
                             if st.button("💾 Guardar Cambios", key=f"save_{f['id']}", type="primary", use_container_width=True):
-                                # RETRIEVE CONTENT
-                                # Priority: 1. New edits (edited_content), 2. Session buffer, 3. Original fallback
-                                # Beware: edited_content might be None if user clicked Save without typing anything new, 
-                                # but session_state[editor_key] should arguably hold the 'safe_content/html_content' we started with if we initialized it properly?
-                                # Actually, we init `st.session_state[editor_key] = file_content` above.
-                                # But `file_content` was original Markdown. `html_content` is what's in the editor.
-                                # If user saves without editing, we might be saving back the Markdown or the HTML?
-                                # Ideally we save what's in the editor. 
                                 
-                                content_to_save = st.session_state.get(editor_key)
-                                
-                                # Safety: If content_to_save is None (rare), use original file_content
+                                # Verification: Did we get content?
+                                # Quill might return None on init. Text Area returns string.
                                 if content_to_save is None:
-                                    content_to_save = file_content
-                                
-                                # DEBUG:
-                                # print(f"Saving File {f['id']}: {str(content_to_save)[:50]}...")
-                                
+                                    # Fallback to original HTML (no changes detected yet, or init)
+                                    # If user clicked save immediately without touching quill
+                                    if QUILL_AVAILABLE:
+                                         content_to_save = html_content 
+                                    else:
+                                         content_to_save = clean_markdown_v3(file_content)
+
+                                # Final Debug
+                                # print(f"Saving (Type: {type(content_to_save)}): {str(content_to_save)[:20]}...")
+
                                 result = update_file_content(f['id'], content_to_save)
                                 if result is True:
                                     st.success("✅ Guardado exitosamente")
                                     st.session_state[edit_key] = False
-                                    if editor_key in st.session_state:
-                                        del st.session_state[editor_key]
+                                    # Cleanup keys
+                                    if f"quill_{f['id']}" in st.session_state: del st.session_state[f"quill_{f['id']}"]
+                                    if f"txt_{f['id']}" in st.session_state: del st.session_state[f"txt_{f['id']}"]
+                                    
                                     time.sleep(0.5)
                                     st.rerun()
                                 else:
@@ -596,8 +603,6 @@ def render_library_v2(assistant):
                         with col_cancel:
                             if st.button("❌ Cancelar", key=f"cancel_{f['id']}", use_container_width=True):
                                 st.session_state[edit_key] = False
-                                if editor_key in st.session_state:
-                                    del st.session_state[editor_key]
                                 st.rerun()
                     else:
                         # View mode: Expander with formatted content
