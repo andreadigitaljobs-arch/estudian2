@@ -31,7 +31,15 @@ try:
     st.toast("✅ Sistema Online: V-Emergencia-Final", icon="🚀")
 except: pass
 # --------------------------------------------
-from transcriber import Transcriber
+try:
+    from transcriber import Transcriber
+except Exception as e:
+    print(f"Error importing Transcriber: {e}")
+    # Fallback to prevent crash on instantiation
+    class Transcriber:
+        def __init__(self, *args, **kwargs): pass
+        def process_video(self, *args, **kwargs): return f"Error: Módulo de Transcripción no disponible. Recarga la página."
+
 
 # Helper: Play Sound
 # Helper: Play Sound
@@ -62,7 +70,14 @@ if os.path.exists(CRASH_LOG_FILE):
                 os.remove(CRASH_LOG_FILE)
                 st.rerun()
         except: st.error("No se pudo leer el log.")
-from study_assistant import StudyAssistant
+try:
+    from study_assistant import StudyAssistant
+except Exception as e:
+    print(f"Error importing StudyAssistant: {e}")
+    class StudyAssistant:
+        def __init__(self, *args, **kwargs): pass
+        def chat_tutor(self, *args, **kwargs): return "Error crítico: El cerebro de la IA no pudo cargarse. Intenta recargar la página."
+
 from PIL import Image, ImageGrab
 import shutil
 import time
