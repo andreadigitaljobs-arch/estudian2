@@ -3295,47 +3295,53 @@ with tab1:
             c_id = st.session_state.get('current_course_id')
             selected_unit_id = None
             
-            if c_id:
-                # from db_handler import get_units (Available Global)
-                # RECURSIVE UNITS FETCH
-                units = get_units(c_id, fetch_all=True) # Fetch ALL folders
-                if units:
-                    # Build Path Map
-                    id_to_unit = {u['id']: u for u in units}
-                    
-                    def get_path(u):
-                         parts = [u['name']]
-                         curr = u
-                         # Safety limit for depth
-                         depth = 0
-                         while curr.get('parent_id') and depth < 10:
-                             pid = curr['parent_id']
-                             parent = id_to_unit.get(pid)
-                             if parent:
-                                 parts.insert(0, parent['name'])
-                                 curr = parent
-                                 depth += 1
-                             else:
+            # V3.3.24: Optional Save (Test Mode)
+            save_to_lib = st.checkbox("💾 Guardar en Biblioteca", value=True, help="Si desactivas esto, la transcripción NO se guardará en la base de datos (Ideal para pruebas rápidas).")
+            
+            if save_to_lib:
+                if c_id:
+                    # from db_handler import get_units (Available Global)
+                    # RECURSIVE UNITS FETCH
+                    units = get_units(c_id, fetch_all=True) # Fetch ALL folders
+                    if units:
+                        # Build Path Map
+                        id_to_unit = {u['id']: u for u in units}
+                        
+                        def get_path(u):
+                             parts = [u['name']]
+                             curr = u
+                             # Safety limit for depth
+                             depth = 0
+                             while curr.get('parent_id') and depth < 10:
+                                 pid = curr['parent_id']
+                                 parent = id_to_unit.get(pid)
+                                 if parent:
+                                     parts.insert(0, parent['name'])
+                                     curr = parent
+                                     depth += 1
+                                 else:
+                                     break
+                             return " / ".join(parts)
+                        
+                        # Create Map: Path String -> ID
+                        u_map = {get_path(u): u['id'] for u in units}
+                        keys = sorted(list(u_map.keys()))
+                        
+                        # Default
+                        def_idx = 0
+                        for i, k in enumerate(keys):
+                             if "Transcriptor" in k:
+                                 def_idx = i
                                  break
-                         return " / ".join(parts)
-                    
-                    # Create Map: Path String -> ID
-                    u_map = {get_path(u): u['id'] for u in units}
-                    keys = sorted(list(u_map.keys()))
-                    
-                    # Default
-                    def_idx = 0
-                    for i, k in enumerate(keys):
-                         if "Transcriptor" in k:
-                             def_idx = i
-                             break
-                    
-                    sel_name = st.selectbox("📂 ¿Dónde guardar la transcripción?", keys, index=def_idx, help="Elige cualquier carpeta o subcarpeta")
-                    selected_unit_id = u_map[sel_name]
+                        
+                        sel_name = st.selectbox("📂 ¿Dónde guardar la transcripción?", keys, index=def_idx, help="Elige cualquier carpeta o subcarpeta")
+                        selected_unit_id = u_map[sel_name]
+                    else:
+                        st.warning("⚠️ Tu diplomado no tiene carpetas. Se crearán automáticamente.")
                 else:
-                    st.warning("⚠️ Tu diplomado no tiene carpetas. Se crearán automáticamente.")
+                    st.warning("⚠️ Por favor selecciona un diplomado en la barra lateral.")
             else:
-                st.warning("⚠️ Por favor selecciona un diplomado en la barra lateral.")
+                 st.info("⚡ Modo Pruebas: El resultado aparecerá abajo (Historial) pero no se guardará en la biblioteca.")
 
             # V208: Sound on Upload Complete
             if 'last_upload_count' not in st.session_state:
@@ -3363,12 +3369,12 @@ with tab1:
                          file_renames[uf.name] = new_n
             
 
-            if st.button("▶️ Iniciar Transcripción Inteligente", type="primary", key="btn_start_transcription", use_container_width=True, disabled=(not selected_unit_id)):
+                                if st.button("▶️ Iniciar Transcripción Inteligente", type="primary", key="btn_start_transcription", use_container_width=True, disabled=(save_to_lib and not selected_unit_id)):
                 try:
                     # V207: Start Sound (Blip)
                     play_sound('start')
                     
-                    if not selected_unit_id:
+                    if save_to_lib and not selected_unit_id:
                         st.error("Error: Carpeta no seleccionada.")
                     else:
                         progress_bar = st.progress(0)
@@ -3480,43 +3486,47 @@ with tab1:
                                         if not trans_text or len(trans_text.strip()) < 20:
                                              raise Exception("La IA devolvió una transcripción vacía. Es posible que el audio no se haya procesado correctamente o esté en silencio.")
                                         
-                                        # The new process_video returns TEXT directly, not a path!
-                                        # (Review transcriber.py: return response.text or full_text)
-                                        
-                                        # So we skip the open() step.
-                                        
                                         custom_n = file_renames.get(file.name, os.path.splitext(file.name)[0])
                                         
                                         # V198 Fix: Sanitize filename (remove slashes/colons from dates)
-                                        # User reported error with "2024/11/06 18:00"
                                         custom_n = custom_n.replace("/", "-").replace("\\", "-").replace(":", "-").replace("|", "-")
                                         
                                         final_name = f"{custom_n}.txt"
                                         
-                                        # ROBUST UPLOAD: Retry with timestamp if fails (likely duplicate)
-                                        saved = upload_file_to_db(t_unit_id, final_name, trans_text, "transcript")
-                                        if not saved:
-                                            # Retry with suffix
-                                            import time
-                                            suffix = int(time.time())
-                                            final_name_retry = f"{custom_n}_{suffix}.txt"
-                                            saved = upload_file_to_db(t_unit_id, final_name_retry, trans_text, "transcript")
-                                            
-                                            if saved:
-                                                st.toast(f"⚠️ Nombre duplicado. Guardado como: {final_name_retry}", icon="📝")
-                                                final_name = final_name_retry
-                                            else:
-                                                st.error(f"❌ Error CRÍTICO: No se pudo guardar '{custom_n}' en la base de datos.")
+                                        # SAVE TO DB (Only if enabled)
+                                        saved = False
+                                        if save_to_lib:
+                                            # ROBUST UPLOAD: Retry with timestamp if fails (likely duplicate)
+                                            saved = upload_file_to_db(t_unit_id, final_name, trans_text, "transcript")
+                                            if not saved:
+                                                # Retry with suffix
+                                                import time
+                                                suffix = int(time.time())
+                                                final_name_retry = f"{custom_n}_{suffix}.txt"
+                                                saved = upload_file_to_db(t_unit_id, final_name_retry, trans_text, "transcript")
+                                                
+                                                if saved:
+                                                    st.toast(f"⚠️ Nombre duplicado. Guardado como: {final_name_retry}", icon="📝")
+                                                    final_name = final_name_retry
+                                                else:
+                                                    st.error(f"❌ Error CRÍTICO: No se pudo guardar '{custom_n}' en la base de datos.")
+                                        else:
+                                            # Test mode: Emulate success
+                                            saved = True
+                                            final_name = f"[TEST] {final_name}"
                                         
                                         if saved:
-                                            st.toast(f"✅ Listo: {final_name}") 
-                                            st.session_state['transcript_history'].append({"name": custom_n, "text": trans_text})
-                                            st.session_state['last_transcribed_file'] = custom_n # Update last processed
+                                            if save_to_lib:
+                                                st.toast(f"✅ Listo: {final_name}") 
+                                            else:
+                                                st.toast(f"🧪 Finalizado (Sin guardar): {final_name}")
+                                            
+                                            st.session_state['transcript_history'].append({"name": final_name, "text": trans_text})
+                                            st.session_state['last_transcribed_file'] = final_name # Update last processed
                                             # V206: Play Sound
                                             play_sound('success')
                                         
                                         # Cleanup handled by logic
-                                        # if os.path.exists(txt_path): os.remove(txt_path) # DEPRECATED V174
                                         success = True
                                         time.sleep(2) # Micro-pause between files
                                         
@@ -4910,7 +4920,7 @@ with tab_tutor:
             with st.sidebar:
                 st.header("Estudan2 🧠")
                 st.caption("Tu asistente de estudio con IA")
-                st.caption("v3.3.23 (UX Fix 🧼)")
+                st.caption("v3.3.24 (Lib Restore 🩹)")
                 
                 # --- SIDEBAR AUTH DISPLAY ---
                 if st.session_state.get('authenticated'):
