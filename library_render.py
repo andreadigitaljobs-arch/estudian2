@@ -559,21 +559,33 @@ def render_library_v2(assistant):
                                 if QUILL_AVAILABLE: content_to_save = html_content 
                                 else: content_to_save = clean_markdown_v3(file_content)
 
-                            # 2. HTML CLEANING (Fix "Giant Jump" issue)
-                            # Quill often adds <p><br></p> for empty lines. When updated back to DB -> converted again -> Giant space.
-                            # We strip excessive empty paragraphs.
+                            # 2. HTML CLEANING (Fix "Giant Jump" & Double Spacing)
+                            # Quill adds <p> around everything. Default CSS has large margins.
+                            # We need to Compact the HTML.
                             if isinstance(content_to_save, str):
-                                # Replace multiple empty paragraphs with single break or nothing
-                                # Regex: (<p><br></p>)+ -> <p><br></p>
                                 import re
-                                # Normalize empty paragraphs
-                                cleaned = re.sub(r'(<p><br></p>){2,}', '<p><br></p>', content_to_save)
-                                # Fix potential double wrapping if any
+                                
+                                # 1. Replace multiple empty paragraphs with a SINGLE compact break
+                                # (<p><br></p>)+  -->  <br> (Visual break, not paragraph block)
+                                # Or keep one <p><br></p> but ensure no extra newlines around it.
+                                
+                                cleaned = content_to_save
+                                
+                                # Collapse multiple empty paragraphs into one
+                                cleaned = re.sub(r'(<p><br></p>\s*)+', '<p><br></p>', cleaned)
+                                
+                                # Remove EMPTY paragraphs that might just have whitespace <p>  </p>
+                                cleaned = re.sub(r'<p>\s*</p>', '', cleaned)
+                                
+                                # OPTIONAL: If the user wants "Word-like" tight spacing, we might want to 
+                                # inject a style to reduce margins, but we can't inject CSS into the DB string easily without polluting it.
+                                # Instead, we try to ensure we don't have double <p> nesting.
+                                
                                 content_to_save = cleaned
 
                             result = update_file_content(f['id'], content_to_save)
                             if result is True:
-                                st.success("✅ Guardado exitosamente")
+                                st.success("✅ Guardado exitosamente (Espacios Ajustados)")
                                 st.session_state[edit_key] = False
                                 # Cleanup keys
                                 if f"quill_{f['id']}" in st.session_state: del st.session_state[f"quill_{f['id']}"]
