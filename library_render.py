@@ -135,31 +135,33 @@ def render_library_v2(assistant):
     
     /* COLOR HACK: Filter on the BUTTON element effectively rotates the emoji color */
     
-    /* Target ODD columns (1st, 3rd) -> Greenish */
+    /* Force Icon Size using CSS Content Injection (Definitive Fix) */
+    div.stButton > button::before {
+        content: "📁" !important;
+        font-size: 100px !important;
+        display: block !important;
+        line-height: 1.2 !important;
+        margin-bottom: 0px !important;
+    }
+    
+    /* Clean up old rules */
+    div.stButton > button::first-line {
+        /* Reset any conflicting first-line styles */
+    }
+    
+    /* Ensure Colors Apply to the Emoji (in ::before) */
     /* Support both old and new Streamlit column identifiers */
     div[data-testid="column"]:nth-of-type(odd) div.stButton > button,
     div[data-testid="stColumn"]:nth-of-type(odd) div.stButton > button {
         filter: hue-rotate(80deg) !important; 
     }
     
-    /* Target EVEN columns (2nd) -> Purple */
     div[data-testid="column"]:nth-of-type(even) div.stButton > button,
     div[data-testid="stColumn"]:nth-of-type(even) div.stButton > button {
         filter: hue-rotate(240deg) !important; 
     }
     
-    /* Ensure Icon Size is forced (in case previous rule was weak) */
-    div.stButton > button::first-line {
-        font-size: 100px !important; /* MASSIVE */
-        line-height: 1.8 !important; /* Slightly less line-height if font is huge */
-        display: block !important; /* CRITICAL: Restore this to force rendering box */
-    }
-
-    /* Prevent text color shifting? 
-       Black (0,0,0) rotated is still Black.
-       White (255,255,255) rotated is still White.
-       So this filter is safe for black text on white bg!
-    */
+    /* Text Color Safety */
     </style>
     """, unsafe_allow_html=True)
 
@@ -473,11 +475,12 @@ def render_library_v2(assistant):
         f_cols = st.columns(3)
         for i, unit in enumerate(subfolders):
             with f_cols[i % 3]:
-                # Folder Card (Massive Icon Style)
+                # Folder Card (Massive Icon Style via CSS Injection)
                 count = unit_counts.get(unit['id'], 0)
-                # SEPARATION: TRIPLE NEWLINE seems to be the sweet spot for 
-                # forcing Streamlit to render improved block structure for CSS sizing.
-                label = f"📁\n\n\n{unit['name']} ({count})"
+                # SEPARATION: Handled by CSS ::before margin-bottom now.
+                # Label is just the name and count.
+                # Cleaner, safer, guaranteed size.
+                label = f"{unit['name']} ({count})"
                 
                 if st.button(label, key=f"fdir_{unit['id']}", use_container_width=True):
                     st.session_state['lib_current_unit_id'] = unit['id']
