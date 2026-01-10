@@ -4899,7 +4899,7 @@ with tab_tutor:
             with st.sidebar:
                 st.header("Estudan2 🧠")
                 st.caption("Tu asistente de estudio con IA")
-                st.caption("v3.3.3 (Explorer Mode 🛸)")
+                st.caption("v3.3.4 (Visible Folders 👀)")
                 
                 # --- SIDEBAR AUTH DISPLAY ---
                 if st.session_state.get('authenticated'):

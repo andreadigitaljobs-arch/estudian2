@@ -93,13 +93,12 @@ def render_library_v2(assistant):
     
     # --- CSS for Windows-Style Explorer (Transparent Buttons, Big Icons) ---
     st.markdown("""
-    <style>
     /* Target buttons inside the main app area */
     div.stButton > button {
         background-color: transparent !important;
         border: 1px solid transparent !important;
-        border-radius: 6px !important;
-        color: #e2e8f0 !important; /* Text Color */
+        border-radius: 8px !important;
+        color: #202124 !important; /* DARK TEXT for readability on white */
         
         display: flex !important;
         flex-direction: column !important;
@@ -107,46 +106,53 @@ def render_library_v2(assistant):
         justify-content: flex-start !important;
         text-align: center !important;
         
-        padding: 5px !important;
+        padding: 0px !important;
         width: 100%;
-        height: 120px !important;
+        height: 110px !important;
         
         box-shadow: none !important;
         font-family: 'Segoe UI', sans-serif !important;
-        font-size: 13px !important;
-        line-height: 1.3 !important;
+        font-size: 14px !important;
+        line-height: 1.2 !important;
         white-space: pre-wrap !important;
+        overflow: visible !important;
     }
     
-    /* BIG ICON MAGIC: Target the Folder Emoji (First Line/Letter) */
+    /* BIG ICON MAGIC: Target the Folder Emoji (First Line) */
     div.stButton > button::first-line {
-        font-size: 56px !important; /* Huge Folder Icon */
-        line-height: 1.0 !important;
+        font-size: 64px !important; /* Bigger and bolder */
+        line-height: 1.1 !important;
     }
 
-    /* Hover Effect: Windows Selection Style */
+    /* Hover Effect */
     div.stButton > button:hover {
-        background-color: rgba(255, 255, 255, 0.1) !important;
-        border-color: rgba(255, 255, 255, 0.2) !important;
+        background-color: rgba(0, 0, 0, 0.05) !important;
+        border-color: rgba(0, 0, 0, 0.1) !important;
     }
     
-    /* COLOR HACK: Alternating Folder Colors (Purple & Greenish) 
-       Standard Emoji is Yellow.
-       Purple Target: Hue Rotate ~260deg
-       Green Target: Hue Rotate ~100deg
+    /* COLOR HACK: Vibrancy + Tint */
+    
+    /* Even buttons: Purple Tone (Saturate to fix washout) */
+    div[data-testid="column"]:nth-of-type(even) div.stButton > button::first-line {
+        filter: hue-rotate(260deg) saturate(2); /* Target ONLY the emoji if possible? No, first-line applies styles */
+    } 
+    /* Actually ::first-line doesn't support filter property in all browsers well on text. 
+       Let's apply filter to the BUTTON but invert it for text? No too complex. 
+       Let's apply filter to button and hope text is black enough to handle rotation or just accept tinted text.
+       OR: Use just the rotate on the button and ensure high contrast.
     */
     
-    /* Even buttons: Purple-ish Tone */
     div[data-testid="column"]:nth-of-type(even) div.stButton > button {
-        filter: hue-rotate(240deg) brightness(1.1);
+        filter: hue-rotate(240deg); 
     }
-    /* Odd buttons: Green-ish Tone (Default Yellow + 60deg = Green) */
     div[data-testid="column"]:nth-of-type(odd) div.stButton > button {
-        filter: hue-rotate(60deg) brightness(1.2); 
+        filter: hue-rotate(0deg); /* Keep Yellow/Greenish natural */
     }
-    /* Note: filter affects text too. We might need to invert filter on text? 
-       Hard with single element. Let's see if user accepts colored text (funky).
-       Or we rely on just the layout.
+    
+    /* Fix Text Color Shift caused by Filter: 
+       If we rotate black text, it stays black. Good.
+       If we rotate white background, it stays white. Good.
+       So only the Emoji changes color! Perfect.
     */
     </style>
     """, unsafe_allow_html=True)
