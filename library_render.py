@@ -676,10 +676,47 @@ def render_library_v2(assistant):
                     with st.popover("⚡"):
                         st.markdown(f"**{f['name']}**")
                         if st.button("🤖 Analizar con IA", key=f"ai_{f['id']}"):
-                             st.session_state['chat_context_file'] = f
-                             st.session_state['redirect_target_name'] = "Ayudante de Tareas"
-                             st.session_state['force_chat_tab'] = True
-                             st.rerun()
+                             # V327: Direct Chat Creation with Auto-Summary
+                             with st.spinner("Creando chat con el tutor..."):
+                                 from db_handler import create_chat_session, save_chat_message
+                                 import datetime
+                                 
+                                 # Get file content
+                                 file_content = f.get('content') or f.get('content_text') or "Sin contenido"
+                                 file_name = f['name']
+                                 
+                                 # Create new chat session
+                                 user_id = st.session_state.get('user_id')
+                                 session_title = f"📄 {file_name}"
+                                 session_id = create_chat_session(user_id, session_title)
+                                 
+                                 if session_id:
+                                     # Save user's request for summary
+                                     user_message = f"Por favor, dame un resumen detallado de este archivo:\n\n{file_content}"
+                                     save_chat_message(session_id, "user", user_message)
+                                     
+                                     # Generate AI response
+                                     try:
+                                         ai_response = assistant.send_message(
+                                             f"Eres un tutor académico experto. Analiza el siguiente contenido y proporciona un resumen claro y estructurado:\n\n{file_content}"
+                                         )
+                                         ai_text = ai_response.text
+                                         save_chat_message(session_id, "assistant", ai_text)
+                                         
+                                         # Navigate to chat history with this session active
+                                         st.session_state['active_chat_session_id'] = session_id
+                                         st.session_state['selected_tab'] = "Historial de Chats"
+                                         st.success(f"✅ Chat creado: {session_title}")
+                                         st.rerun()
+                                     except Exception as e:
+                                         st.error(f"❌ Error al generar resumen: {str(e)}")
+                                         # Still navigate to chat even if AI fails
+                                         st.session_state['active_chat_session_id'] = session_id
+                                         st.session_state['selected_tab'] = "Historial de Chats"
+                                         st.rerun()
+                                 else:
+                                     st.error("❌ Error al crear sesión de chat")
+                             
                              
                         if st.button("🗑️ Eliminar", key=f"del_{f['id']}"):
                             delete_file(f['id'])
