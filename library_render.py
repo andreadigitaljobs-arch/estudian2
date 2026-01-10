@@ -481,54 +481,76 @@ def render_library(assistant):
                     
                     # Display content (editable or read-only)
                     if st.session_state[edit_key]:
-                        # Edit mode: Rich Text Editor or Fallback (V308)
+                        # Edit mode: Custom WYSIWYG Editor (V310)
+                        st.caption("💡 Seleccioná texto y usá los botones para dar formato (como Google Docs)")
                         
-                        if QUILL_AVAILABLE:
-                            # Option 1: Quill Rich Text Editor
-                            st.caption("💡 Usá los botones para dar formato (negritas, títulos, etc.)")
-                            
-                            edited_content = st_quill(
-                                value=file_content,
-                                html=True,
-                                toolbar=[
-                                    ['bold', 'italic', 'underline'],
-                                    [{'header': 1}, {'header': 2}],
-                                    [{'list': 'ordered'}, {'list': 'bullet'}],
-                                    ['blockquote'],
-                                    ['clean']
-                                ],
-                                key=f"quill_{f['id']}",
-                                placeholder="Escribí o editá tu contenido aquí..."
-                            )
-                        else:
-                            # Option 2: Fallback - Text Area with Live Preview
-                            st.caption("💡 Editá el texto. Usá Markdown: **negritas**, ## Título")
-                            
-                            col_edit, col_preview = st.columns([1, 1])
-                            
-                            with col_edit:
-                                st.markdown("**Editor:**")
-                                edited_content = st.text_area(
-                                    "Editar contenido:",
-                                    value=file_content,
-                                    height=400,
-                                    key=f"textarea_{f['id']}",
-                                    label_visibility="collapsed"
-                                )
-                            
-                            with col_preview:
-                                st.markdown("**Vista Previa:**")
-                                with st.container(height=400, border=True):
-                                    st.markdown(edited_content or "Escribí algo para ver la vista previa...", unsafe_allow_html=True)
+                        # Initialize session state for edited content
+                        editor_key = f"editor_content_{f['id']}"
+                        if editor_key not in st.session_state:
+                            st.session_state[editor_key] = file_content
                         
-                        if st.button("💾 Guardar Cambios", key=f"save_{f['id']}", type="primary"):
-                            if edited_content and update_file_content(f['id'], edited_content):
-                                st.success("✅ Guardado exitosamente")
+                        # Custom TinyMCE Editor via HTML/JS
+                        editor_html = f"""
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                            <script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+                            <style>
+                                body {{ margin: 0; padding: 10px; font-family: sans-serif; }}
+                            </style>
+                        </head>
+                        <body>
+                            <textarea id="editor">{file_content}</textarea>
+                            <script>
+                                tinymce.init({{
+                                    selector: '#editor',
+                                    height: 500,
+                                    menubar: false,
+                                    plugins: 'lists link code',
+                                    toolbar: 'undo redo | bold italic underline | h1 h2 | bullist numlist | removeformat',
+                                    content_style: 'body {{ font-family: Arial, sans-serif; font-size: 14px; }}',
+                                    setup: function(editor) {{
+                                        editor.on('change keyup', function() {{
+                                            // Send content back to Streamlit
+                                            const content = editor.getContent();
+                                            window.parent.postMessage({{
+                                                type: 'streamlit:setComponentValue',
+                                                value: content
+                                            }}, '*');
+                                        }});
+                                    }}
+                                }});
+                            </script>
+                        </body>
+                        </html>
+                        """
+                        
+                        # Render editor and capture output
+                        edited_content = components.html(editor_html, height=550, scrolling=True)
+                        
+                        # Update session state if content changed
+                        if edited_content:
+                            st.session_state[editor_key] = edited_content
+                        
+                        col_save, col_cancel = st.columns([1, 1])
+                        with col_save:
+                            if st.button("💾 Guardar Cambios", key=f"save_{f['id']}", type="primary", use_container_width=True):
+                                content_to_save = st.session_state.get(editor_key, file_content)
+                                if content_to_save and update_file_content(f['id'], content_to_save):
+                                    st.success("✅ Guardado exitosamente")
+                                    st.session_state[edit_key] = False
+                                    del st.session_state[editor_key]
+                                    time.sleep(0.5)
+                                    st.rerun()
+                                else:
+                                    st.error("❌ Error al guardar")
+                        
+                        with col_cancel:
+                            if st.button("❌ Cancelar", key=f"cancel_{f['id']}", use_container_width=True):
                                 st.session_state[edit_key] = False
-                                time.sleep(0.5)
+                                if editor_key in st.session_state:
+                                    del st.session_state[editor_key]
                                 st.rerun()
-                            else:
-                                st.error("❌ Error al guardar")
                     else:
                         # View mode: Expander with formatted content
                         with st.expander("Ver contenido"):
