@@ -94,19 +94,18 @@ def render_library_v2(assistant):
     # --- CSS for Windows-Style Explorer (Transparent Buttons, Big Icons) ---
     st.markdown("""
     <style>
-    /* --- FOLDER ICON STYLE (UNIVERSAL - V4) --- */
+    /* --- FOLDER ICON STYLE (UNIVERSAL - V5 - SCOPED) --- */
     
     /* 
        Targeting: 
-       1. Blocks that have at least 3 columns (likely our folder grid).
-       2. We use multiple selectors for 'column' to cover Streamlit versions (stColumn vs column).
-       3. We use multiple button nesting selectors.
+       1. Blocks that have a 3rd column...
+       2. BUT DO NOT have a 4th column (Crucial to avoid hitting the 6-col toolbar)
     */
     
-    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="column"]:nth-child(3)) button[kind="secondary"],
-    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(3)) button[kind="secondary"],
-    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="column"]:nth-child(3)) div.stButton > button[kind="secondary"],
-    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(3)) div.stButton > button[kind="secondary"] 
+    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="column"]:nth-child(3)):not(:has(> div[data-testid="column"]:nth-child(4))) button[kind="secondary"],
+    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(3)):not(:has(> div[data-testid="stColumn"]:nth-child(4))) button[kind="secondary"],
+    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="column"]:nth-child(3)):not(:has(> div[data-testid="column"]:nth-child(4))) div.stButton > button[kind="secondary"],
+    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(3)):not(:has(> div[data-testid="stColumn"]:nth-child(4))) div.stButton > button[kind="secondary"] 
     {
         background-color: transparent !important;
         border: 1px solid transparent !important;
@@ -129,10 +128,10 @@ def render_library_v2(assistant):
     }
     
     /* CONTENT INJECTION (The Folder Icon) */
-    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="column"]:nth-child(3)) button[kind="secondary"]::before,
-    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(3)) button[kind="secondary"]::before,
-    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="column"]:nth-child(3)) div.stButton > button[kind="secondary"]::before,
-    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(3)) div.stButton > button[kind="secondary"]::before
+    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="column"]:nth-child(3)):not(:has(> div[data-testid="column"]:nth-child(4))) button[kind="secondary"]::before,
+    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(3)):not(:has(> div[data-testid="stColumn"]:nth-child(4))) button[kind="secondary"]::before,
+    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="column"]:nth-child(3)):not(:has(> div[data-testid="column"]:nth-child(4))) div.stButton > button[kind="secondary"]::before,
+    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(3)):not(:has(> div[data-testid="stColumn"]:nth-child(4))) div.stButton > button[kind="secondary"]::before
     {
         content: "📁" !important;
         font-size: 100px !important;
@@ -142,8 +141,8 @@ def render_library_v2(assistant):
     }
     
     /* HOVER EFFECT */
-    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="column"]:nth-child(3)) button[kind="secondary"]:hover,
-    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(3)) button[kind="secondary"]:hover {
+    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="column"]:nth-child(3)):not(:has(> div[data-testid="column"]:nth-child(4))) button[kind="secondary"]:hover,
+    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(3)):not(:has(> div[data-testid="stColumn"]:nth-child(4))) button[kind="secondary"]:hover {
         background-color: #e6f3ff !important;
         border: 1px solid rgba(0, 120, 215, 0.2) !important;
         transform: translateY(-2px);
@@ -151,14 +150,14 @@ def render_library_v2(assistant):
     }
     
     /* COLOR FILTERS (ODD is Greenish) */
-    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="column"]:nth-child(3)) div[data-testid="column"]:nth-of-type(odd) button[kind="secondary"],
-    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(3)) div[data-testid="stColumn"]:nth-of-type(odd) button[kind="secondary"] {
+    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="column"]:nth-child(3)):not(:has(> div[data-testid="column"]:nth-child(4))) div[data-testid="column"]:nth-of-type(odd) button[kind="secondary"],
+    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(3)):not(:has(> div[data-testid="stColumn"]:nth-child(4))) div[data-testid="stColumn"]:nth-of-type(odd) button[kind="secondary"] {
         filter: hue-rotate(80deg) !important; 
     }
     
     /* COLOR FILTERS (EVEN is Purple) */
-    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="column"]:nth-child(3)) div[data-testid="column"]:nth-of-type(even) button[kind="secondary"],
-    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(3)) div[data-testid="stColumn"]:nth-of-type(even) button[kind="secondary"] {
+    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="column"]:nth-child(3)):not(:has(> div[data-testid="column"]:nth-child(4))) div[data-testid="column"]:nth-of-type(even) button[kind="secondary"],
+    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(3)):not(:has(> div[data-testid="stColumn"]:nth-child(4))) div[data-testid="stColumn"]:nth-of-type(even) button[kind="secondary"] {
         filter: hue-rotate(240deg) !important; 
     }
     </style>
