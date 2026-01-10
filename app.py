@@ -1636,11 +1636,12 @@ def inject_navigation_arrows():
         const scrollDown = () => { scrollNuclear(true); };
 
         // 5. BUILD
-        const btnUp = createBtn('fas fa-arrow-up', 'Inicio', scrollUp, '#4B22DD');
-        const btnDown = createBtn('fas fa-arrow-down', 'Final', scrollDown, '#4B22DD');
+        // 5. REMOVED BY USER REQUEST (V327)
+        // const btnUp = createBtn('fas fa-arrow-up', 'Inicio', scrollUp, '#4B22DD');
+        // const btnDown = createBtn('fas fa-arrow-down', 'Final', scrollDown, '#4B22DD');
 
-        navContainer.appendChild(btnUp);
-        navContainer.appendChild(btnDown);
+        // navContainer.appendChild(btnUp);
+        // navContainer.appendChild(btnDown);
 
         // 6. INJECT
         doc.body.appendChild(navContainer);
@@ -4885,7 +4886,7 @@ with tab_tutor:
             with st.sidebar:
                 st.header("Estudan2 🧠")
                 st.caption("Tu asistente de estudio con IA")
-                st.caption("v3.2.6 (Spacing Fix Final 🛠️)")
+                st.caption("v3.2.7 (No Arrows 👻)")
                 
                 # --- SIDEBAR AUTH DISPLAY ---
                 if st.session_state.get('authenticated'):
