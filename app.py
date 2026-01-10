@@ -4863,5 +4863,11 @@ if 'tutor_chat_history' not in st.session_state: st.session_state['tutor_chat_hi
 
 
 with tab_tutor:
-    from chat_interface import render_chat_interface
-    render_chat_interface(assistant, get_global_context)
+    try:
+        from chat_interface import render_chat_interface
+        render_chat_interface(assistant, get_global_context)
+    except Exception as e:
+        st.error(f"❌ Error crítico cargando el chat: {e}")
+        st.write("Intenta recargar la página. Si persiste, contacta a soporte.")
+        import traceback
+        st.code(traceback.format_exc())
