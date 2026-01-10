@@ -2426,7 +2426,14 @@ with st.sidebar:
 
             # List Sessions
             sessions = get_chat_sessions(st.session_state['user'].id)
-        
+            
+            # --- SELF-HEALING: Fix corrupted session state (ID string instead of Object) ---
+            curr_s = st.session_state.get('current_chat_session')
+            if curr_s and isinstance(curr_s, str):
+                 # Attempt to find the full object in the fresh list
+                 found_s = next((s for s in sessions if s['id'] == curr_s), None)
+                 st.session_state['current_chat_session'] = found_s
+            
             # Determine active ID for highlighting
             active_id = st.session_state['current_chat_session']['id'] if st.session_state['current_chat_session'] else None
 
