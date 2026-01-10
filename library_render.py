@@ -491,7 +491,17 @@ def render_library_v2(assistant):
                         
                         # Escape content for JavaScript
                         import json
-                        safe_content = json.dumps(file_content)
+                        import markdown
+                        
+                        # V314 Fix: Convert existing Markdown to HTML so asterisks don't show up
+                        # We use the markdown library we already have imported in app.py
+                        html_content = markdown.markdown(file_content)
+                        
+                        # Remove outer <p> tags if it's a single paragraph acting weird, 
+                        # but usually markdown wraps everything in <p>. 
+                        # CKEditor handles HTML input perfectly.
+                        
+                        safe_content = json.dumps(html_content)
                         
                         # CKEditor 5 (Free, Force Refresh V312)
                         import time
