@@ -2382,12 +2382,8 @@ with st.sidebar:
             </style>
         """, unsafe_allow_html=True)
 
-    # --- V257: DEPLOYMENT VERIFIER ---
-    st.markdown("""
-        <div style="position: fixed; bottom: 10px; left: 10px; opacity: 0.4; font-size: 10px; color: #888; z-index: 100;">
-            Build V257 (Fix)
-        </div>
-    """, unsafe_allow_html=True)
+    # Fixed version marker removed
+
 
     st.markdown('<div class="aesthetic-sep"></div>', unsafe_allow_html=True)
 
