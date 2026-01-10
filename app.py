@@ -3576,7 +3576,8 @@ with tab1:
         
         # Recents Header
         st.divider()
-        c_hist_1, c_hist_2, c_hist_3 = st.columns([0.5, 0.25, 0.25], vertical_alignment="center")
+        # V324 Fix: Use 4 columns to avoid "Folder CSS" collision (Pattern Breaker)
+        c_hist_1, c_hist_2, c_hist_3, c_spacer = st.columns([0.5, 0.20, 0.20, 0.1], vertical_alignment="center")
         c_hist_1.markdown(f"### 📝 Resultados Recientes")
         
         # CLEAR BUTTON
