@@ -15,6 +15,7 @@ def render_chat_interface(assistant, get_global_context):
     """
     
     # --- 1. SESSION MANAGEMENT ---
+    print(f"DEBUG: render_chat start. Current sess: {st.session_state.get('current_chat_session')}")
     if 'current_chat_session' not in st.session_state:
         st.session_state['current_chat_session'] = None
 
@@ -23,9 +24,11 @@ def render_chat_interface(assistant, get_global_context):
 
     # If no session active, show "Start New" screen
     if not current_sess:
+        print("DEBUG: No session, rendering new chat screen")
         render_new_chat_screen(user_id)
         return
 
+    print(f"DEBUG: Session active: {current_sess['id']}")
     # --- 2. LOAD & SYNC HISTORY ---
     # Sync with DB if needed (or first load)
     if 'tutor_chat_history' not in st.session_state:
@@ -191,10 +194,10 @@ def generate_ai_response(current_sess, assistant, get_global_context):
                 save_chat_message(current_sess['id'], "assistant", response_text)
                 st.session_state['tutor_chat_history'].append({"role": "assistant", "content": response_text})
                 
-                # Reset Trigger
+                # Reset Trigger (NO RERUN - Streamlit updates automatically)
                 st.session_state['trigger_ai_response'] = False
-                st.rerun()
                 
+
             except Exception as e:
                 st.error(f"Error generando respuesta: {e}")
                 st.session_state['trigger_ai_response'] = False
