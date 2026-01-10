@@ -3237,7 +3237,7 @@ with tab1:
             
             with c_notif:
                 st.markdown(f"""
-                    <div style="background-color: #EBF5FF; border: 2px solid #4B22DD; border-left: 8px solid #4B22DD; padding: 10px 15px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                    <div style="background-color: #EBF5FF; border: 2px solid #4B22DD; border-left: 8px solid #4B22DD; padding: 10px 15px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 15px;">
                         <div style="color: #4B22DD; font-weight: 800; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px;">
                             🎯 Último archivo procesado:
                         </div>
