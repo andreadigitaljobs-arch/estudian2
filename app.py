@@ -3379,6 +3379,10 @@ with tab1:
                     else:
                         progress_bar = st.progress(0)
                         status_text = st.empty()
+                        # V326: Persistent Log Container
+                        process_log = st.empty() 
+                        log_content = ""
+                        
                         js_bridge = st.empty() # V295: Dedicated slot for JS bridge to avoid vertical space accumulation
                         import time
                         from google.api_core.exceptions import ResourceExhausted, ServiceUnavailable
@@ -3518,8 +3522,14 @@ with tab1:
                                         if saved:
                                             if save_to_lib:
                                                 st.toast(f"✅ Listo: {final_name}") 
+                                                # V326: Log Update
+                                                log_content += f"✅ **Listo:** {final_name}\n\n"
+                                                process_log.markdown(log_content)
                                             else:
                                                 st.toast(f"🧪 Finalizado (Sin guardar): {final_name}")
+                                                # V326: Log Update
+                                                log_content += f"🧪 **Test Finalizado:** {final_name}\n\n"
+                                                process_log.markdown(log_content)
                                             
                                             st.session_state['transcript_history'].append({"name": final_name, "text": trans_text})
                                             st.session_state['last_transcribed_file'] = final_name # Update last processed
@@ -4916,7 +4926,7 @@ with tab_tutor:
             with st.sidebar:
                 st.header("Estudan2 🧠")
                 st.caption("Tu asistente de estudio con IA")
-                st.caption("v3.3.25 (Clean Finish ✨)")
+                st.caption("v3.3.26 (Feedback Loop 🗣️)")
                 
                 # --- SIDEBAR AUTH DISPLAY ---
                 if st.session_state.get('authenticated'):
