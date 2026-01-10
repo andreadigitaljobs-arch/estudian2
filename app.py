@@ -3369,7 +3369,7 @@ with tab1:
                          file_renames[uf.name] = new_n
             
 
-                                if st.button("▶️ Iniciar Transcripción Inteligente", type="primary", key="btn_start_transcription", use_container_width=True, disabled=(save_to_lib and not selected_unit_id)):
+            if st.button("▶️ Iniciar Transcripción Inteligente", type="primary", key="btn_start_transcription", use_container_width=True, disabled=(save_to_lib and not selected_unit_id)):
                 try:
                     # V207: Start Sound (Blip)
                     play_sound('start')
