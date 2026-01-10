@@ -66,9 +66,12 @@ st.set_page_config(
 )
 
 # --- V252: VISUAL MARKER ---
-if 'v252_marker' not in st.session_state:
-    st.toast("✅ Aplicación Actualizada a V252")
-    st.session_state['v252_marker'] = True
+if 'v315_marker' not in st.session_state:
+    st.toast("✅ Aplicación Actualizada a V315 (Clean Text)")
+    st.session_state['v315_marker'] = True
+
+# --- EMERGENCY VERSION CHECK ---
+st.success("🚨 SI VES ESTO, ESTÁS EN LA VERSIÓN V3.1.5 (Clean Text) 🚨")
 
 # --- V249: HYBRID SNAPPY LOADER (RE-FIXED) ---
 components.html("""
