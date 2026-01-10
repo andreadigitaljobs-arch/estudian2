@@ -2408,13 +2408,16 @@ with st.sidebar:
         with st.expander("🗂️ Historial de Chats", expanded=True):
             # Create New
             if st.button("➕ Nuevo chat", use_container_width=True):
-                new_sess = create_chat_session(st.session_state['user'].id, "Nuevo chat")
-                if new_sess:
-                    st.session_state['current_chat_session'] = new_sess
-                    st.session_state['tutor_chat_history'] = [] # Reset for new chat
-                    # V328: Removed broken redirect to non-existent "Tutoría 1 a 1"
-                    st.success(f"✅ Chat creado: {new_sess.get('name', 'Nuevo chat')}")
-                    st.rerun()
+                new_sess_id = create_chat_session(st.session_state['user'].id, "Nuevo chat")
+                if new_sess_id:
+                    # Fetch the full session object
+                    sessions = get_chat_sessions(st.session_state['user'].id)
+                    new_sess = next((s for s in sessions if s['id'] == new_sess_id), None)
+                    if new_sess:
+                        st.session_state['current_chat_session'] = new_sess
+                        st.session_state['tutor_chat_history'] = [] # Reset for new chat
+                        st.success(f"✅ Chat creado: {new_sess.get('name', 'Nuevo chat')}")
+                        st.rerun()
 
             # List Sessions
             sessions = get_chat_sessions(st.session_state['user'].id)
