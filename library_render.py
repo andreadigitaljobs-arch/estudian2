@@ -91,47 +91,63 @@ def render_library_v2(assistant):
     Refactored V270: Minimalist Toolbar UI
     """
     
-    # --- CSS for Drive-Style Folder Cards (Big Icons) ---
+    # --- CSS for Windows-Style Explorer (Transparent Buttons, Big Icons) ---
     st.markdown("""
     <style>
-    /* Target buttons inside the main app area, specifically for the library layout */
+    /* Target buttons inside the main app area */
     div.stButton > button {
-        background-color: #ffffff !important;
-        border: 1px solid #dadce0 !important;
-        border-radius: 8px !important;
-        color: #3c4043 !important;
+        background-color: transparent !important;
+        border: 1px solid transparent !important;
+        border-radius: 6px !important;
+        color: #e2e8f0 !important; /* Text Color */
         
-        /* VERTICAL STACK LAYOUT */
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
-        justify-content: center !important;
+        justify-content: flex-start !important;
         text-align: center !important;
         
-        padding: 15px 5px !important;
+        padding: 5px !important;
         width: 100%;
-        height: 110px !important; /* Fixed Square-ish height */
+        height: 120px !important;
         
-        transition: background-color 0.1s linear, box-shadow 0.1s linear !important;
         box-shadow: none !important;
-        font-family: 'Google Sans', 'Roboto', Arial, sans-serif !important;
+        font-family: 'Segoe UI', sans-serif !important;
         font-size: 13px !important;
-        font-weight: 500 !important;
-        line-height: 1.4 !important;
-        white-space: pre-wrap !important; /* Allow newlines for Icon on top */
+        line-height: 1.3 !important;
+        white-space: pre-wrap !important;
     }
     
-    div.stButton > button:hover {
-        background-color: #e8f0fe !important; /* Drive Blue Selection Hover */
-        border-color: #d2e3fc !important;
-        color: #1967d2 !important; /* Drive Blue Text */
-        box-shadow: none !important;
+    /* BIG ICON MAGIC: Target the Folder Emoji (First Line/Letter) */
+    div.stButton > button::first-line {
+        font-size: 56px !important; /* Huge Folder Icon */
+        line-height: 1.0 !important;
     }
 
-    div.stButton > button:active {
-        background-color: #d2e3fc !important;
-        box-shadow: none !important;
+    /* Hover Effect: Windows Selection Style */
+    div.stButton > button:hover {
+        background-color: rgba(255, 255, 255, 0.1) !important;
+        border-color: rgba(255, 255, 255, 0.2) !important;
     }
+    
+    /* COLOR HACK: Alternating Folder Colors (Purple & Greenish) 
+       Standard Emoji is Yellow.
+       Purple Target: Hue Rotate ~260deg
+       Green Target: Hue Rotate ~100deg
+    */
+    
+    /* Even buttons: Purple-ish Tone */
+    div[data-testid="column"]:nth-of-type(even) div.stButton > button {
+        filter: hue-rotate(240deg) brightness(1.1);
+    }
+    /* Odd buttons: Green-ish Tone (Default Yellow + 60deg = Green) */
+    div[data-testid="column"]:nth-of-type(odd) div.stButton > button {
+        filter: hue-rotate(60deg) brightness(1.2); 
+    }
+    /* Note: filter affects text too. We might need to invert filter on text? 
+       Hard with single element. Let's see if user accepts colored text (funky).
+       Or we rely on just the layout.
+    */
     </style>
     """, unsafe_allow_html=True)
 
