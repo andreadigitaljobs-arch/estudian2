@@ -1650,17 +1650,26 @@ def inject_navigation_arrows():
         doc.body.appendChild(navContainer);
         console.log("🛗 [Elevator V231] Mounted to Body");
 
-        // 7. REVEAL LOGIC
+        // 7. REVEAL LOGIC (Robust)
         const checkReady = () => {
-            // Check if main content is loaded (Streamlit specific)
-            const main = doc.querySelector('.main');
-            if (main && main.clientHeight > 100) {
+            // Try multiple selectors for main content
+            const main = doc.querySelector('.main') || doc.querySelector('.stApp') || doc.querySelector('[data-testid="stAppViewContainer"]');
+            
+            if (main && (main.clientHeight > 50 || main.scrollHeight > 500)) {
                  navContainer.style.opacity = '1';
+                 console.log("🛗 Arrows Revealed (Content detected)");
             } else {
-                 setTimeout(checkReady, 300);
+                 setTimeout(checkReady, 500);
             }
         };
-        setTimeout(checkReady, 1000);
+        
+        // FAILSAFE: Force show after 3 seconds no matter what
+        setTimeout(() => {
+            navContainer.style.opacity = '1';
+            console.log("🛗 Arrows Revealed (Failsafe)");
+        }, 3000);
+
+        setTimeout(checkReady, 500);
         
         // 8. ENSURE CSS
         if (!doc.getElementById('fa-v6-core')) {
@@ -4900,7 +4909,7 @@ with tab_tutor:
             with st.sidebar:
                 st.header("Estudan2 🧠")
                 st.caption("Tu asistente de estudio con IA")
-                st.caption("v3.2.8 (Smart Arrows 🎯)")
+                st.caption("v3.2.9 (Arrows Failsafe 🛡️)")
                 
                 # --- SIDEBAR AUTH DISPLAY ---
                 if st.session_state.get('authenticated'):
