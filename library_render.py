@@ -703,9 +703,8 @@ def render_library_v2(assistant):
                                              
                                              # Generate AI response
                                              try:
-                                                 ai_response = assistant.send_message(
-                                                     f"Eres un tutor académico experto. Analiza el siguiente contenido y proporciona un resumen claro y estructurado:\n\n{file_content}"
-                                                 )
+                                                 prompt = f"Eres un tutor académico experto. Analiza el siguiente contenido y proporciona un resumen claro y estructurado:\n\n{file_content}"
+                                                 ai_response = assistant.model.generate_content(prompt)
                                                  ai_text = ai_response.text
                                                  save_chat_message(session_id, "assistant", ai_text)
                                                  
