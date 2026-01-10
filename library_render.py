@@ -91,29 +91,49 @@ def render_library_v2(assistant):
     Refactored V270: Minimalist Toolbar UI
     """
     
-    # --- CSS for Cards ---
+    # --- CSS for Drive-Style Folder Cards ---
     st.markdown("""
     <style>
-    div.stButton > button.folder-card {
-        background-color: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        color: #334155;
-        padding: 20px;
+    /* Target buttons inside the main app area, specifically for the library layout */
+    div.stButton > button {
+        background-color: #ffffff !important;
+        border: 1px solid #dadce0 !important;
+        border-radius: 8px !important; /* Rounded corners like Drive */
+        color: #3c4043 !important;
+        padding: 12px 16px !important;
         width: 100%;
-        text-align: left;
-        transition: all 0.2s;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        text-align: left !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: flex-start !important; /* Left Align Content */
+        transition: background-color 0.1s linear, box-shadow 0.1s linear !important;
+        box-shadow: none !important;
+        font-family: 'Google Sans', 'Roboto', Arial, sans-serif !important;
+        font-size: 14px !important;
+        font-weight: 500 !important;
+        height: auto !important;
+        min-height: 48px !important;
     }
-    div.stButton > button.folder-card:hover {
-        border-color: #7c3aed;
-        background-color: #faf5ff;
-        box-shadow: 0 4px 6px -1px rgba(124, 58, 237, 0.1);
-        color: #7c3aed;
+    
+    div.stButton > button:hover {
+        background-color: #f1f3f4 !important; /* Drive Gray Hover */
+        border-color: #dadce0 !important;
+        color: #202124 !important;
+        box-shadow: 0 1px 2px rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15) !important;
+        z-index: 2;
     }
-    .toolbar-btn {
-        text-align: center; 
+
+    div.stButton > button:active {
+        background-color: #e8eaed !important;
+        box-shadow: none !important;
     }
+
+    /* Toolbar Button Overrides (Optional: keep them looking cleaner or let them inherit folder style? 
+       Drive toolbar buttons are usually icon-only or pill. 
+       Let's tweak specific toolbar columns if needed, but for now uniform look is okay for specific cards. 
+       If we want Toolbar to look different, we'd need specific selectors which Streamlit makes hard without keys.
+       However, we can target the specific buttons via the grid structure if needed, but "Folder Style" everywhere is cleaner than "Pills".
+    */
     </style>
     """, unsafe_allow_html=True)
 
