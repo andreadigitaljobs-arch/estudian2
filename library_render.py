@@ -406,7 +406,7 @@ def render_library(assistant):
                 with r_c2:
                     st.write(f"**{f['name']}**")
                     with st.expander("Ver contenido"):
-                        st.markdown(f.get('content') or f.get('content_text') or "Sin contenido")
+                        st.markdown(f.get('content') or f.get('content_text') or "Sin contenido", unsafe_allow_html=True)
                 
                 with r_c3:
                     # Quick Actions Popover
@@ -421,6 +421,19 @@ def render_library(assistant):
                         if st.button("🗑️ Eliminar", key=f"del_{f['id']}"):
                             delete_file(f['id'])
                             st.rerun()
+                            
+                        st.divider()
+                        
+                        # --- MAGIC ARROWS (RESTORED V301) ---
+                        m_c1, m_c2 = st.columns(2)
+                        with m_c1:
+                            if st.button("🔼 Subir", key=f"up_{f['id']}", use_container_width=True):
+                                move_file_up(current_unit_id, f['id'])
+                                st.rerun()
+                        with m_c2:
+                            if st.button("🔽 Bajar", key=f"down_{f['id']}", use_container_width=True):
+                                move_file_down(current_unit_id, f['id'])
+                                st.rerun()
                             
                         st.divider()
                         
