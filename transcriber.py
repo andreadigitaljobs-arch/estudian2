@@ -205,128 +205,88 @@ class Transcriber:
         
         return response.text
 
-    def process_video(self, video_path, visual_mode=False, progress_callback=None):
-        """Orchestrates the conversion and transcription process."""
-        self.visual_mode = visual_mode # Store for prompt usage
+        # V303: DIRECT UPLOAD STRATEGY (OOM PREVENTION)
+        # We always upload the file to Gemini directly to avoid local FFmpeg crashing limits.
+        # Gemini 1.5 Flash supports video/audio directly and has 1M context (no chunking needed).
         
-        # LOGIC FOR VISUAL MODE:
-        if visual_mode:
-            if progress_callback: progress_callback("🚀 Subiendo video a la Nube de IA (Esto depende de tu internet)...", 0.05)
-            print(f"👁️ Procesando VIDEO MULTIMODAL: {video_path}")
+        if progress_callback: progress_callback("🚀 Subiendo archivo a IA (Bypass de Memoria Local)...", 0.1)
+        print(f"🚀 Procesando vía DIRECT CLOUD: {video_path}")
+        
+        try:
+            # 1. Upload File
+            remote_file = genai.upload_file(video_path)
             
-            # DIRECT VIDEO UPLOAD
-            video_file = genai.upload_file(video_path)
-            
-            # Wait for processing
+            # 2. Wait for processing
             import time
             dots = 0
-            while video_file.state.name == "PROCESSING":
+            while remote_file.state.name == "PROCESSING":
                 dots = (dots + 1) % 4
-                if progress_callback: progress_callback(f"🧠 La IA está analizando el video{'.' * dots}", 0.15)
+                if progress_callback: progress_callback(f"☁️ Procesando en Nube de Google{'.' * dots}", 0.2)
                 time.sleep(2)
-                video_file = genai.get_file(video_file.name)
+                remote_file = genai.get_file(remote_file.name)
+            
+            if remote_file.state.name == "FAILED":
+                raise ValueError(f"Google Cloud Error: {remote_file.state.name}")
                 
-            if video_file.state.name == "FAILED":
-                if progress_callback: progress_callback("❌ Error: Falló el procesamiento del video.", 0.0)
-                raise ValueError("Video processing failed in Gemini.")
+            # 3. Choose Prompt based on Mode
+            if visual_mode:
+                if progress_callback: progress_callback("👁️ Generando Análisis Visual...", 0.4)
+                final_prompt = """
+                ERES UN ANALISTA VISUAL Y EDITOR. (SOLO ESPAÑOL).
+                SECCIÓN 1: 🎙️ TRANSCRIPCIÓN DEL AUDIO (FORMATO EDITORIAL)
+                - Transcribe el audio con Títulos Markdown (##) y Párrafos.
+                - USA CÓDIGO DE COLORES (MODO ESTUDIO):
+                  🔴 <span class="sc-base">...</span> -> DEFINICIONES.
+                  🟣 <span class="sc-key">...</span> -> IDEAS CLAVE.
+                  🟡 <span class="sc-data">...</span> -> DATOS/ESTRUCTURA.
+                  🔵 <span class="sc-example">...</span> -> EJEMPLOS.
+                  🟢 <span class="sc-note">...</span> -> MATICES.
                 
-            # Generate
-            if progress_callback: progress_callback("👁️ Generando Análisis Visual y Transcripción... (Paciencia)", 0.4)
-            
-            # Use the specialized prompt directly here to be safe
-            prompt_visual = """
-            ERES UN ANALISTA VISUAL Y EDITOR. (SOLO ESPAÑOL).
-            
-            TU MISION: Generar un reporte DOBLE. Debes entregar DOS SECCIONES CLARAMENTE SEPARADAS.
-            
-            ---
-            SECCIÓN 1: 🎙️ TRANSCRIPCIÓN DEL AUDIO (FORMATO EDITORIAL)
-            Transcribe el audio ESTRUCTURÁNDOLO con Títulos Markdown (##), Subtítulos (###) y párrafos claros.
-            
-            SISTEMA DE RESALTADO OBLIGATORIO (MODO ESTUDIO):
-            
-            🧠 1. CONCEPTO DE "UNIDAD MENTAL" (Mental Units):
-               - PROHIBIDO resaltar palabras huérfanas o artículos. Resalta frases completas con sentido.
-            
-            🎨 2. CÓDIGO DE COLORES (Usa estas clases HTML exactas):
-            🔴 <span class="sc-base">...</span> -> SOLO DEFINICIONES ("¿Qué es X?").
-            🟣 <span class="sc-key">...</span> -> IDEAS CENTRALES y PREMISAS.
-            🟡 <span class="sc-data">...</span> -> ESTRUCTURA ("Paso 1", "Primero") y DATOS Numéricos.
-            🔵 <span class="sc-example">...</span> -> EJEMPLOS (Historias, Marcas).
-            🟢 <span class="sc-note">...</span> -> MATICES, Advertencias o Excepciones.
-            
-            REGLA: El texto debe verse limpio, profesional y fácil de estudiar.
-            
-            ---
-            SECCIÓN 2: 👁️ REGISTRO VISUAL (TIMELINE)
-            Genera una lista cronológica EXCLUSIVAMENTE de lo que se ve en pantalla.
-            - [MM:SS] 📄 Se muestra documento "Nombre". Texto visible: "..."
-            - [MM:SS] 🖥️ Comparten pantalla de navegador web en la URL...
-            - [MM:SS] 🎞️ Diapositiva con título "X". Puntos clave: ...
-            
-            IMPORTANTE:
-            - En la Sección 2, DETECTA TAREAS Y PREGUNTAS escritas en pantalla con OCR PURO.
-            - NO mezcles las secciones.
-            """
-            
-            response = self.model.generate_content([prompt_visual, video_file], request_options={"timeout": 600})
-            
-            if progress_callback: progress_callback("✅ ¡Análisis Completado!", 1.0)
-            return response.text
-            
-        else:
-            # ORIGINAL AUDIO FLOW (Simplified V170)
-            # Use a unique temp name to avoid collisions
-            safe_name = "".join([c for c in os.path.basename(video_path) if c.isalnum()])
-            audio_path = f"temp_audio_{safe_name}.mp3"
-            try:
-                if progress_callback: progress_callback("🔊 Extrayendo audio (Ultra-rápido)...", 0.1)
-                print(f"🔊 Procesando AUDIO Standard: {video_path}")
-                self.extract_audio(video_path, audio_path)
+                SECCIÓN 2: 👁️ REGISTRO VISUAL (TIMELINE)
+                - [MM:SS] Describe lo que se ve en pantalla (OCR, Diapositivas).
+                """
+            else:
+                if progress_callback: progress_callback("🎙️ Transcribiendo Audio (Alta Precisión)...", 0.4)
+                final_prompt = """
+                TRANSCRIPCIÓN EDITORIAL EXPERTA (OBLIGATORIO: SOLAMENTE ESPAÑOL).
+                Tu tarea es transcribir el contenido del archivo a ESPAÑOL con ortografía PERFECTA.
                 
-                # ALWAYS Chunk if needed (Safe approach for long output > 45 mins)
-                # Gemini output limit is ~8k tokens. 
-                # 40 mins was pushing it. 20 mins (1200s) is SAFE.
-                if progress_callback: progress_callback("✂️ Verificando duración y segmentando...", 0.2)
-                chunks = self.chunk_audio(audio_path, chunk_length_sec=1200) # 20 mins
+                👥 DIARIZACIÓN:
+                - Identifica hablantes: **Hablante 1:** "..."
                 
-                full_transcript = []
-                total_chunks = len(chunks)
+                SISTEMA DE RESALTADO (MODO ESTUDIO):
+                🔴 <span class="sc-base">...</span> -> DEFINICIONES TIPO EXAMEN.
+                🟣 <span class="sc-key">...</span> -> IDEAS ANCLA / CONCLUSIONES.
+                🟡 <span class="sc-data">...</span> -> ESTRUCTURA (Pasos) y DATOS.
+                🔵 <span class="sc-example">...</span> -> EJEMPLOS.
+                🟢 <span class="sc-note">...</span> -> Advertencias/Notas.
                 
-                for i, chunk_path in enumerate(chunks):
-                     try:
-                         if progress_callback: 
-                             progress_callback(f"🤖 Transcribiendo Parte {i+1} de {total_chunks}...", 0.3 + (0.6 * (i/total_chunks)))
-                         
-                         # Smart Callback Wrapper for seamless progress
-                         def chunk_cb(msg, p):
-                             if progress_callback:
-                                 # Map inner progress (0.0-1.0) to outer slot
-                                 base_p = 0.3 + (0.6 * (i / total_chunks))
-                                 slot_size = 0.6 / total_chunks
-                                 global_p = base_p + (p * slot_size)
-                                 progress_callback(f"P{i+1}/{total_chunks}: {msg}", global_p)
+                ESTRUCTURA:
+                - Usa Títulos Markdown (##).
+                - Separa párrafos claramente.
+                """
+            
+            # 4. Create Model (1.5 Flash default)
+            # Ensure calling method has setup self.model correctly
+            response = self.model.generate_content([final_prompt, remote_file], request_options={"timeout": 900})
+            
+            if progress_callback: progress_callback("✅ ¡Listo!", 1.0)
+            
+            # V205 Fix: Auto-close tags (Anti-Bleed) applies to this too
+            full_text = response.text
+            lines = full_text.split('\n')
+            repaired_lines = []
+            for line in lines:
+                open_c = line.count("<span")
+                close_c = line.count("</span>")
+                if open_c > close_c:
+                    line += "</span>" * (open_c - close_c)
+                repaired_lines.append(line)
+            
+            return "\n".join(repaired_lines)
 
-                         # Process this chunk with streaming!
-                         chunk_text = self.transcribe_file(chunk_path, progress_callback=chunk_cb, is_continuation=(i > 0))
-                         full_transcript.append(chunk_text)
-                     
-                     except Exception as e:
-                         print(f"Error in chunk {i}: {e}")
-                         full_transcript.append(f"\n\n[ERROR DE SISTEMA: La Parte {i+1} falló. Razón: {e}]\n\n")
-                     
-                     # Cleanup chunk
-                     try: os.remove(chunk_path)
-                     except: pass
-                
-                if progress_callback: progress_callback("✅ ¡Listo!", 1.0)
-                final_result = "\n\n".join(full_transcript)
-                return final_result
-            except Exception as e:
-                print(f"Audio Flow Error: {e}")
-                return f"[ERROR] No se pudo procesar el audio: {e}"
-            finally:
-                if os.path.exists(audio_path):
-                    try: os.remove(audio_path)
-                    except: pass
+        except Exception as e:
+            msg = f"[ERROR DIRECTO] {str(e)}"
+            print(msg)
+            return msg
 
