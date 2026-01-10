@@ -2412,17 +2412,8 @@ with st.sidebar:
                 if new_sess:
                     st.session_state['current_chat_session'] = new_sess
                     st.session_state['tutor_chat_history'] = [] # Reset for new chat
-                    st.session_state['redirect_target_name'] = "Tutoría 1 a 1" # Explicit Redirect
-                    st.session_state['force_chat_tab'] = True # Force switch
-                    
-                    # UPDATE URL
-                    try:
-                        if hasattr(st, 'query_params'):
-                            st.query_params['chat_id'] = str(new_sess['id'])
-                        else:
-                            st.experimental_set_query_params(chat_id=str(new_sess['id']))
-                    except: pass
-                    
+                    # V328: Removed broken redirect to non-existent "Tutoría 1 a 1"
+                    st.success(f"✅ Chat creado: {new_sess.get('name', 'Nuevo chat')}")
                     st.rerun()
 
             # List Sessions
@@ -2449,8 +2440,7 @@ with st.sidebar:
                 if st.button(label, key=f"sess_{sess['id']}", use_container_width=True):
                     st.session_state['current_chat_session'] = sess
                     st.session_state['tutor_chat_history'] = [] # Force reload
-                    st.session_state['redirect_target_name'] = "Tutoría 1 a 1" # Explicit Redirect
-                    st.session_state['force_chat_tab'] = True # Force switch
+                    # V328: Removed broken redirect to non-existent "Tutoría 1 a 1"
                     
                     # TRACK FOOTPRINT
                     update_user_footprint(st.session_state['user'].id, {
@@ -2460,14 +2450,7 @@ with st.sidebar:
                         "subtitle": "Continuar conversación"
                     })
                     
-                    # UPDATE URL
-                    try:
-                        if hasattr(st, 'query_params'):
-                            st.query_params['chat_id'] = str(sess['id'])
-                        else:
-                            st.experimental_set_query_params(chat_id=str(sess['id']))
-                    except: pass
-                    
+                    st.success(f"✅ Abriendo: {sess['name']}")
                     st.rerun()
 
             # VIEW ALL BUTTON ALWAYS VISIBLE
