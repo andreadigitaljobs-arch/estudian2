@@ -1635,43 +1635,33 @@ def inject_navigation_arrows():
         const scrollUp = () => { scrollNuclear(false); };
         const scrollDown = () => { scrollNuclear(true); };
 
-        // 5. RESTORED & HIDDEN INITIALLY (V328)
+        // 5. RESTORED & ANIMATED (V330)
         const btnUp = createBtn('fas fa-arrow-up', 'Inicio', scrollUp, '#4B22DD');
         const btnDown = createBtn('fas fa-arrow-down', 'Final', scrollDown, '#4B22DD');
 
         navContainer.appendChild(btnUp);
         navContainer.appendChild(btnDown);
         
-        // HIDE INITIALLY until App Loaded
+        // CSS ANIMATION INJECTION
+        const style = doc.createElement('style');
+        style.innerHTML = `
+            @keyframes fadeInElevator {
+                0% { opacity: 0; transform: translateY(10px); }
+                100% { opacity: 1; transform: translateY(0); }
+            }
+        `;
+        doc.head.appendChild(style);
+
+        // INITIAL STATE: Hidden -> Animation handles reveal
         navContainer.style.opacity = '0';
-        navContainer.style.transition = 'opacity 0.5s ease';
+        // Delay 2s, Duration 0.5s
+        navContainer.style.animation = 'fadeInElevator 0.5s ease 2s forwards';
 
         // 6. INJECT
         doc.body.appendChild(navContainer);
-        console.log("🛗 [Elevator V231] Mounted to Body");
+        console.log("🛗 [Elevator V231] Mounted & Animating...");
 
-        // 7. REVEAL LOGIC (Robust)
-        const checkReady = () => {
-            // Try multiple selectors for main content
-            const main = doc.querySelector('.main') || doc.querySelector('.stApp') || doc.querySelector('[data-testid="stAppViewContainer"]');
-            
-            if (main && (main.clientHeight > 50 || main.scrollHeight > 500)) {
-                 navContainer.style.opacity = '1';
-                 console.log("🛗 Arrows Revealed (Content detected)");
-            } else {
-                 setTimeout(checkReady, 500);
-            }
-        };
-        
-        // FAILSAFE: Force show after 3 seconds no matter what
-        setTimeout(() => {
-            navContainer.style.opacity = '1';
-            console.log("🛗 Arrows Revealed (Failsafe)");
-        }, 3000);
-
-        setTimeout(checkReady, 500);
-        
-        // 8. ENSURE CSS
+        // 7. ENSURE CSS
         if (!doc.getElementById('fa-v6-core')) {
             const link = doc.createElement('link');
             link.id = 'fa-v6-core';
@@ -1681,7 +1671,7 @@ def inject_navigation_arrows():
         }
     };
 
-    setTimeout(setupElevator, 1500); # Delayed start 
+    setTimeout(setupElevator, 1500);
 </script>
 """, height=0)
 
@@ -4909,7 +4899,7 @@ with tab_tutor:
             with st.sidebar:
                 st.header("Estudan2 🧠")
                 st.caption("Tu asistente de estudio con IA")
-                st.caption("v3.2.9 (Arrows Failsafe 🛡️)")
+                st.caption("v3.3.0 (Arrows Resolved ✅)")
                 
                 # --- SIDEBAR AUTH DISPLAY ---
                 if st.session_state.get('authenticated'):
