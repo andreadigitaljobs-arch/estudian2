@@ -98,13 +98,14 @@ def render_library_v2(assistant):
     /* Target buttons inside the main app area */
     /* Target buttons inside the main app area */
     /* Target buttons inside the main app area */
-    div.stButton > button {
+    /* SCOPED BUTTON STYLE: Only affect PRIMARY buttons in MAIN area */
+    section[data-testid="stMain"] div.stButton > button[kind="primary"] {
         background-color: transparent !important;
         border: 1px solid transparent !important;
         border-radius: 12px !important;
         color: #202124 !important;
         
-        display: block !important; /* Block to allow line-height to work properly on first line */
+        display: block !important;
         text-align: center !important;
         
         padding: 0px !important;
@@ -114,29 +115,13 @@ def render_library_v2(assistant):
         
         box-shadow: none !important;
         font-family: 'Segoe UI', sans-serif !important;
-        font-size: 16px !important; /* Base size for Title */
+        font-size: 16px !important;
         overflow: visible !important;
-        white-space: pre-wrap !important; /* Ensure newlines are respected if used */
+        white-space: pre-wrap !important;
     }
     
-    /* MASSIVE ICON MAGIC: Target the Folder Emoji only (First Line) */
-    div.stButton > button::first-line {
-        font-size: 85px !important;
-        line-height: 2.2 !important; /* KEY: This creates the "detached" space below icon */
-    }
-
-    /* Windows 11 Style Hover */
-    div.stButton > button:hover {
-        background-color: #e6f3ff !important;
-        border: 1px solid rgba(0, 120, 215, 0.2) !important;
-        transform: translateY(-2px);
-        color: #202124 !important;
-    }
-    
-    /* COLOR HACK: Filter on the BUTTON element effectively rotates the emoji color */
-    
-    /* Force Icon Size using CSS Content Injection (Definitive Fix) */
-    div.stButton > button::before {
+    /* Content Injection (The Folder Icon) */
+    section[data-testid="stMain"] div.stButton > button[kind="primary"]::before {
         content: "📁" !important;
         font-size: 100px !important;
         display: block !important;
@@ -144,24 +129,26 @@ def render_library_v2(assistant):
         margin-bottom: 0px !important;
     }
     
-    /* Clean up old rules */
-    div.stButton > button::first-line {
-        /* Reset any conflicting first-line styles */
+    /* Hover Effect */
+    section[data-testid="stMain"] div.stButton > button[kind="primary"]:hover {
+        background-color: #e6f3ff !important;
+        border: 1px solid rgba(0, 120, 215, 0.2) !important;
+        transform: translateY(-2px);
+        color: #202124 !important;
     }
     
-    /* Ensure Colors Apply to the Emoji (in ::before) */
-    /* Support both old and new Streamlit column identifiers */
-    div[data-testid="column"]:nth-of-type(odd) div.stButton > button,
-    div[data-testid="stColumn"]:nth-of-type(odd) div.stButton > button {
+    /* COLOR FILTERS (Scoped to Primary in Main) */
+    /* Target ODD columns -> Greenish */
+    div[data-testid="column"]:nth-of-type(odd) section[data-testid="stMain"] div.stButton > button[kind="primary"],
+    div[data-testid="stColumn"]:nth-of-type(odd) section[data-testid="stMain"] div.stButton > button[kind="primary"] {
         filter: hue-rotate(80deg) !important; 
     }
     
-    div[data-testid="column"]:nth-of-type(even) div.stButton > button,
-    div[data-testid="stColumn"]:nth-of-type(even) div.stButton > button {
+    /* Target EVEN columns -> Purple */
+    div[data-testid="column"]:nth-of-type(even) section[data-testid="stMain"] div.stButton > button[kind="primary"],
+    div[data-testid="stColumn"]:nth-of-type(even) section[data-testid="stMain"] div.stButton > button[kind="primary"] {
         filter: hue-rotate(240deg) !important; 
     }
-    
-    /* Text Color Safety */
     </style>
     """, unsafe_allow_html=True)
 
@@ -482,7 +469,8 @@ def render_library_v2(assistant):
                 # Cleaner, safer, guaranteed size.
                 label = f"{unit['name']} ({count})"
                 
-                if st.button(label, key=f"fdir_{unit['id']}", use_container_width=True):
+                # Use type='primary' to hook into our new scoped CSS
+                if st.button(label, key=f"fdir_{unit['id']}", use_container_width=True, type="primary"):
                     st.session_state['lib_current_unit_id'] = unit['id']
                     st.session_state['lib_current_unit_name'] = unit['name']
                     st.session_state['lib_breadcrumbs'].append(unit)
