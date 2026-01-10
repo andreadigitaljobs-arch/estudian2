@@ -150,8 +150,9 @@ def render_library_v2(assistant):
     
     /* Ensure Icon Size is forced (in case previous rule was weak) */
     div.stButton > button::first-line {
-        font-size: 90px !important;
-        line-height: 2.2 !important; 
+        font-size: 100px !important; /* MASSIVE */
+        line-height: 1.8 !important; /* Slightly less line-height if font is huge */
+        display: block !important; /* CRITICAL: Restore this to force rendering box */
     }
 
     /* Prevent text color shifting? 
