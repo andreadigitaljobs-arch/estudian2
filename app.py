@@ -3232,28 +3232,30 @@ with tab1:
             st.session_state['last_transcribed_file'] = get_last_transcribed_file_name(c_id)
         
         if st.session_state['last_transcribed_file']:
-            st.markdown(f"""
-                <div style="background-color: #EBF5FF; border: 2px solid #4B22DD; border-left: 8px solid #4B22DD; padding: 15px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 4px 12px rgba(75, 34, 221, 0.1);">
-                    <div style="color: #4B22DD; font-weight: 800; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px;">
-                        🎯 Último archivo procesado:
+            # Integrated Layout: Notification + Action
+            c_notif, c_act = st.columns([0.8, 0.2], vertical_alignment="center")
+            
+            with c_notif:
+                st.markdown(f"""
+                    <div style="background-color: #EBF5FF; border: 2px solid #4B22DD; border-left: 8px solid #4B22DD; padding: 10px 15px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                        <div style="color: #4B22DD; font-weight: 800; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px;">
+                            🎯 Último archivo procesado:
+                        </div>
+                        <div style="color: #1a1a1a; font-size: 0.95rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            {st.session_state['last_transcribed_file']}
+                        </div>
                     </div>
-                    <div style="color: #1a1a1a; font-size: 1.1rem; font-weight: 600;">
-                        {st.session_state['last_transcribed_file']}
-                    </div>
-                </div>
-            """, unsafe_allow_html=True)
-        
+                """, unsafe_allow_html=True)
+            
+            with c_act:
+                 # Button aligned with the notification block
+                 if st.button("♻️ Limpiar", help="Olvidar archivo anterior", key="btn_clear_uploader_integrated", use_container_width=True):
+                     import uuid
+                     st.session_state['transcriptor_key'] = str(uuid.uuid4())
+                     st.rerun()
+                     
         # Dynamic Key for Uploader Reset
         if 'transcriptor_key' not in st.session_state: st.session_state['transcriptor_key'] = "up1"
-        
-        # --- RESET BUTTON (V3.3.22) ---
-        # Allows user to clear the persistent file
-        c_refresh_1, c_refresh_2 = st.columns([0.75, 0.25])
-        with c_refresh_2:
-            if st.button("♻️ Limpiar", help="Borrar archivo seleccionado para subir uno nuevo", key="btn_clear_uploader", use_container_width=True):
-                 import uuid
-                 st.session_state['transcriptor_key'] = str(uuid.uuid4())
-                 st.rerun()
         
         # File Uploader
         # Added .waptt (WhatsApp), .opus, .aac, .wma
@@ -4908,7 +4910,7 @@ with tab_tutor:
             with st.sidebar:
                 st.header("Estudan2 🧠")
                 st.caption("Tu asistente de estudio con IA")
-                st.caption("v3.3.22 (Refresh Mode ♻️)")
+                st.caption("v3.3.23 (UX Fix 🧼)")
                 
                 # --- SIDEBAR AUTH DISPLAY ---
                 if st.session_state.get('authenticated'):
