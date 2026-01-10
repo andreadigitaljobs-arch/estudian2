@@ -15,7 +15,14 @@ from db_handler import (
     get_full_course_backup, update_file_content
 )
 import streamlit.components.v1 as components
-from streamlit_quill import st_quill
+
+# V308: Safe import with fallback
+try:
+    from streamlit_quill import st_quill
+    QUILL_AVAILABLE = True
+except ImportError:
+    QUILL_AVAILABLE = False
+    print("Warning: streamlit-quill not available, using fallback editor")
 
 def format_transcript_with_ai(raw_text, assistant):
     """
@@ -474,22 +481,45 @@ def render_library(assistant):
                     
                     # Display content (editable or read-only)
                     if st.session_state[edit_key]:
-                        # Edit mode: Rich Text Editor (V308)
-                        st.caption("💡 Usá los botones para dar formato (negritas, títulos, etc.)")
+                        # Edit mode: Rich Text Editor or Fallback (V308)
                         
-                        edited_content = st_quill(
-                            value=file_content,
-                            html=True,
-                            toolbar=[
-                                ['bold', 'italic', 'underline'],
-                                [{'header': 1}, {'header': 2}],
-                                [{'list': 'ordered'}, {'list': 'bullet'}],
-                                ['blockquote'],
-                                ['clean']
-                            ],
-                            key=f"quill_{f['id']}",
-                            placeholder="Escribí o editá tu contenido aquí..."
-                        )
+                        if QUILL_AVAILABLE:
+                            # Option 1: Quill Rich Text Editor
+                            st.caption("💡 Usá los botones para dar formato (negritas, títulos, etc.)")
+                            
+                            edited_content = st_quill(
+                                value=file_content,
+                                html=True,
+                                toolbar=[
+                                    ['bold', 'italic', 'underline'],
+                                    [{'header': 1}, {'header': 2}],
+                                    [{'list': 'ordered'}, {'list': 'bullet'}],
+                                    ['blockquote'],
+                                    ['clean']
+                                ],
+                                key=f"quill_{f['id']}",
+                                placeholder="Escribí o editá tu contenido aquí..."
+                            )
+                        else:
+                            # Option 2: Fallback - Text Area with Live Preview
+                            st.caption("💡 Editá el texto. Usá Markdown: **negritas**, ## Título")
+                            
+                            col_edit, col_preview = st.columns([1, 1])
+                            
+                            with col_edit:
+                                st.markdown("**Editor:**")
+                                edited_content = st.text_area(
+                                    "Editar contenido:",
+                                    value=file_content,
+                                    height=400,
+                                    key=f"textarea_{f['id']}",
+                                    label_visibility="collapsed"
+                                )
+                            
+                            with col_preview:
+                                st.markdown("**Vista Previa:**")
+                                with st.container(height=400, border=True):
+                                    st.markdown(edited_content or "Escribí algo para ver la vista previa...", unsafe_allow_html=True)
                         
                         if st.button("💾 Guardar Cambios", key=f"save_{f['id']}", type="primary"):
                             if edited_content and update_file_content(f['id'], edited_content):
