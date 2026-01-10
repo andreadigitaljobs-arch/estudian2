@@ -493,13 +493,16 @@ def render_library(assistant):
                         import json
                         safe_content = json.dumps(file_content)
                         
-                        # CKEditor 5 (Free, No API Key)
+                        # CKEditor 5 (Free, Force Refresh V312)
+                        import time
+                        ts = int(time.time())
+                        
                         editor_html = f"""
                         <!DOCTYPE html>
                         <html>
                         <head>
                             <meta charset="UTF-8">
-                            <script src="https://cdn.ckeditor.com/ckeditor5/40.0.0/classic/ckeditor.js"></script>
+                            <script src="https://cdn.ckeditor.com/ckeditor5/40.0.0/classic/ckeditor.js?v={ts}"></script>
                             <style>
                                 body {{ margin: 0; padding: 10px; font-family: sans-serif; }}
                                 #editor {{ min-height: 400px; }}
@@ -509,6 +512,7 @@ def render_library(assistant):
                         <body>
                             <div id="editor"></div>
                             <script>
+                                console.log("Initializing CKEditor V312...");
                                 ClassicEditor
                                     .create(document.querySelector('#editor'), {{
                                         toolbar: ['undo', 'redo', '|', 'bold', 'italic', 'underline', '|', 'heading', '|', 'bulletedList', 'numberedList', '|', 'removeFormat']
@@ -534,8 +538,8 @@ def render_library(assistant):
                         </html>
                         """
                         
-                        # Render editor and capture output
-                        edited_content = components.html(editor_html, height=550, scrolling=True)
+                        # Render editor and capture output (Changed height to force re-render)
+                        edited_content = components.html(editor_html, height=551, scrolling=True)
                         
                         # Update session state if content changed
                         if edited_content:
