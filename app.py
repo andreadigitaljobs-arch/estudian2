@@ -2416,6 +2416,11 @@ with st.sidebar:
                     if new_sess:
                         st.session_state['current_chat_session'] = new_sess
                         st.session_state['tutor_chat_history'] = [] # Reset for new chat
+                        
+                        # FORCE TAB SWITCH
+                        st.session_state['redirect_target_name'] = "Tutoría 1 a 1"
+                        st.session_state['force_chat_tab'] = True
+                        
                         st.success(f"✅ Chat creado: {new_sess.get('name', 'Nuevo chat')}")
                         st.rerun()
 
@@ -2443,7 +2448,10 @@ with st.sidebar:
                 if st.button(label, key=f"sess_{sess['id']}", use_container_width=True):
                     st.session_state['current_chat_session'] = sess
                     st.session_state['tutor_chat_history'] = [] # Force reload
-                    # V328: Removed broken redirect to non-existent "Tutoría 1 a 1"
+                    
+                    # FORCE TAB SWITCH to "Tutoría 1 a 1"
+                    st.session_state['redirect_target_name'] = "Tutoría 1 a 1"
+                    st.session_state['force_chat_tab'] = True
                     
                     # TRACK FOOTPRINT
                     update_user_footprint(st.session_state['user'].id, {
@@ -3171,12 +3179,16 @@ if st.session_state.get('current_course_id'):
     
     if not existing_units: # Only runs if 0 folders exist
         for req in required_folders:
-             create_unit(c_id_check, req)
-             created_any_batch = True
+             # Only count as 'created' if it actually returns a valid object (success)
+             res_unit = create_unit(c_id_check, req)
+             if res_unit:
+                 created_any_batch = True
     
     # If we created anything new, RERUN ONCE to refresh all subsequent 'get_units' calls
-    if created_any_batch:
-        st.session_state['force_rerun_batch'] = True # Optional flag if needed
+    # Safety Check: Avoid infinite loop if creation fails repeatedly
+    if created_any_batch and not st.session_state.get('batch_check_complete'):
+        st.session_state['force_rerun_batch'] = True 
+        st.session_state['batch_check_complete'] = True # Prevent subsequent loops
         st.rerun()
 
 # --- TAB 1: Transcriptor ---
@@ -4857,30 +4869,36 @@ with tab_tutor:
              # 1. Create Session
              # Generate a title from the prompt (truncated)
              short_title = init_prompt[:30] + "..." if len(init_prompt) > 30 else init_prompt
-             new_session = create_chat_session(st.session_state['user'].id, short_title)
+             new_session_id = create_chat_session(st.session_state['user'].id, short_title)
              
-             if new_session:
-                 # 2. Set as Active
-                 st.session_state['current_chat_session'] = new_session
-                 st.session_state['tutor_chat_history'] = [] 
+             if new_session_id:
+                 # FETCH FULL OBJECT (Fix for TypeError)
+                 from db_handler import get_chat_sessions
+                 all_sessions = get_chat_sessions(st.session_state['user'].id)
+                 full_session_obj = next((s for s in all_sessions if s['id'] == new_session_id), None)
                  
-                 # 3. Save User Message
-                 save_chat_message(new_session['id'], "user", init_prompt)
-                 st.session_state['tutor_chat_history'].append({"role": "user", "content": init_prompt})
-                 
-                 # 4. Update Footprint (Sidebar Access)
-                 footprint = {
-                     "type": "chat",
-                     "title": short_title,
-                     "target_id": new_session['id'],
-                     "subtitle": "Nueva consulta"
-                 }
-                 update_user_footprint(st.session_state['user'].id, footprint)
-                 
-                 # 5. Trigger AI Response
-                 st.session_state['trigger_ai_response'] = True
-                 
-                 st.rerun()
+                 if full_session_obj:
+                     # 2. Set as Active
+                     st.session_state['current_chat_session'] = full_session_obj
+                     st.session_state['tutor_chat_history'] = [] 
+                     
+                     # 3. Save User Message
+                     save_chat_message(new_session_id, "user", init_prompt)
+                     st.session_state['tutor_chat_history'].append({"role": "user", "content": init_prompt})
+                     
+                     # 4. Update Footprint (Sidebar Access)
+                     footprint = {
+                         "type": "chat",
+                         "title": short_title,
+                         "target_id": new_session_id,
+                         "subtitle": "Nueva consulta"
+                     }
+                     update_user_footprint(st.session_state['user'].id, footprint)
+                     
+                     # 5. Trigger AI Response
+                     st.session_state['trigger_ai_response'] = True
+                     
+                     st.rerun()
              else:
                  st.error("Error iniciando sesión de chat.")
     else:
