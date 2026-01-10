@@ -157,9 +157,6 @@ def render_library_v2(assistant):
     */
     </style>
     """, unsafe_allow_html=True)
-    /* Invert hue shift on text for even columns if needed, but keeping simple for now */
-    </style>
-    """, unsafe_allow_html=True)
 
     current_course_id = st.session_state.get('current_course_id')
     
@@ -167,10 +164,7 @@ def render_library_v2(assistant):
         st.info("👈 Selecciona un Diplomado en la barra lateral para ver su Biblioteca.")
         return
 
-    # ... (rest of function) ... 
-
-    # LATER IN THE CODE (Adjust Label Generation logic)
-    # We need to target the Loop:
+    # --- LIBRARY LOGIC START ---
 
 
     # --- STATE INITIALIZATION ---
