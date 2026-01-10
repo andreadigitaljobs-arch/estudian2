@@ -98,8 +98,8 @@ def render_library_v2(assistant):
     /* Target buttons inside the main app area */
     /* Target buttons inside the main app area */
     /* Target buttons inside the main app area */
-    /* SCOPED BUTTON STYLE: Only affect PRIMARY buttons in MAIN area */
-    section[data-testid="stMain"] div.stButton > button[kind="primary"] {
+    /* SCOPED BUTTON STYLE: Only affect SECONDARY buttons in MAIN area */
+    section[data-testid="stMain"] div.stButton > button[kind="secondary"] {
         background-color: transparent !important;
         border: 1px solid transparent !important;
         border-radius: 12px !important;
@@ -121,7 +121,7 @@ def render_library_v2(assistant):
     }
     
     /* Content Injection (The Folder Icon) */
-    section[data-testid="stMain"] div.stButton > button[kind="primary"]::before {
+    section[data-testid="stMain"] div.stButton > button[kind="secondary"]::before {
         content: "📁" !important;
         font-size: 100px !important;
         display: block !important;
@@ -130,24 +130,24 @@ def render_library_v2(assistant):
     }
     
     /* Hover Effect */
-    section[data-testid="stMain"] div.stButton > button[kind="primary"]:hover {
+    section[data-testid="stMain"] div.stButton > button[kind="secondary"]:hover {
         background-color: #e6f3ff !important;
         border: 1px solid rgba(0, 120, 215, 0.2) !important;
         transform: translateY(-2px);
         color: #202124 !important;
     }
     
-    /* COLOR FILTERS (Scoped to Primary in Main) */
+    /* COLOR FILTERS (Scoped to Secondary in Main) */
     /* Target ODD columns -> Greenish */
     /* CORRECT HIERARCHY: Main -> Cloud -> Column -> Button */
-    section[data-testid="stMain"] div[data-testid="column"]:nth-of-type(odd) div.stButton > button[kind="primary"],
-    section[data-testid="stMain"] div[data-testid="stColumn"]:nth-of-type(odd) div.stButton > button[kind="primary"] {
+    section[data-testid="stMain"] div[data-testid="column"]:nth-of-type(odd) div.stButton > button[kind="secondary"],
+    section[data-testid="stMain"] div[data-testid="stColumn"]:nth-of-type(odd) div.stButton > button[kind="secondary"] {
         filter: hue-rotate(80deg) !important; 
     }
     
     /* Target EVEN columns -> Purple */
-    section[data-testid="stMain"] div[data-testid="column"]:nth-of-type(even) div.stButton > button[kind="primary"],
-    section[data-testid="stMain"] div[data-testid="stColumn"]:nth-of-type(even) div.stButton > button[kind="primary"] {
+    section[data-testid="stMain"] div[data-testid="column"]:nth-of-type(even) div.stButton > button[kind="secondary"],
+    section[data-testid="stMain"] div[data-testid="stColumn"]:nth-of-type(even) div.stButton > button[kind="secondary"] {
         filter: hue-rotate(240deg) !important; 
     }
     </style>
@@ -470,8 +470,8 @@ def render_library_v2(assistant):
                 # Cleaner, safer, guaranteed size.
                 label = f"{unit['name']} ({count})"
                 
-                # Use type='primary' to hook into our new scoped CSS
-                if st.button(label, key=f"fdir_{unit['id']}", use_container_width=True, type="primary"):
+                # Use type='secondary' to hook into our new scoped CSS (Avoids Primary conflict)
+                if st.button(label, key=f"fdir_{unit['id']}", use_container_width=True, type="secondary"):
                     st.session_state['lib_current_unit_id'] = unit['id']
                     st.session_state['lib_current_unit_name'] = unit['name']
                     st.session_state['lib_breadcrumbs'].append(unit)
