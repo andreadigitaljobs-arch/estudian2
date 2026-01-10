@@ -3392,6 +3392,7 @@ with tab1:
                                             chunk = file.read(4 * 1024 * 1024)
                                             if not chunk: break
                                             f.write(chunk)
+                                            del chunk # V304: Explicit Delete
                                     log_debug("Escritura disco OK.")
                                     
                                     # V302: Memory Optimization for Large Files
@@ -4882,6 +4883,16 @@ with tab_tutor:
                 if st.button("❌ Desvincular", key="unlink_file", help="Quitar este archivo del chat"):
                     st.session_state['chat_context_file'] = None
                     st.rerun()
+            with st.sidebar:
+                st.header("Estudan2 🧠")
+                st.caption("Tu asistente de estudio con IA")
+                st.caption("v3.0.4 (Cloud Optimized ⚡)")
+                
+                # --- SIDEBAR AUTH DISPLAY ---
+                if st.session_state.get('authenticated'):
+                    st.divider()
+                    user_name = st.session_state.get('user_nickname', 'Estudiante')
+                    st.write(f"Hola, **{user_name}** 👋")
             
             st.divider()
             st.markdown("### 📎 Contexto Activo")
