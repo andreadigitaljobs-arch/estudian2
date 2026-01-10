@@ -3249,9 +3249,12 @@ with tab1:
             
             with c_act:
                  # Button aligned with the notification block
-                 if st.button("♻️ Limpiar", help="Olvidar archivo anterior", key="btn_clear_uploader_integrated", use_container_width=True):
+                 if st.button("♻️ Limpiar", help="Borra archivos y resultados de pantalla", key="btn_clear_uploader_integrated", use_container_width=True):
                      import uuid
+                     # FULL CLEANUP
                      st.session_state['transcriptor_key'] = str(uuid.uuid4())
+                     st.session_state['transcript_history'] = [] # Wipe Results
+                     st.session_state['last_transcribed_file'] = "Ninguno" # Wipe Notification
                      st.rerun()
                      
         # Dynamic Key for Uploader Reset
