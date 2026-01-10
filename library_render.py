@@ -475,9 +475,9 @@ def render_library_v2(assistant):
             with f_cols[i % 3]:
                 # Folder Card (Massive Icon Style)
                 count = unit_counts.get(unit['id'], 0)
-                # SEPARATION: Handled by CSS ::first-line line-height now.
-                # Just one newline to separate semantic lines.
-                label = f"📁\n{unit['name']} ({count})"
+                # SEPARATION: We need Double Newline to force Streamlit/Browser 
+                # to treat the emoji as a distinct ::first-line block for CSS styling.
+                label = f"📁\n\n{unit['name']} ({count})"
                 
                 if st.button(label, key=f"fdir_{unit['id']}", use_container_width=True):
                     st.session_state['lib_current_unit_id'] = unit['id']
