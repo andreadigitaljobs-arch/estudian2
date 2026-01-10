@@ -478,7 +478,15 @@ def render_library_v2(assistant):
                 # SEPARATION: Handled by CSS ::before margin-bottom now.
                 # Label is just the name and count.
                 # Cleaner, safer, guaranteed size.
-                label = f"{unit['name']} ({count})"
+                # V326: Truncate long names for aesthetics
+                folder_name = unit['name']
+                max_length = 35
+                if len(folder_name) > max_length:
+                    display_name = folder_name[:max_length] + "..."
+                else:
+                    display_name = folder_name
+                
+                label = f"{display_name} ({count})"
                 
                 # Use type='secondary' to hook into our new scoped CSS (Avoids Primary conflict)
                 if st.button(label, key=f"fdir_{unit['id']}", use_container_width=True, type="secondary"):
