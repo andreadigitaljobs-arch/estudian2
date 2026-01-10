@@ -4,6 +4,21 @@ print("DEBUG: LOADING V72 - SYNTAX FIXED")
 import glob
 import uuid
 import gc # Trigger V215: RAM Safety
+
+# --- SAFETY BRAKE: PREVENT INFINITE LOOPS ---
+import time
+now_ts = time.time()
+last_run = st.session_state.get('last_run_time', 0)
+if now_ts - last_run < 1.0:
+    st.session_state['rapid_rerun_count'] = st.session_state.get('rapid_rerun_count', 0) + 1
+    if st.session_state['rapid_rerun_count'] > 5:
+        st.error("⚠️ CRITICAL: Infinite Redirect Loop Detected. Stopping execution.")
+        st.write("Please refresh the page manually.")
+        st.stop()
+else:
+    st.session_state['rapid_rerun_count'] = 0
+st.session_state['last_run_time'] = now_ts
+# --------------------------------------------
 from transcriber import Transcriber
 
 # Helper: Play Sound
