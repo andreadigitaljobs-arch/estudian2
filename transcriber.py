@@ -205,6 +205,7 @@ class Transcriber:
         
         return response.text
 
+    def process_video(self, video_path, visual_mode=False, progress_callback=None):
         # V303: DIRECT UPLOAD STRATEGY (OOM PREVENTION)
         # We always upload the file to Gemini directly to avoid local FFmpeg crashing limits.
         # Gemini 1.5 Flash supports video/audio directly and has 1M context (no chunking needed).
