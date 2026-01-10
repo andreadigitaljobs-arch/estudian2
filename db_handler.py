@@ -425,6 +425,20 @@ def rename_file(file_id, new_name):
     except: return False
 rename_file_db = rename_file # Compatibility Alias
 
+def update_file_content(file_id, new_content):
+    """
+    Updates the content_text of a file.
+    Used for manual edits or AI formatting.
+    """
+    supabase = init_supabase()
+    try:
+        supabase.table("library_files").update({"content_text": new_content}).eq("id", file_id).execute()
+        get_files.clear()  # Invalidate cache
+        return True
+    except Exception as e:
+        print(f"Error updating file content: {e}")
+        return False
+
 
 
 def get_course_full_context(course_id):

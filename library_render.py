@@ -12,9 +12,46 @@ from db_handler import (
     rename_file, rename_unit, delete_unit, create_chat_session, save_chat_message, 
     search_library, update_user_footprint, get_course_files, move_file, 
     get_course_file_counts, move_file_up, move_file_down, ensure_unit_numbering,
-    get_full_course_backup 
+    get_full_course_backup, update_file_content
 )
 import streamlit.components.v1 as components
+
+def format_transcript_with_ai(raw_text, assistant):
+    """
+    Uses AI to format a raw transcript with proper paragraphs and structure.
+    Does NOT change content, only formatting.
+    """
+    if not assistant or not raw_text:
+        return raw_text
+    
+    prompt = f"""
+ERES UN EDITOR PROFESIONAL. Tu tarea es FORMATEAR esta transcripción.
+
+REGLAS ESTRICTAS:
+1. 📍 NO CAMBIES EL CONTENIDO. Solo reorganiza la estructura.
+2. 📝 Detecta cambios de tema y crea TÍTULOS (## Título)
+3. ✂️ Separa en PÁRRAFOS lógicos (cada 3-5 oraciones relacionadas)
+4. 👥 MANTÉN la diarización (**Hablante X:**) si existe
+5. 🎨 Aplica MODO ESTUDIO (colores HTML) a conceptos clave:
+   - 🔴 <span class="sc-base">...</span> -> DEFINICIONES
+   - 🟣 <span class="sc-key">...</span> -> IDEAS CLAVE
+   - 🟡 <span class="sc-data">...</span> -> DATOS/ESTRUCTURA
+   - 🔵 <span class="sc-example">...</span> -> EJEMPLOS
+   - 🟢 <span class="sc-note">...</span> -> MATICES
+
+TRANSCRIPCIÓN ORIGINAL:
+{raw_text}
+
+DEVUELVE SOLO LA TRANSCRIPCIÓN FORMATEADA. NO agregues explicaciones.
+"""
+    
+    try:
+        response = assistant.model.generate_content(prompt)
+        return response.text
+    except Exception as e:
+        st.error(f"Error al formatear: {e}")
+        return raw_text
+
 
 def clean_markdown_v3(text):
     """Removes all markdown baggage for a perfect copy."""
@@ -405,8 +442,57 @@ def render_library(assistant):
                 
                 with r_c2:
                     st.write(f"**{f['name']}**")
-                    with st.expander("Ver contenido"):
-                        st.markdown(f.get('content') or f.get('content_text') or "Sin contenido", unsafe_allow_html=True)
+                    
+                    # V307: Editable Transcription Interface
+                    file_content = f.get('content') or f.get('content_text') or "Sin contenido"
+                    edit_key = f"edit_mode_{f['id']}"
+                    
+                    # Initialize edit mode state
+                    if edit_key not in st.session_state:
+                        st.session_state[edit_key] = False
+                    
+                    # Edit mode toggle
+                    col_edit, col_ai = st.columns(2)
+                    with col_edit:
+                        if st.button("✏️ Editar" if not st.session_state[edit_key] else "👁️ Ver", 
+                                   key=f"toggle_edit_{f['id']}", use_container_width=True):
+                            st.session_state[edit_key] = not st.session_state[edit_key]
+                            st.rerun()
+                    
+                    with col_ai:
+                        if st.button("🤖 Formatear", key=f"format_{f['id']}", use_container_width=True,
+                                   help="Aplica formato inteligente (párrafos, títulos)"):
+                            with st.spinner("Formateando con IA..."):
+                                formatted_text = format_transcript_with_ai(file_content, assistant)
+                                if update_file_content(f['id'], formatted_text):
+                                    st.success("✅ Texto formateado")
+                                    time.sleep(0.5)
+                                    st.rerun()
+                                else:
+                                    st.error("Error al guardar")
+                    
+                    # Display content (editable or read-only)
+                    if st.session_state[edit_key]:
+                        # Edit mode: Text area
+                        edited_content = st.text_area(
+                            "Editar contenido:",
+                            value=file_content,
+                            height=300,
+                            key=f"textarea_{f['id']}"
+                        )
+                        
+                        if st.button("💾 Guardar Cambios", key=f"save_{f['id']}", type="primary"):
+                            if update_file_content(f['id'], edited_content):
+                                st.success("✅ Guardado exitosamente")
+                                st.session_state[edit_key] = False
+                                time.sleep(0.5)
+                                st.rerun()
+                            else:
+                                st.error("❌ Error al guardar")
+                    else:
+                        # View mode: Expander with formatted content
+                        with st.expander("Ver contenido"):
+                            st.markdown(file_content, unsafe_allow_html=True)
                 
                 with r_c3:
                     # Quick Actions Popover
