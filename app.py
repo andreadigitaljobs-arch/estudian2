@@ -43,7 +43,7 @@ import datetime
 import markdown
 import streamlit.components.v1 as components
 import extra_streamlit_components as stx  # --- PERSISTENCE ---
-from library_render import render_library # --- LIBRARY UI ---
+from library_render import render_library_v2 as render_library # --- LIBRARY UI V2 ---
 import db_handler as database
 from db_handler import (
     get_user_courses, create_course, delete_course, rename_course, 
@@ -4886,7 +4886,7 @@ with tab_tutor:
             with st.sidebar:
                 st.header("Estudan2 🧠")
                 st.caption("Tu asistente de estudio con IA")
-                st.caption("v3.1.2 (CKEditor Fix 🔧)")
+                st.caption("v3.1.3 (Forced Reload 🔄)")
                 
                 # --- SIDEBAR AUTH DISPLAY ---
                 if st.session_state.get('authenticated'):

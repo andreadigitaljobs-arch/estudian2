@@ -85,7 +85,7 @@ def clean_markdown_v3(text):
     text = re.sub(r'\n{3,}', '\n\n', text)
     return text.strip()
 
-def render_library(assistant):
+def render_library_v2(assistant):
     """
     Renders the dedicated "Digital Library" (Drive-style) tab.
     Refactored V270: Minimalist Toolbar UI
