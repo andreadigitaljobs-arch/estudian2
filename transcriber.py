@@ -206,33 +206,30 @@ class Transcriber:
         return response.text
 
     def process_video(self, video_path, visual_mode=False, progress_callback=None):
-        # V303: DIRECT UPLOAD STRATEGY (OOM PREVENTION)
-        # We always upload the file to Gemini directly to avoid local FFmpeg crashing limits.
-        # Gemini 1.5 Flash supports video/audio directly and has 1M context (no chunking needed).
+        """V305: Hybrid Cloud Strategy - Chunking with Aggressive Cleanup"""
         
-        if progress_callback: progress_callback("🚀 Subiendo archivo a IA (Bypass de Memoria Local)...", 0.1)
-        print(f"🚀 Procesando vía DIRECT CLOUD: {video_path}")
-        
-        try:
-            # 1. Upload File
-            remote_file = genai.upload_file(video_path)
+        if visual_mode:
+            # Visual mode: Direct upload (no chunking needed, output is structured)
+            if progress_callback: progress_callback("🚀 Subiendo video para análisis visual...", 0.1)
+            print(f"👁️ Procesando VIDEO MULTIMODAL: {video_path}")
             
-            # 2. Wait for processing
-            import time
-            dots = 0
-            while remote_file.state.name == "PROCESSING":
-                dots = (dots + 1) % 4
-                if progress_callback: progress_callback(f"☁️ Procesando en Nube de Google{'.' * dots}", 0.2)
-                time.sleep(2)
-                remote_file = genai.get_file(remote_file.name)
-            
-            if remote_file.state.name == "FAILED":
-                raise ValueError(f"Google Cloud Error: {remote_file.state.name}")
+            try:
+                remote_file = genai.upload_file(video_path)
                 
-            # 3. Choose Prompt based on Mode
-            if visual_mode:
+                import time
+                dots = 0
+                while remote_file.state.name == "PROCESSING":
+                    dots = (dots + 1) % 4
+                    if progress_callback: progress_callback(f"☁️ Procesando en Nube{'.' * dots}", 0.2)
+                    time.sleep(2)
+                    remote_file = genai.get_file(remote_file.name)
+                
+                if remote_file.state.name == "FAILED":
+                    raise ValueError(f"Google Cloud Error: {remote_file.state.name}")
+                
                 if progress_callback: progress_callback("👁️ Generando Análisis Visual...", 0.4)
-                final_prompt = """
+                
+                prompt_visual = """
                 ERES UN ANALISTA VISUAL Y EDITOR. (SOLO ESPAÑOL).
                 SECCIÓN 1: 🎙️ TRANSCRIPCIÓN DEL AUDIO (FORMATO EDITORIAL)
                 - Transcribe el audio con Títulos Markdown (##) y Párrafos.
@@ -246,48 +243,119 @@ class Transcriber:
                 SECCIÓN 2: 👁️ REGISTRO VISUAL (TIMELINE)
                 - [MM:SS] Describe lo que se ve en pantalla (OCR, Diapositivas).
                 """
-            else:
-                if progress_callback: progress_callback("🎙️ Transcribiendo Audio (Alta Precisión)...", 0.4)
-                final_prompt = """
-                TRANSCRIPCIÓN EDITORIAL EXPERTA (OBLIGATORIO: SOLAMENTE ESPAÑOL).
-                Tu tarea es transcribir el contenido del archivo a ESPAÑOL con ortografía PERFECTA.
                 
-                👥 DIARIZACIÓN:
-                - Identifica hablantes: **Hablante 1:** "..."
+                response = self.model.generate_content([prompt_visual, remote_file], request_options={"timeout": 900})
                 
-                SISTEMA DE RESALTADO (MODO ESTUDIO):
-                🔴 <span class="sc-base">...</span> -> DEFINICIONES TIPO EXAMEN.
-                🟣 <span class="sc-key">...</span> -> IDEAS ANCLA / CONCLUSIONES.
-                🟡 <span class="sc-data">...</span> -> ESTRUCTURA (Pasos) y DATOS.
-                🔵 <span class="sc-example">...</span> -> EJEMPLOS.
-                🟢 <span class="sc-note">...</span> -> Advertencias/Notas.
+                if progress_callback: progress_callback("✅ ¡Listo!", 1.0)
+                return response.text
                 
-                ESTRUCTURA:
-                - Usa Títulos Markdown (##).
-                - Separa párrafos claramente.
-                """
+            except Exception as e:
+                return f"[ERROR VISUAL] {str(e)}"
+        
+        else:
+            # Audio mode: Chunked processing for long videos
+            safe_name = "".join([c for c in os.path.basename(video_path) if c.isalnum()])
+            audio_path = f"temp_audio_{safe_name}.mp3"
             
-            # 4. Create Model (1.5 Flash default)
-            # Ensure calling method has setup self.model correctly
-            response = self.model.generate_content([final_prompt, remote_file], request_options={"timeout": 900})
+            try:
+                if progress_callback: progress_callback("🔊 Extrayendo audio...", 0.05)
+                print(f"🔊 Procesando AUDIO (Chunked): {video_path}")
+                self.extract_audio(video_path, audio_path)
+                
+                if progress_callback: progress_callback("✂️ Segmentando en partes de 20 min...", 0.1)
+                chunks = self.chunk_audio(audio_path, chunk_length_sec=1200)  # 20 mins
+                
+                full_transcript = []
+                total_chunks = len(chunks)
+                
+                for i, chunk_path in enumerate(chunks):
+                    try:
+                        if progress_callback:
+                            progress_callback(f"🤖 Transcribiendo Parte {i+1} de {total_chunks}...", 0.15 + (0.7 * (i / total_chunks)))
+                        
+                        # Upload chunk to Gemini
+                        chunk_file = genai.upload_file(chunk_path)
+                        
+                        # Wait for processing
+                        import time
+                        while chunk_file.state.name == "PROCESSING":
+                            time.sleep(1)
+                            chunk_file = genai.get_file(chunk_file.name)
+                        
+                        if chunk_file.state.name == "FAILED":
+                            raise ValueError(f"Chunk {i+1} failed to process")
+                        
+                        # Transcribe with continuation prompt
+                        chunk_text = self.transcribe_file_direct(chunk_file, is_continuation=(i > 0))
+                        full_transcript.append(chunk_text)
+                        
+                        # V305: AGGRESSIVE CLEANUP
+                        os.remove(chunk_path)
+                        import gc
+                        gc.collect()
+                        
+                    except Exception as e:
+                        print(f"Error in chunk {i+1}: {e}")
+                        full_transcript.append(f"\n\n[ERROR: Parte {i+1} falló - {e}]\n\n")
+                        if os.path.exists(chunk_path):
+                            os.remove(chunk_path)
+                
+                if progress_callback: progress_callback("✅ ¡Listo!", 1.0)
+                return "\n\n".join(full_transcript)
+                
+            except Exception as e:
+                print(f"Audio Flow Error: {e}")
+                return f"[ERROR] {e}"
+            finally:
+                if os.path.exists(audio_path):
+                    os.remove(audio_path)
+    
+    def transcribe_file_direct(self, remote_file, is_continuation=False):
+        """Transcribe an already-uploaded Gemini file"""
+        if not is_continuation:
+            prompt = """
+            TRANSCRIPCIÓN EDITORIAL EXPERTA (OBLIGATORIO: SOLAMENTE ESPAÑOL).
+            Tu tarea es transcribir el contenido del archivo a ESPAÑOL con ortografía PERFECTA.
             
-            if progress_callback: progress_callback("✅ ¡Listo!", 1.0)
+            👥 DIARIZACIÓN:
+            - Identifica hablantes: **Hablante 1:** "..."
             
-            # V205 Fix: Auto-close tags (Anti-Bleed) applies to this too
-            full_text = response.text
-            lines = full_text.split('\n')
-            repaired_lines = []
-            for line in lines:
-                open_c = line.count("<span")
-                close_c = line.count("</span>")
-                if open_c > close_c:
-                    line += "</span>" * (open_c - close_c)
-                repaired_lines.append(line)
+            SISTEMA DE RESALTADO (MODO ESTUDIO):
+            🔴 <span class="sc-base">...</span> -> DEFINICIONES TIPO EXAMEN.
+            🟣 <span class="sc-key">...</span> -> IDEAS ANCLA / CONCLUSIONES.
+            🟡 <span class="sc-data">...</span> -> ESTRUCTURA (Pasos) y DATOS.
+            🔵 <span class="sc-example">...</span> -> EJEMPLOS.
+            🟢 <span class="sc-note">...</span> -> Advertencias/Notas.
             
-            return "\n".join(repaired_lines)
+            ESTRUCTURA:
+            - Usa Títulos Markdown (##).
+            - Separa párrafos claramente.
+            """
+        else:
+            prompt = """
+            TRANSCRIPCIÓN DE CONTINUIDAD (MANTÉN EL FLUJO):
+            Esta es la continuación de una grabación larga.
+            
+            REGLAS:
+            1. ⛔ PROHIBIDO PONER TÍTULOS o ENCABEZADOS.
+            2. ✅ EMPIEZA DIRECTAMENTE con la siguiente frase del diálogo.
+            3. ✅ MANTÉN LOS PÁRRAFOS Y SALTOS DE LÍNEA.
+            4. ✅ RESPETA LA DIARIZACIÓN (**Hablante X:**).
+            """
+        
+        response = self.model.generate_content([prompt, remote_file], request_options={"timeout": 600})
+        
+        # V205 Fix: Auto-close tags
+        full_text = response.text
+        lines = full_text.split('\n')
+        repaired_lines = []
+        for line in lines:
+            open_c = line.count("<span")
+            close_c = line.count("</span>")
+            if open_c > close_c:
+                line += "</span>" * (open_c - close_c)
+            repaired_lines.append(line)
+        
+        return "\n".join(repaired_lines)
 
-        except Exception as e:
-            msg = f"[ERROR DIRECTO] {str(e)}"
-            print(msg)
-            return msg
 
