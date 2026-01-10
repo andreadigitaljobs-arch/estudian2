@@ -98,8 +98,11 @@ def render_library_v2(assistant):
     /* Target buttons inside the main app area */
     /* Target buttons inside the main app area */
     /* Target buttons inside the main app area */
-    /* SCOPED BUTTON STYLE: Only affect SECONDARY buttons in MAIN area */
-    section[data-testid="stMain"] div.stButton > button[kind="secondary"] {
+    /* SCOPED BUTTON STYLE: Only affect SECONDARY buttons in 3-COLUMN GRIDS (Folders) */
+    /* This uses the :has() selector to check for blocks with EXACTLY 3 columns */
+    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="column"]:nth-child(3):last-child) section[data-testid="stMain"] div.stButton > button[kind="secondary"],
+    /* Support legacy or alternative structure if needed, but the main key is stHorizontalBlock with 3 cols */
+    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="column"]:nth-child(3):last-child) div.stButton > button[kind="secondary"] {
         background-color: transparent !important;
         border: 1px solid transparent !important;
         border-radius: 12px !important;
@@ -120,8 +123,8 @@ def render_library_v2(assistant):
         white-space: pre-wrap !important;
     }
     
-    /* Content Injection (The Folder Icon) */
-    section[data-testid="stMain"] div.stButton > button[kind="secondary"]::before {
+    /* Content Injection (The Folder Icon) - Applying same scope */
+    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="column"]:nth-child(3):last-child) div.stButton > button[kind="secondary"]::before {
         content: "📁" !important;
         font-size: 100px !important;
         display: block !important;
@@ -129,25 +132,24 @@ def render_library_v2(assistant):
         margin-bottom: 0px !important;
     }
     
-    /* Hover Effect */
-    section[data-testid="stMain"] div.stButton > button[kind="secondary"]:hover {
+    /* Hover Effect - Applying same scope */
+    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="column"]:nth-child(3):last-child) div.stButton > button[kind="secondary"]:hover {
         background-color: #e6f3ff !important;
         border: 1px solid rgba(0, 120, 215, 0.2) !important;
         transform: translateY(-2px);
         color: #202124 !important;
     }
     
-    /* COLOR FILTERS (Scoped to Secondary in Main) */
+    /* COLOR FILTERS (Scoped to 3-Column Grid) */
     /* Target ODD columns -> Greenish */
-    /* CORRECT HIERARCHY: Main -> Cloud -> Column -> Button */
-    section[data-testid="stMain"] div[data-testid="column"]:nth-of-type(odd) div.stButton > button[kind="secondary"],
-    section[data-testid="stMain"] div[data-testid="stColumn"]:nth-of-type(odd) div.stButton > button[kind="secondary"] {
+    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="column"]:nth-child(3):last-child) div[data-testid="column"]:nth-of-type(odd) div.stButton > button[kind="secondary"],
+    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="column"]:nth-child(3):last-child) div[data-testid="stColumn"]:nth-of-type(odd) div.stButton > button[kind="secondary"] {
         filter: hue-rotate(80deg) !important; 
     }
     
     /* Target EVEN columns -> Purple */
-    section[data-testid="stMain"] div[data-testid="column"]:nth-of-type(even) div.stButton > button[kind="secondary"],
-    section[data-testid="stMain"] div[data-testid="stColumn"]:nth-of-type(even) div.stButton > button[kind="secondary"] {
+    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="column"]:nth-child(3):last-child) div[data-testid="column"]:nth-of-type(even) div.stButton > button[kind="secondary"],
+    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="column"]:nth-child(3):last-child) div[data-testid="stColumn"]:nth-of-type(even) div.stButton > button[kind="secondary"] {
         filter: hue-rotate(240deg) !important; 
     }
     </style>
