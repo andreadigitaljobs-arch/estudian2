@@ -93,12 +93,13 @@ def render_library_v2(assistant):
     
     # --- CSS for Windows-Style Explorer (Transparent Buttons, Big Icons) ---
     st.markdown("""
+    <style>
     /* Target buttons inside the main app area */
     div.stButton > button {
         background-color: transparent !important;
         border: 1px solid transparent !important;
         border-radius: 8px !important;
-        color: #202124 !important; /* DARK TEXT for readability on white */
+        color: #202124 !important; /* DARK TEXT for readability */
         
         display: flex !important;
         flex-direction: column !important;
@@ -120,7 +121,7 @@ def render_library_v2(assistant):
     
     /* BIG ICON MAGIC: Target the Folder Emoji (First Line) */
     div.stButton > button::first-line {
-        font-size: 64px !important; /* Bigger and bolder */
+        font-size: 64px !important; /* Huge Folder Icon */
         line-height: 1.1 !important;
     }
 
@@ -132,15 +133,10 @@ def render_library_v2(assistant):
     
     /* COLOR HACK: Vibrancy + Tint */
     
-    /* Even buttons: Purple Tone (Saturate to fix washout) */
+    /* Even buttons: Purple Tone */
     div[data-testid="column"]:nth-of-type(even) div.stButton > button::first-line {
-        filter: hue-rotate(260deg) saturate(2); /* Target ONLY the emoji if possible? No, first-line applies styles */
+        filter: hue-rotate(260deg) saturate(2);
     } 
-    /* Actually ::first-line doesn't support filter property in all browsers well on text. 
-       Let's apply filter to the BUTTON but invert it for text? No too complex. 
-       Let's apply filter to button and hope text is black enough to handle rotation or just accept tinted text.
-       OR: Use just the rotate on the button and ensure high contrast.
-    */
     
     div[data-testid="column"]:nth-of-type(even) div.stButton > button {
         filter: hue-rotate(240deg); 
@@ -148,12 +144,6 @@ def render_library_v2(assistant):
     div[data-testid="column"]:nth-of-type(odd) div.stButton > button {
         filter: hue-rotate(0deg); /* Keep Yellow/Greenish natural */
     }
-    
-    /* Fix Text Color Shift caused by Filter: 
-       If we rotate black text, it stays black. Good.
-       If we rotate white background, it stays white. Good.
-       So only the Emoji changes color! Perfect.
-    */
     </style>
     """, unsafe_allow_html=True)
 
