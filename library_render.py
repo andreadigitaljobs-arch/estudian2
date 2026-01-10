@@ -139,14 +139,15 @@ def render_library_v2(assistant):
     
     /* COLOR FILTERS (Scoped to Primary in Main) */
     /* Target ODD columns -> Greenish */
-    div[data-testid="column"]:nth-of-type(odd) section[data-testid="stMain"] div.stButton > button[kind="primary"],
-    div[data-testid="stColumn"]:nth-of-type(odd) section[data-testid="stMain"] div.stButton > button[kind="primary"] {
+    /* CORRECT HIERARCHY: Main -> Cloud -> Column -> Button */
+    section[data-testid="stMain"] div[data-testid="column"]:nth-of-type(odd) div.stButton > button[kind="primary"],
+    section[data-testid="stMain"] div[data-testid="stColumn"]:nth-of-type(odd) div.stButton > button[kind="primary"] {
         filter: hue-rotate(80deg) !important; 
     }
     
     /* Target EVEN columns -> Purple */
-    div[data-testid="column"]:nth-of-type(even) section[data-testid="stMain"] div.stButton > button[kind="primary"],
-    div[data-testid="stColumn"]:nth-of-type(even) section[data-testid="stMain"] div.stButton > button[kind="primary"] {
+    section[data-testid="stMain"] div[data-testid="column"]:nth-of-type(even) div.stButton > button[kind="primary"],
+    section[data-testid="stMain"] div[data-testid="stColumn"]:nth-of-type(even) div.stButton > button[kind="primary"] {
         filter: hue-rotate(240deg) !important; 
     }
     </style>
