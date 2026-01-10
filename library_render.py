@@ -481,7 +481,7 @@ def render_library(assistant):
                     
                     # Display content (editable or read-only)
                     if st.session_state[edit_key]:
-                        # Edit mode: Custom WYSIWYG Editor (V310)
+                        # Edit mode: CKEditor WYSIWYG (V311 - No API Key Required)
                         st.caption("💡 Seleccioná texto y usá los botones para dar formato (como Google Docs)")
                         
                         # Initialize session state for edited content
@@ -489,37 +489,46 @@ def render_library(assistant):
                         if editor_key not in st.session_state:
                             st.session_state[editor_key] = file_content
                         
-                        # Custom TinyMCE Editor via HTML/JS
+                        # Escape content for JavaScript
+                        import json
+                        safe_content = json.dumps(file_content)
+                        
+                        # CKEditor 5 (Free, No API Key)
                         editor_html = f"""
                         <!DOCTYPE html>
                         <html>
                         <head>
-                            <script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+                            <meta charset="UTF-8">
+                            <script src="https://cdn.ckeditor.com/ckeditor5/40.0.0/classic/ckeditor.js"></script>
                             <style>
                                 body {{ margin: 0; padding: 10px; font-family: sans-serif; }}
+                                #editor {{ min-height: 400px; }}
+                                .ck-editor__editable {{ min-height: 400px; }}
                             </style>
                         </head>
                         <body>
-                            <textarea id="editor">{file_content}</textarea>
+                            <div id="editor"></div>
                             <script>
-                                tinymce.init({{
-                                    selector: '#editor',
-                                    height: 500,
-                                    menubar: false,
-                                    plugins: 'lists link code',
-                                    toolbar: 'undo redo | bold italic underline | h1 h2 | bullist numlist | removeformat',
-                                    content_style: 'body {{ font-family: Arial, sans-serif; font-size: 14px; }}',
-                                    setup: function(editor) {{
-                                        editor.on('change keyup', function() {{
-                                            // Send content back to Streamlit
-                                            const content = editor.getContent();
+                                ClassicEditor
+                                    .create(document.querySelector('#editor'), {{
+                                        toolbar: ['undo', 'redo', '|', 'bold', 'italic', 'underline', '|', 'heading', '|', 'bulletedList', 'numberedList', '|', 'removeFormat']
+                                    }})
+                                    .then(editor => {{
+                                        // Set initial content
+                                        editor.setData({safe_content});
+                                        
+                                        // Send updates to Streamlit
+                                        editor.model.document.on('change:data', () => {{
+                                            const content = editor.getData();
                                             window.parent.postMessage({{
                                                 type: 'streamlit:setComponentValue',
                                                 value: content
                                             }}, '*');
                                         }});
-                                    }}
-                                }});
+                                    }})
+                                    .catch(error => {{
+                                        console.error('CKEditor error:', error);
+                                    }});
                             </script>
                         </body>
                         </html>
