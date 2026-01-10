@@ -15,6 +15,7 @@ from db_handler import (
     get_full_course_backup, update_file_content
 )
 import streamlit.components.v1 as components
+from streamlit_quill import st_quill
 
 def format_transcript_with_ai(raw_text, assistant):
     """
@@ -473,16 +474,25 @@ def render_library(assistant):
                     
                     # Display content (editable or read-only)
                     if st.session_state[edit_key]:
-                        # Edit mode: Text area
-                        edited_content = st.text_area(
-                            "Editar contenido:",
+                        # Edit mode: Rich Text Editor (V308)
+                        st.caption("💡 Usá los botones para dar formato (negritas, títulos, etc.)")
+                        
+                        edited_content = st_quill(
                             value=file_content,
-                            height=300,
-                            key=f"textarea_{f['id']}"
+                            html=True,
+                            toolbar=[
+                                ['bold', 'italic', 'underline'],
+                                [{'header': 1}, {'header': 2}],
+                                [{'list': 'ordered'}, {'list': 'bullet'}],
+                                ['blockquote'],
+                                ['clean']
+                            ],
+                            key=f"quill_{f['id']}",
+                            placeholder="Escribí o editá tu contenido aquí..."
                         )
                         
                         if st.button("💾 Guardar Cambios", key=f"save_{f['id']}", type="primary"):
-                            if update_file_content(f['id'], edited_content):
+                            if edited_content and update_file_content(f['id'], edited_content):
                                 st.success("✅ Guardado exitosamente")
                                 st.session_state[edit_key] = False
                                 time.sleep(0.5)
