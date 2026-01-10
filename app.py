@@ -3576,19 +3576,14 @@ with tab1:
         
         # Recents Header
         st.divider()
-        # V324 Fix: Use 4 columns to avoid "Folder CSS" collision (Pattern Breaker)
-        c_hist_1, c_hist_2, c_hist_3, c_spacer = st.columns([0.5, 0.20, 0.20, 0.1], vertical_alignment="center")
-        c_hist_1.markdown(f"### 📝 Resultados Recientes")
+        # V325: Simplified to 2 columns (Title + Debate). Avoids 3-col CSS collision safely.
+        c_hist_title, c_hist_debate = st.columns([0.7, 0.3], vertical_alignment="center")
+        c_hist_title.markdown(f"### 📝 Resultados Recientes")
         
-        # CLEAR BUTTON
-        if c_hist_2.button("🧹 Limpiar Pantalla", help="Borra la pantalla y los archivos subidos (no borra de la biblioteca)", use_container_width=True):
-            st.session_state['transcript_history'] = []
-            import uuid
-            st.session_state['transcriptor_key'] = str(uuid.uuid4()) # Force Uploader Reset
-            st.rerun()
+        # REMOVED: "Limpiar Pantalla" (Redundant with top button)
             
         # DISCUSS WITH TUTOR BUTTON
-        if c_hist_3.button("🗣️ Debatir con Tutor", help="Abre un chat con el profesor para analizar estas transcripciones", type="primary", use_container_width=True):
+        if c_hist_debate.button("🗣️ Debatir con Tutor", help="Abre un chat con el profesor para analizar estas transcripciones", type="primary", use_container_width=True):
              # 1. Aggregate Transcripts
              context_blob = "Aquí están las transcripciones de los archivos que acabo de procesar:\n\n"
              for item in st.session_state['transcript_history']:
@@ -4921,7 +4916,7 @@ with tab_tutor:
             with st.sidebar:
                 st.header("Estudan2 🧠")
                 st.caption("Tu asistente de estudio con IA")
-                st.caption("v3.3.24 (Lib Restore 🩹)")
+                st.caption("v3.3.25 (Clean Finish ✨)")
                 
                 # --- SIDEBAR AUTH DISPLAY ---
                 if st.session_state.get('authenticated'):
