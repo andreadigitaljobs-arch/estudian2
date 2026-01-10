@@ -4860,7 +4860,7 @@ with tab_tutor:
         st.session_state['active_context_files'] = []
 
     # --- FETCH MESSAGES FROM DB IF SESSION ACTIVE ---
-    from db_handler import get_chat_messages, save_chat_message
+    from db_handler import get_chat_messages, save_chat_message, update_user_footprint
     
     current_sess = st.session_state.get('current_chat_session')
     
