@@ -677,9 +677,8 @@ def render_library_v2(assistant):
                         st.markdown(f"**{f['name']}**")
                         if st.button("🤖 Analizar con IA", key=f"ai_{f['id']}"):
                              # V327: Direct Chat Creation with Auto-Summary
-                             with st.spinner("Creando chat con el tutor..."):
+                             try:
                                  from db_handler import create_chat_session, save_chat_message
-                                 import datetime
                                  
                                  # Get file content
                                  file_content = f.get('content') or f.get('content_text') or "Sin contenido"
@@ -689,44 +688,38 @@ def render_library_v2(assistant):
                                  user = st.session_state.get('user')
                                  if not user:
                                      st.error("❌ Error: Usuario no autenticado")
-                                     st.stop()
-                                 
-                                 user_id = user.id
-                                 session_title = f"📄 {file_name}"
-                                 
-                                 try:
-                                     session_id = create_chat_session(user_id, session_title)
-                                     
-                                     if session_id:
-                                         # Save user's request for summary
-                                         user_message = f"Por favor, dame un resumen detallado de este archivo:\n\n{file_content}"
-                                         save_chat_message(session_id, "user", user_message)
+                                 else:
+                                     with st.spinner("Creando chat con el tutor..."):
+                                         user_id = user.id
+                                         session_title = f"📄 {file_name}"
                                          
-                                         # Generate AI response
-                                         try:
-                                             ai_response = assistant.send_message(
-                                                 f"Eres un tutor académico experto. Analiza el siguiente contenido y proporciona un resumen claro y estructurado:\n\n{file_content}"
-                                             )
-                                             ai_text = ai_response.text
-                                             save_chat_message(session_id, "assistant", ai_text)
+                                         # Create chat session
+                                         session_id = create_chat_session(user_id, session_title)
+                                         
+                                         if session_id:
+                                             # Save user's request for summary
+                                             user_message = f"Por favor, dame un resumen detallado de este archivo:\n\n{file_content}"
+                                             save_chat_message(session_id, "user", user_message)
                                              
-                                             # Navigate to chat history with this session active
-                                             st.session_state['active_chat_session_id'] = session_id
-                                             st.session_state['selected_tab'] = "Historial de Chats"
-                                             st.success(f"✅ Chat creado: {session_title}")
-                                             st.rerun()
-                                         except Exception as e:
-                                             st.error(f"❌ Error al generar resumen: {str(e)}")
-                                             # Still navigate to chat even if AI fails
-                                             st.session_state['active_chat_session_id'] = session_id
-                                             st.session_state['selected_tab'] = "Historial de Chats"
-                                             st.rerun()
-                                     else:
-                                         st.error("❌ Error al crear sesión de chat (ID nulo)")
-                                 except Exception as e:
-                                     st.error(f"❌ Error crítico: {str(e)}")
-                                     import traceback
-                                     st.code(traceback.format_exc())
+                                             # Generate AI response
+                                             try:
+                                                 ai_response = assistant.send_message(
+                                                     f"Eres un tutor académico experto. Analiza el siguiente contenido y proporciona un resumen claro y estructurado:\n\n{file_content}"
+                                                 )
+                                                 ai_text = ai_response.text
+                                                 save_chat_message(session_id, "assistant", ai_text)
+                                                 
+                                                 st.success(f"✅ Chat creado exitosamente: **{session_title}**")
+                                                 st.info("💬 Ve al **Historial de Chats** para ver el resumen completo")
+                                             except Exception as e:
+                                                 st.error(f"❌ Error al generar resumen: {str(e)}")
+                                                 st.info("💬 El chat fue creado. Ve al **Historial de Chats** para continuar")
+                                         else:
+                                             st.error("❌ Error al crear sesión de chat")
+                             except Exception as e:
+                                 st.error(f"❌ Error crítico: {str(e)}")
+                                 import traceback
+                                 st.code(traceback.format_exc())
                              
                              
                         if st.button("🗑️ Eliminar", key=f"del_{f['id']}"):
