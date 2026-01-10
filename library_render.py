@@ -486,10 +486,22 @@ def render_library_v2(assistant):
                         # Edit mode: CKEditor WYSIWYG (V311 - No API Key Required)
                         st.caption("💡 Seleccioná texto y usá los botones para dar formato (como Google Docs)")
                         
-                        # Initialize session state for edited content
                         editor_key = f"editor_content_{f['id']}"
+
+                        # V322: FORCE SAFE MODE & CLEANUP
+                        # Check if session state has corrupted DeltaGenerator from V319
+                        if editor_key in st.session_state:
+                            val = st.session_state[editor_key]
+                            # If it's not a string (e.g. DeltaGenerator), NUKE IT.
+                            if not isinstance(val, str):
+                                del st.session_state[editor_key]
+                                st.rerun() # Restart with clean state
+
                         if editor_key not in st.session_state:
-                            st.session_state[editor_key] = file_content
+                             st.session_state[editor_key] = file_content
+                        
+                        # FORCED SAFE MODE (Stability First)
+                        QUILL_AVAILABLE_NOW = False # Override global for this render
                         
                         # Escape content for JavaScript
                         import json
@@ -510,7 +522,7 @@ def render_library_v2(assistant):
                         # V320: Robust Editor Logic
                         content_to_save = None
                         
-                        if QUILL_AVAILABLE:
+                        if QUILL_AVAILABLE_NOW:  # V322: Forced Safe Mode
                             # 1. QUILL EDITOR (WYSIWYG)
                             # We check if we have html content from previous step or specific format
                             # Quill likes HTML.
@@ -579,7 +591,7 @@ def render_library_v2(assistant):
                                 if content_to_save is None:
                                     # Fallback to original HTML (no changes detected yet, or init)
                                     # If user clicked save immediately without touching quill
-                                    if QUILL_AVAILABLE:
+                                    if QUILL_AVAILABLE_NOW:
                                          content_to_save = html_content 
                                     else:
                                          content_to_save = clean_markdown_v3(file_content)
