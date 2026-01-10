@@ -95,26 +95,27 @@ def render_library_v2(assistant):
     st.markdown("""
     <style>
     /* Target buttons inside the main app area */
+    /* Target buttons inside the main app area */
     div.stButton > button {
         background-color: transparent !important;
         border: 1px solid transparent !important;
-        border-radius: 8px !important;
+        border-radius: 6px !important;
         color: #202124 !important; /* Dark Text */
         
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
-        justify-content: flex-start !important; /* Start from top to keep icon fixed pos */
+        justify-content: flex-start !important;
         text-align: center !important;
         
-        padding: 10px 4px !important; /* Tighter padding */
+        padding: 4px 2px !important; /* Ultra tight padding */
         width: 100%;
         height: auto !important;
-        min-height: 120px !important; /* Allow growing but sufficient for icon */
+        min-height: 100px !important; 
         
         box-shadow: none !important;
         font-family: 'Segoe UI', sans-serif !important;
-        font-size: 14px !important;
+        font-size: 13px !important;
         line-height: 1.1 !important;
         white-space: pre-wrap !important;
         overflow: visible !important;
@@ -122,24 +123,25 @@ def render_library_v2(assistant):
     
     /* BIG ICON MAGIC: Target the Folder Emoji */
     div.stButton > button::first-line {
-        font-size: 72px !important; /* MASSIVE ICON */
-        line-height: 1.0 !important;
-        margin-bottom: 10px !important; /* Attempt to push text down, though first-line is tricky */
+        font-size: 80px !important; /* MASSIVE */
+        line-height: 0.9 !important; /* Squish vertical space since emoji has built-in padding */
         display: block !important;
     }
 
     /* Windows 11 Style Hover/Selection */
     div.stButton > button:hover {
-        background-color: #e6f3ff !important; /* Win11 Selection Blue */
-        border: 1px solid rgba(0, 120, 215, 0.1) !important;
+        background-color: #e6f3ff !important;
+        border: 1px solid rgba(0, 120, 215, 0.2) !important;
         box-shadow: 0 2px 4px rgba(0,0,0,0.05) !important;
-        transform: translateY(-1px); /* Micro-interaction */
+        transform: translateY(-1px);
+        color: #202124 !important; /* FORCE DARK TEXT ON HOVER */
     }
     
     div.stButton > button:active {
         background-color: #cce8ff !important;
-        border-color: rgba(0, 120, 215, 0.3) !important;
+        border-color: rgba(0, 120, 215, 0.4) !important;
         transform: scale(0.98);
+        color: #202124 !important;
     }
     
     /* Remove default focus ring or style it */
