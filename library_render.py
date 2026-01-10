@@ -549,24 +549,46 @@ def render_library_v2(assistant):
                         """
                         
                         # Render editor and capture output (Changed height to force re-render)
+                        # Render editor and capture output (Changed height to force re-render)
+                        # We use 'default' because initially it might be None if user hasn't typed anything yet,
+                        # but we want to start identifying it.
                         edited_content = components.html(editor_html, height=551, scrolling=True)
                         
                         # Update session state if content changed
-                        if edited_content:
+                        # IMPORTANT: components.html returns None if no message received yet.
+                        if edited_content is not None:
                             st.session_state[editor_key] = edited_content
                         
                         col_save, col_cancel = st.columns([1, 1])
                         with col_save:
                             if st.button("💾 Guardar Cambios", key=f"save_{f['id']}", type="primary", use_container_width=True):
-                                content_to_save = st.session_state.get(editor_key, file_content)
-                                if content_to_save and update_file_content(f['id'], content_to_save):
+                                # RETRIEVE CONTENT
+                                # Priority: 1. New edits (edited_content), 2. Session buffer, 3. Original fallback
+                                # Beware: edited_content might be None if user clicked Save without typing anything new, 
+                                # but session_state[editor_key] should arguably hold the 'safe_content/html_content' we started with if we initialized it properly?
+                                # Actually, we init `st.session_state[editor_key] = file_content` above.
+                                # But `file_content` was original Markdown. `html_content` is what's in the editor.
+                                # If user saves without editing, we might be saving back the Markdown or the HTML?
+                                # Ideally we save what's in the editor. 
+                                
+                                content_to_save = st.session_state.get(editor_key)
+                                
+                                # Safety: If content_to_save is None (rare), use original file_content
+                                if content_to_save is None:
+                                    content_to_save = file_content
+                                
+                                # DEBUG:
+                                # print(f"Saving File {f['id']}: {str(content_to_save)[:50]}...")
+                                
+                                if update_file_content(f['id'], content_to_save):
                                     st.success("✅ Guardado exitosamente")
                                     st.session_state[edit_key] = False
-                                    del st.session_state[editor_key]
+                                    if editor_key in st.session_state:
+                                        del st.session_state[editor_key]
                                     time.sleep(0.5)
                                     st.rerun()
                                 else:
-                                    st.error("❌ Error al guardar")
+                                    st.error(f"❌ Error al guardar (ID: {f['id']})")
                         
                         with col_cancel:
                             if st.button("❌ Cancelar", key=f"cancel_{f['id']}", use_container_width=True):
@@ -577,6 +599,9 @@ def render_library_v2(assistant):
                     else:
                         # View mode: Expander with formatted content
                         with st.expander("Ver contenido"):
+                            # If content is HTML (starts with <p> or contains tags), treat as safe html
+                            # Otherwise markdown.
+                            # We can just always use unsafe_allow_html=True which handles both usually.
                             st.markdown(file_content, unsafe_allow_html=True)
                 
                 with r_c3:
