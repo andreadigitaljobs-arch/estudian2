@@ -91,49 +91,47 @@ def render_library_v2(assistant):
     Refactored V270: Minimalist Toolbar UI
     """
     
-    # --- CSS for Drive-Style Folder Cards ---
+    # --- CSS for Drive-Style Folder Cards (Big Icons) ---
     st.markdown("""
     <style>
     /* Target buttons inside the main app area, specifically for the library layout */
     div.stButton > button {
         background-color: #ffffff !important;
         border: 1px solid #dadce0 !important;
-        border-radius: 8px !important; /* Rounded corners like Drive */
+        border-radius: 8px !important;
         color: #3c4043 !important;
-        padding: 12px 16px !important;
-        width: 100%;
-        text-align: left !important;
+        
+        /* VERTICAL STACK LAYOUT */
         display: flex !important;
+        flex-direction: column !important;
         align-items: center !important;
-        justify-content: flex-start !important; /* Left Align Content */
+        justify-content: center !important;
+        text-align: center !important;
+        
+        padding: 15px 5px !important;
+        width: 100%;
+        height: 110px !important; /* Fixed Square-ish height */
+        
         transition: background-color 0.1s linear, box-shadow 0.1s linear !important;
         box-shadow: none !important;
         font-family: 'Google Sans', 'Roboto', Arial, sans-serif !important;
-        font-size: 14px !important;
+        font-size: 13px !important;
         font-weight: 500 !important;
-        height: auto !important;
-        min-height: 48px !important;
+        line-height: 1.4 !important;
+        white-space: pre-wrap !important; /* Allow newlines for Icon on top */
     }
     
     div.stButton > button:hover {
-        background-color: #f1f3f4 !important; /* Drive Gray Hover */
-        border-color: #dadce0 !important;
-        color: #202124 !important;
-        box-shadow: 0 1px 2px rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15) !important;
-        z-index: 2;
-    }
-
-    div.stButton > button:active {
-        background-color: #e8eaed !important;
+        background-color: #e8f0fe !important; /* Drive Blue Selection Hover */
+        border-color: #d2e3fc !important;
+        color: #1967d2 !important; /* Drive Blue Text */
         box-shadow: none !important;
     }
 
-    /* Toolbar Button Overrides (Optional: keep them looking cleaner or let them inherit folder style? 
-       Drive toolbar buttons are usually icon-only or pill. 
-       Let's tweak specific toolbar columns if needed, but for now uniform look is okay for specific cards. 
-       If we want Toolbar to look different, we'd need specific selectors which Streamlit makes hard without keys.
-       However, we can target the specific buttons via the grid structure if needed, but "Folder Style" everywhere is cleaner than "Pills".
-    */
+    div.stButton > button:active {
+        background-color: #d2e3fc !important;
+        box-shadow: none !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -444,9 +442,12 @@ def render_library_v2(assistant):
         f_cols = st.columns(3)
         for i, unit in enumerate(subfolders):
             with f_cols[i % 3]:
-                # Folder Card
+                # Folder Card (Big Icon Style)
                 count = unit_counts.get(unit['id'], 0)
-                label = f"📁 {unit['name']} ({count})"
+                # We use newlines to separate the big icon from text
+                # 📁
+                # Name (count)
+                label = f"📁\n\n{unit['name']} ({count})"
                 
                 if st.button(label, key=f"fdir_{unit['id']}", use_container_width=True):
                     st.session_state['lib_current_unit_id'] = unit['id']
