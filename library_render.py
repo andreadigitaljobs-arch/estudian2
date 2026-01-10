@@ -97,40 +97,32 @@ def render_library_v2(assistant):
     /* Target buttons inside the main app area */
     /* Target buttons inside the main app area */
     /* Target buttons inside the main app area */
+    /* Target buttons inside the main app area */
     div.stButton > button {
         background-color: transparent !important;
         border: 1px solid transparent !important;
         border-radius: 12px !important;
         color: #202124 !important;
         
-        display: flex !important;
-        flex-direction: column !important;
-        align-items: center !important;
-        justify-content: center !important; /* Center vertically in the big box */
+        display: block !important; /* Block to allow line-height to work properly on first line */
         text-align: center !important;
         
         padding: 0px !important;
         width: 100%;
         height: auto !important;
-        min-height: 140px !important; /* More height for separation */
+        min-height: 140px !important;
         
         box-shadow: none !important;
         font-family: 'Segoe UI', sans-serif !important;
-        font-size: 16px !important; /* Base text size */
+        font-size: 16px !important; /* Base size for Title */
         overflow: visible !important;
+        white-space: pre-wrap !important; /* Ensure newlines are respected if used */
     }
     
-    /* DEEP SELECTOR for inner text paragraph */
-    div.stButton > button p {
-        font-size: 16px !important;
-        line-height: normal !important;
-    }
-
-    /* MASSIVE ICON: Target the Folder Emoji (First Letter of the Paragraph) */
-    div.stButton > button p::first-letter {
+    /* MASSIVE ICON MAGIC: Target the Folder Emoji only (First Line) */
+    div.stButton > button::first-line {
         font-size: 85px !important;
-        line-height: 1.5 !important; /* Huge line height to push text down */
-        display: block !important; /* Force line break effect if possible, or reliance on newlines */
+        line-height: 2.2 !important; /* KEY: This creates the "detached" space below icon */
     }
 
     /* Windows 11 Style Hover */
@@ -138,6 +130,7 @@ def render_library_v2(assistant):
         background-color: #e6f3ff !important;
         border: 1px solid rgba(0, 120, 215, 0.2) !important;
         transform: translateY(-2px);
+        color: #202124 !important;
     }
     
     /* COLOR HACK: Filter on the BUTTON element effectively rotates the emoji color */
@@ -470,12 +463,9 @@ def render_library_v2(assistant):
             with f_cols[i % 3]:
                 # Folder Card (Massive Icon Style)
                 count = unit_counts.get(unit['id'], 0)
-                # SEPARATION: Use newlines to physically push text down
-                # The CSS `line-height: 1.5` on first-letter helps, but plain text separation ensures it.
-                # 📁
-                #
-                # Name
-                label = f"📁\n\n\n{unit['name']} ({count})"
+                # SEPARATION: Handled by CSS ::first-line line-height now.
+                # Just one newline to separate semantic lines.
+                label = f"📁\n{unit['name']} ({count})"
                 
                 if st.button(label, key=f"fdir_{unit['id']}", use_container_width=True):
                     st.session_state['lib_current_unit_id'] = unit['id']
