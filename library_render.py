@@ -494,9 +494,13 @@ def render_library_v2(assistant):
                         import json
                         import markdown
                         
-                        # V314 Fix: Convert existing Markdown to HTML so asterisks don't show up
-                        # We use the markdown library we already have imported in app.py
-                        html_content = markdown.markdown(file_content)
+                        # V325-FIX: Check if content is ALREADY html (starts with <)
+                        # If so, do NOT run markdown() on it again, or it adds extra <p> wrappers.
+                        if file_content.strip().startswith("<"):
+                             html_content = file_content
+                        else:
+                             # Convert existing Markdown to HTML
+                             html_content = markdown.markdown(file_content)
                         
                         # Remove outer <p> tags if it's a single paragraph acting weird, 
                         # but usually markdown wraps everything in <p>. 
@@ -565,23 +569,21 @@ def render_library_v2(assistant):
                             if isinstance(content_to_save, str):
                                 import re
                                 
-                                # 1. Replace multiple empty paragraphs with a SINGLE compact break
-                                # (<p><br></p>)+  -->  <br> (Visual break, not paragraph block)
-                                # Or keep one <p><br></p> but ensure no extra newlines around it.
-                                
-                                cleaned = content_to_save
-                                
-                                # Collapse multiple empty paragraphs into one
-                                cleaned = re.sub(r'(<p><br></p>\s*)+', '<p><br></p>', cleaned)
-                                
-                                # Remove EMPTY paragraphs that might just have whitespace <p>  </p>
-                                cleaned = re.sub(r'<p>\s*</p>', '', cleaned)
-                                
-                                # OPTIONAL: If the user wants "Word-like" tight spacing, we might want to 
-                                # inject a style to reduce margins, but we can't inject CSS into the DB string easily without polluting it.
-                                # Instead, we try to ensure we don't have double <p> nesting.
-                                
-                                content_to_save = cleaned
+                                # DETECT IF WE ARE SAVING HTML OR TEXT
+                                if "<p>" in content_to_save or "<div>" in content_to_save:
+                                    cleaned = content_to_save
+                                    
+                                    # 1. REMOVE ALL EMPTY PARAGRAPHS COMPLETELY
+                                    # This kills the "double enter" visual but fixes the gap issue.
+                                    # <p><br></p> -> ''
+                                    cleaned = re.sub(r'<p><br></p>', '', cleaned)
+                                    
+                                    # 2. ALSO Remove paragraphs that only contain whitespace
+                                    cleaned = re.sub(r'<p>\s*</p>', '', cleaned)
+                                    
+                                    # 3. Trim headers
+                                    
+                                    content_to_save = cleaned
 
                             result = update_file_content(f['id'], content_to_save)
                             if result is True:
