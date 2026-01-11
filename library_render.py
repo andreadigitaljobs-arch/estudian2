@@ -834,7 +834,7 @@ def render_library_v2(assistant):
                                     border-radius: 8px;
                                     padding: 8px 12px;
                                     cursor: pointer;
-                                    font-family: 'Source Sans Pro', sans-serif;
+                                    font-family: "Source Sans Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
                                     font-size: 14px;
                                     color: #475569;
                                     font-weight: 600;
