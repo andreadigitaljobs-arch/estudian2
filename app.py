@@ -2742,14 +2742,38 @@ with st.sidebar:
 
                 // Down arrow: scroll down
                 createArrow('scroll-down', '⬇', '20px', () => {
-                    const el = getScrollContainer();
-                    if(el) el.scrollBy({ top: el.clientHeight, behavior: 'smooth' });
+                    const targets = [
+                        window.parent.document.querySelector('[data-testid="stAppViewContainer"]'),
+                        window.parent.document.querySelector('section.main'),
+                        window.parent.document.documentElement,
+                        window.parent.document.body,
+                        window.parent
+                    ];
+                    targets.forEach(el => {
+                        if(el && el.scrollBy) {
+                            try { el.scrollBy({ top: window.parent.innerHeight, behavior: 'smooth' }); } catch(e){}
+                        } else if(el && el.scrollTo) {
+                             try { el.scrollTo({ top: el.scrollTop + window.parent.innerHeight, behavior: 'smooth' }); } catch(e){}
+                        }
+                    });
                 });
                 
                 // Up arrow: scroll up
                 createArrow('scroll-up', '⬆', '80px', () => {
-                    const el = getScrollContainer();
-                    if(el) el.scrollBy({ top: -el.clientHeight, behavior: 'smooth' });
+                    const targets = [
+                        window.parent.document.querySelector('[data-testid="stAppViewContainer"]'),
+                        window.parent.document.querySelector('section.main'),
+                        window.parent.document.documentElement,
+                        window.parent.document.body,
+                        window.parent
+                    ];
+                    targets.forEach(el => {
+                        if(el && el.scrollBy) {
+                            try { el.scrollBy({ top: -window.parent.innerHeight, behavior: 'smooth' }); } catch(e){}
+                        } else if(el && el.scrollTo) {
+                             try { el.scrollTo({ top: el.scrollTop - window.parent.innerHeight, behavior: 'smooth' }); } catch(e){}
+                        }
+                    });
                 });
             }, 3000);
         </script>
