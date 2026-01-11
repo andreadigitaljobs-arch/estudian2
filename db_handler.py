@@ -1138,33 +1138,39 @@ def get_duplicate_files(course_id):
     supabase = init_supabase()
     try:
         # Get all files for the course (minimal fields)
-        # We need Unit Name to show path
-        res = supabase.table("library_files").select("id, name, unit_id").eq("course_id", course_id).execute()
+        # We need Unit Name to show path. INCREASE LIMIT to 10000 to avoid missing files.
+        res = supabase.table("library_files").select("id, name, unit_id").eq("course_id", course_id).limit(10000).execute()
         files = res.data
         if not files: return []
         
         # Get Units for context
-        units_res = supabase.table("units").select("id, name").eq("course_id", course_id).execute()
+        units_res = supabase.table("units").select("id, name").eq("course_id", course_id).limit(1000).execute()
         unit_map = {u['id']: u['name'] for u in units_res.data}
         
         # Count
         name_map = {}
         for f in files:
-            # Normalize name: strip whitespace
-            n = f['name'].strip()
+            # Normalize name: strip whitespace AND lowercase for robust check
+            n = f['name'].strip().lower()
+            
+            # Store ORIGINAL name for display if first time, but use normalized key
+            # Actually, we need to group them.
             if n not in name_map: name_map[n] = []
             name_map[n].append({
                 'id': f['id'],
+                'original_name': f['name'], # Keep original for display
                 'unit': unit_map.get(f['unit_id'], "Unknown"),
-                'created_at': f.get('created_at', '') # Useful for deciding which to keep
+                'created_at': f.get('created_at', '') 
             })
             
         # Filter Dupes
         duplicates = []
-        for name, entries in name_map.items():
+        for norm_name, entries in name_map.items():
             if len(entries) > 1:
+                # Use the first found original name as the main label, or the normalized one
+                display_name = entries[0]['original_name']
                 duplicates.append({
-                    'name': name,
+                    'name': display_name,
                     'count': len(entries),
                     'entries': entries
                 })
