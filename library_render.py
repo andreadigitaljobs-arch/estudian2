@@ -93,6 +93,7 @@ def render_library_v2(assistant):
     
     # --- CSS for Windows-Style Explorer (Transparent Buttons, Big Icons) ---
     st.markdown("""
+    <style>
     /* Target buttons inside the main app area */
     div.stButton > button {
         background-color: transparent !important;

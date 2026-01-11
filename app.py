@@ -2401,8 +2401,9 @@ with st.sidebar:
 
     st.markdown('<div class="aesthetic-sep"></div>', unsafe_allow_html=True)
 
-    # --- 2. HISTORIAL DE CHATS ---
-    if st.session_state.get('user'):
+    # --- 2. HISTORIAL DE CHATS (DISABLED) ---
+    if False and st.session_state.get('user'):
+        pass
         if 'current_chat_session' not in st.session_state:
             st.session_state['current_chat_session'] = None
         with st.expander("🗂️ Historial de Chats", expanded=True):
@@ -2503,8 +2504,8 @@ with st.sidebar:
                 
                 st.rerun()
 
-        # --- BULK DELETE (GESTIÓN MASIVA) ---
-        if st.session_state.get('user'):
+        # --- BULK DELETE (DISABLED) ---
+        if False and st.session_state.get('user'):
             with st.expander("🗑️ Gestión Masiva", expanded=False):
                 # 1. Multi-Select with Invisible Uniqueness Hack
                 # User wants clean names, but Streamlit merges duplicates.
