@@ -558,7 +558,9 @@ def render_library_v2(assistant):
                                                  if len(str(c_prev).strip()) == 0:
                                                       st.warning("⚠️ El archivo está vacío (0 bytes de texto).")
                                                  else:
-                                                      st.text_area("Vista previa (primeros 1k caracteres):", str(c_prev)[:1000] + ("..." if len(str(c_prev))>1000 else ""), height=150, key=f"prev_{entry['id']}")
+                                                      # Render Markdown in a scrollable box
+                                                      with st.container(height=200):
+                                                          st.markdown(str(c_prev)[:5000]) # Render up to 5k chars nicely
                                              else:
                                                  st.info("ℹ️ Vista previa no disponible para este tipo de archivo.")
                      else:
