@@ -3161,8 +3161,27 @@ with tab_home:
                             
                             st.markdown(f"**{icon} {f['name'][:15]}{'...' if len(f['name'])>15 else ''}**")
                             if st.button("Ver", key=f"btn_rec_{f['id']}", use_container_width=True):
+                                    # DEEP LINKING LOGIC
                                     st.session_state['redirect_target_name'] = "Biblioteca"
                                     st.session_state['force_chat_tab'] = True
+                                    
+                                    # 1. Set Folder Context
+                                    target_unit_id = f.get('unit_id')
+                                    if target_unit_id:
+                                        # Find Unit Name
+                                        u_name = "Carpeta"
+                                        for u in all_units:
+                                            if u['id'] == target_unit_id:
+                                                u_name = u['name']
+                                                break
+                                        
+                                        st.session_state['lib_current_unit_id'] = target_unit_id
+                                        st.session_state['lib_current_unit_name'] = u_name
+                                        st.session_state['lib_breadcrumbs'] = [{'id': target_unit_id, 'name': u_name}]
+                                    
+                                    # 2. Set File Open State (Auto-Expand)
+                                    st.session_state[f"edit_mode_{f['id']}"] = True
+                                    
                                     st.rerun()
             else:
                 st.caption("Sube archivos para verlos aquí.") 
