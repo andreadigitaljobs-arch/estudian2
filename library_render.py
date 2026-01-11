@@ -94,27 +94,6 @@ def render_library_v2(assistant):
     # --- CSS for Windows Explorer Style Folders ---
     st.markdown("""
     <style>
-    /* Completely hide the purple buttons */
-    button[data-testid*="-fdir_"] {
-        display: none !important;
-        visibility: hidden !important;
-        height: 0 !important;
-        width: 0 !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        opacity: 0 !important;
-        position: absolute !important;
-        pointer-events: none !important;
-    }
-    
-    /* Remove button container spacing */
-    div[data-testid="column"] div.stButton {
-        display: none !important;
-        height: 0 !important;
-        margin: 0 !important;
-        padding: 0 !important;
-    }
-
     /* Folder Card Hover Effects */
     .folder-hover-card {
         background: transparent;
