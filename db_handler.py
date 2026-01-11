@@ -1133,9 +1133,10 @@ def get_file_content(file_id):
     """Fetches the content of a specific file for preview."""
     try:
         supabase = init_supabase()
-        res = supabase.table("library_files").select("content").eq("id", file_id).single().execute()
+        # Correct column name is 'content_text' based on other methods
+        res = supabase.table("library_files").select("content_text").eq("id", file_id).single().execute()
         if res.data:
-            return res.data.get('content', '')
+            return res.data.get('content_text', '')
         return None
     except Exception as e:
         print(f"Error fetching file content: {e}")
