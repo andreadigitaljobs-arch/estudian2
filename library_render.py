@@ -94,23 +94,25 @@ def render_library_v2(assistant):
     # --- CSS for Windows Explorer Style Folders ---
     st.markdown("""
     <style>
-    /* Hide the invisible overlay buttons */
+    /* Completely hide the purple buttons */
     button[data-testid*="-fdir_"] {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0 !important;
+        width: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
         opacity: 0 !important;
         position: absolute !important;
-        top: 0 !important;
-        left: 0 !important;
-        width: 100% !important;
-        height: 100% !important;
-        z-index: 10 !important;
-        cursor: pointer !important;
-        border: none !important;
-        background: transparent !important;
+        pointer-events: none !important;
     }
     
-    /* Make folder cards clickable by positioning button over them */
-    div[data-testid="column"] {
-        position: relative !important;
+    /* Remove button container spacing */
+    div[data-testid="column"] div.stButton {
+        display: none !important;
+        height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
     }
     </style>
     """, unsafe_allow_html=True)
