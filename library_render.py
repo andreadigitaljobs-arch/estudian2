@@ -451,305 +451,331 @@ def render_library_v2(assistant):
     if current_unit_id:
         files = get_files(current_unit_id)
         if files:
-            # --- V335: MULTI-SELECT & BATCH ACTIONS ---
+            # --- V336: BATCH MODE (NO RELOAD) ---
             
-            # 1. Header & Batch Actions
-            c_header, c_batch = st.columns([0.6, 0.4], vertical_alignment="bottom")
-            with c_header:
-                st.markdown(f"##### 📄 Archivos ({len(files)})")
+            # Toggle for Batch Mode (State Persisted)
+            col_t1, col_t2 = st.columns([0.7, 0.3], vertical_alignment="bottom")
+            with col_t1:
+                 st.markdown(f"##### 📄 Archivos ({len(files)})")
+            with col_t2:
+                # Use checkbox if toggle not available in older streamlit versions, but toggle is better
+                batch_mode = st.toggle("✅ Selección Múltiple", key="lib_batch_mode", help="Activa para borrar varios archivos sin recargar la página.")
             
-            # Determine selected files
-            selected_ids = []
-            for f in files:
-                if st.session_state.get(f"sel_{f['id']}"):
-                    selected_ids.append(f['id'])
-            
-            with c_batch:
-                if selected_ids:
-                    if st.button(f"🗑️ Eliminar Seleccionados ({len(selected_ids)})", type="primary", use_container_width=True):
-                        for fid in selected_ids:
-                            delete_file(fid)
-                        st.success(f"Eliminados {len(selected_ids)} archivos.")
-                        st.rerun()
-
-            # 2. File List
-            for f in files:
-                # File Row Layout: Checkbox | Icon | Name | Actions
-                # Adjusted layout to accommodate checkbox
-                r_c0, r_c1, r_c2, r_c3 = st.columns([0.05, 0.05, 0.70, 0.2], vertical_alignment="bottom")
+            if batch_mode:
+                st.info("📦 Modo Lote: Marca las casillas y pulsa 'Eliminar' al final.")
                 
-                with r_c0:
-                    st.checkbox("", key=f"sel_{f['id']}", label_visibility="collapsed")
+                with st.form("batch_action_form"):
+                    # Batch Actions Header inside Form
+                    col_b1, col_b2 = st.columns([0.6, 0.4])
+                    with col_b1:
+                        st.caption("Selecciona los archivos a eliminar:")
+                    with col_b2:
+                        submit_batch = st.form_submit_button("🗑️ Eliminar Seleccionados", type="primary", use_container_width=True)
+                    
+                    st.divider()
+                    
+                    # Store selected IDs
+                    selected_files_batch = []
+                    
+                    # File List inside Form (Simplified View)
+                    for f in files:
+                         r_c0, r_c1, r_c2 = st.columns([0.05, 0.05, 0.9])
+                         with r_c0:
+                             # Checkbox inside form
+                             if st.checkbox("", key=f"batch_sel_{f['id']}", label_visibility="collapsed"):
+                                 selected_files_batch.append(f['id'])
+                         with r_c1:
+                             st.write("📝" if f['type'] == 'text' else "📎")
+                         with r_c2:
+                             st.write(f"**{f['name']}**")
+                    
+                    # Form Logic
+                    if submit_batch:
+                         if selected_files_batch:
+                             count = 0
+                             for fid in selected_files_batch:
+                                 delete_file(fid)
+                                 count += 1
+                             st.success(f"Eliminados {count} archivos.")
+                             time.sleep(1)
+                             st.rerun()
+                         else:
+                             st.warning("No seleccionaste nada.")
 
-                with r_c1:
-                    icon = "📝" if f['type'] == 'text' else "📎"
-                    st.write(icon)
-                
-                with r_c2:
-                    st.write(f"**{f['name']}**")
+            else:
+                # NORMAL MODE (Full Features, No Checkboxes causing reloads)
+                # Just the standard list
+                for f in files:
+                    # File Row Layout: Icon | Name | Actions
+                    r_c1, r_c2, r_c3 = st.columns([0.05, 0.75, 0.2], vertical_alignment="bottom")
                     
-                    # V307: Editable Transcription Interface
-                    file_content = f.get('content') or f.get('content_text') or "Sin contenido"
-                    edit_key = f"edit_mode_{f['id']}"
+                    with r_c1:
+                        icon = "📝" if f['type'] == 'text' else "📎"
+                        st.write(icon)
                     
-                    # Initialize edit mode state
-                    if edit_key not in st.session_state:
-                        st.session_state[edit_key] = False
-                    
-                    # Edit mode toggle
-                    col_edit, col_ai = st.columns(2)
-                    with col_edit:
-                        if st.button("✏️ Editar" if not st.session_state[edit_key] else "👁️ Ver", 
-                                   key=f"toggle_edit_{f['id']}", use_container_width=True):
-                            st.session_state[edit_key] = not st.session_state[edit_key]
-                            st.rerun()
-                    
-                    with col_ai:
-                        if st.button("🤖 Formatear", key=f"format_{f['id']}", use_container_width=True,
-                                   help="Aplica formato inteligente (párrafos, títulos)"):
-                            with st.spinner("Formateando con IA..."):
-                                formatted_text = format_transcript_with_ai(file_content, assistant)
-                                result = update_file_content(f['id'], formatted_text)
-                            if result is True:
-                                st.success("✨ Formateado con éxito")
-                                st.session_state[edit_key] = False
-                                time.sleep(0.5)
-                                st.rerun()
-                            else:
-                                st.error(f"❌ Error al guardar formato: {result}")
-                    
-                    # Display content (editable or read-only)
-                    if st.session_state[edit_key]:
-                        # Edit mode: CKEditor WYSIWYG (V311 - No API Key Required)
-                        st.caption("💡 Seleccioná texto y usá los botones para dar formato (como Google Docs)")
+                    with r_c2:
+                        st.write(f"**{f['name']}**")
                         
-                        editor_key = f"editor_content_{f['id']}"
-                        if editor_key not in st.session_state:
-                            st.session_state[editor_key] = file_content
+                        # V307: Editable Transcription Interface
+                        file_content = f.get('content') or f.get('content_text') or "Sin contenido"
+                        edit_key = f"edit_mode_{f['id']}"
                         
-                        # Escape content for JavaScript
-                        import json
-                        import markdown
-                        
-                        # V325-FIX: Check if content is ALREADY html (starts with <)
-                        # If so, do NOT run markdown() on it again, or it adds extra <p> wrappers.
-                        if file_content.strip().startswith("<"):
-                             html_content = file_content
-                        else:
-                             # Convert existing Markdown to HTML
-                             html_content = markdown.markdown(file_content)
-                        
-                        # Remove outer <p> tags if it's a single paragraph acting weird, 
-                        # but usually markdown wraps everything in <p>. 
-                        # CKEditor handles HTML input perfectly.
-                        
-                        safe_content = json.dumps(html_content)
-                        
-                        # Render Editor (Quill or Fallback)
-                        
-                        # V320: Robust Editor Logic
-                        content_to_save = None
-                        
-                        # V324: ISOLATE EDITOR IN FORM TO PREVENT RELOADS
-                        # Using st.form prevents Streamlit from rerunning on every keystroke in Quill
-                        
-                        editor_form_key = f"form_edit_{f['id']}"
-                        
-                        with st.form(key=editor_form_key):
-                            if QUILL_AVAILABLE:
-                                # Toolbar configuration
-                                toolbar = [
-                                    ["bold", "italic", "underline", "strike"],
-                                    [{"header": [1, 2, 3, False]}],
-                                    [{"list": "ordered"}, {"list": "bullet"}],
-                                    [{"indent": "-1"}, {"indent": "+1"}],
-                                    ["clean"]
-                                ]
-                                
-                                st.caption("📝 Editor Visual (Quill) - Presiona 'Guardar' al terminar")
-                                
-                                # quill_content will be captured only on form submit? 
-                                # Actually st_quill inside form updates on submit.
-                                quill_content = st_quill(
-                                    value=html_content, 
-                                    placeholder="Escribe aquí...", 
-                                    html=True, 
-                                    toolbar=toolbar,
-                                    key=f"quill_{f['id']}"
-                                )
-                                content_to_save = quill_content
-                            else:
-                                st.caption("📝 Editor de Texto (Modo Seguro)")
-                                clean_text = clean_markdown_v3(file_content)
-                                txt_content = st.text_area("Contenido", value=clean_text, height=500, key=f"txt_{f['id']}")
-                                content_to_save = txt_content
-
-                            # Form Buttons
-                            col_save, col_cancel = st.columns([1, 1])
-                            with col_save:
-                                submit_save = st.form_submit_button("💾 Guardar Cambios", type="primary", use_container_width=True)
-                            
-                            with col_cancel:
-                                # Cancel button in form submits too, but we handle logic below
-                                submit_cancel = st.form_submit_button("❌ Cancelar", use_container_width=True)
-                        
-                        # LOGIC AFTER FORM SUBMISSION
-                        if submit_save:
-                            # 1. Validation
-                            if content_to_save is None:
-                                if QUILL_AVAILABLE: content_to_save = html_content 
-                                else: content_to_save = clean_markdown_v3(file_content)
-
-                            # 2. HTML CLEANING (Fix "Giant Jump" & Double Spacing)
-                            # Quill adds <p> around everything. Default CSS has large margins.
-                            # We need to Compact the HTML.
-                            if isinstance(content_to_save, str):
-                                import re
-                                
-                                # DETECT IF WE ARE SAVING HTML OR TEXT
-                                if "<p>" in content_to_save or "<div>" in content_to_save:
-                                    cleaned = content_to_save
-                                    
-                                    # 1. REMOVE ALL EMPTY PARAGRAPHS COMPLETELY
-                                    # This kills the "double enter" visual but fixes the gap issue.
-                                    # <p><br></p> -> ''
-                                    cleaned = re.sub(r'<p><br></p>', '', cleaned)
-                                    
-                                    # 2. ALSO Remove paragraphs that only contain whitespace
-                                    cleaned = re.sub(r'<p>\s*</p>', '', cleaned)
-                                    
-                                    # 3. Trim headers
-                                    
-                                    content_to_save = cleaned
-
-                            result = update_file_content(f['id'], content_to_save)
-                            if result is True:
-                                st.success("✅ Guardado exitosamente (Espacios Ajustados)")
-                                st.session_state[edit_key] = False
-                                # Cleanup keys
-                                if f"quill_{f['id']}" in st.session_state: del st.session_state[f"quill_{f['id']}"]
-                                if f"txt_{f['id']}" in st.session_state: del st.session_state[f"txt_{f['id']}"]
-                                
-                                time.sleep(0.5)
-                                st.rerun()
-                            else:
-                                st.error(f"❌ Error al guardar: {result}")
-                        
-                        if submit_cancel:
+                        # Initialize edit mode state
+                        if edit_key not in st.session_state:
                             st.session_state[edit_key] = False
-                            st.rerun()
-                    else:
-                        # View mode: Expander with formatted content
-                        with st.expander("Ver contenido"):
-                            # If content is HTML (starts with <p> or contains tags), treat as safe html
-                            # Otherwise markdown.
-                            # We can just always use unsafe_allow_html=True which handles both usually.
-                            st.markdown(file_content, unsafe_allow_html=True)
-                
-                with r_c3:
-                    # Quick Actions Popover
-                    with st.popover("⚡"):
-                        st.markdown(f"**{f['name']}**")
-                        # AI Analyze Removed - V335
-                             
-                        if st.button("🗑️ Eliminar", key=f"del_{f['id']}"):
-                            delete_file(f['id'])
-                            st.rerun()
-                            
-                        st.divider()
                         
-                        # --- MAGIC ARROWS (RESTORED V301) ---
-                        m_c1, m_c2 = st.columns(2)
-                        with m_c1:
-                            if st.button("🔼 Subir", key=f"up_{f['id']}", use_container_width=True):
-                                move_file_up(current_unit_id, f['id'])
+                        # Edit mode toggle
+                        col_edit, col_ai = st.columns(2)
+                        with col_edit:
+                            if st.button("✏️ Editar" if not st.session_state[edit_key] else "👁️ Ver", 
+                                       key=f"toggle_edit_{f['id']}", use_container_width=True):
+                                st.session_state[edit_key] = not st.session_state[edit_key]
                                 st.rerun()
-                        with m_c2:
-                            if st.button("🔽 Bajar", key=f"down_{f['id']}", use_container_width=True):
-                                move_file_down(current_unit_id, f['id'])
-                                st.rerun()
+                        
+                        with col_ai:
+                            if st.button("🤖 Formatear", key=f"format_{f['id']}", use_container_width=True,
+                                       help="Aplica formato inteligente (párrafos, títulos)"):
+                                with st.spinner("Formateando con IA..."):
+                                    formatted_text = format_transcript_with_ai(file_content, assistant)
+                                    result = update_file_content(f['id'], formatted_text)
+                                if result is True:
+                                    st.success("✨ Formateado con éxito")
+                                    st.session_state[edit_key] = False
+                                    time.sleep(0.5)
+                                    st.rerun()
+                                else:
+                                    st.error(f"❌ Error al guardar formato: {result}")
+                        
+                        # Display content (editable or read-only)
+                        if st.session_state[edit_key]:
+                            # Edit mode: CKEditor WYSIWYG (V311 - No API Key Required)
+                            st.caption("💡 Seleccioná texto y usá los botones para dar formato (como Google Docs)")
                             
-                        st.divider()
-                        
-                        # --- CLEAN COPY BUTTON (ROBUST V299) ---
-                        raw_txt = f.get('content') or f.get('content_text') or ""
-                        clean_txt = clean_markdown_v3(raw_txt)
-                        
-                        import json
-                        safe_txt = json.dumps(clean_txt)
-                        
-                        components.html(f"""
-                        <html>
-                        <body style="margin:0; padding:0; display:flex; justify-content:center;">
-                            <script>
-                            function copyToClipboard() {{
-                                const text = {safe_txt};
-                                const btn = document.getElementById('copyBtn');
+                            editor_key = f"editor_content_{f['id']}"
+                            if editor_key not in st.session_state:
+                                st.session_state[editor_key] = file_content
+                            
+                            # Escape content for JavaScript
+                            import json
+                            import markdown
+                            
+                            # V325-FIX: Check if content is ALREADY html (starts with <)
+                            # If so, do NOT run markdown() on it again, or it adds extra <p> wrappers.
+                            if file_content.strip().startswith("<"):
+                                 html_content = file_content
+                            else:
+                                 # Convert existing Markdown to HTML
+                                 html_content = markdown.markdown(file_content)
+                            
+                            # Remove outer <p> tags if it's a single paragraph acting weird, 
+                            # but usually markdown wraps everything in <p>. 
+                            # CKEditor handles HTML input perfectly.
+                            
+                            safe_content = json.dumps(html_content)
+                            
+                            # Render Editor (Quill or Fallback)
+                            
+                            # V320: Robust Editor Logic
+                            content_to_save = None
+                            
+                            # V324: ISOLATE EDITOR IN FORM TO PREVENT RELOADS
+                            # Using st.form prevents Streamlit from rerunning on every keystroke in Quill
+                            
+                            editor_form_key = f"form_edit_{f['id']}"
+                            
+                            with st.form(key=editor_form_key):
+                                if QUILL_AVAILABLE:
+                                    # Toolbar configuration
+                                    toolbar = [
+                                        ["bold", "italic", "underline", "strike"],
+                                        [{"header": [1, 2, 3, False]}],
+                                        [{"list": "ordered"}, {"list": "bullet"}],
+                                        [{"indent": "-1"}, {"indent": "+1"}],
+                                        ["clean"]
+                                    ]
+                                    
+                                    st.caption("📝 Editor Visual (Quill) - Presiona 'Guardar' al terminar")
+                                    
+                                    # quill_content will be captured only on form submit? 
+                                    # Actually st_quill inside form updates on submit.
+                                    quill_content = st_quill(
+                                        value=html_content, 
+                                        placeholder="Escribe aquí...", 
+                                        html=True, 
+                                        toolbar=toolbar,
+                                        key=f"quill_{f['id']}"
+                                    )
+                                    content_to_save = quill_content
+                                else:
+                                    st.caption("📝 Editor de Texto (Modo Seguro)")
+                                    clean_text = clean_markdown_v3(file_content)
+                                    txt_content = st.text_area("Contenido", value=clean_text, height=500, key=f"txt_{f['id']}")
+                                    content_to_save = txt_content
+    
+                                # Form Buttons
+                                col_save, col_cancel = st.columns([1, 1])
+                                with col_save:
+                                    submit_save = st.form_submit_button("💾 Guardar Cambios", type="primary", use_container_width=True)
                                 
-                                function showSuccess() {{
-                                    btn.innerHTML = '✅ Copiado';
-                                    btn.style.borderColor = '#10b981';
-                                    btn.style.color = '#10b981';
-                                    setTimeout(() => {{
-                                        btn.innerHTML = '📋 Copiar Texto';
-                                        btn.style.borderColor = '#e2e8f0';
-                                        btn.style.color = '#64748b';
-                                    }}, 2000);
-                                }}
-
-                                // Plan A: Modern API
-                                if (navigator.clipboard && window.isSecureContext) {{
-                                    navigator.clipboard.writeText(text).then(showSuccess).catch(err => fallbackCopy(text));
-                                }} else {{
-                                    fallbackCopy(text);
-                                }}
-
-                                function fallbackCopy(text) {{
-                                    const textArea = document.createElement("textarea");
-                                    textArea.value = text;
-                                    textArea.style.position = "fixed";
-                                    textArea.style.left = "-9999px";
-                                    textArea.style.top = "0";
-                                    document.body.appendChild(textArea);
-                                    textArea.focus();
-                                    textArea.select();
-                                    try {{
-                                        const successful = document.execCommand('copy');
-                                        if (successful) showSuccess();
-                                    }} catch (err) {{
-                                        console.error('Fallback failed', err);
+                                with col_cancel:
+                                    # Cancel button in form submits too, but we handle logic below
+                                    submit_cancel = st.form_submit_button("❌ Cancelar", use_container_width=True)
+                            
+                            # LOGIC AFTER FORM SUBMISSION
+                            if submit_save:
+                                # 1. Validation
+                                if content_to_save is None:
+                                    if QUILL_AVAILABLE: content_to_save = html_content 
+                                    else: content_to_save = clean_markdown_v3(file_content)
+    
+                                # 2. HTML CLEANING (Fix "Giant Jump" & Double Spacing)
+                                # Quill adds <p> around everything. Default CSS has large margins.
+                                # We need to Compact the HTML.
+                                if isinstance(content_to_save, str):
+                                    import re
+                                    
+                                    # DETECT IF WE ARE SAVING HTML OR TEXT
+                                    if "<p>" in content_to_save or "<div>" in content_to_save:
+                                        cleaned = content_to_save
+                                        
+                                        # 1. REMOVE ALL EMPTY PARAGRAPHS COMPLETELY
+                                        # This kills the "double enter" visual but fixes the gap issue.
+                                        # <p><br></p> -> ''
+                                        cleaned = re.sub(r'<p><br></p>', '', cleaned)
+                                        
+                                        # 2. ALSO Remove paragraphs that only contain whitespace
+                                        cleaned = re.sub(r'<p>\s*</p>', '', cleaned)
+                                        
+                                        # 3. Trim headers
+                                        
+                                        content_to_save = cleaned
+    
+                                result = update_file_content(f['id'], content_to_save)
+                                if result is True:
+                                    st.success("✅ Guardado exitosamente (Espacios Ajustados)")
+                                    st.session_state[edit_key] = False
+                                    # Cleanup keys
+                                    if f"quill_{f['id']}" in st.session_state: del st.session_state[f"quill_{f['id']}"]
+                                    if f"txt_{f['id']}" in st.session_state: del st.session_state[f"txt_{f['id']}"]
+                                    
+                                    time.sleep(0.5)
+                                    st.rerun()
+                                else:
+                                    st.error(f"❌ Error al guardar: {result}")
+                            
+                            if submit_cancel:
+                                st.session_state[edit_key] = False
+                                st.rerun()
+                        else:
+                            # View mode: Expander with formatted content
+                            with st.expander("Ver contenido"):
+                                # If content is HTML (starts with <p> or contains tags), treat as safe html
+                                # Otherwise markdown.
+                                # We can just always use unsafe_allow_html=True which handles both usually.
+                                st.markdown(file_content, unsafe_allow_html=True)
+                    
+                    with r_c3:
+                        # Quick Actions Popover
+                        with st.popover("⚡"):
+                            st.markdown(f"**{f['name']}**")
+                            # AI Analyze Removed - V335
+                                 
+                            if st.button("🗑️ Eliminar", key=f"del_{f['id']}"):
+                                delete_file(f['id'])
+                                st.rerun()
+                                
+                            st.divider()
+                            
+                            # --- MAGIC ARROWS (RESTORED V301) ---
+                            m_c1, m_c2 = st.columns(2)
+                            with m_c1:
+                                if st.button("🔼 Subir", key=f"up_{f['id']}", use_container_width=True):
+                                    move_file_up(current_unit_id, f['id'])
+                                    st.rerun()
+                            with m_c2:
+                                if st.button("🔽 Bajar", key=f"down_{f['id']}", use_container_width=True):
+                                    move_file_down(current_unit_id, f['id'])
+                                    st.rerun()
+                                
+                            st.divider()
+                            
+                            # --- CLEAN COPY BUTTON (ROBUST V299) ---
+                            raw_txt = f.get('content') or f.get('content_text') or ""
+                            clean_txt = clean_markdown_v3(raw_txt)
+                            
+                            import json
+                            safe_txt = json.dumps(clean_txt)
+                            
+                            components.html(f"""
+                            <html>
+                            <body style="margin:0; padding:0; display:flex; justify-content:center;">
+                                <script>
+                                function copyToClipboard() {{
+                                    const text = {safe_txt};
+                                    const btn = document.getElementById('copyBtn');
+                                    
+                                    function showSuccess() {{
+                                        btn.innerHTML = '✅ Copiado';
+                                        btn.style.borderColor = '#10b981';
+                                        btn.style.color = '#10b981';
+                                        setTimeout(() => {{
+                                            btn.innerHTML = '📋 Copiar Texto';
+                                            btn.style.borderColor = '#e2e8f0';
+                                            btn.style.color = '#64748b';
+                                        }}, 2000);
                                     }}
-                                    document.body.removeChild(textArea);
+    
+                                    // Plan A: Modern API
+                                    if (navigator.clipboard && window.isSecureContext) {{
+                                        navigator.clipboard.writeText(text).then(showSuccess).catch(err => fallbackCopy(text));
+                                    }} else {{
+                                        fallbackCopy(text);
+                                    }}
+    
+                                    function fallbackCopy(text) {{
+                                        const textArea = document.createElement("textarea");
+                                        textArea.value = text;
+                                        textArea.style.position = "fixed";
+                                        textArea.style.left = "-9999px";
+                                        textArea.style.top = "0";
+                                        document.body.appendChild(textArea);
+                                        textArea.focus();
+                                        textArea.select();
+                                        try {{
+                                            const successful = document.execCommand('copy');
+                                            if (successful) showSuccess();
+                                        }} catch (err) {{
+                                            console.error('Fallback failed', err);
+                                        }}
+                                        document.body.removeChild(textArea);
+                                    }}
                                 }}
-                            }}
-                            </script>
-                            <button id="copyBtn" onclick="copyToClipboard()" style="
-                                width: 100%;
-                                background: white;
-                                border: 1px solid #e2e8f0;
-                                border-radius: 8px;
-                                padding: 8px 16px;
-                                color: #64748b;
-                                font-size: 14px;
-                                font-family: sans-serif;
-                                cursor: pointer;
-                                transition: all 0.2s;
-                                display: flex;
-                                align-items: center;
-                                justify-content: center;
-                                gap: 8px;
-                            ">
-                                📋 Copiar Texto
-                            </button>
-                        </body>
-                        </html>
-                        """, height=45)
+                                </script>
+                                <button id="copyBtn" onclick="copyToClipboard()" style="
+                                    width: 100%;
+                                    background: white;
+                                    border: 1px solid #e2e8f0;
+                                    border-radius: 8px;
+                                    padding: 8px 16px;
+                                    color: #64748b;
+                                    font-size: 14px;
+                                    font-family: sans-serif;
+                                    cursor: pointer;
+                                    transition: all 0.2s;
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                    gap: 8px;
+                                ">
+                                    📋 Copiar Texto
+                                </button>
+                            </body>
+                            </html>
+                            """, height=45)
                             
                         # Move Logic could go here (Simplified for now)
         else:
             if not subfolders:
-                st.info("Carpeta vacía. Usa el botón 'Subir' o 'Nueva' en la barra superior.")
-    else:
         # At Root (and maybe no folders)
         if not subfolders:
              st.info("Biblioteca vacía. ¡Empieza creando una carpeta arriba!")
