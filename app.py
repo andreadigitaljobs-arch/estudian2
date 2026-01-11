@@ -2356,6 +2356,60 @@ CSS_STYLE = """
 """
 st.markdown(CSS_STYLE, unsafe_allow_html=True)
 
+# --- V334 LIBRARY OVERRIDE (FINAL PATCH) ---
+# Forces Green/Purple Folders + Big Icons over Global Styles
+st.markdown("""
+<style>
+/* 1. Base Button Style (Glassy & Bold) */
+div.stButton > button {
+    background-color: transparent !important;
+    border: 1px solid transparent !important;
+    border-radius: 12px !important;
+    color: #1e293b !important; /* Dark Slate for Text */
+    
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    
+    padding: 10px !important;
+    width: 100% !important;
+    height: 140px !important;
+    
+    box-shadow: none !important;
+    font-family: 'Segoe UI', system-ui, sans-serif !important;
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    line-height: 1.3 !important;
+    white-space: pre-wrap !important;
+    overflow: visible !important;
+}
+
+/* 2. BIG ICON MAGIC */
+div.stButton > button::first-line {
+    font-size: 72px !important;
+    line-height: 1.0 !important;
+    font-weight: 400 !important;
+}
+
+/* 3. Hover Effect */
+div.stButton > button:hover {
+    background-color: #f1f5f9 !important;
+    border-color: #cbd5e1 !important;
+    transform: translateY(-2px);
+}
+
+/* 4. COLOR HACK: Green & Purple Alternating */
+div[data-testid="column"]:nth-of-type(even) div.stButton > button {
+    filter: hue-rotate(260deg) saturate(1.2); 
+}
+div[data-testid="column"]:nth-of-type(odd) div.stButton > button {
+    filter: hue-rotate(80deg) saturate(1.4); 
+}
+</style>
+""", unsafe_allow_html=True)
+
 # Hidden duplicate button removed.
 # Duplicate button cleanup complete.
 
