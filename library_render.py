@@ -505,7 +505,13 @@ def render_library_v2(assistant):
                 st.caption("Encuentra y gestiona archivos con el mismo nombre en diferentes carpetas.")
                 
                 if st.button("🔍 Escanear toda la biblioteca", type="primary", help="Busca en TODAS las carpetas del diplomado actual"):
-                     from db_handler import get_duplicate_files
+                     from db_handler import get_duplicate_files, init_supabase # Debug import
+                     
+                     # Debug: Verify what we see
+                     st.write(f"DEBUG: Buscando en Course ID: {current_course_id}")
+                     cnt = init_supabase().table("library_files").select("id", count="exact").eq("course_id", current_course_id).execute()
+                     st.write(f"DEBUG: Total archivos en DB para este curso: {cnt.count}")
+
                      # Clear previous state
                      if 'dupes_results' in st.session_state: del st.session_state['dupes_results']
                      
