@@ -4566,7 +4566,8 @@ with tab_quiz:
                             st.session_state['pending_learning_rule'] = None
                             st.rerun()
 # --- TAB 5: Ayudante de Tareas (DISABLED V334 REVERT) ---
-if False: # with tab_tasks:
+if False: # # with tab_tasks:
+if False:
     tab5_html = (
         '<div class="card-text">'
         '<h2 style="margin-top:0;">5. Ayudante de Tareas</h2>'
@@ -4809,7 +4810,8 @@ if False: # with tab_tasks:
 # --- TAB 6: Tutoría 1 a 1 (Docente Artificial) ---
 if 'tutor_chat_history' not in st.session_state: st.session_state['tutor_chat_history'] = []
 
-with tab_tutor:
+# with tab_tutor:
+if False:
     tutor_html = (
         '<div class="card-text">'
         '<h2 style="margin-top:0;">6. Tutoría Personalizada (Profesor IA)</h2>'
