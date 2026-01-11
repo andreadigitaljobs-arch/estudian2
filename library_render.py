@@ -560,7 +560,7 @@ def render_library_v2(assistant):
                 else:
                     display_name = folder_name
                 
-                label = f"{display_name} ({count})"
+                label = f"**{display_name}** ({count})"
                 
                 # Use type='secondary' to hook into our new scoped CSS (Avoids Primary conflict)
                 if st.button(label, key=f"fdir_{unit['id']}", use_container_width=True, type="secondary"):
