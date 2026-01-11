@@ -91,33 +91,35 @@ def render_library_v2(assistant):
     Refactored V270: Minimalist Toolbar UI
     """
     
-    # --- CSS for Library Folders ONLY (Surgical Targeting via data-testid) ---
+    # --- CSS for Library Folders ONLY (Windows Explorer Style) ---
     st.markdown("""
     <style>
     /* Target ONLY buttons with keys starting with "fdir_" (library folders) */
     /* Streamlit generates data-testid like "stButton-fdir_123" for these buttons */
     
-    /* 1. Base Button Style (Glassy & Bold) - LIBRARY FOLDERS ONLY */
+    /* 1. Base Button Style (Transparent & Clean) - LIBRARY FOLDERS ONLY */
     button[data-testid*="-fdir_"] {
-        background-color: transparent !important;
-        border: 1px solid transparent !important;
-        border-radius: 12px !important;
+        background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05)) !important;
+        backdrop-filter: blur(10px) !important;
+        border: 1px solid rgba(203, 213, 225, 0.3) !important;
+        border-radius: 16px !important;
         color: #1e293b !important;
         
         display: block !important;
         
-        padding: 0px !important;
+        padding: 20px 10px !important;
         width: 100% !important;
-        height: 180px !important;
+        height: 200px !important;
         
-        box-shadow: none !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
         font-family: 'Segoe UI', system-ui, sans-serif !important;
-        font-size: 16px !important;
-        font-weight: 700 !important;
-        line-height: normal !important;
+        font-size: 15px !important;
+        font-weight: 600 !important;
+        line-height: 1.4 !important;
         white-space: pre-wrap !important;
         overflow: visible !important;
-        transition: all 0.2s ease !important;
+        transition: all 0.25s ease !important;
+        text-align: center !important;
     }
     
     /* Ensure inner containers allow line breaks and block display */
@@ -125,35 +127,42 @@ def render_library_v2(assistant):
     button[data-testid*="-fdir_"] p {
         display: block !important;
         white-space: pre-wrap !important;
+        text-align: center !important;
     }
     
-    /* 2. BIG ICON MAGIC - Multi-Targeting for Robustness */
+    /* 2. BIG ICON MAGIC - Make folder emoji huge */
     button[data-testid*="-fdir_"]::first-line,
     button[data-testid*="-fdir_"] > div::first-line,
     button[data-testid*="-fdir_"] p::first-line {
-        font-size: 90px !important;
-        line-height: 1.2 !important;
+        font-size: 80px !important;
+        line-height: 1.1 !important;
         font-weight: 400 !important;
+        display: block !important;
     }
 
-    /* 3. Hover Effect (Subtle Windows Highlight) */
+    /* 3. Hover Effect (Subtle lift) */
     button[data-testid*="-fdir_"]:hover {
-        background-color: #f1f5f9 !important;
-        border-color: #cbd5e1 !important;
-        transform: translateY(-2px);
+        background: linear-gradient(135deg, rgba(255,255,255,0.2), rgba(255,255,255,0.1)) !important;
+        border-color: rgba(203, 213, 225, 0.5) !important;
+        transform: translateY(-4px) !important;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.12) !important;
     }
     
-    /* 4. COLOR HACK: Green & Purple Alternating */
-    /* We need to target the parent column to determine odd/even */
+    /* 4. COLOR FILTERS: Green & Pink Alternating (matching reference image) */
     
-    /* EVEN Columns (2nd): Pink/Purple */
-    div[data-testid="column"]:nth-of-type(even) button[data-testid*="-fdir_"] {
-        filter: hue-rotate(260deg) saturate(1.2); 
+    /* Column 1 (Odd - 1st, 4th, 7th...): Bright Green */
+    div[data-testid="column"]:nth-of-type(3n+1) button[data-testid*="-fdir_"] {
+        filter: hue-rotate(75deg) saturate(1.5) brightness(1.1);
     }
     
-    /* ODD Columns (1st & 3rd): Bright Green */
-    div[data-testid="column"]:nth-of-type(odd) button[data-testid*="-fdir_"] {
-        filter: hue-rotate(80deg) saturate(1.4); 
+    /* Column 2 (Even - 2nd, 5th, 8th...): Pink/Magenta */
+    div[data-testid="column"]:nth-of-type(3n+2) button[data-testid*="-fdir_"] {
+        filter: hue-rotate(290deg) saturate(1.3) brightness(1.05);
+    }
+    
+    /* Column 3 (3rd, 6th, 9th...): Bright Green (same as column 1) */
+    div[data-testid="column"]:nth-of-type(3n) button[data-testid*="-fdir_"] {
+        filter: hue-rotate(75deg) saturate(1.5) brightness(1.1);
     }
     </style>
     """, unsafe_allow_html=True)
