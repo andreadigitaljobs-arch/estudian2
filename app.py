@@ -3416,7 +3416,7 @@ with tab1:
                  if st.button("🧹 Limpiar Vista", key="clean_view_only_v2", help="Limpia la pantalla", use_container_width=True):
                     st.session_state['transcript_history'] = []
                     st.session_state['last_transcribed_file'] = None
-                    st.remove_query_params() # Clean URL if any
+                    st.query_params.clear() # V340: Fix AttributeError
                     import uuid
                     st.session_state['transcriptor_key'] = str(uuid.uuid4()) # Reset uploader
                     st.rerun()
