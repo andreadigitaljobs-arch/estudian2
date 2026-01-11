@@ -2700,6 +2700,33 @@ with st.sidebar:
     </script>
     """, height=0)
 
+    # --- DUAL NAVIGATION ARROWS (RESTORED) ---
+    def inject_navigation_arrows():
+        components.html("""
+        <script>
+            function createArrow(id, html, bottom, onClick) {
+                if (window.parent.document.getElementById(id)) return;
+                const btn = window.parent.document.createElement('button');
+                btn.id = id;
+                btn.innerHTML = html;
+                Object.assign(btn.style, {
+                    position: 'fixed', bottom: bottom, right: '20px',
+                    width: '40px', height: '40px', borderRadius: '50%',
+                    border: 'none', backgroundColor: '#4B22DD', color: 'white',
+                    fontSize: '20px', cursor: 'pointer', zIndex: '9999',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    boxShadow: '0 4px 6px rgba(0,0,0,0.3)', transition: 'transform 0.2s'
+                });
+                btn.onmouseover = () => btn.style.transform = 'scale(1.1)';
+                btn.onmouseout = () => btn.style.transform = 'scale(1)';
+                btn.onclick = onClick;
+                window.parent.document.body.appendChild(btn);
+            }
+            createArrow('scroll-down', '⬇', '20px', () => window.parent.scrollTo({top: window.parent.document.body.scrollHeight, behavior: 'smooth'}));
+            createArrow('scroll-up', '⬆', '70px', () => window.parent.scrollTo({top: 0, behavior: 'smooth'}));
+        </script>
+        """, height=0)
+
     # --- DUAL NAVIGATION ARROWS ---
     inject_navigation_arrows()
 
@@ -3042,12 +3069,7 @@ def render_image_card(img_path):
     else:
         st.error(f"Image not found: {img_path}")
 
-# --- TAB LIBRARY ---
-with tab_lib:
-    if 'assistant' in locals() and assistant:
-         render_library(assistant)
-    else:
-         st.info("⚠️ Configura tu API Key en la barra lateral para activar la Biblioteca IA.")
+
 
 # --- BATCH SYSTEM FOLDER CHECK (Prevention of "Popping" folders) ---
 if st.session_state.get('current_course_id'):

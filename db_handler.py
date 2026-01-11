@@ -1128,3 +1128,46 @@ def get_weekly_activity(user_id, course_id):
         print(f"Activity Error: {e}")
         # Return mostly empty structure
         return pd.DataFrame({"Date": dates, "Archivos": [0]*range_days, "Chats": [0]*range_days})
+
+# --- DUPLICATE DETECTION ---
+def get_duplicate_files(course_id):
+    """
+    Scans for files with duplicate names in the course.
+    Returns a list of dicts: {'name': 'foo.pdf', 'count': 2, 'ids': [1, 2], 'paths': ['Unit1/foo.pdf', 'Unit2/foo.pdf']}
+    """
+    supabase = init_supabase()
+    try:
+        # Get all files for the course (minimal fields)
+        # We need Unit Name to show path
+        res = supabase.table("library_files").select("id, name, unit_id").eq("course_id", course_id).execute()
+        files = res.data
+        if not files: return []
+        
+        # Get Units for context
+        units_res = supabase.table("units").select("id, name").eq("course_id", course_id).execute()
+        unit_map = {u['id']: u['name'] for u in units_res.data}
+        
+        # Count
+        name_map = {}
+        for f in files:
+            n = f['name']
+            if n not in name_map: name_map[n] = []
+            name_map[n].append({
+                'id': f['id'],
+                'unit': unit_map.get(f['unit_id'], "Unknown")
+            })
+            
+        # Filter Dupes
+        duplicates = []
+        for name, entries in name_map.items():
+            if len(entries) > 1:
+                duplicates.append({
+                    'name': name,
+                    'count': len(entries),
+                    'entries': entries
+                })
+        
+        return duplicates
+    except Exception as e:
+        print(f"Error checking duplicates: {e}")
+        return []
