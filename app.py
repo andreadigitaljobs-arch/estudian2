@@ -2706,13 +2706,12 @@ with st.sidebar:
         <script>
             setTimeout(function() {
                 function createArrow(id, html, bottom, onClick) {
-                    // Aggressive cleanup: Remove ALL elements with this ID (in case of dupes)
+                    // Aggressive cleanup
                     const oldElements = window.parent.document.querySelectorAll('#' + id);
                     oldElements.forEach(el => el.remove());
 
                     const btn = window.parent.document.createElement('button');
                     btn.id = id;
-                    btn.innerHTML = html;
                     Object.assign(btn.style, {
                         position: 'fixed', bottom: bottom, right: '20px',
                         width: '50px', height: '50px', borderRadius: '50%',
@@ -2735,54 +2734,63 @@ with st.sidebar:
                     window.parent.document.head.appendChild(style);
                 }
 
-                // Down arrow: scroll down
-                createArrow('scroll-down', '⬇', '20px', () => {
-                    const targets = [
-                        window.parent.document.querySelector('[data-testid="stAppViewContainer"]'),
-                        window.parent.document.querySelector('section.main'),
-                        window.parent.document.documentElement,
-                        window.parent.document.body,
-                        window.parent
+                // SMART SCROLL FINDER
+                function getScrollParent() {
+                    // 1. Try known Streamlit containers
+                    const candidates = [
+                        '[data-testid="stAppViewContainer"]',
+                        '.main',
+                        'section[data-testid="stSidebar"] + section',
+                        '#root > div > div > div'
                     ];
-                    let scrolled = false;
-                    targets.forEach(el => {
-                        if(el) {
-                            try {
-                                if (el.scrollBy) {
-                                    el.scrollBy({ top: 300, behavior: 'smooth' });
-                                    scrolled = true;
-                                } else if (el.scrollTo) {
-                                    el.scrollTo({ top: el.scrollTop + 300, behavior: 'smooth' });
-                                    scrolled = true;
-                                }
-                            } catch(e) { console.error(e); }
-                        }
-                    });
-                    if(!scrolled) alert("No scroll target found!");
+                    
+                    for (let sel of candidates) {
+                        try {
+                            const el = window.parent.document.querySelector(sel);
+                            if (el && el.scrollHeight > el.clientHeight) return el;
+                        } catch(e) {}
+                    }
+                    
+                    // 2. Fallback: Find ANY large scrollable div
+                    const allDivs = window.parent.document.getElementsByTagName('div');
+                    let best = null;
+                    let maxH = 0;
+                    
+                    for (let div of allDivs) {
+                         if (div.scrollHeight > div.clientHeight && div.clientHeight > 100) {
+                             if (div.scrollHeight > maxH) {
+                                 maxH = div.scrollHeight;
+                                 best = div;
+                             }
+                         }
+                    }
+                    if (best) return best;
+                    
+                    // 3. Last resort
+                    return window.parent.document.documentElement; 
+                }
+
+                // Down arrow
+                createArrow('scroll-down', '⬇', '20px', () => {
+                    const el = getScrollParent();
+                    if(el) {
+                        el.scrollBy({ top: 400, behavior: 'smooth' });
+                    } else {
+                        // Silent fail or small nudge to window
+                        window.parent.scrollBy(0, 400);
+                    }
                 });
                 
-                // Up arrow: scroll up
+                // Up arrow
                 createArrow('scroll-up', '⬆', '80px', () => {
-                    const targets = [
-                        window.parent.document.querySelector('[data-testid="stAppViewContainer"]'),
-                        window.parent.document.querySelector('section.main'),
-                        window.parent.document.documentElement,
-                        window.parent.document.body,
-                        window.parent
-                    ];
-                    targets.forEach(el => {
-                        if(el) {
-                            try {
-                                if (el.scrollBy) {
-                                    el.scrollBy({ top: -300, behavior: 'smooth' });
-                                } else if (el.scrollTo) {
-                                    el.scrollTo({ top: el.scrollTop - 300, behavior: 'smooth' });
-                                }
-                            } catch(e) { console.error(e); }
-                        }
-                    });
+                    const el = getScrollParent();
+                    if(el) {
+                        el.scrollBy({ top: -400, behavior: 'smooth' });
+                    } else {
+                        window.parent.scrollBy(0, -400);
+                    }
                 });
-            }, 3000);
+            }, 2500); // Slightly faster init
         </script>
         """, height=0)
 
