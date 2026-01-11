@@ -3069,7 +3069,32 @@ def render_image_card(img_path):
     else:
         st.error(f"Image not found: {img_path}")
 
-
+# --- TAB LIBRARY ---
+with tab_lib:
+    # --- DUPLICATE DETECTION BUTTON ---
+    if st.session_state.get('current_course_id'):
+        with st.expander("🔍 Buscar Archivos Duplicados", expanded=False):
+            st.caption("Encuentra archivos con el mismo nombre en diferentes carpetas")
+            if st.button("Escanear Duplicados", type="primary"):
+                from db_handler import get_duplicate_files
+                dupes = get_duplicate_files(st.session_state['current_course_id'])
+                if dupes:
+                    st.warning(f"⚠️ Se encontraron {len(dupes)} archivos duplicados:")
+                    for d in dupes:
+                        with st.container(border=True):
+                            st.markdown(f"**📄 {d['name']}** ({d['count']} copias)")
+                            for entry in d['entries']:
+                                st.caption(f"  └─ {entry['unit']}")
+                else:
+                    st.success("✅ No se encontraron duplicados")
+    
+    st.divider()
+    
+    # --- MAIN LIBRARY RENDER ---
+    if 'assistant' in locals() and assistant:
+         render_library(assistant)
+    else:
+         st.info("⚠️ Configura tu API Key en la barra lateral para activar la Biblioteca IA.")
 
 # --- BATCH SYSTEM FOLDER CHECK (Prevention of "Popping" folders) ---
 if st.session_state.get('current_course_id'):
