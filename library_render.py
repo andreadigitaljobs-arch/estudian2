@@ -425,48 +425,14 @@ def render_library_v2(assistant):
                 # Windows Explorer Style Folder Card (Light Theme)
                 count = unit_counts.get(unit['id'], 0)
                 
-                # Create clickable card
+                # Create clickable card - NO INDENTATION in HTML to avoid rendering issues
                 folder_html = f"""
-                <div style="
-                    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-                    border: 1.5px solid #e2e8f0;
-                    border-radius: 16px;
-                    padding: 28px 20px;
-                    text-align: center;
-                    cursor: pointer;
-                    transition: all 0.3s ease;
-                    min-height: 200px;
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    justify-content: center;
-                    gap: 16px;
-                    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-                " onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 6px 16px rgba(0,0,0,0.12)';" 
-                   onmouseout="this.style.transform=''; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)';">
-                    
-                    <!-- Large Folder Icon -->
-                    <div style="font-size: 80px; line-height: 1; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));">
-                        📁
-                    </div>
-                    
-                    <!-- Folder Name -->
-                    <div style="
-                        color: #1e293b;
-                        font-size: 15px;
-                        font-weight: 700;
-                        line-height: 1.4;
-                        font-family: 'Segoe UI', system-ui, sans-serif;
-                    ">
-                        {unit['name']}
-                    </div>
-                    
-                    <!-- File Count -->
-                    <div style="color: #64748b; font-size: 13px; font-weight: 500;">
-                        {count} archivos
-                    </div>
-                </div>
-                """
+<div style="background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border: 1.5px solid #e2e8f0; border-radius: 16px; padding: 28px 20px; text-align: center; cursor: pointer; transition: all 0.3s ease; min-height: 200px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 6px 16px rgba(0,0,0,0.12)';" onmouseout="this.style.transform=''; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)';">
+<div style="font-size: 80px; line-height: 1; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));">📁</div>
+<div style="color: #1e293b; font-size: 15px; font-weight: 700; line-height: 1.4; font-family: 'Segoe UI', system-ui, sans-serif;">{unit['name']}</div>
+<div style="color: #64748b; font-size: 13px; font-weight: 500;">{count} archivos</div>
+</div>
+"""
                 
                 st.markdown(folder_html, unsafe_allow_html=True)
                 
