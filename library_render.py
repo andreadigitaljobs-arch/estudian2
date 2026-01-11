@@ -272,7 +272,7 @@ def render_library_v2(assistant):
             st.session_state['lib_active_tool'] = tool_name
 
     # Toolbar Layout
-    t_c1, t_c2, t_c3, t_c4, t_c5, t_c6 = st.columns(6)
+    t_c1, t_c2, t_c3, t_c4, t_c5, t_c6, t_c7 = st.columns(7)
     
     # Define button styles based on active state
     def get_type(tool_name):
@@ -307,6 +307,11 @@ def render_library_v2(assistant):
             st.rerun()
             
     with t_c6:
+         if st.button("🧹 Duplicados", type=get_type('duplicates'), use_container_width=True, help="Buscar archivos duplicados"):
+            set_tool('duplicates')
+            st.rerun()
+
+    with t_c7:
          if st.button("📦 Backup", type=get_type('backup'), use_container_width=True, help="Descargar todo"):
             set_tool('backup')
             st.rerun()
@@ -493,6 +498,25 @@ def render_library_v2(assistant):
                              buf.seek(0)
                              st.download_button("⬇️ Descargar ZIP", buf, "backup.zip", "application/zip")
                          else: st.warning("Biblioteca vacía.")
+
+            # --- DUPLICATES TOOL ---
+            elif tool == 'duplicates':
+                st.markdown("#### 🧹 Detección de Duplicados")
+                st.caption("Encuentra y gestiona archivos con el mismo nombre en diferentes carpetas.")
+                
+                if st.button("🔍 Escanear ahora", type="primary"):
+                     from db_handler import get_duplicate_files
+                     dupes = get_duplicate_files(current_course_id)
+                     if dupes:
+                         st.warning(f"⚠️ Se encontraron {len(dupes)} casos de duplicación:")
+                         for d in dupes:
+                             with st.container(border=True):
+                                 st.markdown(f"**📄 {d['name']}** ({d['count']} copias)")
+                                 st.markdown("Ubicaciones:")
+                                 for entry in d['entries']:
+                                      st.text(f"  • {entry['unit']}")
+                     else:
+                         st.success("✅ ¡Todo limpio! No se encontraron archivos duplicados.")
 
             # Close Button footer for Panel
             st.write("")
