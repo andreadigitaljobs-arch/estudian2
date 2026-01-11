@@ -749,15 +749,18 @@ def render_library_v2(assistant):
                     
                     with r_c3:
                         # Quick Actions Popover
+                        # v115: Polished UI - Full Width, No Dividers, Clean Look
                         with st.popover("⚡"):
                             st.markdown(f"**{f['name']}**")
-                            # AI Analyze Removed - V335
+                            # Add small spacer
+                            st.write("")
                                  
-                            if st.button("🗑️ Eliminar", key=f"del_{f['id']}"):
+                            if st.button("🗑️ Eliminar", key=f"del_{f['id']}", type="primary", use_container_width=True):
                                 delete_file(f['id'])
                                 st.rerun()
                                 
-                            st.divider()
+                            # Spacer instead of Divider
+                            st.write("")
                             
                             # --- MAGIC ARROWS (RESTORED V301) ---
                             m_c1, m_c2 = st.columns(2)
@@ -770,7 +773,7 @@ def render_library_v2(assistant):
                                     move_file_down(current_unit_id, f['id'])
                                     st.rerun()
                                 
-                            st.divider()
+                            st.write("")
                             
                             # --- CLEAN COPY BUTTON (ROBUST V299) ---
                             raw_txt = f.get('content') or f.get('content_text') or ""
@@ -826,15 +829,17 @@ def render_library_v2(assistant):
                                 </script>
                                 <button id="copyBtn" onclick="copyToClipboard()" style="
                                     width: 100%;
-                                    background: white;
-                                    border: 1px solid #e2e8f0;
+                                    background: #f8fafc;
+                                    border: none;
                                     border-radius: 8px;
-                                    padding: 8px 16px;
-                                    color: #64748b;
-                                    font-size: 14px;
-                                    font-family: sans-serif;
+                                    padding: 8px 12px;
                                     cursor: pointer;
+                                    font-family: inherit;
+                                    font-size: 14px;
+                                    color: #475569;
+                                    font-weight: 500;
                                     transition: all 0.2s;
+                                    margin-top: 4px;
                                     display: flex;
                                     align-items: center;
                                     justify-content: center;
