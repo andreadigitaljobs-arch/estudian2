@@ -409,6 +409,7 @@ def delete_file(file_id):
     supabase = init_supabase()
     try:
         supabase.table("library_files").delete().eq("id", file_id).execute()
+        get_files.clear() # CACHE FIX
         return True
     except: return False
 delete_file_db = delete_file # Compatibility Alias
