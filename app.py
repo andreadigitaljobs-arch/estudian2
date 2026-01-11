@@ -2381,6 +2381,29 @@ section[data-testid="stSidebar"] div.stButton > button p::first-line {
     line-height: inherit !important;
     font-weight: inherit !important;
 }
+
+/* --- MAIN AREA BUTTON RESET (Protect Dashboard from Library CSS) --- */
+/* Reset ALL buttons in main area EXCEPT those in library tab */
+section[data-testid="stMain"] div.stButton > button {
+    height: auto !important;
+    padding: 0.6rem 2rem !important;
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: center !important;
+    white-space: normal !important;
+}
+
+/* Reset ::first-line for main area buttons */
+section[data-testid="stMain"] div.stButton > button::first-line,
+section[data-testid="stMain"] div.stButton > button > div::first-line,
+section[data-testid="stMain"] div.stButton > button p::first-line {
+    font-size: inherit !important;
+    line-height: inherit !important;
+    font-weight: inherit !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
