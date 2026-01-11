@@ -2893,9 +2893,6 @@ import pandas as pd # FIX: Missing import for charts
 
 # --- DASHBOARD TAB (HOME) ---
 with tab_home:
-    # DEBUG MARKER
-    st.info("DEBUG: ACTUALIZACIÓN RECIBIDA " + str(pd.Timestamp.now()))
-    
     # Load Stats
     current_c_id = st.session_state.get('current_course_id')
     current_c_name = st.session_state.get('current_course', 'General')
@@ -3094,24 +3091,16 @@ with tab_home:
         st.divider()
         st.subheader("⚡ Acciones Rápidas")
         
-        qa1, qa2, qa3 = st.columns(3)
+        qa1, qa2 = st.columns(2)
         
         with qa1:
-            if st.button("✨ Nuevo Chat", use_container_width=True):
-                 st.session_state['current_chat_session'] = None
-                 st.session_state['tutor_chat_history'] = []
-                 st.session_state['redirect_target_name'] = "Tutoría 1 a 1"
-                 st.session_state['force_chat_tab'] = True
-                 st.rerun()
-        
-        with qa2:
             if st.button("📤 Subir Archivo", use_container_width=True):
                  st.session_state['redirect_target_name'] = "Biblioteca"
                  st.session_state['force_chat_tab'] = True
                  st.session_state['lib_auto_open_upload'] = True
                  st.rerun()
                  
-        with qa3:
+        with qa2:
             if st.button("📝 Crear Quiz", use_container_width=True):
                  st.session_state['redirect_target_name'] = "Zona Quiz"
                  st.session_state['force_chat_tab'] = True
