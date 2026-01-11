@@ -495,17 +495,52 @@ def render_library_v2(assistant):
         f_cols = st.columns(3)
         for i, unit in enumerate(subfolders):
             with f_cols[i % 3]:
-                # Folder Card (Big Icon Style)
+                # Folder Card - Custom HTML for full styling control
                 count = unit_counts.get(unit['id'], 0)
-                # We use newlines to separate the big icon from text
-                # 📁
-                # Name (count)
-                label = f"📁\n\n{unit['name']} ({count})"
+                folder_id = f"folder_{unit['id']}"
                 
-                if st.button(label, key=f"fdir_{unit['id']}", use_container_width=True):
+                # Create custom HTML button with onclick that triggers Streamlit rerun
+                components.html(f"""
+                <div style="width: 100%; height: 220px;">
+                    <button 
+                        onclick="window.parent.postMessage({{type: 'streamlit:setComponentValue', value: '{unit['id']}'}}, '*')"
+                        style="
+                            width: 100%;
+                            height: 100%;
+                            background: rgba(248, 250, 252, 0.5);
+                            border: 1.5px solid rgba(203, 213, 225, 0.4);
+                            border-radius: 18px;
+                            color: #1e293b;
+                            cursor: pointer;
+                            transition: all 0.3s ease;
+                            display: flex;
+                            flex-direction: column;
+                            align-items: center;
+                            justify-content: center;
+                            gap: 12px;
+                            padding: 20px;
+                            font-family: 'Segoe UI', system-ui, sans-serif;
+                            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+                        "
+                        onmouseover="this.style.transform='translateY(-3px) scale(1.02)'; this.style.boxShadow='0 6px 20px rgba(0,0,0,0.1)';"
+                        onmouseout="this.style.transform=''; this.style.boxShadow='0 2px 12px rgba(0,0,0,0.06)';"
+                    >
+                        <div style="font-size: 72px; line-height: 1;">📁</div>
+                        <div style="font-size: 14px; font-weight: 600; text-align: center; line-height: 1.4;">
+                            {unit['name']}<br>({count})
+                        </div>
+                    </button>
+                </div>
+                """, height=220, key=f"fdir_{unit['id']}")
+                
+                # Check if this folder was clicked
+                clicked_id = st.session_state.get(f"fdir_{unit['id']}")
+                if clicked_id == unit['id']:
                     st.session_state['lib_current_unit_id'] = unit['id']
                     st.session_state['lib_current_unit_name'] = unit['name']
                     st.session_state['lib_breadcrumbs'].append(unit)
+                    # Clear the click state
+                    st.session_state[f"fdir_{unit['id']}"] = None
                     st.rerun()
 
     # B. Files
