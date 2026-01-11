@@ -1025,7 +1025,38 @@ def render_library_v2(assistant):
                         
                         components.html(f"""
                         <html>
-                        <body style="margin:0; padding:0; display:flex; justify-content:center;">
+                        <head>
+                            <style>
+                                body {{
+                                    margin: 0;
+                                    padding: 0;
+                                    display: flex;
+                                    justify-content: center;
+                                }}
+                                #copyBtn {{
+                                    width: 100%;
+                                    background: white;
+                                    border: 1px solid #e2e8f0;
+                                    border-radius: 8px;
+                                    padding: 8px 16px;
+                                    color: #64748b;
+                                    font-size: 14px;
+                                    font-family: sans-serif;
+                                    cursor: pointer;
+                                    transition: all 0.2s;
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                    gap: 8px;
+                                }}
+                                #copyBtn:hover {{
+                                    background: #f8fafc;
+                                    color: #334155;
+                                    border-color: #cbd5e1;
+                                }}
+                            </style>
+                        </head>
+                        <body>
                             <script>
                             function copyToClipboard() {{
                                 const text = {safe_txt};
@@ -1068,22 +1099,7 @@ def render_library_v2(assistant):
                                 }}
                             }}
                             </script>
-                            <button id="copyBtn" onclick="copyToClipboard()" style="
-                                width: 100%;
-                                background: white;
-                                border: 1px solid #e2e8f0;
-                                border-radius: 8px;
-                                padding: 8px 16px;
-                                color: #64748b;
-                                font-size: 14px;
-                                font-family: sans-serif;
-                                cursor: pointer;
-                                transition: all 0.2s;
-                                display: flex;
-                                align-items: center;
-                                justify-content: center;
-                                gap: 8px;
-                            ">
+                            <button id="copyBtn" onclick="copyToClipboard()">
                                 📋 Copiar Texto
                             </button>
                         </body>
