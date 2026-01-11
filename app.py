@@ -2721,11 +2721,10 @@ with st.sidebar:
                     });
                     btn.onmouseover = () => btn.style.transform = 'scale(1.1)';
                     btn.onmouseout = () => btn.style.transform = 'scale(1)';
-                    btn.onclick = onClick; // Use .onclick for direct assignment in parent
+                    btn.onclick = onClick; 
                     window.parent.document.body.appendChild(btn);
                 }
                 
-                // Fade‑in style
                 if (!window.parent.document.getElementById('arrow-fade-style')) {
                     const style = window.parent.document.createElement('style');
                     style.id = 'arrow-fade-style';
@@ -2733,51 +2732,48 @@ with st.sidebar:
                     window.parent.document.head.appendChild(style);
                 }
 
-                // Helper to find the main scrollable container in Streamlit
                 function getScrollContainer() {
                     return window.parent.document.querySelector('[data-testid="stAppViewContainer"]') || 
                            window.parent.document.querySelector('section.main') ||
                            window.parent.document.documentElement;
                 }
 
-                // Down arrow: scroll down
                 createArrow('scroll-down', '⬇', '20px', () => {
-                    const targets = [
-                        window.parent.document.querySelector('[data-testid="stAppViewContainer"]'),
-                        window.parent.document.querySelector('section.main'),
-                        window.parent.document.documentElement,
-                        window.parent.document.body,
-                        window.parent
-                    ];
-                    targets.forEach(el => {
-                        if(el && el.scrollBy) {
-                            try { el.scrollBy({ top: window.parent.innerHeight, behavior: 'smooth' }); } catch(e){}
-                        } else if(el && el.scrollTo) {
-                             try { el.scrollTo({ top: el.scrollTop + window.parent.innerHeight, behavior: 'smooth' }); } catch(e){}
+                    const el = getScrollContainer();
+                    if(el) {
+                        try { 
+                            el.scrollBy({ top: 500, behavior: 'smooth' }); 
+                        } catch(e) { 
+                            alert('Error scroll: ' + e.message); 
                         }
-                    });
+                    } else {
+                        alert('Error: No scroll container found');
+                    }
                 });
                 
-                // Up arrow: scroll up
                 createArrow('scroll-up', '⬆', '80px', () => {
-                    const targets = [
-                        window.parent.document.querySelector('[data-testid="stAppViewContainer"]'),
-                        window.parent.document.querySelector('section.main'),
-                        window.parent.document.documentElement,
-                        window.parent.document.body,
-                        window.parent
-                    ];
-                    targets.forEach(el => {
-                        if(el && el.scrollBy) {
-                            try { el.scrollBy({ top: -window.parent.innerHeight, behavior: 'smooth' }); } catch(e){}
-                        } else if(el && el.scrollTo) {
-                             try { el.scrollTo({ top: el.scrollTop - window.parent.innerHeight, behavior: 'smooth' }); } catch(e){}
+                    const el = getScrollContainer();
+                    if(el) {
+                        try {
+                            el.scrollTop = 0; 
+                        } catch(e) {
+                            alert('Error scroll up: ' + e.message);
                         }
-                    });
+                    } else {
+                         alert('Error: No scroll container found (up)');
+                    }
                 });
             }, 3000);
         </script>
         """, height=0)
+
+    # --- DUAL NAVIGATION ARROWS ---
+    inject_navigation_arrows()
+    
+    # Debug Version Indicator
+    from datetime import datetime
+    st.sidebar.caption(f"Versión: {datetime.now().strftime('%H:%M:%S')}")
+
 
 
 
