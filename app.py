@@ -1020,7 +1020,14 @@ st.markdown(THEME_CSS + """
 .stTabs ~ hr, .stTabs + .element-container hr {
     display: none !important;
 }
-/* Ensure the Tab Border itself is visible (Line 1) */
+
+/* User identified specific unwanted line: tab-border */
+div[data-baseweb="tab-border"] {
+    display: none !important;
+    visibility: hidden !important;
+}
+
+/* Ensure the Tab Border itself is visible (Line 1 - The main container border) */
 .stTabs [data-baseweb="tab-list"] {
     border-bottom: 2px solid #F0F0F0 !important;
 }
