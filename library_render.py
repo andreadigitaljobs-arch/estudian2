@@ -504,19 +504,44 @@ def render_library_v2(assistant):
                 st.markdown("#### 🧹 Detección de Duplicados")
                 st.caption("Encuentra y gestiona archivos con el mismo nombre en diferentes carpetas.")
                 
-                if st.button("🔍 Escanear ahora", type="primary"):
+                if st.button("🔍 Escanear toda la biblioteca", type="primary", help="Busca en TODAS las carpetas del diplomado actual"):
                      from db_handler import get_duplicate_files
-                     dupes = get_duplicate_files(current_course_id)
+                     # Clear previous state
+                     if 'dupes_results' in st.session_state: del st.session_state['dupes_results']
+                     
+                     with st.spinner("Analizando..."):
+                         dupes = get_duplicate_files(current_course_id)
+                         st.session_state['dupes_results'] = dupes
+                
+                # Render Results from Session State (to persist after delete actions re-run)
+                if 'dupes_results' in st.session_state:
+                     dupes = st.session_state['dupes_results']
                      if dupes:
-                         st.warning(f"⚠️ Se encontraron {len(dupes)} casos de duplicación:")
+                         st.warning(f"⚠️ Se encontraron {len(dupes)} grupos de archivos duplicados:")
+                         
                          for d in dupes:
                              with st.container(border=True):
-                                 st.markdown(f"**📄 {d['name']}** ({d['count']} copias)")
-                                 st.markdown("Ubicaciones:")
+                                 st.write(f"**📄 {d['name']}**")
+                                 st.caption(f"Archivos idénticos detectados: {d['count']}")
+                                 
                                  for entry in d['entries']:
-                                      st.text(f"  • {entry['unit']}")
+                                      d_c1, d_c2 = st.columns([0.85, 0.15])
+                                      with d_c1:
+                                          st.markdown(f"📂 En: **{entry['unit']}**")
+                                      with d_c2:
+                                          if st.button("🗑️", key=f"del_dupe_{entry['id']}", help="Eliminar esta copia", use_container_width=True):
+                                              delete_file(entry['id'])
+                                              st.success("Eliminado")
+                                              time.sleep(0.5)
+                                              # Remove from local state to update UI immediately
+                                              d['entries'].remove(entry)
+                                              d['count'] -= 1
+                                              if d['count'] <= 1: 
+                                                  # No longer a duplicate pair if only 1 left
+                                                  dupes.remove(d) 
+                                              st.rerun()
                      else:
-                         st.success("✅ ¡Todo limpio! No se encontraron archivos duplicados.")
+                         st.success("✅ ¡Excelente! No se encontraron duplicados en ninguna carpeta del curso.")
 
             # Close Button footer for Panel
             st.write("")

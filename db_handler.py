@@ -1150,11 +1150,13 @@ def get_duplicate_files(course_id):
         # Count
         name_map = {}
         for f in files:
-            n = f['name']
+            # Normalize name: strip whitespace
+            n = f['name'].strip()
             if n not in name_map: name_map[n] = []
             name_map[n].append({
                 'id': f['id'],
-                'unit': unit_map.get(f['unit_id'], "Unknown")
+                'unit': unit_map.get(f['unit_id'], "Unknown"),
+                'created_at': f.get('created_at', '') # Useful for deciding which to keep
             })
             
         # Filter Dupes
