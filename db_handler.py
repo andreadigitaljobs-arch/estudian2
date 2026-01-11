@@ -1145,58 +1145,72 @@ def get_file_content(file_id):
 # --- DUPLICATE DETECTION ---
 def get_duplicate_files(course_id):
     """
-    Scans for files with duplicate names in the course.
+    Scans for files with duplicate names in the course (V2 Robust).
     Returns a list of dicts: {'name': 'foo.pdf', 'count': 2, 'ids': [1, 2], 'paths': ['Unit1/foo.pdf', 'Unit2/foo.pdf']}
     """
     supabase = init_supabase()
     try:
-        # Get Units for context first (linking table)
-        # 1. Get all units for this course
-        units_res = supabase.table("units").select("id, name").eq("course_id", course_id).limit(1000).execute()
+        # 1. Get ALL units for this course
+        units_res = supabase.table("units").select("id, name").eq("course_id", course_id).execute()
         units_data = units_res.data
         if not units_data: return []
         
         unit_map = {u['id']: u['name'] for u in units_data}
         unit_ids = list(unit_map.keys())
         
-        # 2. Get files that belong to these units
-        # Supabase limit for 'in' filter is confusing, but we can do it.
-        # If too many units, might need chunks. For now assume < 100 units.
-        # Better: use the 'unit_id' filter.
+        # 2. Get ALL files (Robust Fetch)
+        # Fetching strictly ID, NAME, UNIT_ID to minimize payload
+        # Using a higher limit to ensure we catch everything
+        files = []
         
-        res = supabase.table("library_files").select("id, name, unit_id").in_("unit_id", unit_ids).limit(10000).execute()
-        files = res.data
-        if not files: return []
-        
-        # Count
+        # Chunking if necessary (though 10000 is plenty for now)
+        res = supabase.table("library_files") \
+            .select("id, name, unit_id, created_at") \
+            .in_("unit_id", unit_ids) \
+            .limit(10000) \
+            .execute()
+            
+        if res.data:
+            files = res.data
+        else:
+            return []
+            
+        # 3. Group by Normalized Name
         name_map = {}
         for f in files:
-            # Normalize name: strip whitespace AND lowercase for robust check
-            n = f['name'].strip().lower()
+            # Robust Normalization: Lowercase + Strip + Remove double spaces
+            raw_name = f['name']
+            if not raw_name: continue
             
-            # Store ORIGINAL name for display if first time, but use normalized key
-            # Actually, we need to group them.
-            if n not in name_map: name_map[n] = []
-            name_map[n].append({
+            norm_name = " ".join(raw_name.strip().lower().split()) 
+            
+            if norm_name not in name_map: 
+                name_map[norm_name] = []
+                
+            name_map[norm_name].append({
                 'id': f['id'],
-                'original_name': f['name'], # Keep original for display
+                'original_name': raw_name, 
                 'unit': unit_map.get(f['unit_id'], "Unknown"),
-                'created_at': f.get('created_at', '') 
+                'created_at': f.get('created_at', '')
             })
             
-        # Filter Dupes
+        # 4. Filter for Duplicates (>1 entry)
         duplicates = []
-        for norm_name, entries in name_map.items():
+        for norm_val, entries in name_map.items():
             if len(entries) > 1:
-                # Use the first found original name as the main label, or the normalized one
+                # Use the most common original casing or just the first one
                 display_name = entries[0]['original_name']
+                
                 duplicates.append({
                     'name': display_name,
                     'count': len(entries),
                     'entries': entries
                 })
         
+        # Sort by count descending (most dupes first)
+        duplicates.sort(key=lambda x: x['count'], reverse=True)
+        
         return duplicates
     except Exception as e:
-        print(f"Error checking duplicates: {e}")
+        print(f"Error checking duplicates V2: {e}")
         return []
