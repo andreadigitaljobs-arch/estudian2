@@ -91,73 +91,26 @@ def render_library_v2(assistant):
     Refactored V270: Minimalist Toolbar UI
     """
     
-    # --- AGGRESSIVE CSS for Library Folders (Tertiary Buttons) ---
+    # --- CSS for Windows Explorer Style Folders ---
     st.markdown("""
     <style>
-    /* Target library folder buttons by key pattern */
+    /* Hide the invisible overlay buttons */
     button[data-testid*="-fdir_"] {
-        /* FORCE transparent background */
-        background: rgba(248, 250, 252, 0.5) !important;
-        background-color: rgba(248, 250, 252, 0.5) !important;
-        background-image: none !important;
-        
-        /* Border and shape */
-        border: 1.5px solid rgba(203, 213, 225, 0.4) !important;
-        border-radius: 18px !important;
-        
-        /* Layout */
-        display: block !important;
-        padding: 24px 12px !important;
+        opacity: 0 !important;
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
         width: 100% !important;
-        min-height: 200px !important;
-        height: auto !important;
-        
-        /* Typography */
-        color: #1e293b !important;
-        font-family: 'Segoe UI', system-ui, sans-serif !important;
-        font-size: 14px !important;
-        font-weight: 700 !important;
-        line-height: 1.5 !important;
-        text-align: center !important;
-        white-space: pre-wrap !important;
-        
-        /* Effects */
-        box-shadow: 0 2px 12px rgba(0,0,0,0.06) !important;
-        transition: all 0.3s ease !important;
+        height: 100% !important;
+        z-index: 10 !important;
+        cursor: pointer !important;
+        border: none !important;
+        background: transparent !important;
     }
     
-    /* Remove any Streamlit default styling */
-    button[data-testid*="-fdir_"]:hover,
-    button[data-testid*="-fdir_"]:focus,
-    button[data-testid*="-fdir_"]:active {
-        background: rgba(248, 250, 252, 0.7) !important;
-        background-color: rgba(248, 250, 252, 0.7) !important;
-        background-image: none !important;
-        border-color: rgba(203, 213, 225, 0.6) !important;
-        transform: translateY(-3px) scale(1.02) !important;
-        box-shadow: 0 6px 20px rgba(0,0,0,0.1) !important;
-    }
-    
-    /* Big folder icon */
-    button[data-testid*="-fdir_"]::first-line,
-    button[data-testid*="-fdir_"] > div::first-line,
-    button[data-testid*="-fdir_"] p::first-line {
-        font-size: 72px !important;
-        line-height: 1 !important;
-        font-weight: 400 !important;
-    }
-    
-    /* Color filters by column */
-    div[data-testid="column"]:nth-of-type(3n+1) button[data-testid*="-fdir_"] {
-        filter: hue-rotate(75deg) saturate(1.6) brightness(1.15) !important;
-    }
-    
-    div[data-testid="column"]:nth-of-type(3n+2) button[data-testid*="-fdir_"] {
-        filter: hue-rotate(290deg) saturate(1.4) brightness(1.1) !important;
-    }
-    
-    div[data-testid="column"]:nth-of-type(3n) button[data-testid*="-fdir_"] {
-        filter: hue-rotate(75deg) saturate(1.6) brightness(1.15) !important;
+    /* Make folder cards clickable by positioning button over them */
+    div[data-testid="column"] {
+        position: relative !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -469,12 +422,52 @@ def render_library_v2(assistant):
         f_cols = st.columns(3)
         for i, unit in enumerate(subfolders):
             with f_cols[i % 3]:
-                # Folder Card (Big Icon Style)
+                # Windows Explorer Style Folder Card
                 count = unit_counts.get(unit['id'], 0)
-                label = f"📁\n\n{unit['name']} ({count})"
                 
-                # Use tertiary button (no default styling) so CSS can override
-                if st.button(label, key=f"fdir_{unit['id']}", use_container_width=True, type="tertiary"):
+                # Create clickable card using st.container and st.button hidden approach
+                folder_html = f"""
+                <div style="
+                    background: linear-gradient(180deg, #2a2a2a 0%, #1a1a1a 100%);
+                    border-radius: 12px;
+                    padding: 24px 16px;
+                    text-align: center;
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                    min-height: 180px;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 16px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                " onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 8px 20px rgba(0,0,0,0.4)';" 
+                   onmouseout="this.style.transform=''; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.3)';">
+                    
+                    <!-- Large Folder Icon -->
+                    <div style="font-size: 80px; line-height: 1; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
+                        📁
+                    </div>
+                    
+                    <!-- Folder Name -->
+                    <div style="
+                        color: #ffffff;
+                        font-size: 14px;
+                        font-weight: 600;
+                        line-height: 1.4;
+                        font-family: 'Segoe UI', system-ui, sans-serif;
+                        text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+                    ">
+                        {unit['name']}<br>
+                        <span style="color: #b0b0b0; font-size: 12px;">({count} archivos)</span>
+                    </div>
+                </div>
+                """
+                
+                st.markdown(folder_html, unsafe_allow_html=True)
+                
+                # Invisible button overlay for click detection
+                if st.button(f"Open {unit['name']}", key=f"fdir_{unit['id']}", label_visibility="collapsed", use_container_width=True):
                     st.session_state['lib_current_unit_id'] = unit['id']
                     st.session_state['lib_current_unit_name'] = unit['name']
                     st.session_state['lib_breadcrumbs'].append(unit)
