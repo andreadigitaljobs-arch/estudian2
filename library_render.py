@@ -867,3 +867,4 @@ def render_library(assistant):
                             # Refresh to show new files in background? Not strictly necessary if we rely on Toast, but user might want to see.
                             # We won't rerun broadly to avoid resetting chat, relying on the 'success' messages.
         
+ 
