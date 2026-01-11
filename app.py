@@ -3376,7 +3376,7 @@ with tab1:
         if st.session_state['last_transcribed_file']:
             # V339: Layout Fix - Aesthetic Spacing
             # More gap ("large"), slightly different ratio to push button right but keeping it accessible
-            c_ban, c_btn = st.columns([0.75, 0.25], gap="large", vertical_alignment="center")
+            c_ban, c_btn = st.columns([0.70, 0.30], gap="large", vertical_alignment="center")
 
             with c_ban:
                 st.markdown(f"""
