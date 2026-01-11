@@ -97,72 +97,96 @@ def render_library_v2(assistant):
     /* Target ONLY buttons with keys starting with "fdir_" (library folders) */
     /* Streamlit generates data-testid like "stButton-fdir_123" for these buttons */
     
-    /* 1. Base Button Style (Transparent & Clean) - LIBRARY FOLDERS ONLY */
-    button[data-testid*="-fdir_"] {
-        background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05)) !important;
-        backdrop-filter: blur(10px) !important;
-        border: 1px solid rgba(203, 213, 225, 0.3) !important;
-        border-radius: 16px !important;
+    /* CRITICAL: Override ALL Streamlit default button styles */
+    button[data-testid*="-fdir_"],
+    button[data-testid*="-fdir_"]:hover,
+    button[data-testid*="-fdir_"]:active,
+    button[data-testid*="-fdir_"]:focus {
+        /* Force remove purple background */
+        background-color: transparent !important;
+        background-image: none !important;
+        background: rgba(248, 250, 252, 0.4) !important;
+        
+        /* Subtle border */
+        border: 1.5px solid rgba(203, 213, 225, 0.4) !important;
+        border-radius: 18px !important;
+        
+        /* Text color */
         color: #1e293b !important;
         
+        /* Layout */
         display: block !important;
-        
-        padding: 20px 10px !important;
+        padding: 24px 12px !important;
         width: 100% !important;
-        height: 200px !important;
+        min-height: 200px !important;
+        height: auto !important;
         
-        box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
-        font-family: 'Segoe UI', system-ui, sans-serif !important;
-        font-size: 15px !important;
+        /* Visual effects */
+        box-shadow: 0 2px 12px rgba(0,0,0,0.06) !important;
+        backdrop-filter: blur(8px) !important;
+        
+        /* Typography */
+        font-family: 'Segoe UI', -apple-system, system-ui, sans-serif !important;
+        font-size: 14px !important;
         font-weight: 600 !important;
-        line-height: 1.4 !important;
-        white-space: pre-wrap !important;
-        overflow: visible !important;
-        transition: all 0.25s ease !important;
+        line-height: 1.5 !important;
         text-align: center !important;
+        white-space: pre-wrap !important;
+        
+        /* Animation */
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        
+        /* Remove any default Streamlit styling */
+        outline: none !important;
     }
     
-    /* Ensure inner containers allow line breaks and block display */
+    /* Ensure inner containers are properly styled */
     button[data-testid*="-fdir_"] > div,
     button[data-testid*="-fdir_"] p {
         display: block !important;
         white-space: pre-wrap !important;
         text-align: center !important;
+        background: transparent !important;
     }
     
-    /* 2. BIG ICON MAGIC - Make folder emoji huge */
+    /* BIG FOLDER ICON - Target first line (the emoji) */
     button[data-testid*="-fdir_"]::first-line,
     button[data-testid*="-fdir_"] > div::first-line,
     button[data-testid*="-fdir_"] p::first-line {
-        font-size: 80px !important;
-        line-height: 1.1 !important;
+        font-size: 72px !important;
+        line-height: 1 !important;
         font-weight: 400 !important;
         display: block !important;
     }
 
-    /* 3. Hover Effect (Subtle lift) */
+    /* Hover Effect */
     button[data-testid*="-fdir_"]:hover {
-        background: linear-gradient(135deg, rgba(255,255,255,0.2), rgba(255,255,255,0.1)) !important;
-        border-color: rgba(203, 213, 225, 0.5) !important;
-        transform: translateY(-4px) !important;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.12) !important;
+        background: rgba(248, 250, 252, 0.7) !important;
+        border-color: rgba(203, 213, 225, 0.6) !important;
+        transform: translateY(-3px) scale(1.02) !important;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.1) !important;
     }
     
-    /* 4. COLOR FILTERS: Green & Pink Alternating (matching reference image) */
+    /* Active/Click state */
+    button[data-testid*="-fdir_"]:active {
+        transform: translateY(-1px) scale(0.98) !important;
+    }
     
-    /* Column 1 (Odd - 1st, 4th, 7th...): Bright Green */
+    /* COLOR FILTERS: Green & Pink Alternating */
+    
+    /* Column 1, 4, 7... (Green) */
     div[data-testid="column"]:nth-of-type(3n+1) button[data-testid*="-fdir_"] {
-        filter: hue-rotate(75deg) saturate(1.5) brightness(1.1);
+        filter: hue-rotate(75deg) saturate(1.6) brightness(1.15) !important;
     }
     
-    /* Column 2 (Even - 2nd, 5th, 8th...): Pink/Magenta */
+    /* Column 2, 5, 8... (Pink/Magenta) */
     div[data-testid="column"]:nth-of-type(3n+2) button[data-testid*="-fdir_"] {
-        filter: hue-rotate(290deg) saturate(1.3) brightness(1.05);
+        filter: hue-rotate(290deg) saturate(1.4) brightness(1.1) !important;
     }
     
-    /* Column 3 (3rd, 6th, 9th...): Bright Green (same as column 1) */
+    /* Column 3, 6, 9... (Green) */
     div[data-testid="column"]:nth-of-type(3n) button[data-testid*="-fdir_"] {
-        filter: hue-rotate(75deg) saturate(1.5) brightness(1.1);
+        filter: hue-rotate(75deg) saturate(1.6) brightness(1.15) !important;
     }
     </style>
     """, unsafe_allow_html=True)
