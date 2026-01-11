@@ -138,11 +138,16 @@ def render_library_v2(assistant):
     }
     
     /* 4. COLOR HACK: Green & Purple Alternating */
-    /* DEFAULT (Odd Columns): Greenish/Yellow (Natural Folder Emoji) */
-    /* Target EVEN Columns: Purple Tone */
     
+    /* EVEN Columns (2nd): Pink/Purple */
     div[data-testid="column"]:nth-of-type(even) div.stButton > button {
-        filter: hue-rotate(260deg) saturate(1.2); /* Turn Yellow -> Purple */
+        filter: hue-rotate(260deg) saturate(1.2); 
+    }
+    
+    /* ODD Columns (1st & 3rd): Bright Green */
+    /* Default is Yellowish. We rotate ~80deg to get Green. */
+    div[data-testid="column"]:nth-of-type(odd) div.stButton > button {
+        filter: hue-rotate(80deg) saturate(1.4); 
     }
     
     /* Fix Text Color Shift for Purple Buttons */
