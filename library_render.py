@@ -91,77 +91,8 @@ def render_library_v2(assistant):
     Refactored V270: Minimalist Toolbar UI
     """
     
-    # --- CSS for Windows-Style Explorer (Transparent Buttons, Big Icons) ---
-    st.markdown("""
-    <style>
-    /* --- V334 RESTORED: WINDOWS STYLE FOLDERS (SCOPED TO MAIN) --- */
-    
-    /* 1. Base Button Style (Glassy & Bold) - MAIN DATA AREA ONLY */
-    section[data-testid="stMain"] div.stButton > button {
-        background-color: transparent !important;
-        border: 1px solid transparent !important;
-        border-radius: 12px !important;
-        color: #1e293b !important; /* Dark Slate for Text */
-        
-        display: block !important; /* REQUIRED for ::first-line icon sizing */
-        
-        padding: 0px !important;
-        width: 100% !important;
-        height: 180px !important; /* Taller for Big Icon */
-        
-        box-shadow: none !important;
-        font-family: 'Segoe UI', system-ui, sans-serif !important;
-        font-size: 16px !important;
-        font-weight: 700 !important; /* BOLD TITLES */
-        line-height: normal !important;
-        white-space: pre-wrap !important; /* Allow Icon break */
-        overflow: visible !important;
-        transition: all 0.2s ease !important;
-    }
-    
-    /* Ensure inner containers allow line breaks and block display */
-    section[data-testid="stMain"] div.stButton > button > div,
-    section[data-testid="stMain"] div.stButton > button p {
-        display: block !important;
-        white-space: pre-wrap !important;
-    }
-    
-    /* 2. BIG ICON MAGIC - Multi-Targeting for Robustness */
-    section[data-testid="stMain"] div.stButton > button::first-line,
-    section[data-testid="stMain"] div.stButton > button > div::first-line,
-    section[data-testid="stMain"] div.stButton > button p::first-line {
-        font-size: 90px !important; /* HUGE ICONS */
-        line-height: 1.2 !important;
-        font-weight: 400 !important; /* Emoji doesn't need bold */
-    }
-
-    /* 3. Hover Effect (Subtle Windows Highlight) */
-    section[data-testid="stMain"] div.stButton > button:hover {
-        background-color: #f1f5f9 !important; /* Light Slate 100 */
-        border-color: #cbd5e1 !important; /* Slate 300 */
-        transform: translateY(-2px);
-    }
-    
-    /* 4. COLOR HACK: Green & Purple Alternating */
-    
-    /* EVEN Columns (2nd): Pink/Purple */
-    section[data-testid="stMain"] div[data-testid="column"]:nth-of-type(even) div.stButton > button {
-        filter: hue-rotate(260deg) saturate(1.2); 
-    }
-    
-    /* ODD Columns (1st & 3rd): Bright Green */
-    /* Default is Yellowish. We rotate ~80deg to get Green. */
-    section[data-testid="stMain"] div[data-testid="column"]:nth-of-type(odd) div.stButton > button {
-        filter: hue-rotate(80deg) saturate(1.4); 
-    }
-    
-    /* Fix Text Color Shift for Purple Buttons */
-    /* Since we rotate the whole button, text color flips too. 
-       Compensate by forcing text to be dark grey/black which rotates to... dark blueish. 
-       Actually, standard dark grey (#1e293b) rotated 260deg stays dark. It's fine. */
-       
-    </style>
-    """, unsafe_allow_html=True)
+    # CSS removed - was causing global button pollution
+    # Library will use default Streamlit button styling for now
 
     current_course_id = st.session_state.get('current_course_id')
     
