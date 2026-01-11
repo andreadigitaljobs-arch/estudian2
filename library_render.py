@@ -429,28 +429,30 @@ def render_library_v2(assistant):
                 unit_id = unit['id']
                 unit_name = unit['name']
                 
-                # Use components.html for clickable functionality
+                # Use st.markdown with anchor tag for clickable functionality (avoids iframe issues and key error)
                 html_content = f"""
-                <div onclick="window.parent.postMessage({{type: 'streamlit:setComponentValue', value: '{unit_id}'}}, '*')" 
-                     style="background: transparent; border: none; padding: 16px 8px; text-align: center; cursor: pointer; transition: all 0.2s ease; min-height: 180px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;" 
-                     onmouseover="this.style.backgroundColor='rgba(0,0,0,0.04)'; this.style.borderRadius='12px';" 
-                     onmouseout="this.style.backgroundColor='transparent'; this.style.borderRadius='0px';">
-                    <div style="font-size: 80px; line-height: 1;">📁</div>
-                    <div style="color: #1e293b; font-size: 14px; font-weight: 700; line-height: 1.3; font-family: 'Segoe UI', system-ui, sans-serif; max-width: 180px; word-wrap: break-word;">{unit_name}</div>
-                    <div style="color: #64748b; font-size: 12px; font-weight: 500;">{count} archivos</div>
-                </div>
+                <a href="?folder_id={unit_id}" target="_self" style="text-decoration: none; color: inherit; display: block;">
+                    <div style="background: transparent; border: none; padding: 16px 8px; text-align: center; cursor: pointer; transition: all 0.2s ease; min-height: 180px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;" 
+                         onmouseover="this.style.backgroundColor='rgba(0,0,0,0.04)'; this.style.borderRadius='12px';" 
+                         onmouseout="this.style.backgroundColor='transparent'; this.style.borderRadius='0px';">
+                        <div style="font-size: 80px; line-height: 1;">📁</div>
+                        <div style="color: #1e293b; font-size: 14px; font-weight: 700; line-height: 1.3; font-family: 'Segoe UI', system-ui, sans-serif; max-width: 180px; word-wrap: break-word;">{unit_name}</div>
+                        <div style="color: #64748b; font-size: 12px; font-weight: 500;">{count} archivos</div>
+                    </div>
+                </a>
                 """
-                components.html(html_content, height=200, key=f"fdir_{unit_id}")
+                st.markdown(html_content, unsafe_allow_html=True)
                 
-                # Check if this folder was clicked
-                clicked_value = st.session_state.get(f"fdir_{unit_id}")
-                if clicked_value == str(unit_id):
-                    st.session_state['lib_current_unit_id'] = unit_id
-                    st.session_state['lib_current_unit_name'] = unit_name
-                    st.session_state['lib_breadcrumbs'].append(unit)
-                    # Clear the value to prevent re-triggering
-                    st.session_state[f"fdir_{unit_id}"] = None
-                    st.rerun()
+                # Check for navigation via query params
+                if "folder_id" in st.query_params:
+                    qp_folder_id = st.query_params["folder_id"]
+                    if qp_folder_id == str(unit_id):
+                        st.session_state['lib_current_unit_id'] = unit_id
+                        st.session_state['lib_current_unit_name'] = unit_name
+                        st.session_state['lib_breadcrumbs'].append(unit)
+                        # Clear params and rerun
+                        st.query_params.clear()
+                        st.rerun()
 
     # B. Files
     if current_unit_id:
