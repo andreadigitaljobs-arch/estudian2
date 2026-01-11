@@ -2276,10 +2276,11 @@ with st.sidebar:
     # st.caption("🚀 v3.3 (API Fix)") # Removed per user request
     # --- 1. LOGO & USER ---
     # Left Aligned ("RAS con el resto")
-    @st.cache_data
+    # @st.cache_data # DISABLED: Debugging blank image
     def load_logo_cached():
-        if os.path.exists("assets/logo_sidebar.png"):
-            return Image.open("assets/logo_sidebar.png")
+        path = os.path.join(os.getcwd(), "assets", "logo_sidebar.png")
+        if os.path.exists(path):
+            return Image.open(path)
         return None
 
     logo_img = load_logo_cached()

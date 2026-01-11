@@ -272,7 +272,7 @@ def render_library_v2(assistant):
             st.session_state['lib_active_tool'] = tool_name
 
     # Toolbar Layout
-    st.caption("--- Menú de Biblioteca ---")
+    # st.caption("--- Menú de Biblioteca ---") # REMOVED: Visual clean up
     t_c1, t_c2, t_c3, t_c4, t_c5, t_c6, t_c7 = st.columns(7)
     
     # Define button styles based on active state
