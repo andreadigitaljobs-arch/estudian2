@@ -4509,4 +4509,4 @@ with tab_quiz:
 
 # --- LIBRARY TAB ---
 with tab_lib:
-    render_library(assistant)
+    render_library(assistant, key_suffix="main_tab_v3")
