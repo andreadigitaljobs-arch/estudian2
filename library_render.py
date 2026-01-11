@@ -140,7 +140,8 @@ def render_library_v2(assistant):
             st.session_state['lib_active_tool'] = tool_name
 
     # Toolbar Layout
-    t_c1, t_c2, t_c3, t_c4, t_c5, t_c6 = st.columns(6)
+    # v113: Added Cleaner Tool -> 7 cols
+    t_c1, t_c2, t_c3, t_c4, t_c5, t_c6, t_c7 = st.columns([0.15, 0.14, 0.14, 0.14, 0.14, 0.14, 0.15])
     
     # Define button styles based on active state
     def get_type(tool_name):
@@ -173,8 +174,14 @@ def render_library_v2(assistant):
         if st.button("🔍 Buscar", type=get_type('search'), use_container_width=True, help="Buscar en toda la biblioteca"):
             set_tool('search')
             st.rerun()
-            
+
     with t_c6:
+        # CLEANER BUTTON
+        if st.button("🧹 Limpieza", type=get_type('cleaner'), use_container_width=True, help="Encontrar y eliminar duplicados"):
+            set_tool('cleaner')
+            st.rerun()
+
+    with t_c7:
          if st.button("📦 Backup", type=get_type('backup'), use_container_width=True, help="Descargar todo"):
             set_tool('backup')
             st.rerun()
@@ -361,6 +368,68 @@ def render_library_v2(assistant):
                              buf.seek(0)
                              st.download_button("⬇️ Descargar ZIP", buf, "backup.zip", "application/zip")
                          else: st.warning("Biblioteca vacía.")
+
+            # --- CLEANER TOOL (v113) ---
+            elif tool == 'cleaner':
+                st.markdown("#### 🧹 Limpieza de Duplicados")
+                from db_handler import get_duplicate_candidates, delete_file_db
+                
+                cands = get_duplicate_candidates(current_course_id)
+                if not cands:
+                    st.success("✅ ¡Todo limpio! No se encontraron archivos duplicados.")
+                else:
+                    st.info(f"Se encontraron duplicados en {len(cands)} grupos.")
+                    
+                    for name, files in cands.items():
+                        with st.expander(f"📄 {name} ({len(files)} copias)", expanded=True):
+                            # Sort by date (newest first for display)
+                            # Assuming files have 'created_at' but if not, use ID or assume DB order
+                            # DB 'get_course_files' orders by created_at desc.
+                            
+                            cols = st.columns([0.6, 0.2, 0.2])
+                            cols[0].caption("Ubicación & Fecha")
+                            cols[1].caption("Acción")
+                            
+                            for f in files:
+                                c1, c2, c3 = st.columns([0.6, 0.2, 0.2])
+                                with c1:
+                                    st.markdown(f"**📂 {f['unit_name']}**")
+                                    # Show date if available (format it)
+                                    if f.get('created_at'):
+                                        dt = f['created_at'].split('T')[0]
+                                        st.caption(f"Creado: {dt}")
+                                    else:
+                                        st.caption("Fecha desconocida")
+                                
+                                with c2:
+                                    if st.button("🗑️ Borrar", key=f"del_{f['id']}", type="secondary"):
+                                        if delete_file_db(f['id']):
+                                            st.toast(f"Archivo eliminado: {name}")
+                                            st.rerun()
+                                            
+                                with c3:
+                                    # Preview button? (Simple text)
+                                    pass
+
+                            st.divider()
+                            # Smart Actions
+                            sc1, sc2 = st.columns(2)
+                            with sc1:
+                                if st.button("✨ Mantener MÁS NUEVO", key=f"k_new_{name}", help="Borra todos menos el más reciente"):
+                                    # files[0] is newest because of DB order
+                                    to_delete = files[1:]
+                                    for d in to_delete:
+                                        delete_file_db(d['id'])
+                                    st.toast(f"Limpieza completada para: {name}")
+                                    st.rerun()
+                            with sc2:
+                                if st.button("🕰️ Mantener MÁS ANTIGUO", key=f"k_old_{name}", help="Borra todos menos el más antiguo"):
+                                    # files[-1] is oldest
+                                    to_delete = files[:-1]
+                                    for d in to_delete:
+                                        delete_file_db(d['id'])
+                                    st.toast(f"Limpieza completada para: {name}")
+                                    st.rerun()
 
             # Close Button footer for Panel
             st.write("")

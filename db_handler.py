@@ -379,10 +379,11 @@ def upload_file_to_db(unit_id, name, content_text, file_type):
             "type": file_type
         }
         res = supabase.table("library_files").insert(data).execute()
-        return True
+        # V336: Return ID instead of True for tracking
+        return res.data[0]['id'] if res.data else None
     except Exception as e:
         print(f"Error uploading file: {e}")
-        return False
+        return None
 
 def move_file(file_id, new_unit_id):
     """
@@ -719,9 +720,40 @@ def get_course_files(course_id, type_filter=None):
             
         res = query.order("created_at", desc=True).execute()
         return res.data
+        return res.data
     except Exception as e:
         print(f"Error fetching course files: {e}")
         return []
+
+def get_duplicate_candidates(course_id):
+    """
+    Finds files with the same name in the course.
+    Returns a dict: { 'filename': [file_obj_1, file_obj_2, ...] }
+    Only returns entries where len(list) > 1.
+    """
+    # 1. Fetch all files
+    all_files = get_course_files(course_id)
+    if not all_files: return {}
+    
+    # 2. Enrich with Unit Names (for context)
+    # We need unit map
+    supabase = init_supabase()
+    units = supabase.table("units").select("id, name").eq("course_id", course_id).execute().data
+    unit_map = {u['id']: u['name'] for u in units} if units else {}
+    
+    # 3. Group by Name
+    groups = {}
+    for f in all_files:
+        name = f['name'].strip() # normalize
+        if name not in groups: groups[name] = []
+        
+        # Add context info
+        f['unit_name'] = unit_map.get(f['unit_id'], "Sin Carpeta")
+        groups[name].append(f)
+        
+    # 4. Filter for duplicates
+    duplicates = {k: v for k, v in groups.items() if len(v) > 1}
+    return duplicates
 
 def get_recent_files(course_id, limit=5):
     """
