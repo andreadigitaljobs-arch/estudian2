@@ -776,7 +776,8 @@ def render_library_v2(assistant):
                             
                         # Move Logic could go here (Simplified for now)
         else:
-            if not subfolders:
+            st.info("Carpeta vacía. Usa el botón 'Subir' o 'Nueva' en la barra superior.")
+    else:
         # At Root (and maybe no folders)
         if not subfolders:
              st.info("Biblioteca vacía. ¡Empieza creando una carpeta arriba!")
