@@ -3087,6 +3087,65 @@ with tab_home:
 
 
 
+        # 3. ADVANCED DASHBOARD WIDGETS (E-Learning Style)
+        
+        # --- PREPARE DATA ---
+        all_units = get_units(current_c_id)
+        all_files = get_course_files(current_c_id)
+        
+        # Calculate Counts per Unit (Optimization: Python-side grouping)
+        unit_counts = {u['id']: 0 for u in all_units}
+        for f in all_files:
+            if f.get('unit_id') in unit_counts:
+                unit_counts[f['unit_id']] += 1
+                
+        # --- WIDGET A: LEARNING PATH (Route) ---
+        st.write("")
+        st.subheader("🗺️ Tu Ruta de Aprendizaje")
+        
+        if all_units:
+            # Grid Layout for Units
+            # We'll do rows of 2 or 3 depending on logic, let's try columns of 2 for descriptive feel
+            u_cols = st.columns(2)
+            for i, unit in enumerate(all_units):
+                count = unit_counts.get(unit['id'], 0)
+                # Calculate simple progress (mock target: 5 files per unit makes it look 'full')
+                progress = min(1.0, count / 5) 
+                
+                with u_cols[i % 2]:
+                    with st.container(border=True):
+                        st.markdown(f"**📂 {unit['name']}**")
+                        st.progress(progress)
+                        st.caption(f"{count} Recursos")
+        else:
+            st.info("Aún no tienes unidades creadas. Ve a la Biblioteca para organizar tu curso.")
+
+        # --- WIDGET B: RECENT CAROUSEL (Netflix Style) ---
+        st.write("")
+        st.write("")
+        st.subheader("🆕 Novedades")
+        
+        recents = all_files[:4] # Top 4 newest (get_course_files returns ordered desc)
+        
+        if recents:
+            r_cols = st.columns(4)
+            for i, f in enumerate(recents):
+                with r_cols[i]:
+                    with st.container(border=True):
+                        # Icon Logic
+                        icon = "📄"
+                        if f['type'] == 'transcript': icon = "📹"
+                        elif "quiz" in f['name'].lower(): icon = "📝"
+                        
+                        st.markdown(f"**{icon} {f['name'][:20]}{'...' if len(f['name'])>20 else ''}**")
+                        # st.caption(f"{f['created_at'][:10]}") # Date takes space, keeping it minimal
+                        if st.button("Ver", key=f"btn_rec_{f['id']}", use_container_width=True):
+                                st.session_state['redirect_target_name'] = "Biblioteca"
+                                st.session_state['force_chat_tab'] = True
+                                st.rerun()
+        else:
+            st.caption("Sube tu primer archivo para verlo aquí.")  
+
         # 4. QUICK ACTIONS ONLY (Refactored Horizontal)
         st.divider()
         st.subheader("⚡ Acciones Rápidas")
