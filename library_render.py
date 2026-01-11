@@ -91,41 +91,26 @@ def render_library_v2(assistant):
     Refactored V270: Minimalist Toolbar UI
     """
     
-    # --- CSS for Library Folders ONLY (Windows Explorer Style) ---
+    # --- CSS + JavaScript for Library Folders (Force Override Streamlit Styles) ---
     st.markdown("""
     <style>
     /* Target ONLY buttons with keys starting with "fdir_" (library folders) */
-    /* Streamlit generates data-testid like "stButton-fdir_123" for these buttons */
     
-    /* CRITICAL: Override ALL Streamlit default button styles */
-    button[data-testid*="-fdir_"],
-    button[data-testid*="-fdir_"]:hover,
-    button[data-testid*="-fdir_"]:active,
-    button[data-testid*="-fdir_"]:focus {
-        /* Force remove purple background */
-        background-color: transparent !important;
-        background-image: none !important;
-        background: rgba(248, 250, 252, 0.4) !important;
-        
-        /* Subtle border */
+    /* Base styling */
+    button[data-testid*="-fdir_"] {
         border: 1.5px solid rgba(203, 213, 225, 0.4) !important;
         border-radius: 18px !important;
-        
-        /* Text color */
         color: #1e293b !important;
         
-        /* Layout */
         display: block !important;
         padding: 24px 12px !important;
         width: 100% !important;
         min-height: 200px !important;
         height: auto !important;
         
-        /* Visual effects */
         box-shadow: 0 2px 12px rgba(0,0,0,0.06) !important;
         backdrop-filter: blur(8px) !important;
         
-        /* Typography */
         font-family: 'Segoe UI', -apple-system, system-ui, sans-serif !important;
         font-size: 14px !important;
         font-weight: 600 !important;
@@ -133,23 +118,18 @@ def render_library_v2(assistant):
         text-align: center !important;
         white-space: pre-wrap !important;
         
-        /* Animation */
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-        
-        /* Remove any default Streamlit styling */
         outline: none !important;
     }
     
-    /* Ensure inner containers are properly styled */
     button[data-testid*="-fdir_"] > div,
     button[data-testid*="-fdir_"] p {
         display: block !important;
         white-space: pre-wrap !important;
         text-align: center !important;
-        background: transparent !important;
     }
     
-    /* BIG FOLDER ICON - Target first line (the emoji) */
+    /* BIG FOLDER ICON */
     button[data-testid*="-fdir_"]::first-line,
     button[data-testid*="-fdir_"] > div::first-line,
     button[data-testid*="-fdir_"] p::first-line {
@@ -159,36 +139,53 @@ def render_library_v2(assistant):
         display: block !important;
     }
 
-    /* Hover Effect */
     button[data-testid*="-fdir_"]:hover {
-        background: rgba(248, 250, 252, 0.7) !important;
         border-color: rgba(203, 213, 225, 0.6) !important;
         transform: translateY(-3px) scale(1.02) !important;
         box-shadow: 0 6px 20px rgba(0,0,0,0.1) !important;
     }
     
-    /* Active/Click state */
     button[data-testid*="-fdir_"]:active {
         transform: translateY(-1px) scale(0.98) !important;
     }
     
-    /* COLOR FILTERS: Green & Pink Alternating */
-    
-    /* Column 1, 4, 7... (Green) */
+    /* COLOR FILTERS */
     div[data-testid="column"]:nth-of-type(3n+1) button[data-testid*="-fdir_"] {
         filter: hue-rotate(75deg) saturate(1.6) brightness(1.15) !important;
     }
     
-    /* Column 2, 5, 8... (Pink/Magenta) */
     div[data-testid="column"]:nth-of-type(3n+2) button[data-testid*="-fdir_"] {
         filter: hue-rotate(290deg) saturate(1.4) brightness(1.1) !important;
     }
     
-    /* Column 3, 6, 9... (Green) */
     div[data-testid="column"]:nth-of-type(3n) button[data-testid*="-fdir_"] {
         filter: hue-rotate(75deg) saturate(1.6) brightness(1.15) !important;
     }
     </style>
+    
+    <script>
+    // Force remove purple background using JavaScript (runs after Streamlit renders)
+    function applyLibraryFolderStyles() {
+        const folderButtons = document.querySelectorAll('button[data-testid*="-fdir_"]');
+        folderButtons.forEach(btn => {
+            // Force transparent background
+            btn.style.setProperty('background-color', 'rgba(248, 250, 252, 0.4)', 'important');
+            btn.style.setProperty('background-image', 'none', 'important');
+            btn.style.setProperty('background', 'rgba(248, 250, 252, 0.4)', 'important');
+        });
+    }
+    
+    // Run immediately
+    applyLibraryFolderStyles();
+    
+    // Run again after a short delay (in case Streamlit re-renders)
+    setTimeout(applyLibraryFolderStyles, 100);
+    setTimeout(applyLibraryFolderStyles, 500);
+    
+    // Watch for DOM changes and re-apply styles
+    const observer = new MutationObserver(applyLibraryFolderStyles);
+    observer.observe(document.body, { childList: true, subtree: true });
+    </script>
     """, unsafe_allow_html=True)
 
     current_course_id = st.session_state.get('current_course_id')
