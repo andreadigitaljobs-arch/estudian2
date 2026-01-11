@@ -1451,7 +1451,7 @@ if not st.session_state['user']:
     c_spacer, c_login = st.columns([1.3, 1]) 
 
     with c_spacer:
-        st.write("") 
+        st.image("assets/login_hero_final.png", use_container_width=True) 
 
     with c_login:
         # ANCHOR FOR CSS TARGETING + VERTICAL CENTERING
