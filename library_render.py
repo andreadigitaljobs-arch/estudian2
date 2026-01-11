@@ -507,36 +507,13 @@ def render_library_v2(assistant):
                 if st.button("🔍 Escanear toda la biblioteca", type="primary", help="Busca en TODAS las carpetas del diplomado actual"):
                      from db_handler import get_duplicate_files
                      
-                     # Debug: Verify what we see
-                     st.write(f"DEBUG: Buscando en Course ID: {current_course_id}")
-                     
                      # Clear previous state
                      if 'dupes_results' in st.session_state: del st.session_state['dupes_results']
                      
                      with st.spinner("Analizando..."):
                          dupes = get_duplicate_files(current_course_id)
-                         # Simple count debug
-                         st.write(f"DEBUG: Grupos de duplicados encontrados: {len(dupes)}")
                          st.session_state['dupes_results'] = dupes
                 
-                # Debug Data Inspector
-                with st.expander("🕵️ Ver Datos Crudos (Debug)", expanded=False):
-                    from db_handler import init_supabase
-                    st.write("Muestra los primeros 100 archivos que ve el sistema:")
-                    try:
-                        # Correct Query: Units -> Files
-                        units_res = init_supabase().table("units").select("id").eq("course_id", current_course_id).execute()
-                        u_ids = [u['id'] for u in units_res.data]
-                        
-                        raw_res = init_supabase().table("library_files").select("id, name, unit_id").in_("unit_id", u_ids).limit(100).execute()
-                        if raw_res.data:
-                            st.write(f"Total mostrados: {len(raw_res.data)}")
-                            st.dataframe(raw_res.data)
-                        else:
-                            st.error("¡La consulta devolvió 0 archivos! El Course ID podría estar vacío o haber un error de permisos.")
-                    except Exception as e:
-                        st.error(f"Error consultando DB: {e}")
-
                 # Render Results from Session State (to persist after delete actions re-run)
                 if 'dupes_results' in st.session_state:
                      from db_handler import get_file_content # Delayed import
