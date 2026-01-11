@@ -43,7 +43,7 @@ import datetime
 import markdown
 import streamlit.components.v1 as components
 import extra_streamlit_components as stx  # --- PERSISTENCE ---
-from library_render import render_library_v2 as render_library # --- LIBRARY UI V2 ---
+from library_render import render_library_v2 as render_library # --- LIBRARY UI V2 (RELOADED) ---
 import db_handler as database
 from db_handler import (
     get_user_courses, create_course, delete_course, rename_course, 
