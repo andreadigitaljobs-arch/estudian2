@@ -3546,7 +3546,8 @@ with tab1:
                             log_debug(f"--- BATCH {batch_num} START ---")
                             # Clean UI: Removed raw DEBUG print
                             
-                            for file in batch:
+                            for batch_idx, file in enumerate(batch):
+                                current_file_num = start_idx + batch_idx + 1
                                 t_unit_id = selected_unit_id 
                                 
                                 # CHECK TRANSCRIBER EARLY
@@ -3595,12 +3596,20 @@ with tab1:
                                         def update_ui(msg, prog):
                                             # Update both text and bar
                                             pct = int(prog * 100)
-                                            status_text.markdown(f"**⚡ {msg} ({pct}%)**")
+                                            
+                                            # V350: Better Feedback (File X of Y)
+                                            # We emphasize the CURRENT file clearly
+                                            file_prefix = f"📄 Archivo {current_file_num}/{total_files}: {file.name}"
+                                            
+                                            status_text.markdown(f"**{file_prefix}**\n\n⚡ {msg} ({pct}%)")
                                             progress_bar.progress(prog)
                                             
                                             # --- V257: SIMPLIFIED UPDATE ---
                                             try:
-                                                msg_clean = msg.replace("'", "")
+                                                # Include file name in the global loader too
+                                                clean_prefix = f"[{current_file_num}/{total_files}]"
+                                                msg_clean = f"{clean_prefix} {msg}".replace("'", "")
+                                                
                                                 with js_bridge:
                                                     components.html(f"""
                                                         <script>
