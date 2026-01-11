@@ -2706,7 +2706,10 @@ with st.sidebar:
         <script>
             setTimeout(function() {
                 function createArrow(id, html, bottom, onClick) {
-                    if (window.parent.document.getElementById(id)) return;
+                    // Force Remove if exists (Fixes duplicates)
+                    const old = window.parent.document.getElementById(id);
+                    if (old) old.remove();
+
                     const btn = window.parent.document.createElement('button');
                     btn.id = id;
                     btn.innerHTML = html;
