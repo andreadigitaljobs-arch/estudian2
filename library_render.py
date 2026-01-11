@@ -4,162 +4,34 @@ import time
 import os
 import base64
 import pandas as pd
-import re
-import io
-import zipfile
-from db_handler import (
-    get_units, create_unit, upload_file_to_db, get_files, delete_file, 
-    rename_file, rename_unit, delete_unit, create_chat_session, save_chat_message, 
-    search_library, update_user_footprint, get_course_files, move_file, 
-    get_course_file_counts, move_file_up, move_file_down, ensure_unit_numbering,
-    get_full_course_backup, update_file_content
-)
-import streamlit.components.v1 as components
-
-# V308: Safe import with fallback
-try:
-    from streamlit_quill import st_quill
-    QUILL_AVAILABLE = True
-except ImportError:
-    QUILL_AVAILABLE = False
-    print("Warning: streamlit-quill not available, using fallback editor")
-
-def format_transcript_with_ai(raw_text, assistant):
-    """
-    Uses AI to format a raw transcript with proper paragraphs and structure.
-    Does NOT change content, only formatting.
-    """
-    if not assistant or not raw_text:
-        return raw_text
-    
-    prompt = f"""
-ERES UN EDITOR PROFESIONAL. Tu tarea es FORMATEAR esta transcripción.
-
-REGLAS ESTRICTAS:
-1. 📍 NO CAMBIES EL CONTENIDO. Solo reorganiza la estructura.
-2. 📝 Detecta cambios de tema y crea TÍTULOS (## Título)
-3. ✂️ Separa en PÁRRAFOS lógicos (cada 3-5 oraciones relacionadas)
-4. 👥 MANTÉN la diarización (**Hablante X:**) si existe
-5. 🎨 Aplica MODO ESTUDIO (colores HTML) a conceptos clave:
-   - 🔴 <span class="sc-base">...</span> -> DEFINICIONES
-   - 🟣 <span class="sc-key">...</span> -> IDEAS CLAVE
-   - 🟡 <span class="sc-data">...</span> -> DATOS/ESTRUCTURA
-   - 🔵 <span class="sc-example">...</span> -> EJEMPLOS
-   - 🟢 <span class="sc-note">...</span> -> MATICES
-
-TRANSCRIPCIÓN ORIGINAL:
-{raw_text}
-
-DEVUELVE SOLO LA TRANSCRIPCIÓN FORMATEADA. NO agregues explicaciones.
-"""
-    
-    try:
-        response = assistant.model.generate_content(prompt)
-        return response.text
-    except Exception as e:
-        st.error(f"Error al formatear: {e}")
-        return raw_text
+# V85 - Nuclear Rename
+from db_handler import get_units, create_unit, upload_file_to_db, get_files, delete_file, rename_file, rename_unit, delete_unit, create_chat_session, save_chat_message, search_library, update_user_footprint, get_course_files, move_file, get_course_file_counts
 
 
-def clean_markdown_v3(text):
-    """Removes all markdown baggage for a perfect copy."""
-    import re
-    if not text: return ""
-    # Remove HTML tags
-    text = re.sub(r'<[^>]*>', '', text)
-    # Headers #
-    text = re.sub(r'^#+\s*', '', text, flags=re.MULTILINE)
-    # Bold/Italic ** * __ _
-    text = re.sub(r'(\*\*|__|\*|_)', '', text)
-    # Bullets / Lists
-    text = re.sub(r'^[ \t]*[\*\-\+]\s+', '', text, flags=re.MULTILINE)
-    # Blockquotes >
-    text = re.sub(r'^>\s*', '', text, flags=re.MULTILINE)
-    # Links [text](url) -> text
-    text = re.sub(r'\[([^\]]+)\]\([^\)]+\)', r'\1', text)
-    # Code blocks `
-    text = text.replace("`", "")
-    # Strange symbols mentioned by user: @
-    text = text.replace("@", "")
-    # Remove excessive empty lines
-    text = re.sub(r'\n{3,}', '\n\n', text)
-    return text.strip()
-
-def render_library_v2(assistant):
+def render_library(assistant):
     """
     Renders the dedicated "Digital Library" (Drive-style) tab.
-    Refactored V270: Minimalist Toolbar UI
     """
     
-    # --- CSS for Windows-Style Explorer (Transparent Buttons, Big Icons) ---
+    # --- CSS for Cards ---
     st.markdown("""
     <style>
-    /* --- FOLDER ICON STYLE (UNIVERSAL - V5 - SCOPED) --- */
-    
-    /* 
-       Targeting: 
-       1. Blocks that have a 3rd column...
-       2. BUT DO NOT have a 4th column (Crucial to avoid hitting the 6-col toolbar)
-    */
-    
-    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="column"]:nth-child(3)):not(:has(> div[data-testid="column"]:nth-child(4))) button[kind="secondary"],
-    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(3)):not(:has(> div[data-testid="stColumn"]:nth-child(4))) button[kind="secondary"],
-    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="column"]:nth-child(3)):not(:has(> div[data-testid="column"]:nth-child(4))) div.stButton > button[kind="secondary"],
-    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(3)):not(:has(> div[data-testid="stColumn"]:nth-child(4))) div.stButton > button[kind="secondary"] 
-    {
-        background-color: transparent !important;
-        border: 1px solid transparent !important;
-        border-radius: 12px !important;
-        color: #202124 !important;
-        
-        display: block !important;
-        text-align: center !important;
-        
-        padding: 0px !important;
+    div.stButton > button.folder-card {
+        background-color: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        color: #334155;
+        padding: 20px;
         width: 100%;
-        height: auto !important;
-        min-height: 140px !important;
-        
-        box-shadow: none !important;
-        font-family: 'Segoe UI', sans-serif !important;
-        font-size: 16px !important;
-        font-weight: 700 !important;
-        overflow: visible !important;
-        white-space: pre-wrap !important;
+        text-align: left;
+        transition: all 0.2s;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
     }
-    
-    /* CONTENT INJECTION (The Folder Icon) */
-    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="column"]:nth-child(3)):not(:has(> div[data-testid="column"]:nth-child(4))) button[kind="secondary"]::before,
-    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(3)):not(:has(> div[data-testid="stColumn"]:nth-child(4))) button[kind="secondary"]::before,
-    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="column"]:nth-child(3)):not(:has(> div[data-testid="column"]:nth-child(4))) div.stButton > button[kind="secondary"]::before,
-    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(3)):not(:has(> div[data-testid="stColumn"]:nth-child(4))) div.stButton > button[kind="secondary"]::before
-    {
-        content: "📁" !important;
-        font-size: 100px !important;
-        display: block !important;
-        line-height: 1.2 !important;
-        margin-bottom: 0px !important;
-    }
-    
-    /* HOVER EFFECT */
-    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="column"]:nth-child(3)):not(:has(> div[data-testid="column"]:nth-child(4))) button[kind="secondary"]:hover,
-    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(3)):not(:has(> div[data-testid="stColumn"]:nth-child(4))) button[kind="secondary"]:hover {
-        background-color: #e6f3ff !important;
-        border: 1px solid rgba(0, 120, 215, 0.2) !important;
-        transform: translateY(-2px);
-        color: #202124 !important;
-    }
-    
-    /* COLOR FILTERS (ODD is Greenish) */
-    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="column"]:nth-child(3)):not(:has(> div[data-testid="column"]:nth-child(4))) div[data-testid="column"]:nth-of-type(odd) button[kind="secondary"],
-    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(3)):not(:has(> div[data-testid="stColumn"]:nth-child(4))) div[data-testid="stColumn"]:nth-of-type(odd) button[kind="secondary"] {
-        filter: hue-rotate(80deg) !important; 
-    }
-    
-    /* COLOR FILTERS (EVEN is Purple) */
-    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="column"]:nth-child(3)):not(:has(> div[data-testid="column"]:nth-child(4))) div[data-testid="column"]:nth-of-type(even) button[kind="secondary"],
-    div[data-testid="stHorizontalBlock"]:has(> div[data-testid="stColumn"]:nth-child(3)):not(:has(> div[data-testid="stColumn"]:nth-child(4))) div[data-testid="stColumn"]:nth-of-type(even) button[kind="secondary"] {
-        filter: hue-rotate(240deg) !important; 
+    div.stButton > button.folder-card:hover {
+        border-color: #7c3aed;
+        background-color: #faf5ff;
+        box-shadow: 0 4px 6px -1px rgba(124, 58, 237, 0.1);
+        color: #7c3aed;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -170,898 +42,775 @@ def render_library_v2(assistant):
         st.info("👈 Selecciona un Diplomado en la barra lateral para ver su Biblioteca.")
         return
 
-    # --- LIBRARY LOGIC START ---
+    # --- MAINTENANCE TOOLS ---
+    with st.expander("🔧 Mantenimiento de Archivos"):
+        c_m1, c_m2 = st.columns([0.8, 0.2])
+        c_m1.caption("Usa esto si tienes archivos antiguos con nombres raros (ej: Apuntes_Tema_1.txt)")
+        if c_m2.button("✨ Limpiar Nombres", help="Reemplaza guiones bajos por espacios en TODOS los archivos del curso"):
+             all_c_files = get_course_files(current_course_id)
+             count_ren = 0
+             with st.status("Analizando biblioteca...") as status:
+                 for f in all_c_files:
+                      old_n = f['name']
+                      new_n = old_n.replace("_", " ")
+                      
+                      # Strip extensions physically
+                      for ext in ['.txt', '.md', '.pdf', '.TXT', '.MD', '.PDF']:
+                          if new_n.endswith(ext):
+                              new_n = new_n[:-len(ext)]
+                              
+                      while "  " in new_n: new_n = new_n.replace("  ", " ")
+                      new_n = new_n.strip()
+                      
+                      if new_n != old_n and new_n: # Ensure name isn't empty
+                          status.write(f"Renombrando: {old_n} -> {new_n}")
+                          rename_file(f['id'], new_n)
+                          count_ren += 1
+                 status.update(label=f"¡Terminado! {count_ren} archivos corregidos.", state="complete")
+                 if count_ren > 0:
+                     time.sleep(1.5)
+                     st.rerun()
+             if count_ren == 0:
+                 st.toast("Todo limpio. No se encontraron archivos para corregir.")
 
+    # --- EXPORT / BACKUP SECTION ---
+    with st.expander("📦 Exportar Todo (Para ChatGPT/Backup)"):
+        st.info("Descarga toda tu biblioteca organizada por carpetas para subirla a otra IA.")
+        
+        if st.button("Generar Backup .ZIP", key="btn_gen_backup"):
+            with st.spinner("Empaquetando conocimientos... 🧠📦"):
+                 from db_handler import get_full_course_backup
+                 import io
+                 import zipfile
+                 
+                 files_data = get_full_course_backup(current_course_id)
+                 
+                 if not files_data:
+                     st.error("No hay archivos para exportar.")
+                 else:
+                     # Create ZIP in Memory
+                     zip_buffer = io.BytesIO()
+                     with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zf:
+                         for item in files_data:
+                             # Clean names
+                             safe_unit = "".join([c for c in item['unit'] if c.isalnum() or c in (' ', '_', '-')]).strip()
+                             safe_file = "".join([c for c in item['name'] if c.isalnum() or c in (' ', '_', '-', '.')]).strip()
+                             if not safe_file.lower().endswith(('.txt', '.md')):
+                                 safe_file += ".txt"
+                                 
+                             # Path inside zip: Unit/File
+                             zip_path = f"{safe_unit}/{safe_file}"
+                             
+                             # Write
+                             zf.writestr(zip_path, item['content'])
+                     
+                     zip_buffer.seek(0)
+                     
+                     st.success(f"¡Listo! {len(files_data)} archivos empaquetados.")
+                     st.download_button(
+                         label="⬇️ Descargar Archivo ZIP",
+                         data=zip_buffer,
+                         file_name="Bibliotec_Completa_Estudian2.zip",
+                         mime="application/zip",
+                         key="btn_down_zip"
+                     )
 
-    # --- STATE INITIALIZATION ---
+    # --- STATE MANAGEMENT ---
     if 'lib_current_unit_id' not in st.session_state: st.session_state['lib_current_unit_id'] = None
     if 'lib_current_unit_name' not in st.session_state: st.session_state['lib_current_unit_name'] = None
     if 'lib_breadcrumbs' not in st.session_state: st.session_state['lib_breadcrumbs'] = []
-    if 'lib_active_tool' not in st.session_state: st.session_state['lib_active_tool'] = None # 'upload', 'create', 'manage', 'backup', 'search'
 
-    # --- DASHBOARD TRIGGER HANDLING ---
-    if st.session_state.get('lib_auto_open_upload'):
-        st.session_state['lib_active_tool'] = 'upload'
-        st.session_state['lib_auto_open_upload'] = False
-        # Optional: Toast to confirm
-        # st.toast("Modo de subida activado")
-    
-    # V328: BATCH ANALYSIS TRIGGER
-    if st.session_state.get('trigger_batch_analysis'):
-        st.session_state['trigger_batch_analysis'] = False
-        
-        selected_ids = list(st.session_state.get('selected_files_for_chat', set()))
-        if selected_ids:
-            with st.spinner(f"Analizando {len(selected_ids)} archivos..."):
-                from db_handler import create_chat_session, save_chat_message, get_file_content
-                
-                # Get user
-                user = st.session_state.get('user')
-                if user:
-                    try:
-                        # Fetch all selected files
-                        file_contents = []
-                        file_names = []
-                        
-                        for file_id in selected_ids:
-                            content = get_file_content(file_id)
-                            if content:
-                                # Get file name from files list
-                                current_unit_id = st.session_state.get('lib_current_unit_id')
-                                if current_unit_id:
-                                    files = get_files(current_unit_id)
-                                    file_obj = next((f for f in files if f['id'] == file_id), None)
-                                    if file_obj:
-                                        file_names.append(file_obj['name'])
-                                        file_contents.append(f"--- ARCHIVO: {file_obj['name']} ---\n{content}")
-                        
-                        if file_contents:
-                            # Create combined prompt
-                            combined_content = "\n\n".join(file_contents)
-                            
-                            # Create session title
-                            if len(file_names) == 1:
-                                session_title = f"📄 {file_names[0]}"
-                            elif len(file_names) <= 3:
-                                session_title = f"📚 {', '.join(file_names)}"
-                            else:
-                                session_title = f"📚 {', '.join(file_names[:2])} (+{len(file_names)-2} más)"
-                            
-                            # Create chat session
-                            session_id = create_chat_session(user.id, session_title)
-                            
-                            if session_id:
-                                # Save user message
-                                user_message = f"Por favor, analiza estos {len(file_names)} archivos relacionados y proporciona:\n1. Un resumen individual de cada archivo\n2. Las conexiones y relaciones entre los contenidos\n3. Un análisis integrado del tema completo\n\n{combined_content}"
-                                save_chat_message(session_id, "user", user_message)
-                                
-                                # Generate AI response
-                                try:
-                                    prompt = f"Eres un tutor académico experto. Analiza los siguientes {len(file_names)} archivos relacionados y proporciona:\n1. Un resumen claro de cada archivo\n2. Las conexiones y relaciones entre los contenidos\n3. Un análisis integrado y conclusiones\n\n{combined_content}"
-                                    ai_response = assistant.model.generate_content(prompt)
-                                    ai_text = ai_response.text
-                                    save_chat_message(session_id, "assistant", ai_text)
-                                    
-                                    st.success(f"✅ Chat creado exitosamente: **{session_title}**")
-                                    st.info("💬 Ve al **Historial de Chats** para ver el análisis completo")
-                                    
-                                    # Clear selection
-                                    st.session_state['selected_files_for_chat'] = set()
-                                except Exception as e:
-                                    st.error(f"❌ Error al generar análisis: {str(e)}")
-                                    st.info("💬 El chat fue creado. Ve al **Historial de Chats** para continuar")
-                            else:
-                                st.error("❌ Error al crear sesión de chat")
-                        else:
-                            st.warning("⚠️ No se pudo cargar el contenido de los archivos seleccionados")
-                    except Exception as e:
-                        st.error(f"❌ Error crítico: {str(e)}")
-                else:
-                    st.error("❌ Error: Usuario no autenticado")
+    if 'lib_breadcrumbs' not in st.session_state: st.session_state['lib_breadcrumbs'] = []
 
-
-    # ==========================================
-    # 1. TOOLBAR (Minimalist Top Menu)
-    # ==========================================
-    
-    # Helper to set tool
-    def set_tool(tool_name):
-        if st.session_state['lib_active_tool'] == tool_name:
-            st.session_state['lib_active_tool'] = None # Toggle off
-        else:
-            st.session_state['lib_active_tool'] = tool_name
-
-    # Toolbar Layout
-    st.caption("--- Menú de Biblioteca ---")
-    t_c1, t_c2, t_c3, t_c4, t_c5, t_c6, t_c7 = st.columns(7)
-    
-    # Define button styles based on active state
-    def get_type(tool_name):
-        return "primary" if st.session_state['lib_active_tool'] == tool_name else "secondary"
-
-    with t_c1:
-        if st.button("Raiz", use_container_width=True, help="Ir a la carpeta principal"):
-            st.session_state['lib_current_unit_id'] = None
-            st.session_state['lib_current_unit_name'] = None
-            st.session_state['lib_breadcrumbs'] = []
-            st.session_state['lib_active_tool'] = None # Close tools
-            st.rerun()
-
-    with t_c2:
-        if st.button("Subir", type=get_type('upload'), use_container_width=True, help="Subir archivos o crear notas"):
-            set_tool('upload')
-            st.rerun()
-
-    with t_c3:
-        if st.button("Nueva", type=get_type('create'), use_container_width=True, help="Crear nueva carpeta"):
-            set_tool('create')
-            st.rerun()
-
-    with t_c4:
-        if st.button("Gestion", type=get_type('manage'), use_container_width=True, help="Renombrar o borrar carpetas"):
-            set_tool('manage')
-            st.rerun()
-
-    with t_c5:
-        if st.button("Buscar", type=get_type('search'), use_container_width=True, help="Buscar en toda la biblioteca"):
-            set_tool('search')
-            st.rerun()
+    # --- SEARCH BAR ---
+    # ADDED KEY for clearing
+    # Callback to clear
+    def clear_search():
+        st.session_state['lib_search_box'] = ""
             
-    with t_c6:
-         if st.button("Duplicados", type=get_type('duplicates'), use_container_width=True, help="Buscar archivos duplicados"):
-            set_tool('duplicates')
-            st.rerun()
+    search_query = st.text_input("Busca tu archivo específico aquí", placeholder="Escribe el nombre del archivo...", key="lib_search_box")
 
-    with t_c7:
-         if st.button("Backup", type=get_type('backup'), use_container_width=True, help="Descargar todo"):
-            set_tool('backup')
-            st.rerun()
+    if search_query:
+        # --- SEARCH RESULTS VIEW ---
+        c_head_1, c_head_2 = st.columns([0.8, 0.2])
+        c_head_1.markdown(f"#### 🔎 Resultados para: *'{search_query}'*")
+        
+        # Use on_click to avoid "Set Key while rendering" error
+        c_head_2.button("✖️ Cerrar", use_container_width=True, on_click=clear_search)
+             # No need for manual rerun, on_click triggers it automatically
 
-    # Custom Separator (Minimalist)
-    # Only show if a tool is active to separate it, otherwise just a thin line or nothing if very tight
-    if st.session_state['lib_active_tool']:
-         st.markdown("---")
-    else:
-         # Ultra thin separator when no tool is open
-         st.markdown("<hr style='margin: 0px 0 10px 0; border: none; border-top: 1px solid #f1f5f9;'>", unsafe_allow_html=True)
+        results = search_library(current_course_id, search_query)
+        
+        if not results:
+            st.info("No se encontraron archivos.")
+        else:
+             for f in results:
+                # REUSED CARD UI for consistency
+                c1, c2, c3, c4 = st.columns([0.1, 0.7, 0.1, 0.1], vertical_alignment="bottom")
+                
+                with c1:
+                    icon = "📄" if f['type'] == "text" else "📕"
+                    st.write(f"## {icon}")
+                
+                with c2:
+                    st.markdown(f"{f['name']}")
+                    # Context Label (Folder)
+                    st.caption(f"📂 En: {f.get('unit_name', 'Módulo')}")
+                    
+                    with st.expander("Ver contenido"):
+                        safe_content = f.get('content') or f.get('content_text') or ""
+                        st.markdown(safe_content, unsafe_allow_html=True)
 
-    # ==========================================
-    # 2. ACTION PANEL (Context Specific)
-    # ==========================================
-    
-    tool = st.session_state['lib_active_tool']
+                with c3:
+                    # DYNAMIC KEY POPOVER (Same logic as main view)
+                    if 'popover_reset_token' not in st.session_state: st.session_state['popover_reset_token'] = 0
+                    token = st.session_state['popover_reset_token']
+                    pop_id = f"search_pop_{f['id']}_{token}" # Distinct key prefix
+                    
+                    try:
+                        popover_container = st.popover("⚡", help="Acciones Rápidas", key=pop_id)
+                    except TypeError:
+                         suffix = "." if (token % 2 != 0) else ""
+                         popover_container = st.popover(f"⚡{suffix}", help=f"Acciones {suffix}")
+
+                    with popover_container:
+                        st.markdown(f"<div style='margin-bottom: 10px; font-weight: bold;'>{f['name']}</div>", unsafe_allow_html=True)
+                        
+                        if st.button("🤖 Resolver Tarea", key=f"s_btn_task_{f['id']}_{token}", use_container_width=True):
+                            st.session_state['chat_context_file'] = f
+                            st.session_state['redirect_target_name'] = "Ayudante de Tareas"
+                            st.session_state['force_chat_tab'] = True
+                            st.rerun()
+                            
+                        if st.button("👨🏻‍🏫 Hablar con Profe", key=f"s_btn_tutor_{f['id']}_{token}", use_container_width=True):
+                            st.session_state['chat_context_file'] = f
+                            if 'user' in st.session_state:
+                                uid = st.session_state['user'].id
+                                sess_name = f"Análisis: {f['name']}"
+                                new_sess = create_chat_session(uid, sess_name)
+                                st.session_state['current_chat_session'] = new_sess
+                                st.session_state['tutor_chat_history'] = [] 
+                                prompt_msg = f"He abierto el archivo **{f['name']}**. ¿Me puedes dar un resumen o interpretación de su contenido?"
+                                st.session_state['tutor_chat_history'].append({"role": "user", "content": prompt_msg})
+                            st.session_state['redirect_target_name'] = "Tutoria 1 a 1"
+                            st.session_state['force_chat_tab'] = True
+                            st.rerun()
+
+                with c4:
+                    st.markdown("<div style='height: 8px'></div>", unsafe_allow_html=True)
+                    if st.button("🗑️", key=f"s_del_{f['id']}", help="Eliminar archivo"):
+                        if delete_file(f['id']):
+                            st.toast(f"Archivo eliminado: {f['name']}")
+                            time.sleep(0.5)
+                            st.rerun()
+         
+        # Return here to prevent rendering normal view below
+        return
+
+    # Normal View continues...
     current_unit_id = st.session_state['lib_current_unit_id']
 
-    if tool:
-        with st.container(border=True):
-            
-            # --- UPLOAD TOOL ---
-            if tool == 'upload':
-                st.markdown("#### 📤 Subir Contenido")
-                
-                # Tabs for different upload types
-                up_t1, up_t2, up_t3 = st.tabs(["📂 Archivos", "✍🏻 Nota Rápida", "📥 Importar Chat"])
-                
-                with up_t1:
-                    upl_files = st.file_uploader("Arrastra tus archivos aquí (PDF, Word, TXT, MD, etc):", accept_multiple_files=True)
-                    if st.button("Subir a esta carpeta", type="primary"):
-                        target = current_unit_id
-                        if not target:
-                             # If at root, check if we need to enforce folder? 
-                             # Assuming root upload is allowed if system supports it, but usually we want organization.
-                             # Let's handle Root Uploads (create generic 'Uncategorized' or allow root files if DB supports)
-                             # DB Handler supports root files (unit_id=None)? check upload_file_to_db logic.
-                             # If parent_id in create_unit can be None, files usually need a unit. 
-                             # Let's enforce Folder Selection if at root, OR create a "General" folder.
-                             pass 
-                        
-                        # Logic from original
-                        if upl_files:
-                            for uf in upl_files:
-                                try:
-                                    content = ""
-                                    if uf.type in ["text/plain", "application/json", "text/markdown"]:
-                                        content = str(uf.read(), "utf-8", errors='ignore')
-                                    elif uf.type == "application/pdf":
-                                         if hasattr(assistant, 'extract_text_from_pdf'):
-                                             content = assistant.extract_text_from_pdf(uf.getvalue())
-                                         else: content = "PDF Content"
-                                    elif "wordprocessingml" in uf.type:
-                                         import docx
-                                         doc = docx.Document(uf)
-                                         content = "\n".join([p.text for p in doc.paragraphs])
-                                    else:
-                                        content = f"Binary: {uf.name}"
-                                        
-                                    # Fallback for root: create 'General' if needed or passing None if supported
-                                    # DB Handler seems to require unit_id for files usually.
-                                    # We'll assume allow root files if Current Unit is set.
-                                    # If Current Unit is None (Root), we force user to pick a folder?
-                                    if not current_unit_id:
-                                         # Quick Fix: Auto-assign to first available folder or create "General"
-                                         all_u = get_units(current_course_id)
-                                         if all_u: 
-                                             real_target = all_u[0]['id']
-                                             st.toast(f"⚠️ Subiendo a '{all_u[0]['name']}' (No estabas en una carpeta)")
-                                         else:
-                                             res = create_unit(current_course_id, "General")
-                                             real_target = res['id']
-                                             st.toast("✨ Carpeta 'General' creada automáticamente")
-                                    else:
-                                        real_target = current_unit_id
-
-                                    upload_file_to_db(real_target, uf.name, content, "text")
-                                except Exception as e:
-                                    st.error(f"Error: {e}")
-                            
-                            st.success("¡Archivos Subidos!")
-                            st.session_state['lib_active_tool'] = None # Close panel
-                            time.sleep(1)
-                            st.rerun()
-
-                with up_t2:
-                     note_title = st.text_input("Título:", placeholder="Ej: Idea.txt")
-                     note_body = st.text_area("Contenido:", height=150)
-                     if st.button("Guardar Nota"):
-                         if note_title and note_body:
-                             final_name = note_title if "." in note_title else f"{note_title}.txt"
-                             real_target = current_unit_id
-                             if not real_target:
-                                 all_u = get_units(current_course_id)
-                                 if all_u: real_target = all_u[0]['id']
-                                 else: 
-                                     r = create_unit(current_course_id, "Notas")
-                                     real_target = r['id']
-                             
-                             upload_file_to_db(real_target, final_name, note_body, "text")
-                             st.success("Nota guardada")
-                             st.session_state['lib_active_tool'] = None
-                             time.sleep(1)
-                             st.rerun()
-
-                with up_t3:
-                    st.info("Importar historial de chat como archivo.")
-                    # Simplified import logic (from original)
-                    i_file = st.file_uploader("Historial:", key="chat_imp_Simple")
-                    if i_file:
-                        content = str(i_file.read(), "utf-8", errors='ignore')
-                        if st.button("Procesar e Importar"):
-                             # Just save as file for now to keep it simple
-                             real_target = current_unit_id or (get_units(current_course_id)[0]['id'] if get_units(current_course_id) else create_unit(current_course_id, "Importados")['id'])
-                             upload_file_to_db(real_target, i_file.name, content, "text")
-                             st.success("Importado correctamente")
-                             st.rerun()
-
-            # --- CREATE FOLDER TOOL ---
-            elif tool == 'create':
-                st.markdown("#### ✨ Nueva Carpeta")
-                c_f1, c_f2 = st.columns([0.7, 0.3])
-                name = c_f1.text_input("Nombre de la carpeta:", label_visibility="collapsed", placeholder="Ej: Unidad 2")
-                if c_f2.button("Crear", type="primary", use_container_width=True):
-                    if name:
-                        create_unit(current_course_id, name, parent_id=current_unit_id)
-                        st.success(f"Carpeta '{name}' creada")
-                        st.session_state['lib_active_tool'] = None
-                        time.sleep(1)
-                        st.rerun()
-
-            # --- SEARCH TOOL ---
-            elif tool == 'search':
-                st.markdown("#### 🔍 Búsqueda Global")
-                q = st.text_input("Buscar archivo:", placeholder="Escribe el nombre...", key="search_bar_glob")
-                if q:
-                    results = search_library(current_course_id, q)
-                    if results:
-                        st.write(f"Encontrados **{len(results)}** resultados:")
-                        for r in results:
-                            with st.expander(f"{r['name']} (En: {r.get('unit_name', 'Unknown')})"):
-                                st.markdown(r.get('content')[:500] + "...")
-                                # Action to jump to folder?
-                                if st.button("Ir a la carpeta", key=f"jump_{r['id']}"):
-                                     # Not easy to jump fully without parent ID chain logic, 
-                                     # but we can try setting current unit if we had unit_id
-                                     # search_library returns unit_name usually. 
-                                     # Let's keep it simple.
-                                     pass
-                    else:
-                        st.caption("No se encontraron resultados.")
-
-            # --- MANAGE TOOL ---
-            elif tool == 'manage':
-                st.markdown("#### ⚙️ Gestión de Carpetas")
-                # Show only if subfolders exist
-                subs = get_units(current_course_id, parent_id=current_unit_id)
-                if not subs:
-                    st.info("No hay carpetas aquí para gestionar.")
-                else:
-                    st.write("Selecciona carpetas para borrar o renombrar (Ver interfaz clásica para renombrar individualmente).")
-                    opts = {u['name']: u['id'] for u in subs}
-                    sel_dels = st.multiselect("Seleccionar carpetas:", list(opts.keys()))
-                    if sel_dels and st.button(f"🗑️ Borrar {len(sel_dels)} carpetas"):
-                         for n in sel_dels:
-                             delete_unit(opts[n])
-                         st.success("Eliminadas.")
-                         st.rerun()
-
-            # --- BACKUP TOOL ---
-            elif tool == 'backup':
-                 st.markdown("#### 📦 Exportar Biblioteca")
-                 st.caption("Descarga todo tu contenido en un ZIP.")
-                 if st.button("Generar ZIP"):
-                     with st.spinner("Comprimiendo..."):
-                         data = get_full_course_backup(current_course_id)
-                         if data:
-                             buf = io.BytesIO()
-                             with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
-                                 for item in data:
-                                     path = f"{item['unit']}/{item['name']}"
-                                     zf.writestr(path, item['content'] or "")
-                             buf.seek(0)
-                             st.download_button("⬇️ Descargar ZIP", buf, "backup.zip", "application/zip")
-                         else: st.warning("Biblioteca vacía.")
-
-            # --- DUPLICATES TOOL ---
-            elif tool == 'duplicates':
-                st.markdown("#### 🧹 Detección de Duplicados")
-                st.caption("Encuentra y gestiona archivos con el mismo nombre en diferentes carpetas.")
-                
-                if st.button("🔍 Escanear toda la biblioteca", type="primary", help="Busca en TODAS las carpetas del diplomado actual"):
-                     from db_handler import get_duplicate_files
-                     
-                     st.toast("🔵 Iniciando escaneo...", icon="🔄")
-                     
-                     if not current_course_id:
-                         st.error("❌ No se pudo obtener el ID del curso. Por favor recarga la página.")
-                     else:
-                         try:
-                             # Clear previous state
-                             if 'dupes_results' in st.session_state: 
-                                 del st.session_state['dupes_results']
-                             if 'batch_delete_ready' in st.session_state:
-                                 del st.session_state['batch_delete_ready']
-                             
-                             with st.spinner("Analizando..."):
-                                 dupes = get_duplicate_files(current_course_id)
-                                 st.session_state['dupes_results'] = dupes
-                                 st.toast(f"✅ Escaneo completado. Encontrados: {len(dupes)}", icon="✅")
-                                 # Don't rerun here - let Streamlit naturally refresh
-                         except Exception as e:
-                             st.error(f"Error al escanear duplicados: {e}")
-                
-                # Render Results from Session State (to persist after delete actions re-run)
-                if 'dupes_results' in st.session_state:
-                     from db_handler import get_file_content # Delayed import
-                     dupes = st.session_state['dupes_results']
-                     if dupes:
-                         st.warning(f"⚠️ Se encontraron {len(dupes)} grupos de archivos duplicados:")
-                         
-                         for d in dupes:
-                             with st.container(border=True):
-                                 st.write(f"**📄 {d['name']}**")
-                                 st.caption(f"Archivos idénticos detectados: {d['count']}")
-                                 
-                                 for entry in d['entries']:
-                                     # Format date nicely
-                                     created_date = entry.get('created_at', '')
-                                     date_str = ""
-                                     if created_date:
-                                         if len(created_date) > 16:
-                                             date_str = f" <span style='color:grey; font-size:0.8em'>({created_date[:10]} {created_date[11:16]})</span>"
-                                         else:
-                                             date_str = f" <span style='color:grey; font-size:0.8em'>({created_date})</span>"
-                                     
-                                     # Row Layout: Folder + Delete Button aligned
-                                     d_c1, d_c2 = st.columns([0.85, 0.15], vertical_alignment="center")
-                                     with d_c1:
-                                         st.markdown(f"📂 **{entry['unit']}**{date_str}", unsafe_allow_html=True)
-                                     with d_c2:
-                                         if st.button("🗑️", key=f"del_dupe_{entry['id']}", help="Eliminar esta copia", use_container_width=True):
-                                             delete_file(entry['id'])
-                                             st.success("Eliminado")
-                                             time.sleep(0.5)
-                                             d['entries'].remove(entry)
-                                             d['count'] -= 1
-                                             if d['count'] <= 1: dupes.remove(d) 
-                                             st.rerun()
-
-                                     # File Content Preview (Full Width below)
-                                     with st.expander("👁️ Ver contenido"):
-                                         with st.container(height=200):
-                                             c_prev = get_file_content(entry['id'])
-                                             if c_prev is not None:
-                                                 if len(str(c_prev).strip()) == 0:
-                                                      st.warning("⚠️ El archivo está vacío (0 bytes de texto).")
-                                                 else:
-                                                      st.markdown(str(c_prev).lstrip()[:5000], unsafe_allow_html=True) 
-                                             else:
-                                                 st.info("ℹ️ Vista previa no disponible para este tipo de archivo.")
-                         
-                         # --- BATCH ACTIONS ---
-                         st.divider()
-                         st. subheader("⚡ Acciones Masivas")
-                         
-                         if st.button("🧹 Preparar Limpieza Automática", help="Selecciona automáticamente los duplicados para borrar, manteniendo solo la versión más reciente."):
-                             st.session_state['batch_delete_ready'] = True
-                         
-                         if st.session_state.get('batch_delete_ready'):
-                             to_delete = []
-                             for d in dupes:
-                                 # Sort by created_at DESCENDING (newest first)
-                                 # We keep the one with the 'largest' date (newest)
-                                 sorted_entries = sorted(d['entries'], key=lambda x: x.get('created_at', '0000'), reverse=True)
-                                 if len(sorted_entries) > 1:
-                                     # Keep index 0 (newest), delete 1..N (older ones)
-                                     to_delete.extend(sorted_entries[1:])
-                             
-                             if to_delete:
-                                 st.error(f"⚠️ **¿Estás seguro?** Se eliminarán **{len(to_delete)}** archivos duplicados.")
-                                 st.markdown("Se conservará únicamente la versión **más reciente** de cada grupo.")
-                                 
-                                 col_confirm, col_cancel = st.columns(2)
-                                 with col_confirm:
-                                     if st.button("🚨 SÍ, ELIMINAR TODOS", type="primary"):
-                                         try:
-                                             progress_bar = st.progress(0)
-                                             status_text = st.empty()
-                                             deleted_count = 0
-                                             
-                                             for i, f in enumerate(to_delete):
-                                                 status_text.text(f"Eliminando {i+1}/{len(to_delete)}: {f.get('unit', 'archivo')}...")
-                                                 try:
-                                                     delete_file(f['id'])
-                                                     deleted_count += 1
-                                                 except Exception as e:
-                                                     st.error(f"Error eliminando archivo: {e}")
-                                                 progress_bar.progress((i + 1) / len(to_delete))
-                                             
-                                             status_text.empty()
-                                             st.success(f"¡Limpieza completada! {deleted_count} archivos eliminados.")
-                                             time.sleep(1)
-                                             
-                                             # Reset state and re-scan
-                                             if 'batch_delete_ready' in st.session_state:
-                                                 del st.session_state['batch_delete_ready']
-                                             if 'dupes_results' in st.session_state:
-                                                 del st.session_state['dupes_results']
-                                             st.rerun()
-                                         except Exception as e:
-                                             st.error(f"Error en limpieza masiva: {e}")
-                                             if 'batch_delete_ready' in st.session_state:
-                                                 del st.session_state['batch_delete_ready']
-                                 with col_cancel:
-                                     if st.button("Cancelar"):
-                                         del st.session_state['batch_delete_ready']
-                                         st.rerun()
-                             else:
-                                 st.info("No hay candidatos seguros para borrar (quizás las fechas son idénticas o ya están limpios).")
-                         st.success("✅ ¡Excelente! No se encontraron duplicados en ninguna carpeta del curso.")
-
-            # Close Button footer for Panel
-            st.write("")
-            if st.button("Cerrar Panel", key="close_panel"):
-                st.session_state['lib_active_tool'] = None
-                st.rerun()
-
-    # ==========================================
-    # 3. BREADCRUMBS & NAVIGATION
-    # ==========================================
+    # --- NAVIGATION UI ---
+    # FIX: Tighter columns [0.1, 0.1, 0.8] to keep buttons grouped "pegaditos"
+    col_nav = st.columns([0.1, 0.1, 0.8])
     
-    # Breadcrumb Logic
-    crumbs = st.session_state['lib_breadcrumbs']
-    path_str = "Raíz" # Removed emoji from string to be cleaner with icon next to it
-    for c in crumbs:
-        path_str += f" > {c['name']}"
+    with col_nav[0]:
+        # Home Button (Renamed to avoid confusion with App Dashboard)
+        if st.button("📂 Raíz", use_container_width=True, help="Ir a la carpeta principal"):
+             st.session_state["lib_current_unit_id"] = None
+             st.session_state["lib_current_unit_name"] = None
+             st.session_state["lib_breadcrumbs"] = []
+             # PATCH: Update local var so it renders Home immediately without rerun
+             current_unit_id = None
 
-    # Minimalist Breadcrumbs (Compact)
-    # No extra spacers to keep it thin
-    bc_c1, bc_c2 = st.columns([0.85, 0.15])
-    with bc_c1:
-        # Minimalist path display
-        breadcrumbs_html = f"<div style='color: #94a3b8; font-size: 0.85rem; margin-top: 0px;'>📍 {path_str}</div>"
-        st.markdown(breadcrumbs_html, unsafe_allow_html=True)
-    with bc_c2:
-        if crumbs:
-            if st.button("⬅️ Atrás", use_container_width=True, key="back_nav_btn"):
-                st.session_state['lib_breadcrumbs'].pop()
+    with col_nav[1]:
+        # Back Button (Only if not at root)
+        if current_unit_id:
+            if st.button("⬅️ Atrás", key="back_btn", help="Subir un nivel"):
+                # Logic: Pop current, go to previous
                 if st.session_state['lib_breadcrumbs']:
-                    last = st.session_state['lib_breadcrumbs'][-1]
-                    st.session_state['lib_current_unit_id'] = last['id']
-                    st.session_state['lib_current_unit_name'] = last['name']
+                    st.session_state['lib_breadcrumbs'].pop() # Remove current
+                    
+                    if st.session_state['lib_breadcrumbs']:
+                        # Go to parent
+                        prev = st.session_state['lib_breadcrumbs'][-1]
+                        st.session_state['lib_current_unit_id'] = prev['id']
+                        st.session_state['lib_current_unit_name'] = prev['name']
+                    else:
+                        # Back to Home
+                        st.session_state['lib_current_unit_id'] = None
+                        st.session_state['lib_current_unit_name'] = None
                 else:
+                    # Fallback
                     st.session_state['lib_current_unit_id'] = None
-                    st.session_state['lib_current_unit_name'] = None
-                st.rerun()
+                    current_unit_id = None
+                
+                # Update local var for immediate render (Fast Back)
+                current_unit_id = st.session_state['lib_current_unit_id']
 
-    # Minimal Separator instead of thick Divider
-    st.markdown("<hr style='margin: 5px 0 15px 0; border: none; border-top: 1px solid #e2e8f0;'>", unsafe_allow_html=True)
-
-    # ==========================================
-    # 4. CONTENT GRID (Folders & Files)
-    # ==========================================
-    
-    # A. Folders
+    # --- FOLDER VIEW ---
     subfolders = get_units(current_course_id, parent_id=current_unit_id)
+    
     if subfolders:
         st.markdown("##### 📁 Carpetas")
+        cols = st.columns(3)
         
-        # V275: Restore File Counts (User Request)
-        unit_counts = get_course_file_counts(current_course_id)
+        # V110: Fetch Counts efficiently
+        file_counts = get_course_file_counts(current_course_id)
         
-        f_cols = st.columns(3)
         for i, unit in enumerate(subfolders):
-            with f_cols[i % 3]:
-                # Folder Card (Massive Icon Style via CSS Injection)
-                count = unit_counts.get(unit['id'], 0)
-                # SEPARATION: Handled by CSS ::before margin-bottom now.
-                # Label is just the name and count.
-                # Cleaner, safer, guaranteed size.
-                # V326: Truncate long names for aesthetics
-                folder_name = unit['name']
-                max_length = 35
-                if len(folder_name) > max_length:
-                    display_name = folder_name[:max_length] + "..."
-                else:
-                    display_name = folder_name
+            with cols[i % 3]:
+                # Dynamic Label
+                count = file_counts.get(unit['id'], 0)
+                label = f"📁 {unit['name']} ({count})" if count > 0 else f"📁 {unit['name']}"
                 
-                label = f"**{display_name}** ({count})"
-                
-                # Use type='secondary' to hook into our new scoped CSS (Avoids Primary conflict)
-                if st.button(label, key=f"fdir_{unit['id']}", use_container_width=True, type="secondary"):
+                if st.button(label, key=f"btn_unit_{unit['id']}", use_container_width=True):
                     st.session_state['lib_current_unit_id'] = unit['id']
                     st.session_state['lib_current_unit_name'] = unit['name']
-                    st.session_state['lib_breadcrumbs'].append(unit)
-                    st.rerun()
+                    st.session_state['lib_breadcrumbs'].append({'id': unit['id'], 'name': unit['name']})
+                    
+                    # TRACK FOOTPRINT
+                    if 'user' in st.session_state:
+                        update_user_footprint(st.session_state['user'].id, {
+                           "type": "unit",
+                           "title": unit['name'],
+                           "subtitle": "Explorando carpeta"
+                        })
+                        
+                    st.rerun() # REQUIRED: To clear parent folders from view
+                    
+        # Management Section (Rename & Delete)
+        with st.expander("⚙️ Gestión de Carpetas (Renombrar/Borrar)"):
+            c_rename, c_delete = st.columns(2, gap="large")
+            
+            
+            # 1. DEFINE OPTIONS AND HANDLE DUPLICATES
+            # Detect duplicates to ensure all folders are listed with unique keys
+            name_counts = {}
+            for u in subfolders:
+                name_counts[u['name']] = name_counts.get(u['name'], 0) + 1
+            
+            unit_options = {}
+            for u in subfolders:
+                name = u['name']
+                if name_counts[name] > 1:
+                    # Append short ID to make unique
+                    label = f"{name} ({u['id'][:4]})"
+                else:
+                    label = name
+                unit_options[label] = u['id']
 
-    # B. Files
-    if current_unit_id:
-        files = get_files(current_unit_id)
-        if files:
-            # V328: Multi-File Selection State
-            if 'selected_files_for_chat' not in st.session_state:
-                st.session_state['selected_files_for_chat'] = set()
+            # 3. USE ALL UNITS (No Filter)
+            editable_units = unit_options 
             
-            # Header with file count and batch actions
-            col_header, col_actions = st.columns([0.7, 0.3])
-            with col_header:
-                st.markdown(f"##### 📄 Archivos ({len(files)})")
-            
-            with col_actions:
-                selected_count = len(st.session_state['selected_files_for_chat'])
-                if selected_count > 0:
-                    if st.button(f"🤖 Analizar {selected_count} archivo{'s' if selected_count > 1 else ''}", 
-                                key="batch_analyze", use_container_width=True, type="primary"):
-                        # Batch analysis logic (implemented below)
-                        st.session_state['trigger_batch_analysis'] = True
-                        st.rerun()
-            
-            
-            
-            for f in files:
-                # V328: File Row Layout: Checkbox | Icon | Name | Actions | Spacer
-                r_check, r_c1, r_c2, r_c3, r_spacer = st.columns([0.05, 0.05, 0.70, 0.15, 0.05], vertical_alignment="bottom")
+            with c_rename:
+                st.markdown("###### ✏️ Renombrar Carpeta")
                 
-                with r_check:
-                    # Checkbox for multi-file selection
-                    is_selected = f['id'] in st.session_state['selected_files_for_chat']
-                    if st.checkbox("", value=is_selected, key=f"select_{f['id']}", label_visibility="collapsed"):
-                        st.session_state['selected_files_for_chat'].add(f['id'])
-                    else:
-                        st.session_state['selected_files_for_chat'].discard(f['id'])
-                
-                with r_c1:
-                    icon = "📝" if f['type'] == 'text' else "📎"
-                    st.write(icon)
-                
-                with r_c2:
-                    st.write(f"**{f['name']}**")
+                if not editable_units:
+                    st.caption("No hay carpetas para renombrar.")
+                else:
+                    sel_rename = st.selectbox("Selecciona carpeta:", ["-- Seleccionar --"] + list(editable_units.keys()), key="ren_unit_sel")
                     
-                    # V307: Editable Transcription Interface
-                    file_content = f.get('content') or f.get('content_text') or "Sin contenido"
-                    edit_key = f"edit_mode_{f['id']}"
-                    
-                    # Initialize edit mode state
-                    if edit_key not in st.session_state:
-                        st.session_state[edit_key] = False
-                    
-                    # Edit mode toggle
-                    col_edit, col_ai = st.columns(2)
-                    with col_edit:
-                        if st.button("✏️ Editar" if not st.session_state[edit_key] else "👁️ Ver", 
-                                   key=f"toggle_edit_{f['id']}", use_container_width=True):
-                            st.session_state[edit_key] = not st.session_state[edit_key]
-                            st.rerun()
-                    
-                    with col_ai:
-                        if st.button("🤖 Formatear", key=f"format_{f['id']}", use_container_width=True,
-                                   help="Aplica formato inteligente (párrafos, títulos)"):
-                            with st.spinner("Formateando con IA..."):
-                                formatted_text = format_transcript_with_ai(file_content, assistant)
-                                result = update_file_content(f['id'], formatted_text)
-                            if result is True:
-                                st.success("✨ Formateado con éxito")
-                                st.session_state[edit_key] = False
-                                time.sleep(0.5)
-                                st.rerun()
-                            else:
-                                st.error(f"❌ Error al guardar formato: {result}")
-                    
-                    # Display content (editable or read-only)
-                    if st.session_state[edit_key]:
-                        # Edit mode: CKEditor WYSIWYG (V311 - No API Key Required)
-                        st.caption("💡 Seleccioná texto y usá los botones para dar formato (como Google Docs)")
-                        
-                        editor_key = f"editor_content_{f['id']}"
-                        if editor_key not in st.session_state:
-                            st.session_state[editor_key] = file_content
-                        
-                        # Escape content for JavaScript
-                        import json
-                        import markdown
-                        
-                        # V325-FIX: Check if content is ALREADY html (starts with <)
-                        # If so, do NOT run markdown() on it again, or it adds extra <p> wrappers.
-                        if file_content.strip().startswith("<"):
-                             html_content = file_content
-                        else:
-                             # Convert existing Markdown to HTML
-                             html_content = markdown.markdown(file_content)
-                        
-                        # Remove outer <p> tags if it's a single paragraph acting weird, 
-                        # but usually markdown wraps everything in <p>. 
-                        # CKEditor handles HTML input perfectly.
-                        
-                        safe_content = json.dumps(html_content)
-                        
-                        # Render Editor (Quill or Fallback)
-                        
-                        # V320: Robust Editor Logic
-                        content_to_save = None
-                        
-                        # V324: ISOLATE EDITOR IN FORM TO PREVENT RELOADS
-                        # Using st.form prevents Streamlit from rerunning on every keystroke in Quill
-                        
-                        editor_form_key = f"form_edit_{f['id']}"
-                        
-                        with st.form(key=editor_form_key):
-                            if QUILL_AVAILABLE:
-                                # Toolbar configuration
-                                toolbar = [
-                                    ["bold", "italic", "underline", "strike"],
-                                    [{"header": [1, 2, 3, False]}],
-                                    [{"list": "ordered"}, {"list": "bullet"}],
-                                    [{"indent": "-1"}, {"indent": "+1"}],
-                                    ["clean"]
-                                ]
-                                
-                                st.caption("📝 Editor Visual (Quill) - Presiona 'Guardar' al terminar")
-                                
-                                # quill_content will be captured only on form submit? 
-                                # Actually st_quill inside form updates on submit.
-                                quill_content = st_quill(
-                                    value=html_content, 
-                                    placeholder="Escribe aquí...", 
-                                    html=True, 
-                                    toolbar=toolbar,
-                                    key=f"quill_{f['id']}"
-                                )
-                                content_to_save = quill_content
-                            else:
-                                st.caption("📝 Editor de Texto (Modo Seguro)")
-                                clean_text = clean_markdown_v3(file_content)
-                                txt_content = st.text_area("Contenido", value=clean_text, height=500, key=f"txt_{f['id']}")
-                                content_to_save = txt_content
-
-                            # Form Buttons
-                            col_save, col_cancel = st.columns([1, 1])
-                            with col_save:
-                                submit_save = st.form_submit_button("💾 Guardar Cambios", type="primary", use_container_width=True)
-                            
-                            with col_cancel:
-                                # Cancel button in form submits too, but we handle logic below
-                                submit_cancel = st.form_submit_button("❌ Cancelar", use_container_width=True)
-                        
-                        # LOGIC AFTER FORM SUBMISSION
-                        if submit_save:
-                            # 1. Validation
-                            if content_to_save is None:
-                                if QUILL_AVAILABLE: content_to_save = html_content 
-                                else: content_to_save = clean_markdown_v3(file_content)
-
-                            # 2. HTML CLEANING (Fix "Giant Jump" & Double Spacing)
-                            # Quill adds <p> around everything. Default CSS has large margins.
-                            # We need to Compact the HTML.
-                            if isinstance(content_to_save, str):
-                                import re
-                                
-                                # DETECT IF WE ARE SAVING HTML OR TEXT
-                                if "<p>" in content_to_save or "<div>" in content_to_save:
-                                    cleaned = content_to_save
-                                    
-                                    # 1. REMOVE ALL EMPTY PARAGRAPHS COMPLETELY
-                                    # This kills the "double enter" visual but fixes the gap issue.
-                                    # <p><br></p> -> ''
-                                    cleaned = re.sub(r'<p><br></p>', '', cleaned)
-                                    
-                                    # 2. ALSO Remove paragraphs that only contain whitespace
-                                    cleaned = re.sub(r'<p>\s*</p>', '', cleaned)
-                                    
-                                    # 3. Trim headers
-                                    
-                                    content_to_save = cleaned
-
-                            result = update_file_content(f['id'], content_to_save)
-                            if result is True:
-                                st.success("✅ Guardado exitosamente (Espacios Ajustados)")
-                                st.session_state[edit_key] = False
-                                # Cleanup keys
-                                if f"quill_{f['id']}" in st.session_state: del st.session_state[f"quill_{f['id']}"]
-                                if f"txt_{f['id']}" in st.session_state: del st.session_state[f"txt_{f['id']}"]
-                                
-                                time.sleep(0.5)
-                                st.rerun()
-                            else:
-                                st.error(f"❌ Error al guardar: {result}")
-                        
-                        if submit_cancel:
-                            st.session_state[edit_key] = False
-                            st.rerun()
-                    else:
-                        # View mode: Expander with formatted content
-                        with st.expander("Ver contenido"):
-                            # If content is HTML (starts with <p> or contains tags), treat as safe html
-                            # Otherwise markdown.
-                            # We can just always use unsafe_allow_html=True which handles both usually.
-                            st.markdown(file_content, unsafe_allow_html=True)
-                
-                with r_c3:
-                    # Quick Actions Popover
-                    with st.popover("⚡"):
-                        st.markdown(f"**{f['name']}**")
-                        if st.button("🤖 Analizar con IA", key=f"ai_{f['id']}"):
-                             # V327: Direct Chat Creation with Auto-Summary
-                             try:
-                                 from db_handler import create_chat_session, save_chat_message
-                                 
-                                 # Get file content
-                                 file_content = f.get('content') or f.get('content_text') or "Sin contenido"
-                                 file_name = f['name']
-                                 
-                                 # Get user ID from authenticated session
-                                 user = st.session_state.get('user')
-                                 if not user:
-                                     st.error("❌ Error: Usuario no autenticado")
+                    if sel_rename != "-- Seleccionar --":
+                        new_name = st.text_input("Nuevo nombre:", key="ren_new_name")
+                        if st.button("Renombrar Carpeta", use_container_width=True):
+                            if new_name:
+                                 target_id = editable_units[sel_rename]
+                                 if rename_unit(target_id, new_name):
+                                     st.success(f"Renombrado a '{new_name}'")
+                                     time.sleep(1)
+                                     st.rerun()
                                  else:
-                                     with st.spinner("Creando chat con el tutor..."):
-                                         user_id = user.id
-                                         session_title = f"📄 {file_name}"
-                                         
-                                         # Create chat session
-                                         session_id = create_chat_session(user_id, session_title)
-                                         
-                                         if session_id:
-                                             # Save user's request for summary
-                                             user_message = f"Por favor, dame un resumen detallado de este archivo:\n\n{file_content}"
-                                             save_chat_message(session_id, "user", user_message)
-                                             
-                                             # Generate AI response
-                                             try:
-                                                 prompt = f"Eres un tutor académico experto. Analiza el siguiente contenido y proporciona un resumen claro y estructurado:\n\n{file_content}"
-                                                 ai_response = assistant.model.generate_content(prompt)
-                                                 ai_text = ai_response.text
-                                                 save_chat_message(session_id, "assistant", ai_text)
-                                                 
-                                                 st.success(f"✅ Chat creado exitosamente: **{session_title}**")
-                                                 st.info("💬 Ve al **Historial de Chats** para ver el resumen completo")
-                                             except Exception as e:
-                                                 st.error(f"❌ Error al generar resumen: {str(e)}")
-                                                 st.info("💬 El chat fue creado. Ve al **Historial de Chats** para continuar")
-                                         else:
-                                             st.error("❌ Error al crear sesión de chat")
-                             except Exception as e:
-                                 st.error(f"❌ Error crítico: {str(e)}")
-                                 import traceback
-                                 st.code(traceback.format_exc())
-                             
-                             
-                        if st.button("🗑️ Eliminar", key=f"del_{f['id']}"):
-                            delete_file(f['id'])
+                                     st.error("Error al renombrar.")
+                            else:
+                                 st.warning("Escribe un nuevo nombre.")
+
+            with c_delete:
+                st.markdown("###### 🗑️ Borrar Carpeta(s)")
+                
+                if not editable_units:
+                     st.caption("No hay carpetas personalizadas para borrar.")
+                else:
+                    # Bulk Selection
+                    pass
+                    sel_del_list = st.multiselect("Selecciona carpetas para borrar:", list(editable_units.keys()), key="del_unit_mul")
+                    
+                    if sel_del_list:
+                        count = len(sel_del_list)
+                        st.warning(f"⚠️ ¿Seguro que quieres borrar {count} carpeta(s)?")
+                        # Debug
+                        # st.write(f"DEBUG: Selected: {sel_del_list}")
+                        
+                        if st.button(f"Sí, Borrar {count} Carpetas", key="btn_confirm_del", type="primary", use_container_width=True):
+                            success_count = 0
+                            fail_count = 0
+                            
+                            progress_bar = st.progress(0)
+                            for i, name in enumerate(sel_del_list):
+                                 target_id = editable_units[name]
+                                 if delete_unit(target_id):
+                                     success_count += 1
+                                 else:
+                                     fail_count += 1
+                                 progress_bar.progress((i + 1) / count)
+                            
+                            if fail_count == 0:
+                                 st.success(f"✅ {success_count} carpetas eliminadas correctamente.")
+                            else:
+                                 st.warning(f"⚠️ {success_count} eliminadas, {fail_count} fallaron.")
+                                 
+                            time.sleep(1)
                             st.rerun()
+        st.write("") # Spacer instead of divider
+    elif not current_unit_id:
+        st.info("No hay carpetas. Crea una nueva ➕")
+
+    # --- FILE VIEW ---
+    # Global callback to close popovers
+    def close_all_popovers():
+        if 'popover_reset_token' not in st.session_state:
+            st.session_state['popover_reset_token'] = 0
+            
+        st.session_state['popover_reset_token'] += 1
+        st.session_state['popover_needs_reset'] = True # Trigger flicker
+        st.toast("Menú cerrado", icon="✅")
+
+    if current_unit_id:
+        st.markdown(f"##### 📄 Archivos en '{st.session_state.get('lib_current_unit_name')}'")
+        files = get_files(current_unit_id)
+        
+        # Check reset flag
+        should_reset = st.session_state.get('popover_needs_reset', False)
+
+        if not files:
+            st.caption("Carpeta vacía.")
+        else:
+            # --- BULK ACTIONS BAR ---
+            # Initialize Selection State
+            if 'lib_multi_select' not in st.session_state: st.session_state['lib_multi_select'] = []
+            
+            # Filter valid IDs (clean up deleted files)
+            valid_ids = {f['id'] for f in files}
+            st.session_state['lib_multi_select'] = [fid for fid in st.session_state['lib_multi_select'] if fid in valid_ids]
+            
+            num_selected = len(st.session_state['lib_multi_select'])
+            
+            if num_selected > 0:
+                with st.container(border=True):
+                    st.markdown(f"**✨ {num_selected} seleccionados**")
+                    
+                    b_c1, b_c2 = st.columns([2, 1])
+                    with b_c1:
+                         # Bulk Move Selector
+                         # Only show if not moving to same folder (redundant check but good UI)
+                         all_units = get_units(current_course_id, fetch_all=True)
+                         target_b_opts = {u['name']: u['id'] for u in all_units if u['id'] != current_unit_id}
+                         
+                         if target_b_opts:
+                             sel_b_target = st.selectbox("Mover todo a:", list(target_b_opts.keys()), key="bulk_mov_sel", label_visibility="collapsed")
+                             target_b_id = target_b_opts[sel_b_target]
+                         else:
+                             target_b_id = None
+                             st.caption("No hay destinos.")
+
+                    with b_c2:
+                         if target_b_id and st.button("🚀 Mover", key="btn_bulk_move", type="primary", use_container_width=True):
+                             success_cnt = 0
+                             for fid in st.session_state['lib_multi_select']:
+                                 if move_file(fid, target_b_id):
+                                     success_cnt += 1
+                             
+                             if success_cnt > 0:
+                                 st.toast(f"✅ {success_cnt} archivos movidos a '{sel_b_target}'!")
+                                 st.session_state['lib_multi_select'] = [] # Clear selection
+                                 st.rerun()
+                             else:
+                                 st.error("Error al mover archivos.")
+
+            # --- FILE LIST ---
+            for f in files:
+                # COMPACT LAYOUT with Checkbox
+                # c0: Check, c1: Icon, c2: Link, c3: Menu, c4: Del
+                c0, c1, c2, c3, c4 = st.columns([0.05, 0.1, 0.65, 0.1, 0.1], vertical_alignment="bottom")
+                
+                with c0:
+                     # Checkbox for Multi Select
+                     is_sel = f['id'] in st.session_state['lib_multi_select']
+                     
+                     def toggle_sel(fid=f['id']):
+                         if fid in st.session_state['lib_multi_select']:
+                             st.session_state['lib_multi_select'].remove(fid)
+                         else:
+                             st.session_state['lib_multi_select'].append(fid)
+                             
+                     st.checkbox("Select", value=is_sel, key=f"chk_{f['id']}", on_change=toggle_sel, label_visibility="collapsed")
+
+                with c1:
+                    icon = "📄" if f['type'] == "text" else "📕"
+                    st.write(f"## {icon}")
+                
+                with c2:
+                    # RENAME LOGIC
+                    # consultant fix: hide extension in display (Case Insensitive)
+                    name_root, name_ext = os.path.splitext(f['name'])
+                    display_name = name_root if name_ext.lower() in ['.txt', '.md', '.pdf'] else f['name']
+                    
+                    ren_key = f"ren_file_{f['id']}"
+                    if st.session_state.get(ren_key):
+                        with st.container(border=True):
+                            new_name_input = st.text_input("Nuevo nombre", value=display_name, key=f"in_{ren_key}", label_visibility="collapsed")
                             
-                        st.divider()
-                        
-                        # --- MAGIC ARROWS (RESTORED V301) ---
-                        m_c1, m_c2 = st.columns(2)
-                        with m_c1:
-                            if st.button("🔼 Subir", key=f"up_{f['id']}", use_container_width=True):
-                                move_file_up(current_unit_id, f['id'])
-                                st.rerun()
-                        with m_c2:
-                            if st.button("🔽 Bajar", key=f"down_{f['id']}", use_container_width=True):
-                                move_file_down(current_unit_id, f['id'])
-                                st.rerun()
-                            
-                        st.divider()
-                        
-                        # --- CLEAN COPY BUTTON (ROBUST V299) ---
-                        raw_txt = f.get('content') or f.get('content_text') or ""
-                        clean_txt = clean_markdown_v3(raw_txt)
-                        
-                        import json
-                        safe_txt = json.dumps(clean_txt)
-                        
-                        components.html(f"""
-                        <html>
-                        <body style="margin:0; padding:0; display:flex; justify-content:center;">
-                            <script>
-                            function copyToClipboard() {{
-                                const text = {safe_txt};
-                                const btn = document.getElementById('copyBtn');
+                            col_s, col_c = st.columns([1, 1])
+                            if col_s.button("💾", key=f"sav_{ren_key}", help="Guardar", use_container_width=True):
+                                # Re-attach extension to ensure system integrity
+                                final_name = new_name_input + name_ext if name_ext else new_name_input
                                 
-                                function showSuccess() {{
-                                    btn.innerHTML = '✅ Copiado';
-                                    btn.style.borderColor = '#10b981';
-                                    btn.style.color = '#10b981';
-                                    setTimeout(() => {{
-                                        btn.innerHTML = '📋 Copiar Texto';
-                                        btn.style.borderColor = '#e2e8f0';
-                                        btn.style.color = '#64748b';
+                                if rename_file(f['id'], final_name):
+                                    st.toast("Renombrado!")
+                                    del st.session_state[ren_key]
+                                    st.rerun()
+                            if col_c.button("❌", key=f"can_{ren_key}", help="Cancelar", use_container_width=True):
+                                del st.session_state[ren_key]
+                                st.rerun()
+                    else:
+                        st.markdown(f"**{display_name}**")
+                    
+                    with st.expander("Ver contenido"):
+                        safe_content = f.get('content') or f.get('content_text') or ""
+                        
+                        # COPY BUTTON (JS-BASED)
+                        import streamlit.components.v1 as components
+                        import json
+                        
+                        safe_json = json.dumps(safe_content)
+                        # JS Component
+                        # We use an iframe, so we need to ensure clipboard access is allowed.
+                        # Usually standard button click works.
+                        html_code = f"""
+                        <html>
+                        <body style="margin:0; padding:0; background: transparent;">
+                            <script>
+                            function copyContent() {{
+                                const txt = {safe_json};
+                                navigator.clipboard.writeText(txt).then(function() {{
+                                    const btn = document.getElementById('copy_btn');
+                                    btn.innerText = '✅ Copiado!';
+                                    btn.style.color = 'green';
+                                    btn.style.borderColor = 'green';
+                                    setTimeout(() => {{ 
+                                        btn.innerText = '📄 Copiar Texto'; 
+                                        btn.style.color = '#555';
+                                        btn.style.borderColor = '#ccc';
                                     }}, 2000);
-                                }}
-
-                                // Plan A: Modern API
-                                if (navigator.clipboard && window.isSecureContext) {{
-                                    navigator.clipboard.writeText(text).then(showSuccess).catch(err => fallbackCopy(text));
-                                }} else {{
-                                    fallbackCopy(text);
-                                }}
-
-                                function fallbackCopy(text) {{
-                                    const textArea = document.createElement("textarea");
-                                    textArea.value = text;
-                                    textArea.style.position = "fixed";
-                                    textArea.style.left = "-9999px";
-                                    textArea.style.top = "0";
-                                    document.body.appendChild(textArea);
-                                    textArea.focus();
-                                    textArea.select();
-                                    try {{
-                                        const successful = document.execCommand('copy');
-                                        if (successful) showSuccess();
-                                    }} catch (err) {{
-                                        console.error('Fallback failed', err);
-                                    }}
-                                    document.body.removeChild(textArea);
-                                }}
+                                }}, function(err) {{
+                                    console.error('Async: Could not copy text: ', err);
+                                }});
                             }}
                             </script>
-                            <button id="copyBtn" onclick="copyToClipboard()" style="
-                                width: 100%;
-                                background: white;
-                                border: 1px solid #e2e8f0;
-                                border-radius: 8px;
-                                padding: 8px 16px;
-                                color: #64748b;
-                                font-size: 14px;
-                                font-family: sans-serif;
+                            <button id="copy_btn" onclick="copyContent()" style="
                                 cursor: pointer;
-                                transition: all 0.2s;
+                                background-color: #ffffff;
+                                border: 1px solid #cccccc;
+                                border-radius: 5px;
+                                padding: 5px 12px;
+                                font-family: 'Segoe UI', sans-serif;
+                                font-size: 14px;
+                                color: #555;
                                 display: flex;
                                 align-items: center;
+                                gap: 5px;
+                                width: 100%;
                                 justify-content: center;
-                                gap: 8px;
                             ">
-                                📋 Copiar Texto
+                                📄 Copiar Texto
                             </button>
                         </body>
                         </html>
-                        """, height=45)
-                            
-                        # Move Logic could go here (Simplified for now)
-        else:
-            if not subfolders:
-                st.info("Carpeta vacía. Usa el botón 'Subir' o 'Nueva' en la barra superior.")
-    else:
-        # At Root (and maybe no folders)
-        if not subfolders:
-             st.info("Biblioteca vacía. ¡Empieza creando una carpeta arriba!")
+                        """
+                        # Render with height enough for the button
+                        components.html(html_code, height=40)
+                        
+                        st.markdown(safe_content, unsafe_allow_html=True)
 
+                with c3:
+                    # CONSULTANT: SMART POPOVER (Choice Menu)
+                    # STRATEGY: DYNAMIC KEYS
+                    # Changing the 'key' forces Streamlit to destroy the old widget (open) and create a new one (closed).
+                    if 'popover_reset_token' not in st.session_state:
+                         st.session_state['popover_reset_token'] = 0
+                    
+                    token = st.session_state['popover_reset_token']
+                    pop_id = f"pop_{f['id']}_{token}"
+                    
+                    try:
+                        # Attempt to use dynamic key (Best method)
+                        popover_container = st.popover("⚡", help="Acciones Rápidas", key=pop_id)
+                    except TypeError:
+                        # Fallback for old Streamlit versions (No key support)
+                        # We use the label-rotation trick as a backup
+                        suffix = "." if (token % 2 != 0) else ""
+                        popover_container = st.popover(f"⚡{suffix}", help=f"Acciones {suffix}")
+
+                    with popover_container:
+                        # Layout: Title only (Clean UI)
+                        st.markdown(f"<div style='margin-bottom: 10px; font-weight: bold;'>{f['name']}</div>", unsafe_allow_html=True)
+                        
+                        # Actions
+                        if st.button("✏️ Renombrar", key=f"btn_ren_{f['id']}_{token}", use_container_width=True):
+                            st.session_state[f"ren_file_{f['id']}"] = True
+                            st.rerun()
+
+                            st.session_state['force_chat_tab'] = True
+                            st.rerun()
+
+                        # --- MOVER ARCHIVO ---
+                        move_key_mode = f"mov_mode_{f['id']}_{token}"
+                        
+                        def toggle_move_vis(k):
+                            st.session_state[k] = not st.session_state.get(k, False)
+
+                        if st.button("➡️ Mover a...", key=f"btn_move_{f['id']}_{token}", use_container_width=True, on_click=toggle_move_vis, args=(move_key_mode,)):
+                             pass # Handled by callback
+                             
+                        if st.session_state.get(move_key_mode):
+                             # Fetch available units (Optimized)
+                             all_units = get_units(current_course_id, fetch_all=True)
+                             target_opts = {u['name']: u['id'] for u in all_units if u['id'] != current_unit_id}
+                             
+                             if not target_opts:
+                                 st.caption("No hay otras carpetas.")
+                             else:
+                                 sel_target = st.selectbox("Destino:", list(target_opts.keys()), key=f"sel_mov_{f['id']}_{token}")
+                                 
+                                 def do_move(fid, tid, tname):
+                                     if move_file(fid, tid):
+                                         st.toast(f"Archivo movido a '{tname}'")
+                                         # Reset mode
+                                         # (Can't reset key here easily without rerunning, but rerun helps)
+                                     else: st.error("Error al mover")
+                                     
+                                 if st.button("Confirmar Mover", key=f"conf_mov_{f['id']}_{token}"):
+                                     # Not using callback here because we need to read the Selectbox State which might not be updated inside a callback if it was just changed?
+                                     # actually selectbox state IS available in callback.
+                                     # But let's keep it simple for action button. The TOGGLE is the one usually needing double clicks.
+                                     target_id = target_opts[sel_target]
+                                     if move_file(f['id'], target_id):
+                                         st.toast(f"Archivo movido a '{sel_target}'")
+                                         st.session_state[move_key_mode] = False # Close
+                                         st.rerun()
+                            
+                        if st.button("👨🏻‍🏫 Hablar con Profe", key=f"btn_tutor_{f['id']}_{token}", use_container_width=True):
+                            st.session_state['chat_context_file'] = f
+                            if 'user' in st.session_state:
+                                uid = st.session_state['user'].id
+                                sess_name = f"Análisis: {f['name']}"
+                                new_sess = create_chat_session(uid, sess_name)
+                                st.session_state['current_chat_session'] = new_sess
+                                st.session_state['tutor_chat_history'] = [] 
+                                prompt_msg = f"He abierto el archivo **{f['name']}**. ¿Me puedes dar un resumen o interpretación de su contenido?"
+                                st.session_state['tutor_chat_history'].append({"role": "user", "content": prompt_msg})
+                            st.session_state['redirect_target_name'] = "Tutoria 1 a 1"
+                            st.session_state['force_chat_tab'] = True
+                            st.rerun()
+
+                with c4:
+                    # Spacer to align with "Ver contenido"
+                    st.markdown("<div style='height: 8px'></div>", unsafe_allow_html=True)
+                    # Compact Delete Button
+                    if st.button("🗑️", key=f"del_f_{f['id']}", help="Borrar archivo permanentemente"):
+                        delete_file(f['id'])
+                        st.rerun()
+                            
+            # END OF LOOP
+
+            # END OF LOOP
+    
+    # --- ACTION AREA (Upload/Create) ---
+    # Auto-expand if triggered from Dashboard
+    open_upload = st.session_state.get('lib_auto_open_upload', False)
+    # Reset immediately so it doesn't stick
+    if open_upload: 
+        st.session_state['lib_auto_open_upload'] = False
+        # JS Hack to click the "Subir Archivos" tab
+        st.components.v1.html("""
+            <script>
+                setTimeout(() => {
+                    const tabs = window.parent.document.querySelectorAll('button[data-testid="stTab"]');
+                    for (const tab of tabs) {
+                        if (tab.innerText.includes("Subir Archivos")) {
+                            tab.click();
+                            tab.scrollIntoView({behavior: "smooth", block: "center"});
+                            break;
+                        }
+                    }
+                }, 1000); // Delay to allow render
+            </script>
+        """, height=0)
+    
+    with st.expander("➕ Añadir Contenido / Subir Archivos", expanded=open_upload):
+        target_unit_id = current_unit_id
+    
+        # If root, allow valid selection
+        if not current_unit_id:
+            all_units = get_units(current_course_id, fetch_all=True)
+            u_map = {u['name']: u['id'] for u in all_units}
+            sel = st.selectbox("Destino:", ["✨ Nueva Carpeta..."] + list(u_map.keys()))
+            if sel == "✨ Nueva Carpeta...":
+                 new_folder_name = st.text_input("Nombre de Carpeta:", placeholder="Ej: Unidad 1")
+                 if st.button("Crear Carpeta", key="create_root_f_btn"):
+                     if new_folder_name:
+                          create_unit(current_course_id, new_folder_name, parent_id=None)
+                          st.rerun()
+            else:
+                 target_unit_id = u_map[sel]
+        else:
+            new_folder_name = None
+    
+        tab2, tab1, tab4, tab3 = st.tabs(["✨ Crear Carpeta", "📂 Subir Archivos", "✍🏻 Escribir contenido", "📥 Importar chat masivo"])
+    
+        with tab1:
+            upl_files = st.file_uploader(
+                "Archivos (Todos los formatos):",
+                accept_multiple_files=True
+            )
+            if st.button("Subir Archivos", type="primary"):
+                if not target_unit_id:
+                     # Check if user entered a new folder name
+                     if new_folder_name:
+                         res = create_unit(current_course_id, new_folder_name, parent_id=None)
+                         if res: target_unit_id = res['id']
+                     else:
+                         st.error("Selecciona una carpeta destino o crea una nueva.")
+                         st.stop()
+            
+                if target_unit_id and upl_files:
+                    for uf in upl_files:
+                        try:
+                            content = ""
+                            # Simple text handler for now, can be expanded
+                            if uf.type in ["text/plain", "application/json", "text/markdown"]:
+                                content = str(uf.read(), "utf-8", errors='ignore')
+                            elif uf.type == "application/pdf":
+                                 # If assistant has pdf extractor, use it, else placeholder
+                                 if hasattr(assistant, 'extract_text_from_pdf'):
+                                     content = assistant.extract_text_from_pdf(uf.getvalue())
+                                 else:
+                                     content = "PDF Content Placeholder"
+                            elif uf.type == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+                                 try:
+                                     import docx
+                                     # docx.Document expects a file-like object
+                                     doc = docx.Document(uf)
+                                     content = "\n".join([para.text for para in doc.paragraphs])
+                                 except Exception as e:
+                                     content = f"Error reading DOCX: {e}"
+                            else:
+                                content = f"Binary content: {uf.name}"
+                            
+                            upload_file_to_db(target_unit_id, uf.name, content, "text")
+                        except Exception as e:
+                            st.error(f"Error subiendo {uf.name}: {e}")
+                    st.success("¡Archivos subidos correctamente!")
+                    time.sleep(1)
+                    st.rerun()
+    
+        with tab2:
+            nf_name = st.text_input("Nombre de sub-carpeta:", key="new_sub_folder")
+            if st.button("Crear Carpeta"):
+                if nf_name:
+                    create_unit(current_course_id, nf_name, parent_id=current_unit_id)
+                    st.rerun()
+
+        with tab4:
+            st.markdown("###### 📝 Editor de Texto Simple")
+        
+            # Folder Selection for Saving
+            all_units = get_units(current_course_id, fetch_all=True)
+            if not all_units:
+                st.warning("Primero crea una carpeta en la pestaña 'Crear Carpeta'.")
+            else:
+                unit_opts = {u['name']: u['id'] for u in all_units}
+                # Default to current if set
+                def_idx = 0
+                if current_unit_id and current_unit_id in unit_opts.values():
+                     def_name = next(k for k,v in unit_opts.items() if v == current_unit_id)
+                     if def_name in list(unit_opts.keys()):
+                         def_idx = list(unit_opts.keys()).index(def_name)
+            
+                sel_target_name = st.selectbox("Guardar en:", list(unit_opts.keys()), index=def_idx, key="save_note_target")
+                target_save_id = unit_opts[sel_target_name]
+
+                note_title = st.text_input("Título de la nota (ej: Resumen.txt):", placeholder="Mi_Nota.txt", key="new_note_title")
+                note_content = st.text_area("Contenido:", height=200, placeholder="Escribe o pega tu texto aquí...", key="new_note_content")
+            
+                c_save, c_clear = st.columns([0.2, 0.8])
+            
+                # Clear Button Logic
+                if c_clear.button("🗑️ Borrar todo"):
+                    st.session_state['new_note_content'] = ""
+                    st.rerun()
+
+                if c_save.button("💾 Guardar Nota", type="primary", use_container_width=True):
+                    if not note_title:
+                        st.error("Escribe un título para la nota.")
+                    elif not note_content:
+                        st.error("La nota está vacía.")
+                    else:
+                        # Append .txt if missing
+                        final_name = note_title
+                        if "." not in final_name: final_name += ".txt"
+                    
+                        try:
+                            upload_file_to_db(target_save_id, final_name, note_content, "text")
+                            st.success(f"✅ Nota '{final_name}' guardada en '{sel_target_name}'.")
+                            time.sleep(1)
+                            # Optional: Don't rerun whole app if you want to stay here, but refreshing shows file in list if visible
+                            # User requested NOT to be redirected. So simple check.
+                            # We are in Tab4. Rerun keeps us in Tab4 if st.session_state of tabs is managed, but st.tabs usually resets.
+                            # Wait, st.tabs usually resets to first tab on rerun unless we track active tab index?
+                            # Streamlit doesn't natively track active tab index easily without component.
+                            # But rewriting the UI might stay looking similar. 
+                            # Let's try basic rerun first as it refreshes data.
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Error guardando nota: {e}")
+
+        with tab3:
+            st.markdown("###### 🧠 Importador Inteligente de Historiales")
+            st.caption("Conversa con la IA para organizar tu archivo. Pídele resúmenes, extraer fechas o dividir por temas.")
+        
+            chat_file = st.file_uploader("Sube el historial del chat:", type=['txt', 'json', 'md'], key="chat_import_upl")
+        
+            # Session State for Import Chat
+            if 'import_chat_history' not in st.session_state: st.session_state['import_chat_history'] = []
+        
+            if chat_file is not None:
+                raw_text = str(chat_file.read(), "utf-8", errors='ignore')
+            
+                # --- INITIAL ANALYSIS (Agent Kickoff) ---
+                if 'last_imported_file' not in st.session_state or st.session_state['last_imported_file'] != chat_file.name:
+                    st.session_state['import_chat_history'] = [] # Reset history on new file
+                    st.session_state['last_imported_file'] = chat_file.name
+                
+                    with st.spinner("🤖 Analizando archivo..."):
+                        greeting = assistant.analyze_import_file(raw_text)
+                        st.session_state['import_chat_history'].append({"role": "assistant", "content": greeting})
+            
+                # --- CHAT UI ---
+                # Display History
+                for msg in st.session_state['import_chat_history']:
+                     with st.chat_message(msg["role"]):
+                         st.markdown(msg["content"])
+                
+                # Input
+                if prompt := st.chat_input("Dime cómo quieres organizar este archivo..."):
+                    st.session_state['import_chat_history'].append({"role": "user", "content": prompt})
+                    with st.chat_message("user"):
+                        st.markdown(prompt)
+                    
+                    with st.chat_message("assistant"):
+                        with st.spinner("Pensando..."):
+                             # We pass the prompt + raw_text context to the assistant
+                             resp = assistant.chat_about_import(raw_text, st.session_state['import_chat_history'])
+                             st.markdown(resp)
+                             st.session_state['import_chat_history'].append({"role": "assistant", "content": resp})
