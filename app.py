@@ -2706,8 +2706,8 @@ with st.sidebar:
         <script>
             setTimeout(function() {
                 function createArrow(id, html, bottom, onClick) {
-                    if (document.getElementById(id)) return;
-                    const btn = document.createElement('button');
+                    if (window.parent.document.getElementById(id)) return;
+                    const btn = window.parent.document.createElement('button');
                     btn.id = id;
                     btn.innerHTML = html;
                     Object.assign(btn.style, {
@@ -2721,23 +2721,35 @@ with st.sidebar:
                     });
                     btn.onmouseover = () => btn.style.transform = 'scale(1.1)';
                     btn.onmouseout = () => btn.style.transform = 'scale(1)';
-                    btn.addEventListener('click', onClick);
-                    document.body.appendChild(btn);
+                    btn.onclick = onClick; // Use .onclick for direct assignment in parent
+                    window.parent.document.body.appendChild(btn);
                 }
+                
                 // Fade‑in style
-                if (!document.getElementById('arrow-fade-style')) {
-                    const style = document.createElement('style');
+                if (!window.parent.document.getElementById('arrow-fade-style')) {
+                    const style = window.parent.document.createElement('style');
                     style.id = 'arrow-fade-style';
                     style.textContent = '@keyframes fadeIn { to { opacity: 1; } }';
-                    document.head.appendChild(style);
+                    window.parent.document.head.appendChild(style);
                 }
-                // Down arrow: scroll down one viewport height
+
+                // Helper to find the main scrollable container in Streamlit
+                function getScrollContainer() {
+                    return window.parent.document.querySelector('[data-testid="stAppViewContainer"]') || 
+                           window.parent.document.querySelector('section.main') ||
+                           window.parent.document.documentElement;
+                }
+
+                // Down arrow: scroll down
                 createArrow('scroll-down', '⬇', '20px', () => {
-                    window.scrollBy({ top: window.innerHeight, behavior: 'smooth' });
+                    const el = getScrollContainer();
+                    if(el) el.scrollBy({ top: el.clientHeight, behavior: 'smooth' });
                 });
-                // Up arrow: scroll up one viewport height
+                
+                // Up arrow: scroll up
                 createArrow('scroll-up', '⬆', '80px', () => {
-                    window.scrollBy({ top: -window.innerHeight, behavior: 'smooth' });
+                    const el = getScrollContainer();
+                    if(el) el.scrollBy({ top: -el.clientHeight, behavior: 'smooth' });
                 });
             }, 3000);
         </script>

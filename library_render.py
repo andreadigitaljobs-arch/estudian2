@@ -507,6 +507,8 @@ def render_library_v2(assistant):
                 if st.button("🔍 Escanear toda la biblioteca", type="primary", help="Busca en TODAS las carpetas del diplomado actual"):
                      from db_handler import get_duplicate_files
                      
+                     st.toast("🔵 Iniciando escaneo...", icon="🔄")
+                     
                      if not current_course_id:
                          st.error("❌ No se pudo obtener el ID del curso. Por favor recarga la página.")
                      else:
@@ -520,6 +522,7 @@ def render_library_v2(assistant):
                              with st.spinner("Analizando..."):
                                  dupes = get_duplicate_files(current_course_id)
                                  st.session_state['dupes_results'] = dupes
+                                 st.toast(f"✅ Escaneo completado. Encontrados: {len(dupes)}", icon="✅")
                                  # Don't rerun here - let Streamlit naturally refresh
                          except Exception as e:
                              st.error(f"Error al escanear duplicados: {e}")
