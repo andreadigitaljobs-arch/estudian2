@@ -1023,17 +1023,19 @@ def render_library_v2(assistant):
                         import json
                         safe_txt = json.dumps(clean_txt)
                         
-                        components.html(f"""
+                        # --- ROBUST REFACTOR: Split Strings to Avoid F-String Brace Hell ---
+                        # 1. Static CSS (No f-string, so { } are safe)
+                        html_head = """
                         <html>
                         <head>
                             <style>
-                                body {{
+                                body {
                                     margin: 0;
                                     padding: 0;
                                     display: flex;
                                     justify-content: center;
-                                }}
-                                #copyBtn {{
+                                }
+                                #copyBtn {
                                     width: 100%;
                                     background: white;
                                     border: 1px solid #e2e8f0;
@@ -1048,14 +1050,19 @@ def render_library_v2(assistant):
                                     align-items: center;
                                     justify-content: center;
                                     gap: 8px;
-                                }}
-                                #copyBtn:hover {{
+                                }
+                                #copyBtn:hover {
                                     background: #f8fafc;
                                     color: #334155;
                                     border-color: #cbd5e1;
-                                }}
+                                }
                             </style>
                         </head>
+                        """
+                        
+                        # 2. Dynamic Body (F-String, need to escape JS braces {{ }})
+                        # We use {safe_txt} for the variable
+                        html_body = f"""
                         <body>
                             <script>
                             function copyToClipboard() {{
@@ -1104,7 +1111,9 @@ def render_library_v2(assistant):
                             </button>
                         </body>
                         </html>
-                        """, height=45)
+                        """
+                        
+                        components.html(html_head + html_body, height=45)
                             
                         # Move Logic could go here (Simplified for now)
         else:
