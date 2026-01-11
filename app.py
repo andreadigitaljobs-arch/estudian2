@@ -2706,17 +2706,20 @@ with st.sidebar:
         <script>
             setTimeout(function() {
                 function createArrow(id, html, bottom, onClick) {
-                    if (window.parent.document.getElementById(id)) return;
+                    // Try to find existing arrow first
+                    const existingBtn = window.parent.document.getElementById(id);
+                    if (existingBtn) return;
+                    
                     const btn = window.parent.document.createElement('button');
                     btn.id = id;
                     btn.innerHTML = html;
                     Object.assign(btn.style, {
                         position: 'fixed', bottom: bottom, right: '20px',
-                        width: '40px', height: '40px', borderRadius: '50%',
+                        width: '50px', height: '50px', borderRadius: '50%',
                         border: 'none', backgroundColor: '#4B22DD', color: 'white',
-                        fontSize: '20px', cursor: 'pointer', zIndex: '9999',
+                        fontSize: '24px', cursor: 'pointer', zIndex: '999999',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        boxShadow: '0 4px 6px rgba(0,0,0,0.3)', transition: 'transform 0.2s',
+                        boxShadow: '0 4px 6px rgba(0,0,0,0.3)', transition: 'all 0.2s',
                         opacity: '0', animation: 'fadeIn 0.5s forwards'
                     });
                     btn.onmouseover = () => btn.style.transform = 'scale(1.1)';
@@ -2733,8 +2736,22 @@ with st.sidebar:
                     window.parent.document.head.appendChild(style);
                 }
                 
-                createArrow('scroll-down', '⬇', '20px', () => window.parent.scrollTo({top: window.parent.document.body.scrollHeight, behavior: 'smooth'}));
-                createArrow('scroll-up', '⬆', '70px', () => window.parent.scrollTo({top: 0, behavior: 'smooth'}));
+                // Get the main scrollable container (Streamlit's main content area)
+                const getScrollContainer = () => {
+                    return window.parent.document.querySelector('section.main') || 
+                           window.parent.document.documentElement || 
+                           window.parent.document.body;
+                };
+                
+                createArrow('scroll-down', '⬇', '20px', () => {
+                    const container = getScrollContainer();
+                    container.scrollTo({top: container.scrollHeight, behavior: 'smooth'});
+                });
+                
+                createArrow('scroll-up', '⬆', '80px', () => {
+                    const container = getScrollContainer();
+                    container.scrollTo({top: 0, behavior: 'smooth'});
+                });
             }, 3000); // 3 second delay to avoid interference with page loads
         </script>
         """, height=0)
