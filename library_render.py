@@ -430,11 +430,12 @@ def render_library_v2(assistant):
                 unit_name = unit['name']
                 
                 # Use st.markdown with anchor tag for clickable functionality (avoids iframe issues and key error)
+                # Use st.markdown with anchor tag for clickable functionality (avoids iframe issues and key error)
                 html_content = f"""
                 <a href="?folder_id={unit_id}" target="_self" style="text-decoration: none; color: inherit; display: block;">
-                    <div style="background: transparent; border: none; padding: 16px 8px; text-align: center; cursor: pointer; transition: all 0.2s ease; min-height: 180px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;" 
-                         onmouseover="this.style.backgroundColor='rgba(0,0,0,0.04)'; this.style.borderRadius='12px';" 
-                         onmouseout="this.style.backgroundColor='transparent'; this.style.borderRadius='0px';">
+                    <div style="background: transparent; border: 1px solid transparent; padding: 16px 8px; text-align: center; cursor: pointer; transition: all 0.1s ease; min-height: 180px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; border-radius: 4px;" 
+                         onmouseover="this.style.backgroundColor='rgba(224, 242, 254, 0.5)'; this.style.borderColor='rgba(186, 230, 253, 0.8)'; this.style.transform='scale(1.02)';" 
+                         onmouseout="this.style.backgroundColor='transparent'; this.style.borderColor='transparent'; this.style.transform='scale(1)';">
                         <div style="font-size: 80px; line-height: 1;">📁</div>
                         <div style="color: #1e293b; font-size: 14px; font-weight: 700; line-height: 1.3; font-family: 'Segoe UI', system-ui, sans-serif; max-width: 180px; word-wrap: break-word;">{unit_name}</div>
                         <div style="color: #64748b; font-size: 12px; font-weight: 500;">{count} archivos</div>
