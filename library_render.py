@@ -834,10 +834,10 @@ def render_library_v2(assistant):
                                     border-radius: 8px;
                                     padding: 8px 12px;
                                     cursor: pointer;
-                                    font-family: inherit;
+                                    font-family: 'Source Sans Pro', sans-serif;
                                     font-size: 14px;
                                     color: #475569;
-                                    font-weight: 500;
+                                    font-weight: 600;
                                     transition: all 0.2s;
                                     margin-top: 4px;
                                     display: flex;
