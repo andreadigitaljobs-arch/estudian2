@@ -566,22 +566,22 @@ def render_library_v2(assistant):
                          st.divider()
                          st. subheader("⚡ Acciones Masivas")
                          
-                         if st.button("🧹 Preparar Limpieza Automática", help="Selecciona automáticamente los duplicados para borrar, manteniendo solo la versión más antigua."):
+                         if st.button("🧹 Preparar Limpieza Automática", help="Selecciona automáticamente los duplicados para borrar, manteniendo solo la versión más reciente."):
                              st.session_state['batch_delete_ready'] = True
                          
                          if st.session_state.get('batch_delete_ready'):
                              to_delete = []
                              for d in dupes:
-                                 # Sort by created_at (strings iso format sorts correctly)
-                                 # We keep the one with the 'smallest' date (oldest)
-                                 sorted_entries = sorted(d['entries'], key=lambda x: x.get('created_at', '9999'))
+                                 # Sort by created_at DESCENDING (newest first)
+                                 # We keep the one with the 'largest' date (newest)
+                                 sorted_entries = sorted(d['entries'], key=lambda x: x.get('created_at', '0000'), reverse=True)
                                  if len(sorted_entries) > 1:
-                                     # Keep index 0, delete 1..N
+                                     # Keep index 0 (newest), delete 1..N (older ones)
                                      to_delete.extend(sorted_entries[1:])
                              
                              if to_delete:
                                  st.error(f"⚠️ **¿Estás seguro?** Se eliminarán **{len(to_delete)}** archivos duplicados.")
-                                 st.markdown("Se conservará únicamente la versión más antigua de cada grupo.")
+                                 st.markdown("Se conservará únicamente la versión **más reciente** de cada grupo.")
                                  
                                  col_confirm, col_cancel = st.columns(2)
                                  with col_confirm:
