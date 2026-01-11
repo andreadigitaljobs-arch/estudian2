@@ -1566,6 +1566,67 @@ if not st.session_state['user']:
 
     # st.stop() # COMMENTED OUT: Suspicious global stop
 
+# --- DUAL NAVIGATION ARROWS (CLASSIC + FIXED) ---
+def inject_navigation_arrows():
+    components.html("""
+    <script>
+        setTimeout(function() {
+            function createArrow(id, html, bottom, onClick) {
+                // Fix: Remove if exists (Anti-Dupe)
+                const old = window.parent.document.getElementById(id);
+                if (old) old.remove();
+
+                const btn = window.parent.document.createElement('button');
+                btn.id = id;
+                btn.innerHTML = html;
+                Object.assign(btn.style, {
+                    position: 'fixed', bottom: bottom, right: '20px',
+                    width: '50px', height: '50px', borderRadius: '50%',
+                    border: 'none', backgroundColor: '#4B22DD', color: 'white',
+                    fontSize: '24px', cursor: 'pointer', zIndex: '999999',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    boxShadow: '0 4px 6px rgba(0,0,0,0.3)', transition: 'all 0.2s',
+                    opacity: '0', animation: 'fadeIn 0.5s forwards'
+                });
+                btn.onmouseover = () => btn.style.transform = 'scale(1.1)';
+                btn.onmouseout = () => btn.style.transform = 'scale(1)';
+                btn.onclick = onClick; 
+                window.parent.document.body.appendChild(btn);
+            }
+            
+            if (!window.parent.document.getElementById('arrow-fade-style')) {
+                const style = window.parent.document.createElement('style');
+                style.id = 'arrow-fade-style';
+                style.textContent = '@keyframes fadeIn { to { opacity: 1; } }';
+                window.parent.document.head.appendChild(style);
+            }
+
+            function getScrollContainer() {
+                return window.parent.document.querySelector('[data-testid="stAppViewContainer"]') || 
+                       window.parent.document.querySelector('section.main') ||
+                       window.parent.document.documentElement;
+            }
+
+            // Down arrow
+            createArrow('scroll-down', '⬇', '20px', () => {
+                const el = getScrollContainer();
+                if(el) {
+                    el.scrollBy({ top: 400, behavior: 'smooth' });
+                }
+            });
+            
+            // Up arrow
+            createArrow('scroll-up', '⬆', '80px', () => {
+               const el = getScrollContainer();
+               if(el) {
+                   el.scrollBy({ top: -400, behavior: 'smooth' });
+               }
+            });
+        }, 3000);
+    </script>
+    """, height=0)
+
+
 
 
 
