@@ -94,67 +94,62 @@ def render_library_v2(assistant):
     # --- CSS for Windows-Style Explorer (Transparent Buttons, Big Icons) ---
     st.markdown("""
     <style>
-    /* Target buttons inside the main app area */
+    /* --- V334 RESTORED: WINDOWS STYLE FOLDERS --- */
+    
+    /* 1. Base Button Style (Glassy & Bold) */
     div.stButton > button {
         background-color: transparent !important;
         border: 1px solid transparent !important;
-        border-radius: 8px !important;
-        color: #202124 !important; /* DARK TEXT for readability on white */
+        border-radius: 12px !important;
+        color: #1e293b !important; /* Dark Slate for Text */
         
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
-        justify-content: flex-start !important;
+        justify-content: center !important; /* Center everything */
         text-align: center !important;
         
-        padding: 0px !important;
-        width: 100%;
-        height: 110px !important;
+        padding: 10px !important;
+        width: 100% !important;
+        height: 140px !important; /* Taller for Big Icon */
         
         box-shadow: none !important;
-        font-family: 'Segoe UI', sans-serif !important;
-        font-size: 14px !important;
-        line-height: 1.2 !important;
-        white-space: pre-wrap !important;
+        font-family: 'Segoe UI', system-ui, sans-serif !important;
+        font-size: 15px !important;
+        font-weight: 700 !important; /* BOLD TITLES */
+        line-height: 1.3 !important;
+        white-space: pre-wrap !important; /* Allow Icon break */
         overflow: visible !important;
+        transition: all 0.2s ease !important;
     }
     
-    /* BIG ICON MAGIC: Target the Folder Emoji (First Line) */
+    /* 2. BIG ICON MAGIC (Target First Line / Emoji) */
     div.stButton > button::first-line {
-        font-size: 64px !important; /* Bigger and bolder */
-        line-height: 1.1 !important;
+        font-size: 72px !important; /* HUGE ICONS */
+        line-height: 1.0 !important;
+        font-weight: 400 !important; /* Emoji doesn't need bold */
     }
 
-    /* Hover Effect */
+    /* 3. Hover Effect (Subtle Windows Highlight) */
     div.stButton > button:hover {
-        background-color: rgba(0, 0, 0, 0.05) !important;
-        border-color: rgba(0, 0, 0, 0.1) !important;
+        background-color: #f1f5f9 !important; /* Light Slate 100 */
+        border-color: #cbd5e1 !important; /* Slate 300 */
+        transform: translateY(-2px);
     }
     
-    /* COLOR HACK: Vibrancy + Tint */
-    
-    /* Even buttons: Purple Tone (Saturate to fix washout) */
-    div[data-testid="column"]:nth-of-type(even) div.stButton > button::first-line {
-        filter: hue-rotate(260deg) saturate(2); /* Target ONLY the emoji if possible? No, first-line applies styles */
-    } 
-    /* Actually ::first-line doesn't support filter property in all browsers well on text. 
-       Let's apply filter to the BUTTON but invert it for text? No too complex. 
-       Let's apply filter to button and hope text is black enough to handle rotation or just accept tinted text.
-       OR: Use just the rotate on the button and ensure high contrast.
-    */
+    /* 4. COLOR HACK: Green & Purple Alternating */
+    /* DEFAULT (Odd Columns): Greenish/Yellow (Natural Folder Emoji) */
+    /* Target EVEN Columns: Purple Tone */
     
     div[data-testid="column"]:nth-of-type(even) div.stButton > button {
-        filter: hue-rotate(240deg); 
-    }
-    div[data-testid="column"]:nth-of-type(odd) div.stButton > button {
-        filter: hue-rotate(0deg); /* Keep Yellow/Greenish natural */
+        filter: hue-rotate(260deg) saturate(1.2); /* Turn Yellow -> Purple */
     }
     
-    /* Fix Text Color Shift caused by Filter: 
-       If we rotate black text, it stays black. Good.
-       If we rotate white background, it stays white. Good.
-       So only the Emoji changes color! Perfect.
-    */
+    /* Fix Text Color Shift for Purple Buttons */
+    /* Since we rotate the whole button, text color flips too. 
+       Compensate by forcing text to be dark grey/black which rotates to... dark blueish. 
+       Actually, standard dark grey (#1e293b) rotated 260deg stays dark. It's fine. */
+       
     </style>
     """, unsafe_allow_html=True)
 
