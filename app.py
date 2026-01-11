@@ -450,61 +450,7 @@ st.markdown("""
         position: absolute !important;
     }
     
-    /* --- V334 RESTORED: WINDOWS STYLE FOLDERS (GLOBAL ENFORCEMENT) --- */
-    
-    /* 1. Base Button Style (Glassy & Bold) */
-    div.stButton > button {
-        background-color: transparent !important;
-        border: 1px solid transparent !important;
-        border-radius: 12px !important;
-        color: #1e293b !important; /* Dark Slate for Text */
-        
-        display: flex !important;
-        flex-direction: column !important;
-        align-items: center !important;
-        justify-content: center !important; /* Center everything */
-        text-align: center !important;
-        
-        padding: 10px !important;
-        width: 100% !important;
-        height: 140px !important; /* Taller for Big Icon */
-        
-        box-shadow: none !important;
-        font-family: 'Segoe UI', system-ui, sans-serif !important;
-        font-size: 15px !important;
-        font-weight: 700 !important; /* BOLD TITLES */
-        line-height: 1.3 !important;
-        white-space: pre-wrap !important; /* Allow Icon break */
-        overflow: visible !important;
-        transition: all 0.2s ease !important;
-    }
-    
-    /* 2. BIG ICON MAGIC (Target First Line / Emoji) */
-    div.stButton > button::first-line {
-        font-size: 72px !important; /* HUGE ICONS */
-        line-height: 1.0 !important;
-        font-weight: 400 !important; /* Emoji doesn't need bold */
-    }
-
-    /* 3. Hover Effect (Subtle Windows Highlight) */
-    div.stButton > button:hover {
-        background-color: #f1f5f9 !important; /* Light Slate 100 */
-        border-color: #cbd5e1 !important; /* Slate 300 */
-        transform: translateY(-2px);
-    }
-    
-    /* 4. COLOR HACK: Green & Purple Alternating */
-    
-    /* EVEN Columns (2nd): Pink/Purple */
-    div[data-testid="column"]:nth-of-type(even) div.stButton > button {
-        filter: hue-rotate(260deg) saturate(1.2); 
-    }
-    
-    /* ODD Columns (1st & 3rd): Bright Green */
-    /* Default is Yellowish. We rotate ~80deg to get Green. */
-    div[data-testid="column"]:nth-of-type(odd) div.stButton > button {
-        filter: hue-rotate(80deg) saturate(1.4); 
-    }
+    /* --- V334 RESTORED: CSS REMOVED (Handled locally in library_render.py) --- */
     </style>
 """, unsafe_allow_html=True)
 
