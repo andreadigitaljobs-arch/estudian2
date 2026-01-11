@@ -539,6 +539,7 @@ def render_library_v2(assistant):
 
                 # Render Results from Session State (to persist after delete actions re-run)
                 if 'dupes_results' in st.session_state:
+                     from db_handler import get_file_content # Delayed import
                      dupes = st.session_state['dupes_results']
                      if dupes:
                          st.warning(f"⚠️ Se encontraron {len(dupes)} grupos de archivos duplicados:")
@@ -549,9 +550,27 @@ def render_library_v2(assistant):
                                  st.caption(f"Archivos idénticos detectados: {d['count']}")
                                  
                                  for entry in d['entries']:
+                                      # Format date nicely
+                                      created_date = entry.get('created_at', '')
+                                      if created_date and len(created_date) > 16: 
+                                          created_date_fmt = created_date[:10] + " " + created_date[11:16]
+                                      else:
+                                          created_date_fmt = created_date
+                                      
                                       d_c1, d_c2 = st.columns([0.85, 0.15])
                                       with d_c1:
-                                          st.markdown(f"📂 En: **{entry['unit']}**")
+                                          st.markdown(f"📂 **{entry['unit']}**  <span style='color:grey; font-size:0.8em'>({created_date_fmt})</span>", unsafe_allow_html=True)
+                                          
+                                          # PREVIEW CONTENT
+                                          with st.expander("👁️ Ver contenido"):
+                                              with st.spinner("Cargando..."):
+                                                  c_prev = get_file_content(entry['id'])
+                                                  if c_prev:
+                                                      # Show first 1000 chars
+                                                      st.text_area("Vista previa:", c_prev[:1000] + ("..." if len(c_prev)>1000 else ""), height=150, key=f"prev_{entry['id']}")
+                                                  else:
+                                                      st.warning("No se pudo cargar el contenido o está vacío.")
+
                                       with d_c2:
                                           if st.button("🗑️", key=f"del_dupe_{entry['id']}", help="Eliminar esta copia", use_container_width=True):
                                               delete_file(entry['id'])
