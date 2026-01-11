@@ -3355,12 +3355,12 @@ with tab1:
         
         if st.session_state['last_transcribed_file']:
             # V339: Layout Fix - robust columns
-            # Using standard columns without new parameters to ensure compatibility
-            c_ban, c_btn = st.columns([0.65, 0.35], gap="medium")
+            # ALIGNED LOGIC: Banner Left | Buttons Right (Centered)
+            c_ban, c_btn = st.columns([0.65, 0.35], gap="medium", vertical_alignment="center")
 
             with c_ban:
                 st.markdown(f"""
-                    <div style="background-color: #EBF5FF; border: 2px solid #4B22DD; border-left: 8px solid #4B22DD; padding: 15px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 4px 12px rgba(75, 34, 221, 0.1);">
+                    <div style="background-color: #EBF5FF; border: 2px solid #4B22DD; border-left: 8px solid #4B22DD; padding: 15px; border-radius: 12px; margin-bottom: 0px; box-shadow: 0 4px 12px rgba(75, 34, 221, 0.1);">
                         <div style="color: #4B22DD; font-weight: 800; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px;">
                             🎯 Último archivo procesado:
                         </div>
@@ -3370,13 +3370,10 @@ with tab1:
                     </div>
                 """, unsafe_allow_html=True)
             
-            # RENDER BUTTONS NEXT TO BANNER
+            # RENDER BUTTONS NEXT TO BANNER (Vertical Stack)
             with c_btn:
-                 # Spacer to align with banner middle roughly
-                 st.write("") 
-                 
-                 # DEEP CLEAN
-                 if st.button("🗑️ Limpieza Profunda", key="btn_deep_clean_v2", help="Borra este archivo de la base de datos y limpia la vista", type="primary", use_container_width=True):
+                 # 1. DEEP CLEAN
+                 if st.button("🗑️ Limpieza Profunda", key="btn_deep_clean_v2", help="Borra este archivo de la base de datos", type="secondary", use_container_width=True):
                      from db_handler import delete_file, get_course_files
                      deleted_count = 0
                      
@@ -3396,21 +3393,32 @@ with tab1:
                                      break 
                      
                      if deleted_count > 0:
-                         st.toast(f"🗑️ Archivo eliminado de la Biblioteca", icon="✅")
+                         st.toast(f"🗑️ Archivo eliminado", icon="✅")
+                         st.rerun()
                      else:
-                         st.toast("⚠️ No se encontró el archivo en BD para borrar, pero limpiando vista...", icon="🧹")
+                         st.warning("No se encontró el archivo para borrar.")
+
+                 # 2. DISCUSS WITH TUTOR (Moved from bottom)
+                 if st.button("🗣️ Debatir con Tutor", help="Analizar con IA", type="primary", use_container_width=True):
+                     context_blob = "Aquí están las transcripciones recientes:\n\n"
+                     for item in st.session_state['transcript_history']:
+                         context_blob += f"--- {item['name']} ---\n{item['text'][:10000]}\n\n" # Limit 10k chars
                      
-                     # Reset State
-                     st.session_state['transcript_history'] = []
-                     st.session_state['last_transcribed_file'] = None
-                     import uuid
-                     st.session_state['transcriptor_key'] = str(uuid.uuid4())
+                     st.session_state['tutor_chat_history'] = [{"role": "user", "content": context_blob}]
+                     st.session_state['current_chat_session'] = None # New session
+                     
+                     # Redirect
+                     st.session_state['redirect_target_name'] = "Tutoría 1 a 1"
+                     st.session_state['force_chat_tab'] = True
                      st.rerun()
-                     
-                 # VIEW CLEAN
-                 if st.button("Limpiar Vista", key="clean_view_only_v2", help="Solo limpia la pantalla", use_container_width=True):
+
+                 # 3. CLEAR VIEW (Simple)
+                 if st.button("🧹 Limpiar Vista", key="clean_view_only_v2", help="Limpia la pantalla", use_container_width=True):
                     st.session_state['transcript_history'] = []
-                    st.session_state['last_transcribed_file'] = None 
+                    st.session_state['last_transcribed_file'] = None
+                    st.remove_query_params() # Clean URL if any
+                    import uuid
+                    st.session_state['transcriptor_key'] = str(uuid.uuid4()) # Reset uploader
                     st.rerun()
         
         # Dynamic Key for Uploader Reset
@@ -3726,53 +3734,9 @@ with tab1:
         
         # Recents Header
         st.divider()
-        # Recents Header
-        st.divider()
-        c_hist_1, c_hist_2, c_hist_3 = st.columns([0.45, 0.35, 0.20], vertical_alignment="center")
+        st.markdown(f"### 📝 Resultados Recientes")
         
-        c_hist_1.markdown(f"### 📝 Resultados Recientes")
-        
-        # RESTORED BUTTON (User Request)
-        if c_hist_2.button("🧹 Limpiar Pantalla", help="Borra la pantalla y los archivos subidos (no borra de la biblioteca)", use_container_width=True):
-             st.session_state['transcript_history'] = []
-             import uuid
-             st.session_state['transcriptor_key'] = str(uuid.uuid4())
-             st.rerun()
-
-        # DISCUSS WITH TUTOR BUTTON 
-
-        # DISCUSS WITH TUTOR BUTTON
-            
-        # DISCUSS WITH TUTOR BUTTON
-        if c_hist_3.button("🗣️ Debatir con Tutor", help="Abre un chat con el profesor para analizar estas transcripciones", type="primary", use_container_width=True):
-             # 1. Aggregate Transcripts
-             context_blob = "Aquí están las transcripciones de los archivos que acabo de procesar:\n\n"
-             for item in st.session_state['transcript_history']:
-                 context_blob += f"--- ARCHIVO: {item['name']} ---\n{item['text']}\n\n"
-             
-             context_blob += "\nAnalyzalas y dime qué podemos hacer con ellas (resumen, extraer datos, ordenar instrucciones, etc). ¿Qué sugieres?"
-             
-             # 2. Create Session
-             from db_handler import create_chat_session, save_chat_message
-             import datetime
-             sess_name = f"Debate Transcripciones {datetime.datetime.now().strftime('%H:%M')}"
-             new_sess = create_chat_session(st.session_state['user'].id, sess_name)
-             
-             if new_sess:
-                 # 3. Save Message & Prepare Redirect
-                 st.session_state['current_chat_session'] = new_sess
-                 st.session_state['tutor_chat_history'] = [] # Reset local
-                 
-                 save_chat_message(new_sess['id'], "user", context_blob)
-                 st.session_state['tutor_chat_history'].append({"role": "user", "content": context_blob})
-                 
-                 # 4. Trigger AI & Switch
-                 st.session_state['trigger_ai_response'] = True
-                 st.session_state['redirect_target_name'] = "Tutoría 1 a 1"
-                 st.session_state['force_chat_tab'] = True
-                 st.rerun()
-             else:
-                 st.error("Error al crear sesión de chat.")
+        # Buttons moved to top (next to banner) for better UX
         
         for i, item in enumerate(st.session_state['transcript_history']):
             with st.expander(f"📄 {item['name']}", expanded=True):
