@@ -2735,36 +2735,52 @@ with st.sidebar:
                     window.parent.document.head.appendChild(style);
                 }
 
-                function getScrollContainer() {
-                    return window.parent.document.querySelector('[data-testid="stAppViewContainer"]') || 
-                           window.parent.document.querySelector('section.main') ||
-                           window.parent.document.documentElement;
-                }
-
+                // Down arrow: scroll down
                 createArrow('scroll-down', '⬇', '20px', () => {
-                    const el = getScrollContainer();
-                    if(el) {
-                        try { 
-                            el.scrollBy({ top: 500, behavior: 'smooth' }); 
-                        } catch(e) { 
-                            alert('Error scroll: ' + e.message); 
+                    const targets = [
+                        window.parent.document.querySelector('[data-testid="stAppViewContainer"]'),
+                        window.parent.document.querySelector('section.main'),
+                        window.parent.document.documentElement,
+                        window.parent.document.body,
+                        window.parent
+                    ];
+                    let scrolled = false;
+                    targets.forEach(el => {
+                        if(el) {
+                            try {
+                                if (el.scrollBy) {
+                                    el.scrollBy({ top: 300, behavior: 'smooth' });
+                                    scrolled = true;
+                                } else if (el.scrollTo) {
+                                    el.scrollTo({ top: el.scrollTop + 300, behavior: 'smooth' });
+                                    scrolled = true;
+                                }
+                            } catch(e) { console.error(e); }
                         }
-                    } else {
-                        alert('Error: No scroll container found');
-                    }
+                    });
+                    if(!scrolled) alert("No scroll target found!");
                 });
                 
+                // Up arrow: scroll up
                 createArrow('scroll-up', '⬆', '80px', () => {
-                    const el = getScrollContainer();
-                    if(el) {
-                        try {
-                            el.scrollTop = 0; 
-                        } catch(e) {
-                            alert('Error scroll up: ' + e.message);
+                    const targets = [
+                        window.parent.document.querySelector('[data-testid="stAppViewContainer"]'),
+                        window.parent.document.querySelector('section.main'),
+                        window.parent.document.documentElement,
+                        window.parent.document.body,
+                        window.parent
+                    ];
+                    targets.forEach(el => {
+                        if(el) {
+                            try {
+                                if (el.scrollBy) {
+                                    el.scrollBy({ top: -300, behavior: 'smooth' });
+                                } else if (el.scrollTo) {
+                                    el.scrollTo({ top: el.scrollTop - 300, behavior: 'smooth' });
+                                }
+                            } catch(e) { console.error(e); }
                         }
-                    } else {
-                         alert('Error: No scroll container found (up)');
-                    }
+                    });
                 });
             }, 3000);
         </script>
