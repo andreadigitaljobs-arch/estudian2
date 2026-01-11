@@ -552,18 +552,57 @@ def render_library_v2(assistant):
 
                                      # File Content Preview (Full Width below)
                                      with st.expander("👁️ Ver contenido"):
-                                         with st.spinner("Descargando vista previa..."):
+                                         with st.container(height=200):
                                              c_prev = get_file_content(entry['id'])
                                              if c_prev is not None:
                                                  if len(str(c_prev).strip()) == 0:
                                                       st.warning("⚠️ El archivo está vacío (0 bytes de texto).")
                                                  else:
-                                                      # Render Markdown in a scrollable box
-                                                      with st.container(height=200):
-                                                          st.markdown(str(c_prev)[:5000]) # Render up to 5k chars nicely
+                                                      st.markdown(str(c_prev)[:5000]) 
                                              else:
                                                  st.info("ℹ️ Vista previa no disponible para este tipo de archivo.")
-                     else:
+                         
+                         # --- BATCH ACTIONS ---
+                         st.divider()
+                         st. subheader("⚡ Acciones Masivas")
+                         
+                         if st.button("🧹 Preparar Limpieza Automática", help="Selecciona automáticamente los duplicados para borrar, manteniendo solo la versión más antigua."):
+                             st.session_state['batch_delete_ready'] = True
+                         
+                         if st.session_state.get('batch_delete_ready'):
+                             to_delete = []
+                             for d in dupes:
+                                 # Sort by created_at (strings iso format sorts correctly)
+                                 # We keep the one with the 'smallest' date (oldest)
+                                 sorted_entries = sorted(d['entries'], key=lambda x: x.get('created_at', '9999'))
+                                 if len(sorted_entries) > 1:
+                                     # Keep index 0, delete 1..N
+                                     to_delete.extend(sorted_entries[1:])
+                             
+                             if to_delete:
+                                 st.error(f"⚠️ **¿Estás seguro?** Se eliminarán **{len(to_delete)}** archivos duplicados.")
+                                 st.markdown("Se conservará únicamente la versión más antigua de cada grupo.")
+                                 
+                                 col_confirm, col_cancel = st.columns(2)
+                                 with col_confirm:
+                                     if st.button("🚨 SÍ, ELIMINAR TODOS", type="primary"):
+                                         progress_bar = st.progress(0)
+                                         for i, f in enumerate(to_delete):
+                                             delete_file(f['id'])
+                                             progress_bar.progress((i + 1) / len(to_delete))
+                                         
+                                         st.success(f"¡Limpieza completada! {len(to_delete)} archivos eliminados.")
+                                         time.sleep(1)
+                                         
+                                         # Reset state and re-scan
+                                         del st.session_state['batch_delete_ready']
+                                         st.rerun()
+                                 with col_cancel:
+                                     if st.button("Cancelar"):
+                                         del st.session_state['batch_delete_ready']
+                                         st.rerun()
+                             else:
+                                 st.info("No hay candidatos seguros para borrar (quizás las fechas son idénticas o ya están limpios).")
                          st.success("✅ ¡Excelente! No se encontraron duplicados en ninguna carpeta del curso.")
 
             # Close Button footer for Panel
