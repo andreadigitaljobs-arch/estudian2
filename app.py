@@ -2778,7 +2778,7 @@ with st.sidebar:
 
 
     # --- DUAL NAVIGATION ARROWS ---
-    inject_navigation_arrows()
+    # inject_navigation_arrows() # REMOVED DUPLICATE CALL
 
     # --- TABS DEFINITION ---
 # --- TABS DEFINITION ---
