@@ -2367,29 +2367,26 @@ div.stButton > button {
     border-radius: 12px !important;
     color: #1e293b !important; /* Dark Slate for Text */
     
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    justify-content: center !important;
-    text-align: center !important;
+    /* display: block is REQUIRED for ::first-line to work for the icon size */
+    display: block !important; 
     
     padding: 10px !important;
     width: 100% !important;
-    height: 140px !important;
+    height: 180px !important; /* Even Taller for Huge Icon */
     
     box-shadow: none !important;
     font-family: 'Segoe UI', system-ui, sans-serif !important;
-    font-size: 15px !important;
+    font-size: 16px !important;
     font-weight: 700 !important;
-    line-height: 1.3 !important;
+    line-height: normal !important;
     white-space: pre-wrap !important;
     overflow: visible !important;
 }
 
-/* 2. BIG ICON MAGIC */
+/* 2. BIG ICON MAGIC - The First Line is the EMOJI */
 div.stButton > button::first-line {
-    font-size: 72px !important;
-    line-height: 1.0 !important;
+    font-size: 90px !important; /* MASSIVE ICONS */
+    line-height: 1.2 !important;
     font-weight: 400 !important;
 }
 
