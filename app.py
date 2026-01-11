@@ -2634,6 +2634,8 @@ with st.sidebar:
 
 
 
+    st.markdown('<div class="aesthetic-sep"></div>', unsafe_allow_html=True)
+
     # --- 3. SPOTLIGHT ACADÉMICO ---
     st.markdown("#### 🔍 Búsqueda rápida")
     st.caption("¿Qué buscas hoy?")
