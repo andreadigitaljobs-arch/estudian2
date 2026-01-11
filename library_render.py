@@ -586,17 +586,34 @@ def render_library_v2(assistant):
                                  col_confirm, col_cancel = st.columns(2)
                                  with col_confirm:
                                      if st.button("🚨 SÍ, ELIMINAR TODOS", type="primary"):
-                                         progress_bar = st.progress(0)
-                                         for i, f in enumerate(to_delete):
-                                             delete_file(f['id'])
-                                             progress_bar.progress((i + 1) / len(to_delete))
-                                         
-                                         st.success(f"¡Limpieza completada! {len(to_delete)} archivos eliminados.")
-                                         time.sleep(1)
-                                         
-                                         # Reset state and re-scan
-                                         del st.session_state['batch_delete_ready']
-                                         st.rerun()
+                                         try:
+                                             progress_bar = st.progress(0)
+                                             status_text = st.empty()
+                                             deleted_count = 0
+                                             
+                                             for i, f in enumerate(to_delete):
+                                                 status_text.text(f"Eliminando {i+1}/{len(to_delete)}: {f.get('unit', 'archivo')}...")
+                                                 try:
+                                                     delete_file(f['id'])
+                                                     deleted_count += 1
+                                                 except Exception as e:
+                                                     st.error(f"Error eliminando archivo: {e}")
+                                                 progress_bar.progress((i + 1) / len(to_delete))
+                                             
+                                             status_text.empty()
+                                             st.success(f"¡Limpieza completada! {deleted_count} archivos eliminados.")
+                                             time.sleep(1)
+                                             
+                                             # Reset state and re-scan
+                                             if 'batch_delete_ready' in st.session_state:
+                                                 del st.session_state['batch_delete_ready']
+                                             if 'dupes_results' in st.session_state:
+                                                 del st.session_state['dupes_results']
+                                             st.rerun()
+                                         except Exception as e:
+                                             st.error(f"Error en limpieza masiva: {e}")
+                                             if 'batch_delete_ready' in st.session_state:
+                                                 del st.session_state['batch_delete_ready']
                                  with col_cancel:
                                      if st.button("Cancelar"):
                                          del st.session_state['batch_delete_ready']
