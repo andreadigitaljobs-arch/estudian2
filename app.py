@@ -2706,9 +2706,9 @@ with st.sidebar:
         <script>
             setTimeout(function() {
                 function createArrow(id, html, bottom, onClick) {
-                    // Force Remove if exists (Fixes duplicates)
-                    const old = window.parent.document.getElementById(id);
-                    if (old) old.remove();
+                    // Aggressive cleanup: Remove ALL elements with this ID (in case of dupes)
+                    const oldElements = window.parent.document.querySelectorAll('#' + id);
+                    oldElements.forEach(el => el.remove());
 
                     const btn = window.parent.document.createElement('button');
                     btn.id = id;
