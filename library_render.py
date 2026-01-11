@@ -504,21 +504,23 @@ def render_library_v2(assistant):
                 st.markdown("#### 🧹 Detección de Duplicados")
                 st.caption("Encuentra y gestiona archivos con el mismo nombre en diferentes carpetas.")
                 
-                if st.button("🔍 Escanear toda la biblioteca", type="primary", help="Busca en TODAS las carpetas del diplomado actual", key="scan_dupes_btn"):
+                if st.button("🔍 Escanear toda la biblioteca", type="primary", help="Busca en TODAS las carpetas del diplomado actual"):
                      from db_handler import get_duplicate_files
-                     
-                     # Clear previous state
-                     if 'dupes_results' in st.session_state: 
-                         del st.session_state['dupes_results']
                      
                      if not current_course_id:
                          st.error("❌ No se pudo obtener el ID del curso. Por favor recarga la página.")
                      else:
                          try:
+                             # Clear previous state
+                             if 'dupes_results' in st.session_state: 
+                                 del st.session_state['dupes_results']
+                             if 'batch_delete_ready' in st.session_state:
+                                 del st.session_state['batch_delete_ready']
+                             
                              with st.spinner("Analizando..."):
                                  dupes = get_duplicate_files(current_course_id)
                                  st.session_state['dupes_results'] = dupes
-                                 st.rerun()
+                                 # Don't rerun here - let Streamlit naturally refresh
                          except Exception as e:
                              st.error(f"Error al escanear duplicados: {e}")
                 
