@@ -3131,7 +3131,10 @@ with tab_home:
                 if st.button(f"Ver {hidden_count} carpetas más en la Biblioteca →", key="btn_see_all_units", type="tertiary"):
                      st.session_state['redirect_target_name'] = "Biblioteca"
                      st.session_state['force_chat_tab'] = True
-                     st.session_state['lib_auto_open_upload'] = False # Just view
+                     st.session_state['lib_auto_open_upload'] = False 
+                     # Reset to Root
+                     st.session_state['lib_current_unit_id'] = None
+                     st.session_state['lib_breadcrumbs'] = []
                      st.rerun()
                      
         else:
