@@ -451,12 +451,40 @@ def render_library_v2(assistant):
     if current_unit_id:
         files = get_files(current_unit_id)
         if files:
-            st.markdown(f"##### 📄 Archivos ({len(files)})")
+    # B. Files
+    if current_unit_id:
+        files = get_files(current_unit_id)
+        if files:
+            # --- V335: MULTI-SELECT & BATCH ACTIONS ---
             
+            # 1. Header & Batch Actions
+            c_header, c_batch = st.columns([0.6, 0.4], vertical_alignment="bottom")
+            with c_header:
+                st.markdown(f"##### 📄 Archivos ({len(files)})")
+            
+            # Determine selected files
+            selected_ids = []
             for f in files:
-                # File Row Layout: Icon | Name | Actions
-                r_c1, r_c2, r_c3 = st.columns([0.05, 0.75, 0.2], vertical_alignment="bottom")
+                if st.session_state.get(f"sel_{f['id']}"):
+                    selected_ids.append(f['id'])
+            
+            with c_batch:
+                if selected_ids:
+                    if st.button(f"🗑️ Eliminar Seleccionados ({len(selected_ids)})", type="primary", use_container_width=True):
+                        for fid in selected_ids:
+                            delete_file(fid)
+                        st.success(f"Eliminados {len(selected_ids)} archivos.")
+                        st.rerun()
+
+            # 2. File List
+            for f in files:
+                # File Row Layout: Checkbox | Icon | Name | Actions
+                # Adjusted layout to accommodate checkbox
+                r_c0, r_c1, r_c2, r_c3 = st.columns([0.05, 0.05, 0.70, 0.2], vertical_alignment="bottom")
                 
+                with r_c0:
+                    st.checkbox("", key=f"sel_{f['id']}", label_visibility="collapsed")
+
                 with r_c1:
                     icon = "📝" if f['type'] == 'text' else "📎"
                     st.write(icon)
@@ -626,11 +654,7 @@ def render_library_v2(assistant):
                     # Quick Actions Popover
                     with st.popover("⚡"):
                         st.markdown(f"**{f['name']}**")
-                        if st.button("🤖 Analizar con IA", key=f"ai_{f['id']}"):
-                             st.session_state['chat_context_file'] = f
-                             st.session_state['redirect_target_name'] = "Ayudante de Tareas"
-                             st.session_state['force_chat_tab'] = True
-                             st.rerun()
+                        # AI Analyze Removed - V335
                              
                         if st.button("🗑️ Eliminar", key=f"del_{f['id']}"):
                             delete_file(f['id'])
