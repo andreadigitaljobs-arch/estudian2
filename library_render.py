@@ -424,30 +424,31 @@ def render_library_v2(assistant):
         f_cols = st.columns(3)
         for i, unit in enumerate(subfolders):
             with f_cols[i % 3]:
-                # Windows Explorer Style Folder Card (Light Theme)
+                # Windows Explorer Style Folder (Transparent, No Card)
                 count = unit_counts.get(unit['id'], 0)
                 unit_id = unit['id']
                 unit_name = unit['name']
                 
-                # Create clickable card with JavaScript onclick
-                folder_html = f"""
-<div onclick="window.location.href='?folder_id={unit_id}'" style="background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border: 1.5px solid #e2e8f0; border-radius: 16px; padding: 28px 20px; text-align: center; cursor: pointer; transition: all 0.3s ease; min-height: 200px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);" onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 6px 16px rgba(0,0,0,0.12)';" onmouseout="this.style.transform=''; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)';">
-<div style="font-size: 80px; line-height: 1; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));">📁</div>
-<div style="color: #1e293b; font-size: 15px; font-weight: 700; line-height: 1.4; font-family: 'Segoe UI', system-ui, sans-serif;">{unit_name}</div>
-<div style="color: #64748b; font-size: 13px; font-weight: 500;">{count} archivos</div>
+                # Use components.html for clickable functionality
+                components.html(f"""
+<div onclick="window.parent.postMessage({{type: 'streamlit:setComponentValue', value: '{unit_id}'}}, '*')" 
+     style="background: transparent; border: none; padding: 16px 8px; text-align: center; cursor: pointer; transition: all 0.2s ease; min-height: 180px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;" 
+     onmouseover="this.style.backgroundColor='rgba(0,0,0,0.04)'; this.style.borderRadius='12px';" 
+     onmouseout="this.style.backgroundColor='transparent'; this.style.borderRadius='0px';">
+<div style="font-size: 80px; line-height: 1;">📁</div>
+<div style="color: #1e293b; font-size: 14px; font-weight: 700; line-height: 1.3; font-family: 'Segoe UI', system-ui, sans-serif; max-width: 180px; word-wrap: break-word;">{unit_name}</div>
+<div style="color: #64748b; font-size: 12px; font-weight: 500;">{count} archivos</div>
 </div>
-"""
+""", height=200, key=f"fdir_{unit_id}")
                 
-                st.markdown(folder_html, unsafe_allow_html=True)
-                
-                # Check if this folder was clicked via URL parameter
-                query_params = st.query_params
-                if 'folder_id' in query_params and query_params['folder_id'] == str(unit_id):
+                # Check if this folder was clicked
+                clicked_value = st.session_state.get(f"fdir_{unit_id}")
+                if clicked_value == str(unit_id):
                     st.session_state['lib_current_unit_id'] = unit_id
                     st.session_state['lib_current_unit_name'] = unit_name
                     st.session_state['lib_breadcrumbs'].append(unit)
-                    # Clear the query param
-                    st.query_params.clear()
+                    # Clear the value to prevent re-triggering
+                    st.session_state[f"fdir_{unit_id}"] = None
                     st.rerun()
 
     # B. Files
