@@ -3372,45 +3372,6 @@ with tab1:
             
             # RENDER BUTTONS NEXT TO BANNER (Vertical Stack)
             with c_btn:
-                 # 1. DEEP CLEAN
-                 if st.button("🗑️ Limpieza Profunda", key="btn_deep_clean_v2", help="Borra este archivo de la base de datos", type="secondary", use_container_width=True):
-                     from db_handler import delete_file, get_course_files
-                     deleted_count = 0
-                     
-                     # 1. Try Session History first (Most accurate)
-                     for item in st.session_state.get('transcript_history', []):
-                         if 'id' in item and item['id']:
-                             if delete_file(item['id']): deleted_count += 1
-                     
-                     # 2. Fallback: Find by Name (If session died but banner is showing)
-                     if deleted_count == 0 and c_id:
-                         target_name = st.session_state['last_transcribed_file']
-                         candidates = get_course_files(c_id, type_filter="transcript")
-                         for f in candidates:
-                             if target_name in f['name']: 
-                                 if delete_file(f['id']):
-                                     deleted_count += 1
-                                     break 
-                     
-                     if deleted_count > 0:
-                         st.toast(f"🗑️ Archivo eliminado", icon="✅")
-                         st.rerun()
-                     else:
-                         st.warning("No se encontró el archivo para borrar.")
-
-                 # 2. DISCUSS WITH TUTOR (Moved from bottom)
-                 if st.button("🗣️ Debatir con Tutor", help="Analizar con IA", type="primary", use_container_width=True):
-                     context_blob = "Aquí están las transcripciones recientes:\n\n"
-                     for item in st.session_state['transcript_history']:
-                         context_blob += f"--- {item['name']} ---\n{item['text'][:10000]}\n\n" # Limit 10k chars
-                     
-                     st.session_state['tutor_chat_history'] = [{"role": "user", "content": context_blob}]
-                     st.session_state['current_chat_session'] = None # New session
-                     
-                     # Redirect
-                     st.session_state['redirect_target_name'] = "Tutoría 1 a 1"
-                     st.session_state['force_chat_tab'] = True
-                     st.rerun()
 
                  # 3. CLEAR VIEW (Simple)
                  if st.button("🧹 Limpiar Vista", key="clean_view_only_v2", help="Limpia la pantalla", use_container_width=True):
