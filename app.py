@@ -3137,46 +3137,46 @@ with tab_home:
         else:
             st.info("Aún no tienes unidades creadas. Ve a la Biblioteca para organizar tu curso.")
 
-        # --- WIDGET B: RECENT CAROUSEL (Netflix Style) ---
+        # --- WIDGET B: COMPACT CONTENT ROW (News + Actions) ---
         st.write("")
         st.write("")
-        st.subheader("🆕 Novedades")
         
-        recents = all_files[:4] # Top 4 newest (get_course_files returns ordered desc)
+        # Layout: 70% News | 30% Actions (Side-by-Side)
+        c_news, c_actions = st.columns([0.7, 0.3], gap="medium")
         
-        if recents:
-            r_cols = st.columns(4)
-            for i, f in enumerate(recents):
-                with r_cols[i]:
-                    with st.container(border=True):
-                        # Icon Logic
-                        icon = "📄"
-                        if f['type'] == 'transcript': icon = "📹"
-                        elif "quiz" in f['name'].lower(): icon = "📝"
-                        
-                        st.markdown(f"**{icon} {f['name'][:20]}{'...' if len(f['name'])>20 else ''}**")
-                        # st.caption(f"{f['created_at'][:10]}") # Date takes space, keeping it minimal
-                        if st.button("Ver", key=f"btn_rec_{f['id']}", use_container_width=True):
-                                st.session_state['redirect_target_name'] = "Biblioteca"
-                                st.session_state['force_chat_tab'] = True
-                                st.rerun()
-        else:
-            st.caption("Sube tu primer archivo para verlo aquí.")  
+        # --- LEFT: NEWS CAROUSEL ---
+        with c_news:
+            st.subheader("🆕 Novedades")
+            recents = all_files[:3] # Limit to 3 for space
+            
+            if recents:
+                r_cols = st.columns(3)
+                for i, f in enumerate(recents):
+                    with r_cols[i]:
+                        with st.container(border=True):
+                            # Icon Logic
+                            icon = "📄"
+                            if f['type'] == 'transcript': icon = "📹"
+                            elif "quiz" in f['name'].lower(): icon = "📝"
+                            
+                            st.markdown(f"**{icon} {f['name'][:15]}{'...' if len(f['name'])>15 else ''}**")
+                            if st.button("Ver", key=f"btn_rec_{f['id']}", use_container_width=True):
+                                    st.session_state['redirect_target_name'] = "Biblioteca"
+                                    st.session_state['force_chat_tab'] = True
+                                    st.rerun()
+            else:
+                st.caption("Sube archivos para verlos aquí.") 
 
-        # 4. QUICK ACTIONS ONLY (Refactored Horizontal)
-        st.divider()
-        st.subheader("⚡ Acciones Rápidas")
-        
-        qa1, qa2 = st.columns(2)
-        
-        with qa1:
+        # --- RIGHT: QUICK ACTIONS (Vertical) ---
+        with c_actions:
+            st.subheader("⚡ Acciones")
+            # Vertical Stack naturally
             if st.button("📤 Subir Archivo", use_container_width=True):
                  st.session_state['redirect_target_name'] = "Biblioteca"
                  st.session_state['force_chat_tab'] = True
                  st.session_state['lib_auto_open_upload'] = True
                  st.rerun()
                  
-        with qa2:
             if st.button("📝 Crear Quiz", use_container_width=True):
                  st.session_state['redirect_target_name'] = "Zona Quiz"
                  st.session_state['force_chat_tab'] = True
