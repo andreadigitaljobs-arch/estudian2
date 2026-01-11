@@ -2893,6 +2893,9 @@ import pandas as pd # FIX: Missing import for charts
 
 # --- DASHBOARD TAB (HOME) ---
 with tab_home:
+    # DEBUG MARKER
+    st.info("DEBUG: ACTUALIZACIÓN RECIBIDA " + str(pd.Timestamp.now()))
+    
     # Load Stats
     current_c_id = st.session_state.get('current_course_id')
     current_c_name = st.session_state.get('current_course', 'General')
@@ -3087,52 +3090,28 @@ with tab_home:
 
 
 
-        # 4. RECENT & ACTIONS SPLIT
-        d1, d2 = st.columns([0.65, 0.35])
+        # 4. QUICK ACTIONS ONLY (Refactored Horizontal)
+        st.divider()
+        st.subheader("⚡ Acciones Rápidas")
         
-        with d1:
-            st.subheader("⏱️ Continuar donde lo dejaste")
-            # Smart Continuity Card logic (Existing)
-            last_chat = get_recent_chats(st.session_state['user'].id, limit=1)
-            last_file = get_recent_files(current_c_id, limit=1)
-
-            if last_chat:
-               lc = last_chat[0]
-               with st.container(border=True):
-                   st.markdown(f"**💬 Último Chat:** {lc['name']}")
-                   st.caption(f"Hace un momento • {lc['created_at'][:10]}")
-                   if st.button("Reanudar Conversación ➔", key="btn_resume_dash_2"):
-                        st.session_state['current_chat_session'] = lc
-                        st.session_state['tutor_chat_history'] = []
-                        st.session_state['redirect_target_name'] = "Tutoría 1 a 1"
-                        st.session_state['force_chat_tab'] = True
-                        st.rerun()
-            elif last_file:
-                 lf = last_file[0]
-                 with st.container(border=True):
-                     st.markdown(f"**📄 Subiste:** {lf['name']}")
-                     st.caption("Ve a la biblioteca para estudiarlo.")
-            else:
-                st.markdown("""
-                <div style="background:#F0F2F6; padding:20px; border-radius:10px; text-align:center;">
-                    <p style="margin:0; color:#555;">No hay actividad reciente.</p> 
-                    <small>¡Empieza un chat o sube algo!</small>
-                </div>
-                """, unsafe_allow_html=True)
-
-        with d2:
-            st.subheader("⚡ Acciones Rápidas")
+        qa1, qa2, qa3 = st.columns(3)
+        
+        with qa1:
             if st.button("✨ Nuevo Chat", use_container_width=True):
                  st.session_state['current_chat_session'] = None
                  st.session_state['tutor_chat_history'] = []
                  st.session_state['redirect_target_name'] = "Tutoría 1 a 1"
                  st.session_state['force_chat_tab'] = True
                  st.rerun()
+        
+        with qa2:
             if st.button("📤 Subir Archivo", use_container_width=True):
                  st.session_state['redirect_target_name'] = "Biblioteca"
                  st.session_state['force_chat_tab'] = True
                  st.session_state['lib_auto_open_upload'] = True
                  st.rerun()
+                 
+        with qa3:
             if st.button("📝 Crear Quiz", use_container_width=True):
                  st.session_state['redirect_target_name'] = "Zona Quiz"
                  st.session_state['force_chat_tab'] = True
@@ -3288,16 +3267,64 @@ with tab1:
             st.session_state['last_transcribed_file'] = get_last_transcribed_file_name(c_id)
         
         if st.session_state['last_transcribed_file']:
-            st.markdown(f"""
-                <div style="background-color: #EBF5FF; border: 2px solid #4B22DD; border-left: 8px solid #4B22DD; padding: 15px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 4px 12px rgba(75, 34, 221, 0.1);">
-                    <div style="color: #4B22DD; font-weight: 800; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px;">
-                        🎯 Último archivo procesado:
+            # V339: Layout Fix - robust columns
+            # Using standard columns without new parameters to ensure compatibility
+            c_ban, c_btn = st.columns([0.65, 0.35], gap="medium")
+
+            with c_ban:
+                st.markdown(f"""
+                    <div style="background-color: #EBF5FF; border: 2px solid #4B22DD; border-left: 8px solid #4B22DD; padding: 15px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 4px 12px rgba(75, 34, 221, 0.1);">
+                        <div style="color: #4B22DD; font-weight: 800; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px;">
+                            🎯 Último archivo procesado:
+                        </div>
+                        <div style="color: #1a1a1a; font-size: 1.1rem; font-weight: 600;">
+                            {st.session_state['last_transcribed_file']}
+                        </div>
                     </div>
-                    <div style="color: #1a1a1a; font-size: 1.1rem; font-weight: 600;">
-                        {st.session_state['last_transcribed_file']}
-                    </div>
-                </div>
-            """, unsafe_allow_html=True)
+                """, unsafe_allow_html=True)
+            
+            # RENDER BUTTONS NEXT TO BANNER
+            with c_btn:
+                 # Spacer to align with banner middle roughly
+                 st.write("") 
+                 
+                 # DEEP CLEAN
+                 if st.button("🗑️ Limpieza Profunda", key="btn_deep_clean_v2", help="Borra este archivo de la base de datos y limpia la vista", type="primary", use_container_width=True):
+                     from db_handler import delete_file, get_course_files
+                     deleted_count = 0
+                     
+                     # 1. Try Session History first (Most accurate)
+                     for item in st.session_state.get('transcript_history', []):
+                         if 'id' in item and item['id']:
+                             if delete_file(item['id']): deleted_count += 1
+                     
+                     # 2. Fallback: Find by Name (If session died but banner is showing)
+                     if deleted_count == 0 and c_id:
+                         target_name = st.session_state['last_transcribed_file']
+                         candidates = get_course_files(c_id, type_filter="transcript")
+                         for f in candidates:
+                             if target_name in f['name']: 
+                                 if delete_file(f['id']):
+                                     deleted_count += 1
+                                     break 
+                     
+                     if deleted_count > 0:
+                         st.toast(f"🗑️ Archivo eliminado de la Biblioteca", icon="✅")
+                     else:
+                         st.toast("⚠️ No se encontró el archivo en BD para borrar, pero limpiando vista...", icon="🧹")
+                     
+                     # Reset State
+                     st.session_state['transcript_history'] = []
+                     st.session_state['last_transcribed_file'] = None
+                     import uuid
+                     st.session_state['transcriptor_key'] = str(uuid.uuid4())
+                     st.rerun()
+                     
+                 # VIEW CLEAN
+                 if st.button("Limpiar Vista", key="clean_view_only_v2", help="Solo limpia la pantalla", use_container_width=True):
+                    st.session_state['transcript_history'] = []
+                    st.session_state['last_transcribed_file'] = None 
+                    st.rerun()
         
         # Dynamic Key for Uploader Reset
         if 'transcriptor_key' not in st.session_state: st.session_state['transcriptor_key'] = "up1"
@@ -3539,23 +3566,24 @@ with tab1:
                                         final_name = f"{custom_n}.txt"
                                         
                                         # ROBUST UPLOAD: Retry with timestamp if fails (likely duplicate)
-                                        saved = upload_file_to_db(t_unit_id, final_name, trans_text, "transcript")
-                                        if not saved:
+                                        saved_id = upload_file_to_db(t_unit_id, final_name, trans_text, "transcript")
+                                        if not saved_id:
                                             # Retry with suffix
                                             import time
                                             suffix = int(time.time())
                                             final_name_retry = f"{custom_n}_{suffix}.txt"
-                                            saved = upload_file_to_db(t_unit_id, final_name_retry, trans_text, "transcript")
+                                            saved_id = upload_file_to_db(t_unit_id, final_name_retry, trans_text, "transcript")
                                             
-                                            if saved:
+                                            if saved_id:
                                                 st.toast(f"⚠️ Nombre duplicado. Guardado como: {final_name_retry}", icon="📝")
                                                 final_name = final_name_retry
                                             else:
                                                 st.error(f"❌ Error CRÍTICO: No se pudo guardar '{custom_n}' en la base de datos.")
                                         
-                                        if saved:
+                                        if saved_id:
                                             st.toast(f"✅ Listo: {final_name}") 
-                                            st.session_state['transcript_history'].append({"name": custom_n, "text": trans_text})
+                                            # V336: Store ID for Deep Clean
+                                            st.session_state['transcript_history'].append({"name": custom_n, "text": trans_text, "id": saved_id})
                                             st.session_state['last_transcribed_file'] = custom_n # Update last processed
                                             # V206: Play Sound
                                             play_sound('success')
@@ -3611,15 +3639,22 @@ with tab1:
         
         # Recents Header
         st.divider()
-        c_hist_1, c_hist_2, c_hist_3 = st.columns([0.5, 0.25, 0.25], vertical_alignment="center")
+        # Recents Header
+        st.divider()
+        c_hist_1, c_hist_2, c_hist_3 = st.columns([0.45, 0.35, 0.20], vertical_alignment="center")
+        
         c_hist_1.markdown(f"### 📝 Resultados Recientes")
         
-        # CLEAR BUTTON
+        # RESTORED BUTTON (User Request)
         if c_hist_2.button("🧹 Limpiar Pantalla", help="Borra la pantalla y los archivos subidos (no borra de la biblioteca)", use_container_width=True):
-            st.session_state['transcript_history'] = []
-            import uuid
-            st.session_state['transcriptor_key'] = str(uuid.uuid4()) # Force Uploader Reset
-            st.rerun()
+             st.session_state['transcript_history'] = []
+             import uuid
+             st.session_state['transcriptor_key'] = str(uuid.uuid4())
+             st.rerun()
+
+        # DISCUSS WITH TUTOR BUTTON 
+
+        # DISCUSS WITH TUTOR BUTTON
             
         # DISCUSS WITH TUTOR BUTTON
         if c_hist_3.button("🗣️ Debatir con Tutor", help="Abre un chat con el profesor para analizar estas transcripciones", type="primary", use_container_width=True):
@@ -3724,7 +3759,8 @@ with tab1:
                        if "```" in processed_text:
                             processed_text = processed_text.replace("```markdown", "").replace("```html", "").replace("```", "")
                        
-                       st.markdown(processed_text, unsafe_allow_html=True)
+                       # V341: Fix UI Gap - Strip leading whitespace
+                       st.markdown(processed_text.strip(), unsafe_allow_html=True)
 
 
 # --- TAB 2: Explorador Didáctico (Traductor de Conocimiento) ---
