@@ -2614,7 +2614,7 @@ with st.sidebar:
                                 time.sleep(0.5)
                                 st.rerun()
 
-
+    st.markdown('<div class="aesthetic-sep"></div>', unsafe_allow_html=True)
 
     # --- 3. SPOTLIGHT ACADÉMICO ---
     st.markdown("#### 🔍 Búsqueda rápida")
@@ -2630,7 +2630,7 @@ with st.sidebar:
             st.session_state['spotlight_mode'] = search_mode
             st.rerun()
 
-
+    st.markdown('<div class="aesthetic-sep"></div>', unsafe_allow_html=True)
 
     # --- 4. ESPACIO DE TRABAJO ---
     st.markdown("#### 📂 Espacio de Trabajo")
