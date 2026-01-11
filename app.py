@@ -1564,7 +1564,7 @@ if not st.session_state['user']:
     </script>
     """, height=0)
 
-    st.stop()
+    # st.stop() # COMMENTED OUT: Suspicious global stop
 
 
 
@@ -1577,20 +1577,7 @@ if not st.session_state['user']:
 
 
 
-# (Remaining JS code removed)
-        // 7. ENSURE CSS
-        if (!doc.getElementById('fa-v6-core')) {
-            const link = doc.createElement('link');
-            link.id = 'fa-v6-core';
-            link.rel = 'stylesheet';
-            link.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css';
-            doc.head.appendChild(link);
-        }
-    };
-
-    setTimeout(setupElevator, 1500);
-</script>
-""", height=0)
+# (Cleaned up orphaned JS)
 
 
 # --- CONFIGURATION & MIGRATION ---
