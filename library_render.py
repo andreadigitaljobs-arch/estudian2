@@ -91,101 +91,30 @@ def render_library_v2(assistant):
     Refactored V270: Minimalist Toolbar UI
     """
     
-    # --- CSS + JavaScript for Library Folders (Force Override Streamlit Styles) ---
+    # --- CSS for Custom HTML Library Folders ---
     st.markdown("""
     <style>
-    /* Target ONLY buttons with keys starting with "fdir_" (library folders) */
-    
-    /* Base styling */
-    button[data-testid*="-fdir_"] {
-        border: 1.5px solid rgba(203, 213, 225, 0.4) !important;
-        border-radius: 18px !important;
-        color: #1e293b !important;
-        
-        display: block !important;
-        padding: 24px 12px !important;
-        width: 100% !important;
-        min-height: 200px !important;
-        height: auto !important;
-        
-        box-shadow: 0 2px 12px rgba(0,0,0,0.06) !important;
-        backdrop-filter: blur(8px) !important;
-        
-        font-family: 'Segoe UI', -apple-system, system-ui, sans-serif !important;
-        font-size: 14px !important;
-        font-weight: 600 !important;
-        line-height: 1.5 !important;
-        text-align: center !important;
-        white-space: pre-wrap !important;
-        
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-        outline: none !important;
+    /* Target custom HTML folder buttons by iframe container */
+    div[data-testid="stHtml"] iframe {
+        border: none !important;
     }
     
-    button[data-testid*="-fdir_"] > div,
-    button[data-testid*="-fdir_"] p {
-        display: block !important;
-        white-space: pre-wrap !important;
-        text-align: center !important;
+    /* Apply color filters to columns containing folder buttons */
+    /* Column 1, 4, 7... (Green) */
+    div[data-testid="column"]:nth-of-type(3n+1) div[data-testid="stHtml"] {
+        filter: hue-rotate(75deg) saturate(1.6) brightness(1.15);
     }
     
-    /* BIG FOLDER ICON */
-    button[data-testid*="-fdir_"]::first-line,
-    button[data-testid*="-fdir_"] > div::first-line,
-    button[data-testid*="-fdir_"] p::first-line {
-        font-size: 72px !important;
-        line-height: 1 !important;
-        font-weight: 400 !important;
-        display: block !important;
-    }
-
-    button[data-testid*="-fdir_"]:hover {
-        border-color: rgba(203, 213, 225, 0.6) !important;
-        transform: translateY(-3px) scale(1.02) !important;
-        box-shadow: 0 6px 20px rgba(0,0,0,0.1) !important;
+    /* Column 2, 5, 8... (Pink/Magenta) */
+    div[data-testid="column"]:nth-of-type(3n+2) div[data-testid="stHtml"] {
+        filter: hue-rotate(290deg) saturate(1.4) brightness(1.1);
     }
     
-    button[data-testid*="-fdir_"]:active {
-        transform: translateY(-1px) scale(0.98) !important;
-    }
-    
-    /* COLOR FILTERS */
-    div[data-testid="column"]:nth-of-type(3n+1) button[data-testid*="-fdir_"] {
-        filter: hue-rotate(75deg) saturate(1.6) brightness(1.15) !important;
-    }
-    
-    div[data-testid="column"]:nth-of-type(3n+2) button[data-testid*="-fdir_"] {
-        filter: hue-rotate(290deg) saturate(1.4) brightness(1.1) !important;
-    }
-    
-    div[data-testid="column"]:nth-of-type(3n) button[data-testid*="-fdir_"] {
-        filter: hue-rotate(75deg) saturate(1.6) brightness(1.15) !important;
+    /* Column 3, 6, 9... (Green) */
+    div[data-testid="column"]:nth-of-type(3n) div[data-testid="stHtml"] {
+        filter: hue-rotate(75deg) saturate(1.6) brightness(1.15);
     }
     </style>
-    
-    <script>
-    // Force remove purple background using JavaScript (runs after Streamlit renders)
-    function applyLibraryFolderStyles() {
-        const folderButtons = document.querySelectorAll('button[data-testid*="-fdir_"]');
-        folderButtons.forEach(btn => {
-            // Force transparent background
-            btn.style.setProperty('background-color', 'rgba(248, 250, 252, 0.4)', 'important');
-            btn.style.setProperty('background-image', 'none', 'important');
-            btn.style.setProperty('background', 'rgba(248, 250, 252, 0.4)', 'important');
-        });
-    }
-    
-    // Run immediately
-    applyLibraryFolderStyles();
-    
-    // Run again after a short delay (in case Streamlit re-renders)
-    setTimeout(applyLibraryFolderStyles, 100);
-    setTimeout(applyLibraryFolderStyles, 500);
-    
-    // Watch for DOM changes and re-apply styles
-    const observer = new MutationObserver(applyLibraryFolderStyles);
-    observer.observe(document.body, { childList: true, subtree: true });
-    </script>
     """, unsafe_allow_html=True)
 
     current_course_id = st.session_state.get('current_course_id')
