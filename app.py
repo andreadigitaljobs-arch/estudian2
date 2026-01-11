@@ -2735,41 +2735,42 @@ with st.sidebar:
                     window.parent.document.head.appendChild(style);
                 }
 
-                // TARGETED SCROLL FINDER (Main Content Only)
-                function getScrollParent() {
-                    // Start with specific Main Content selectors to avoid Sidebar
-                    const candidates = [
-                        'section.main', // Primary Streamlit content
-                        '[data-testid="stAppViewContainer"]' // Main scrolling wrapper
+                function scrollAll(amount) {
+                    const targets = [
+                        // Priority 1: The main Streamlit scroller
+                        window.parent.document.querySelector('[data-testid="stAppViewContainer"]'),
+                         // Priority 2: The 'main' section explicitly
+                        window.parent.document.querySelector('section.main'),
+                        // Fallbacks
+                        window.parent.document.documentElement,
+                        window.parent.document.body,
+                        window.parent
                     ];
                     
-                    for (let sel of candidates) {
-                        const el = window.parent.document.querySelector(sel);
-                        if (el) return el;
-                    }
-                    
-                    return window.parent.document.documentElement; 
+                    let moved = false;
+                    targets.forEach(el => {
+                        if (el) {
+                            try {
+                                if (el.scrollBy) {
+                                    el.scrollBy({ top: amount, behavior: 'smooth' });
+                                    moved = true;
+                                } else if (el.scrollTo) {
+                                    el.scrollTo({ top: el.scrollTop + amount, behavior: 'smooth' });
+                                    moved = true;
+                                }
+                            } catch(e) {}
+                        }
+                    });
                 }
 
                 // Down arrow
                 createArrow('scroll-down', '⬇', '20px', () => {
-                    const el = getScrollParent();
-                    if(el) {
-                        el.scrollBy({ top: 400, behavior: 'smooth' });
-                    } else {
-                        // Silent fail or small nudge to window
-                        window.parent.scrollBy(0, 400);
-                    }
+                   scrollAll(400);
                 });
                 
                 // Up arrow
                 createArrow('scroll-up', '⬆', '80px', () => {
-                    const el = getScrollParent();
-                    if(el) {
-                        el.scrollBy({ top: -400, behavior: 'smooth' });
-                    } else {
-                        window.parent.scrollBy(0, -400);
-                    }
+                   scrollAll(-400);
                 });
             }, 2500); // Slightly faster init
         </script>
