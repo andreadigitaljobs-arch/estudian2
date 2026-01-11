@@ -119,8 +119,18 @@ def render_library_v2(assistant):
         transition: all 0.2s ease !important;
     }
     
-    /* 2. BIG ICON MAGIC (Target First Line / Emoji) */
-    div.stButton > button::first-line {
+    /* Ensure inner containers allow line breaks and block display */
+    div.stButton > button > div,
+    div.stButton > button p {
+        display: block !important;
+        white-space: pre-wrap !important;
+    }
+    
+    /* 2. BIG ICON MAGIC - Multi-Targeting for Robustness */
+    /* Target first line of button, OR inner div, OR inner paragraph */
+    div.stButton > button::first-line,
+    div.stButton > button > div::first-line,
+    div.stButton > button p::first-line {
         font-size: 90px !important; /* HUGE ICONS */
         line-height: 1.2 !important;
         font-weight: 400 !important; /* Emoji doesn't need bold */
