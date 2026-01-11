@@ -4567,7 +4567,6 @@ with tab_quiz:
                             st.rerun()
 # --- TAB 5: Ayudante de Tareas (DISABLED V334 REVERT) ---
 if False: # # with tab_tasks:
-if False:
     tab5_html = (
         '<div class="card-text">'
         '<h2 style="margin-top:0;">5. Ayudante de Tareas</h2>'
