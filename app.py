@@ -3066,7 +3066,7 @@ def render_image_card(img_path):
 with tab_lib:
     # --- MAIN LIBRARY RENDER ---
     if 'assistant' in locals() and assistant:
-         # render_library(assistant) # Removed duplicate call
+         pass # render_library(assistant) # Removed duplicate call
     else:
          st.info("⚠️ Configura tu API Key en la barra lateral para activar la Biblioteca IA.")
 
