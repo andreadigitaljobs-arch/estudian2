@@ -1580,14 +1580,6 @@ if not st.session_state['user']:
 
 
 
-# --- DUAL NAVIGATION ARROWS (V243 - Conditional Visibility) ---
-def inject_navigation_arrows():
-    # Show arrows on all pages with content
-    components.html("""
-    <script>
-    const setupElevator = () => {
-        const doc = window.parent.document;
-        const CONTAINER_ID = 'v231_auth_elevator';
         
         console.log("🛗 [Elevator V231] Auth Init...");
 
@@ -4575,3 +4567,7 @@ with tab_quiz:
                             st.rerun()
 # --- FUNCIONES DE TAREAS Y TUTORÍA ELIMINADAS ---
 # El código ha sido borrado por solicitud del usuario para garantizar estabilidad.
+
+# --- LIBRARY TAB ---
+with tab_lib:
+    render_library(assistant)
