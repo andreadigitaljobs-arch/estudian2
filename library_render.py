@@ -458,9 +458,9 @@ def render_library_v2(assistant):
             with col_t1:
                  st.markdown(f"##### 📄 Archivos ({len(files)})")
             with col_t2:
-                # V337: Clear Visual Cue (User Request)
-                st.caption("👇 Haz clic para borrar varios")
-                batch_mode = st.toggle("✅ Selección Múltiple", key="lib_batch_mode")
+                # V337-FIX: Make it impossible to miss (Red & Bold)
+                st.markdown(":red[**👇 CLIC AQUÍ PARA BORRAR**]")
+                batch_mode = st.toggle("✅ MODO SELECCIÓN", key="lib_batch_mode")
             
             if batch_mode:
                 st.info("📦 Modo Lote: Marca las casillas y pulsa 'Eliminar' al final.")
