@@ -27,9 +27,9 @@ else:
     st.session_state['rapid_rerun_count'] = 0
 st.session_state['last_run_time'] = now_ts
 # --------------------------------------------
-try:
-    st.toast("✅ Sistema Online: V-Emergencia-Final", icon="🚀")
-except: pass
+# --------------------------------------------
+# System Check Removed
+# --------------------------------------------
 # --------------------------------------------
 try:
     from transcriber import Transcriber
