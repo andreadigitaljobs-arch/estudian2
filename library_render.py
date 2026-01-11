@@ -558,7 +558,7 @@ def render_library_v2(assistant):
                                                  if len(str(c_prev).strip()) == 0:
                                                       st.warning("⚠️ El archivo está vacío (0 bytes de texto).")
                                                  else:
-                                                      st.markdown(str(c_prev)[:5000], unsafe_allow_html=True) 
+                                                      st.markdown(str(c_prev).lstrip()[:5000], unsafe_allow_html=True) 
                                              else:
                                                  st.info("ℹ️ Vista previa no disponible para este tipo de archivo.")
                          
