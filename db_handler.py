@@ -1129,6 +1129,18 @@ def get_weekly_activity(user_id, course_id):
         # Return mostly empty structure
         return pd.DataFrame({"Date": dates, "Archivos": [0]*range_days, "Chats": [0]*range_days})
 
+def get_file_content(file_id):
+    """Fetches the content of a specific file for preview."""
+    try:
+        supabase = init_supabase()
+        res = supabase.table("library_files").select("content").eq("id", file_id).single().execute()
+        if res.data:
+            return res.data.get('content', '')
+        return None
+    except Exception as e:
+        print(f"Error fetching file content: {e}")
+        return None
+
 # --- DUPLICATE DETECTION ---
 def get_duplicate_files(course_id):
     """
