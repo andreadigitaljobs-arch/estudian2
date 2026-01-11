@@ -549,41 +549,41 @@ def render_library_v2(assistant):
                                  st.write(f"**📄 {d['name']}**")
                                  st.caption(f"Archivos idénticos detectados: {d['count']}")
                                  
-                                  for entry in d['entries']:
-                                      # Format date nicely
-                                      created_date = entry.get('created_at', '')
-                                      date_str = ""
-                                      if created_date:
-                                          if len(created_date) > 16:
-                                              date_str = f" <span style='color:grey; font-size:0.8em'>({created_date[:10]} {created_date[11:16]})</span>"
-                                          else:
-                                              date_str = f" <span style='color:grey; font-size:0.8em'>({created_date})</span>"
-                                      
-                                      # Row Layout: Folder + Delete Button aligned
-                                      d_c1, d_c2 = st.columns([0.85, 0.15], vertical_alignment="center")
-                                      with d_c1:
-                                          st.markdown(f"📂 **{entry['unit']}**{date_str}", unsafe_allow_html=True)
-                                      with d_c2:
-                                          if st.button("🗑️", key=f"del_dupe_{entry['id']}", help="Eliminar esta copia", use_container_width=True):
-                                              delete_file(entry['id'])
-                                              st.success("Eliminado")
-                                              time.sleep(0.5)
-                                              d['entries'].remove(entry)
-                                              d['count'] -= 1
-                                              if d['count'] <= 1: dupes.remove(d) 
-                                              st.rerun()
+                                 for entry in d['entries']:
+                                     # Format date nicely
+                                     created_date = entry.get('created_at', '')
+                                     date_str = ""
+                                     if created_date:
+                                         if len(created_date) > 16:
+                                             date_str = f" <span style='color:grey; font-size:0.8em'>({created_date[:10]} {created_date[11:16]})</span>"
+                                         else:
+                                             date_str = f" <span style='color:grey; font-size:0.8em'>({created_date})</span>"
+                                     
+                                     # Row Layout: Folder + Delete Button aligned
+                                     d_c1, d_c2 = st.columns([0.85, 0.15], vertical_alignment="center")
+                                     with d_c1:
+                                         st.markdown(f"📂 **{entry['unit']}**{date_str}", unsafe_allow_html=True)
+                                     with d_c2:
+                                         if st.button("🗑️", key=f"del_dupe_{entry['id']}", help="Eliminar esta copia", use_container_width=True):
+                                             delete_file(entry['id'])
+                                             st.success("Eliminado")
+                                             time.sleep(0.5)
+                                             d['entries'].remove(entry)
+                                             d['count'] -= 1
+                                             if d['count'] <= 1: dupes.remove(d) 
+                                             st.rerun()
 
-                                      # File Content Preview (Full Width below)
-                                      with st.expander("👁️ Ver contenido"):
-                                          with st.spinner("Descargando vista previa..."):
-                                              c_prev = get_file_content(entry['id'])
-                                              if c_prev is not None:
-                                                  if len(c_prev.strip()) == 0:
-                                                       st.warning("⚠️ El archivo está vacío (0 bytes de texto).")
-                                                  else:
-                                                       st.text_area("Vista previa (primeros 1k caracteres):", c_prev[:1000] + ("..." if len(c_prev)>1000 else ""), height=150, key=f"prev_{entry['id']}")
-                                              else:
-                                                  st.error("❌ Error al leer contenido. Es posible que sea binario (PDF/Img) o haya error de red.")
+                                     # File Content Preview (Full Width below)
+                                     with st.expander("👁️ Ver contenido"):
+                                         with st.spinner("Descargando vista previa..."):
+                                             c_prev = get_file_content(entry['id'])
+                                             if c_prev is not None:
+                                                 if len(str(c_prev).strip()) == 0:
+                                                      st.warning("⚠️ El archivo está vacío (0 bytes de texto).")
+                                                 else:
+                                                      st.text_area("Vista previa (primeros 1k caracteres):", str(c_prev)[:1000] + ("..." if len(str(c_prev))>1000 else ""), height=150, key=f"prev_{entry['id']}")
+                                             else:
+                                                 st.info("ℹ️ Vista previa no disponible para este tipo de archivo.")
                      else:
                          st.success("✅ ¡Excelente! No se encontraron duplicados en ninguna carpeta del curso.")
 
