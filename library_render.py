@@ -103,21 +103,17 @@ def render_library_v2(assistant):
         border-radius: 12px !important;
         color: #1e293b !important; /* Dark Slate for Text */
         
-        display: flex !important;
-        flex-direction: column !important;
-        align-items: center !important;
-        justify-content: center !important; /* Center everything */
-        text-align: center !important;
+        display: block !important; /* REQUIRED for ::first-line icon sizing */
         
-        padding: 10px !important;
+        padding: 0px !important;
         width: 100% !important;
-        height: 140px !important; /* Taller for Big Icon */
+        height: 180px !important; /* Taller for Big Icon */
         
         box-shadow: none !important;
         font-family: 'Segoe UI', system-ui, sans-serif !important;
-        font-size: 15px !important;
+        font-size: 16px !important;
         font-weight: 700 !important; /* BOLD TITLES */
-        line-height: 1.3 !important;
+        line-height: normal !important;
         white-space: pre-wrap !important; /* Allow Icon break */
         overflow: visible !important;
         transition: all 0.2s ease !important;
@@ -125,8 +121,8 @@ def render_library_v2(assistant):
     
     /* 2. BIG ICON MAGIC (Target First Line / Emoji) */
     div.stButton > button::first-line {
-        font-size: 72px !important; /* HUGE ICONS */
-        line-height: 1.0 !important;
+        font-size: 90px !important; /* HUGE ICONS */
+        line-height: 1.2 !important;
         font-weight: 400 !important; /* Emoji doesn't need bold */
     }
 
