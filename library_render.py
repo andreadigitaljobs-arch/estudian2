@@ -280,7 +280,7 @@ def render_library_v2(assistant):
         return "primary" if st.session_state['lib_active_tool'] == tool_name else "secondary"
 
     with t_c1:
-        if st.button("Raiz", use_container_width=True, help="Ir a la carpeta principal"):
+        if st.button("📂 Raíz", key="lib_btn_root", use_container_width=True, help="Ir a la carpeta principal"):
             st.session_state['lib_current_unit_id'] = None
             st.session_state['lib_current_unit_name'] = None
             st.session_state['lib_breadcrumbs'] = []
@@ -288,32 +288,32 @@ def render_library_v2(assistant):
             st.rerun()
 
     with t_c2:
-        if st.button("Subir", type=get_type('upload'), use_container_width=True, help="Subir archivos o crear notas"):
+        if st.button("📤 Subir", key="lib_btn_upload", type=get_type('upload'), use_container_width=True, help="Subir archivos o crear notas"):
             set_tool('upload')
             st.rerun()
 
     with t_c3:
-        if st.button("Nueva", type=get_type('create'), use_container_width=True, help="Crear nueva carpeta"):
+        if st.button("✨ Nueva", key="lib_btn_new", type=get_type('create'), use_container_width=True, help="Crear nueva carpeta"):
             set_tool('create')
             st.rerun()
 
     with t_c4:
-        if st.button("Gestion", type=get_type('manage'), use_container_width=True, help="Renombrar o borrar carpetas"):
+        if st.button("⚙️ Gestión", key="lib_btn_manage", type=get_type('manage'), use_container_width=True, help="Renombrar o borrar carpetas"):
             set_tool('manage')
             st.rerun()
 
     with t_c5:
-        if st.button("Buscar", type=get_type('search'), use_container_width=True, help="Buscar en toda la biblioteca"):
+        if st.button("🔍 Buscar", key="lib_btn_search", type=get_type('search'), use_container_width=True, help="Buscar en toda la biblioteca"):
             set_tool('search')
             st.rerun()
             
     with t_c6:
-         if st.button("Duplicados", type=get_type('duplicates'), use_container_width=True, help="Buscar archivos duplicados"):
+         if st.button("🧹 Duplicados", key="lib_btn_dupes", type=get_type('duplicates'), use_container_width=True, help="Buscar archivos duplicados"):
             set_tool('duplicates')
             st.rerun()
 
     with t_c7:
-         if st.button("Backup", type=get_type('backup'), use_container_width=True, help="Descargar todo"):
+         if st.button("📦 Backup", key="lib_btn_backup", type=get_type('backup'), use_container_width=True, help="Descargar todo"):
             set_tool('backup')
             st.rerun()
 
