@@ -447,11 +447,7 @@ def render_library_v2(assistant):
                         st.query_params.clear()
                         st.rerun()
 
-    # B. Files
-    if current_unit_id:
-        files = get_files(current_unit_id)
-        if files:
-    # B. Files
+
     if current_unit_id:
         files = get_files(current_unit_id)
         if files:
