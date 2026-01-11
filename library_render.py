@@ -280,7 +280,7 @@ def render_library_v2(assistant):
         return "primary" if st.session_state['lib_active_tool'] == tool_name else "secondary"
 
     with t_c1:
-        if st.button("📂 Raíz", use_container_width=True, help="Ir a la carpeta principal"):
+        if st.button("Raiz", use_container_width=True, help="Ir a la carpeta principal"):
             st.session_state['lib_current_unit_id'] = None
             st.session_state['lib_current_unit_name'] = None
             st.session_state['lib_breadcrumbs'] = []
