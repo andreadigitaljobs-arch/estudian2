@@ -2356,6 +2356,34 @@ CSS_STYLE = """
 """
 st.markdown(CSS_STYLE, unsafe_allow_html=True)
 
+# --- EMERGENCY SIDEBAR RESET ---
+# Forces Sidebar buttons to be normal size, ignoring any global leaks
+st.markdown("""
+<style>
+section[data-testid="stSidebar"] div.stButton > button {
+    height: auto !important;
+    width: 100% !important;
+    padding: 0.5rem 1rem !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    display: flex !important;
+    flex-direction: row !important; /* Standard row for text */
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 8px !important;
+}
+
+/* Reset ::first-line for Sidebar to avoid giant emojis if leak persists */
+section[data-testid="stSidebar"] div.stButton > button::first-line,
+section[data-testid="stSidebar"] div.stButton > button > div::first-line,
+section[data-testid="stSidebar"] div.stButton > button p::first-line {
+    font-size: inherit !important;
+    line-height: inherit !important;
+    font-weight: inherit !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
 # Hidden duplicate button removed.
 # Duplicate button cleanup complete.
 
