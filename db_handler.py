@@ -1137,15 +1137,23 @@ def get_duplicate_files(course_id):
     """
     supabase = init_supabase()
     try:
-        # Get all files for the course (minimal fields)
-        # We need Unit Name to show path. INCREASE LIMIT to 10000 to avoid missing files.
-        res = supabase.table("library_files").select("id, name, unit_id").eq("course_id", course_id).limit(10000).execute()
+        # Get Units for context first (linking table)
+        # 1. Get all units for this course
+        units_res = supabase.table("units").select("id, name").eq("course_id", course_id).limit(1000).execute()
+        units_data = units_res.data
+        if not units_data: return []
+        
+        unit_map = {u['id']: u['name'] for u in units_data}
+        unit_ids = list(unit_map.keys())
+        
+        # 2. Get files that belong to these units
+        # Supabase limit for 'in' filter is confusing, but we can do it.
+        # If too many units, might need chunks. For now assume < 100 units.
+        # Better: use the 'unit_id' filter.
+        
+        res = supabase.table("library_files").select("id, name, unit_id").in_("unit_id", unit_ids).limit(10000).execute()
         files = res.data
         if not files: return []
-        
-        # Get Units for context
-        units_res = supabase.table("units").select("id, name").eq("course_id", course_id).limit(1000).execute()
-        unit_map = {u['id']: u['name'] for u in units_res.data}
         
         # Count
         name_map = {}

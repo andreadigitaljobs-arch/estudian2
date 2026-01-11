@@ -524,7 +524,11 @@ def render_library_v2(assistant):
                     from db_handler import init_supabase
                     st.write("Muestra los primeros 100 archivos que ve el sistema:")
                     try:
-                        raw_res = init_supabase().table("library_files").select("id, name, unit_id").eq("course_id", current_course_id).limit(100).execute()
+                        # Correct Query: Units -> Files
+                        units_res = init_supabase().table("units").select("id").eq("course_id", current_course_id).execute()
+                        u_ids = [u['id'] for u in units_res.data]
+                        
+                        raw_res = init_supabase().table("library_files").select("id, name, unit_id").in_("unit_id", u_ids).limit(100).execute()
                         if raw_res.data:
                             st.write(f"Total mostrados: {len(raw_res.data)}")
                             st.dataframe(raw_res.data)
