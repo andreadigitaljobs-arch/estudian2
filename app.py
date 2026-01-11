@@ -2702,50 +2702,47 @@ with st.sidebar:
 
     # --- DUAL NAVIGATION ARROWS (RESTORED) ---
     def inject_navigation_arrows():
-    def inject_navigation_arrows():
         components.html("""
         <script>
-            // Ensure DOM is ready
-            document.addEventListener('DOMContentLoaded', function() {
-                setTimeout(function() {
-                    function createArrow(id, html, bottom, onClick) {
-                        if (document.getElementById(id)) return;
-                        const btn = document.createElement('button');
-                        btn.id = id;
-                        btn.innerHTML = html;
-                        Object.assign(btn.style, {
-                            position: 'fixed', bottom: bottom, right: '20px',
-                            width: '50px', height: '50px', borderRadius: '50%',
-                            border: 'none', backgroundColor: '#4B22DD', color: 'white',
-                            fontSize: '24px', cursor: 'pointer', zIndex: '999999',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            boxShadow: '0 4px 6px rgba(0,0,0,0.3)', transition: 'all 0.2s',
-                            opacity: '0', animation: 'fadeIn 0.5s forwards'
-                        });
-                        btn.onmouseover = () => btn.style.transform = 'scale(1.1)';
-                        btn.onmouseout = () => btn.style.transform = 'scale(1)';
-                        btn.addEventListener('click', onClick);
-                        document.body.appendChild(btn);
-                    }
-                    // Fade‑in style
-                    if (!document.getElementById('arrow-fade-style')) {
-                        const style = document.createElement('style');
-                        style.id = 'arrow-fade-style';
-                        style.textContent = '@keyframes fadeIn { to { opacity: 1; } }';
-                        document.head.appendChild(style);
-                    }
-                    // Down arrow: scroll down one viewport height
-                    createArrow('scroll-down', '⬇', '20px', () => {
-                        window.scrollBy({ top: window.innerHeight, behavior: 'smooth' });
+            setTimeout(function() {
+                function createArrow(id, html, bottom, onClick) {
+                    if (document.getElementById(id)) return;
+                    const btn = document.createElement('button');
+                    btn.id = id;
+                    btn.innerHTML = html;
+                    Object.assign(btn.style, {
+                        position: 'fixed', bottom: bottom, right: '20px',
+                        width: '50px', height: '50px', borderRadius: '50%',
+                        border: 'none', backgroundColor: '#4B22DD', color: 'white',
+                        fontSize: '24px', cursor: 'pointer', zIndex: '999999',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        boxShadow: '0 4px 6px rgba(0,0,0,0.3)', transition: 'all 0.2s',
+                        opacity: '0', animation: 'fadeIn 0.5s forwards'
                     });
-                    // Up arrow: scroll up one viewport height
-                    createArrow('scroll-up', '⬆', '80px', () => {
-                        window.scrollBy({ top: -window.innerHeight, behavior: 'smooth' });
-                    });
-                }, 3000);
-            });
+                    btn.onmouseover = () => btn.style.transform = 'scale(1.1)';
+                    btn.onmouseout = () => btn.style.transform = 'scale(1)';
+                    btn.addEventListener('click', onClick);
+                    document.body.appendChild(btn);
+                }
+                // Fade‑in style
+                if (!document.getElementById('arrow-fade-style')) {
+                    const style = document.createElement('style');
+                    style.id = 'arrow-fade-style';
+                    style.textContent = '@keyframes fadeIn { to { opacity: 1; } }';
+                    document.head.appendChild(style);
+                }
+                // Down arrow: scroll down one viewport height
+                createArrow('scroll-down', '⬇', '20px', () => {
+                    window.scrollBy({ top: window.innerHeight, behavior: 'smooth' });
+                });
+                // Up arrow: scroll up one viewport height
+                createArrow('scroll-up', '⬆', '80px', () => {
+                    window.scrollBy({ top: -window.innerHeight, behavior: 'smooth' });
+                });
+            }, 3000);
         </script>
         """, height=0)
+
 
 
     # --- DUAL NAVIGATION ARROWS ---
