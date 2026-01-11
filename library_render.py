@@ -455,7 +455,7 @@ def render_library_v2(assistant):
                         onmouseout="this.style.transform=''; this.style.boxShadow='0 2px 12px rgba(0,0,0,0.06)';"
                     >
                         <div style="font-size: 72px; line-height: 1;">📁</div>
-                        <div style="font-size: 14px; font-weight: 600; text-align: center; line-height: 1.4;">
+                        <div style="font-size: 14px; font-weight: 700; text-align: center; line-height: 1.4;">
                             {unit['name']}<br>({count})
                         </div>
                     </button>
