@@ -91,28 +91,73 @@ def render_library_v2(assistant):
     Refactored V270: Minimalist Toolbar UI
     """
     
-    # --- CSS for Custom HTML Library Folders ---
+    # --- AGGRESSIVE CSS for Library Folders (Tertiary Buttons) ---
     st.markdown("""
     <style>
-    /* Target custom HTML folder buttons by iframe container */
-    div[data-testid="stHtml"] iframe {
-        border: none !important;
+    /* Target library folder buttons by key pattern */
+    button[data-testid*="-fdir_"] {
+        /* FORCE transparent background */
+        background: rgba(248, 250, 252, 0.5) !important;
+        background-color: rgba(248, 250, 252, 0.5) !important;
+        background-image: none !important;
+        
+        /* Border and shape */
+        border: 1.5px solid rgba(203, 213, 225, 0.4) !important;
+        border-radius: 18px !important;
+        
+        /* Layout */
+        display: block !important;
+        padding: 24px 12px !important;
+        width: 100% !important;
+        min-height: 200px !important;
+        height: auto !important;
+        
+        /* Typography */
+        color: #1e293b !important;
+        font-family: 'Segoe UI', system-ui, sans-serif !important;
+        font-size: 14px !important;
+        font-weight: 700 !important;
+        line-height: 1.5 !important;
+        text-align: center !important;
+        white-space: pre-wrap !important;
+        
+        /* Effects */
+        box-shadow: 0 2px 12px rgba(0,0,0,0.06) !important;
+        transition: all 0.3s ease !important;
     }
     
-    /* Apply color filters to columns containing folder buttons */
-    /* Column 1, 4, 7... (Green) */
-    div[data-testid="column"]:nth-of-type(3n+1) div[data-testid="stHtml"] {
-        filter: hue-rotate(75deg) saturate(1.6) brightness(1.15);
+    /* Remove any Streamlit default styling */
+    button[data-testid*="-fdir_"]:hover,
+    button[data-testid*="-fdir_"]:focus,
+    button[data-testid*="-fdir_"]:active {
+        background: rgba(248, 250, 252, 0.7) !important;
+        background-color: rgba(248, 250, 252, 0.7) !important;
+        background-image: none !important;
+        border-color: rgba(203, 213, 225, 0.6) !important;
+        transform: translateY(-3px) scale(1.02) !important;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.1) !important;
     }
     
-    /* Column 2, 5, 8... (Pink/Magenta) */
-    div[data-testid="column"]:nth-of-type(3n+2) div[data-testid="stHtml"] {
-        filter: hue-rotate(290deg) saturate(1.4) brightness(1.1);
+    /* Big folder icon */
+    button[data-testid*="-fdir_"]::first-line,
+    button[data-testid*="-fdir_"] > div::first-line,
+    button[data-testid*="-fdir_"] p::first-line {
+        font-size: 72px !important;
+        line-height: 1 !important;
+        font-weight: 400 !important;
     }
     
-    /* Column 3, 6, 9... (Green) */
-    div[data-testid="column"]:nth-of-type(3n) div[data-testid="stHtml"] {
-        filter: hue-rotate(75deg) saturate(1.6) brightness(1.15);
+    /* Color filters by column */
+    div[data-testid="column"]:nth-of-type(3n+1) button[data-testid*="-fdir_"] {
+        filter: hue-rotate(75deg) saturate(1.6) brightness(1.15) !important;
+    }
+    
+    div[data-testid="column"]:nth-of-type(3n+2) button[data-testid*="-fdir_"] {
+        filter: hue-rotate(290deg) saturate(1.4) brightness(1.1) !important;
+    }
+    
+    div[data-testid="column"]:nth-of-type(3n) button[data-testid*="-fdir_"] {
+        filter: hue-rotate(75deg) saturate(1.6) brightness(1.15) !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -424,52 +469,15 @@ def render_library_v2(assistant):
         f_cols = st.columns(3)
         for i, unit in enumerate(subfolders):
             with f_cols[i % 3]:
-                # Folder Card - Custom HTML for full styling control
+                # Folder Card (Big Icon Style)
                 count = unit_counts.get(unit['id'], 0)
-                folder_id = f"folder_{unit['id']}"
+                label = f"📁\n\n{unit['name']} ({count})"
                 
-                # Create custom HTML button with onclick that triggers Streamlit rerun
-                components.html(f"""
-                <div style="width: 100%; height: 220px;">
-                    <button 
-                        onclick="window.parent.postMessage({{type: 'streamlit:setComponentValue', value: '{unit['id']}'}}, '*')"
-                        style="
-                            width: 100%;
-                            height: 100%;
-                            background: rgba(248, 250, 252, 0.5);
-                            border: 1.5px solid rgba(203, 213, 225, 0.4);
-                            border-radius: 18px;
-                            color: #1e293b;
-                            cursor: pointer;
-                            transition: all 0.3s ease;
-                            display: flex;
-                            flex-direction: column;
-                            align-items: center;
-                            justify-content: center;
-                            gap: 12px;
-                            padding: 20px;
-                            font-family: 'Segoe UI', system-ui, sans-serif;
-                            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
-                        "
-                        onmouseover="this.style.transform='translateY(-3px) scale(1.02)'; this.style.boxShadow='0 6px 20px rgba(0,0,0,0.1)';"
-                        onmouseout="this.style.transform=''; this.style.boxShadow='0 2px 12px rgba(0,0,0,0.06)';"
-                    >
-                        <div style="font-size: 72px; line-height: 1;">📁</div>
-                        <div style="font-size: 14px; font-weight: 700; text-align: center; line-height: 1.4;">
-                            {unit['name']}<br>({count})
-                        </div>
-                    </button>
-                </div>
-                """, height=220, key=f"fdir_{unit['id']}")
-                
-                # Check if this folder was clicked
-                clicked_id = st.session_state.get(f"fdir_{unit['id']}")
-                if clicked_id == unit['id']:
+                # Use tertiary button (no default styling) so CSS can override
+                if st.button(label, key=f"fdir_{unit['id']}", use_container_width=True, type="tertiary"):
                     st.session_state['lib_current_unit_id'] = unit['id']
                     st.session_state['lib_current_unit_name'] = unit['name']
                     st.session_state['lib_breadcrumbs'].append(unit)
-                    # Clear the click state
-                    st.session_state[f"fdir_{unit['id']}"] = None
                     st.rerun()
 
     # B. Files
