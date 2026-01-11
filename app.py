@@ -1577,27 +1577,7 @@ if not st.session_state['user']:
 
 
 
-
-
-
-        const style = doc.createElement('style');
-        style.innerHTML = `
-            @keyframes fadeInElevator {
-                0% { opacity: 0; transform: translateY(10px); }
-                100% { opacity: 1; transform: translateY(0); }
-            }
-        `;
-        doc.head.appendChild(style);
-
-        // INITIAL STATE: Hidden -> Animation handles reveal
-        navContainer.style.opacity = '0';
-        // Delay 2s, Duration 0.5s
-        navContainer.style.animation = 'fadeInElevator 0.5s ease 2s forwards';
-
-        // 6. INJECT
-        doc.body.appendChild(navContainer);
-        console.log("🛗 [Elevator V231] Mounted & Animating...");
-
+# (Remaining JS code removed)
         // 7. ENSURE CSS
         if (!doc.getElementById('fa-v6-core')) {
             const link = doc.createElement('link');
