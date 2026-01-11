@@ -2823,14 +2823,12 @@ with st.sidebar:
 # --- TABS DEFINITION ---
 # NEW: "Inicio" is the Dashboard Tab
 # NEW: "Explorador Didáctico" replaces Apuntes/Guide
-tab_home, tab1, tab_didactic, tab_quiz, tab_lib, tab_tasks, tab_tutor = st.tabs([
-    "🏠 Inicio",
-    "📹 Transcriptor", 
-    "🧠 Explorador Didáctico", 
-    "🧩 Zona Quiz",
-    "📂 Biblioteca",
-    "👩🏻‍🏫 Ayudante de Tareas",
-    "📚 Tutoría 1 a 1"
+tab_home, tab1, tab_didactic, tab_quiz, tab_lib = st.tabs([
+    "🏠 Inicio", 
+    "🎤 Transcriptor", 
+    "📘 Didáctica", 
+    "📝 Quiz", 
+    "📂 Biblioteca"
 ])
 
 import pandas as pd # FIX: Missing import for charts
@@ -4567,8 +4565,8 @@ with tab_quiz:
                         if st.button('❌ Descartar', key='btn_deny_auto'):
                             st.session_state['pending_learning_rule'] = None
                             st.rerun()
-# --- TAB 5: Ayudante de Tareas ---
-with tab_tasks:
+# --- TAB 5: Ayudante de Tareas (DISABLED V334 REVERT) ---
+if False: # with tab_tasks:
     tab5_html = (
         '<div class="card-text">'
         '<h2 style="margin-top:0;">5. Ayudante de Tareas</h2>'
