@@ -123,6 +123,7 @@ def render_library_v2(assistant):
         box-shadow: none !important;
         font-family: 'Segoe UI', sans-serif !important;
         font-size: 16px !important;
+        font-weight: 700 !important;
         overflow: visible !important;
         white-space: pre-wrap !important;
     }
