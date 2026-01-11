@@ -454,13 +454,13 @@ def render_library_v2(assistant):
             # --- V336: BATCH MODE (NO RELOAD) ---
             
             # Toggle for Batch Mode (State Persisted)
-            col_t1, col_t2 = st.columns([0.65, 0.35], vertical_alignment="bottom")
+            # Toggle for Batch Mode (State Persisted)
+            col_t1, col_t2 = st.columns([0.7, 0.3], vertical_alignment="bottom")
             with col_t1:
                  st.markdown(f"##### 📄 Archivos ({len(files)})")
             with col_t2:
-                # V337-FIX: Make it impossible to miss (Red & Bold)
-                st.markdown(":red[**👇 CLIC AQUÍ PARA BORRAR**]")
-                batch_mode = st.toggle("✅ MODO SELECCIÓN", key="lib_batch_mode")
+                # V337: Clean Toggle (Red Cue Removed)
+                batch_mode = st.toggle("✅ Selección Múltiple", key="lib_batch_mode")
             
             if batch_mode:
                 st.info("📦 Modo Lote: Marca las casillas y pulsa 'Eliminar' al final.")
