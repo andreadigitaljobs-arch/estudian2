@@ -2701,86 +2701,9 @@ with st.sidebar:
     """, height=0)
 
     # --- DUAL NAVIGATION ARROWS (RESTORED) ---
-    def inject_navigation_arrows():
-        components.html("""
-        <script>
-            setTimeout(function() {
-                // DEBUG ALERT FOR DEPLOYMENT CHECK
-                // alert('JS NAVIGATION V3 - INIT');
-
-                function createArrow(id, html, bottom, onClick) {
-                    // Aggressive cleanup
-                    const oldElements = window.parent.document.querySelectorAll('#' + id);
-                    oldElements.forEach(el => el.remove());
-
-                    const btn = window.parent.document.createElement('button');
-                    btn.id = id;
-                    btn.innerHTML = html; // RESTORED ICON
-                    Object.assign(btn.style, {
-                        position: 'fixed', bottom: bottom, right: '20px',
-                        width: '50px', height: '50px', borderRadius: '50%',
-                        border: 'none', backgroundColor: '#4B22DD', color: 'white',
-                        fontSize: '24px', cursor: 'pointer', zIndex: '999999',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        boxShadow: '0 4px 6px rgba(0,0,0,0.3)', transition: 'all 0.2s',
-                        opacity: '0', animation: 'fadeIn 0.5s forwards'
-                    });
-                    btn.onmouseover = () => btn.style.transform = 'scale(1.1)';
-                    btn.onmouseout = () => btn.style.transform = 'scale(1)';
-                    btn.onclick = onClick; 
-                    window.parent.document.body.appendChild(btn);
-                }
-                
-                if (!window.parent.document.getElementById('arrow-fade-style')) {
-                    const style = window.parent.document.createElement('style');
-                    style.id = 'arrow-fade-style';
-                    style.textContent = '@keyframes fadeIn { to { opacity: 1; } }';
-                    window.parent.document.head.appendChild(style);
-                }
-
-                function scrollAll(amount) {
-                    const targets = [
-                        // Priority 1: The main Streamlit scroller
-                        window.parent.document.querySelector('[data-testid="stAppViewContainer"]'),
-                         // Priority 2: The 'main' section explicitly
-                        window.parent.document.querySelector('section.main'),
-                        // Fallbacks
-                        window.parent.document.documentElement,
-                        window.parent.document.body,
-                        window.parent
-                    ];
-                    
-                    let moved = false;
-                    targets.forEach(el => {
-                        if (el) {
-                            try {
-                                if (el.scrollBy) {
-                                    el.scrollBy({ top: amount, behavior: 'smooth' });
-                                    moved = true;
-                                } else if (el.scrollTo) {
-                                    el.scrollTo({ top: el.scrollTop + amount, behavior: 'smooth' });
-                                    moved = true;
-                                }
-                            } catch(e) {}
-                        }
-                    });
-                }
-
-                // Down arrow
-                createArrow('scroll-down', '⬇', '20px', () => {
-                   scrollAll(400);
-                });
-                
-                // Up arrow
-                createArrow('scroll-up', '⬆', '80px', () => {
-                   scrollAll(-400);
-                });
-            }, 2500); // Slightly faster init
-        </script>
-        """, height=0)
-
-    # --- DUAL NAVIGATION ARROWS ---
-    inject_navigation_arrows()
+    # Navigation arrows temporarily disabled - focusing on duplicate scanner fix
+    # def inject_navigation_arrows():
+    #     pass
     
     # Debug Version Indicator
     from datetime import datetime
@@ -4575,3 +4498,7 @@ with tab_quiz:
                             st.rerun()
 # --- FUNCIONES DE TAREAS Y TUTORÍA ELIMINADAS ---
 # El código ha sido borrado por solicitud del usuario para garantizar estabilidad.
+
+# --- LIBRARY TAB ---
+with tab_lib:
+    render_library(assistant)
