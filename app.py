@@ -2475,7 +2475,7 @@ with st.sidebar:
     # Fixed version marker removed
 
 
-    st.markdown('<div class="aesthetic-sep"></div>', unsafe_allow_html=True)
+
 
     # --- 2. HISTORIAL DE CHATS (DISABLED) ---
     if False and st.session_state.get('user'):
@@ -2632,7 +2632,7 @@ with st.sidebar:
                                 time.sleep(0.5)
                                 st.rerun()
 
-    st.markdown('<div class="aesthetic-sep"></div>', unsafe_allow_html=True)
+
 
     # --- 3. SPOTLIGHT ACADÉMICO ---
     st.markdown("#### 🔍 Búsqueda rápida")
