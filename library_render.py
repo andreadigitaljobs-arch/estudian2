@@ -94,10 +94,10 @@ def render_library_v2(assistant):
     # --- CSS for Windows-Style Explorer (Transparent Buttons, Big Icons) ---
     st.markdown("""
     <style>
-    /* --- V334 RESTORED: WINDOWS STYLE FOLDERS --- */
+    /* --- V334 RESTORED: WINDOWS STYLE FOLDERS (SCOPED TO MAIN) --- */
     
-    /* 1. Base Button Style (Glassy & Bold) */
-    div.stButton > button {
+    /* 1. Base Button Style (Glassy & Bold) - MAIN DATA AREA ONLY */
+    section[data-testid="stMain"] div.stButton > button {
         background-color: transparent !important;
         border: 1px solid transparent !important;
         border-radius: 12px !important;
@@ -120,24 +120,23 @@ def render_library_v2(assistant):
     }
     
     /* Ensure inner containers allow line breaks and block display */
-    div.stButton > button > div,
-    div.stButton > button p {
+    section[data-testid="stMain"] div.stButton > button > div,
+    section[data-testid="stMain"] div.stButton > button p {
         display: block !important;
         white-space: pre-wrap !important;
     }
     
     /* 2. BIG ICON MAGIC - Multi-Targeting for Robustness */
-    /* Target first line of button, OR inner div, OR inner paragraph */
-    div.stButton > button::first-line,
-    div.stButton > button > div::first-line,
-    div.stButton > button p::first-line {
+    section[data-testid="stMain"] div.stButton > button::first-line,
+    section[data-testid="stMain"] div.stButton > button > div::first-line,
+    section[data-testid="stMain"] div.stButton > button p::first-line {
         font-size: 90px !important; /* HUGE ICONS */
         line-height: 1.2 !important;
         font-weight: 400 !important; /* Emoji doesn't need bold */
     }
 
     /* 3. Hover Effect (Subtle Windows Highlight) */
-    div.stButton > button:hover {
+    section[data-testid="stMain"] div.stButton > button:hover {
         background-color: #f1f5f9 !important; /* Light Slate 100 */
         border-color: #cbd5e1 !important; /* Slate 300 */
         transform: translateY(-2px);
@@ -146,13 +145,13 @@ def render_library_v2(assistant):
     /* 4. COLOR HACK: Green & Purple Alternating */
     
     /* EVEN Columns (2nd): Pink/Purple */
-    div[data-testid="column"]:nth-of-type(even) div.stButton > button {
+    section[data-testid="stMain"] div[data-testid="column"]:nth-of-type(even) div.stButton > button {
         filter: hue-rotate(260deg) saturate(1.2); 
     }
     
     /* ODD Columns (1st & 3rd): Bright Green */
     /* Default is Yellowish. We rotate ~80deg to get Green. */
-    div[data-testid="column"]:nth-of-type(odd) div.stButton > button {
+    section[data-testid="stMain"] div[data-testid="column"]:nth-of-type(odd) div.stButton > button {
         filter: hue-rotate(80deg) saturate(1.4); 
     }
     

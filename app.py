@@ -2356,56 +2356,9 @@ CSS_STYLE = """
 """
 st.markdown(CSS_STYLE, unsafe_allow_html=True)
 
-# --- V334 LIBRARY OVERRIDE (FINAL PATCH) ---
-# Forces Green/Purple Folders + Big Icons over Global Styles
-st.markdown("""
-<style>
-/* 1. Base Button Style (Glassy & Bold) */
-div.stButton > button {
-    background-color: transparent !important;
-    border: 1px solid transparent !important;
-    border-radius: 12px !important;
-    color: #1e293b !important; /* Dark Slate for Text */
-    
-    /* display: block is REQUIRED for ::first-line to work for the icon size */
-    display: block !important; 
-    
-    padding: 10px !important;
-    width: 100% !important;
-    height: 180px !important; /* Even Taller for Huge Icon */
-    
-    box-shadow: none !important;
-    font-family: 'Segoe UI', system-ui, sans-serif !important;
-    font-size: 16px !important;
-    font-weight: 700 !important;
-    line-height: normal !important;
-    white-space: pre-wrap !important;
-    overflow: visible !important;
-}
+# Hidden duplicate button removed.
+# Duplicate button cleanup complete.
 
-/* 2. BIG ICON MAGIC - The First Line is the EMOJI */
-div.stButton > button::first-line {
-    font-size: 90px !important; /* MASSIVE ICONS */
-    line-height: 1.2 !important;
-    font-weight: 400 !important;
-}
-
-/* 3. Hover Effect */
-div.stButton > button:hover {
-    background-color: #f1f5f9 !important;
-    border-color: #cbd5e1 !important;
-    transform: translateY(-2px);
-}
-
-/* 4. COLOR HACK: Green & Purple Alternating */
-div[data-testid="column"]:nth-of-type(even) div.stButton > button {
-    filter: hue-rotate(260deg) saturate(1.2); 
-}
-div[data-testid="column"]:nth-of-type(odd) div.stButton > button {
-    filter: hue-rotate(80deg) saturate(1.4); 
-}
-</style>
-""", unsafe_allow_html=True)
 
 # Hidden duplicate button removed.
 # Duplicate button cleanup complete.
