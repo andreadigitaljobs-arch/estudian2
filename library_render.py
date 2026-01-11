@@ -661,7 +661,7 @@ def render_library_v2(assistant, key_suffix="default"):
         st.markdown(breadcrumbs_html, unsafe_allow_html=True)
     with bc_c2:
         if crumbs:
-            if st.button("⬅️ Atrás", use_container_width=True, key="back_nav_btn"):
+            if st.button("⬅️ Atrás", use_container_width=True, key=f"back_nav_btn_{key_suffix}"):
                 st.session_state['lib_breadcrumbs'].pop()
                 if st.session_state['lib_breadcrumbs']:
                     last = st.session_state['lib_breadcrumbs'][-1]
@@ -706,7 +706,7 @@ def render_library_v2(assistant, key_suffix="default"):
                 label = f"**{display_name}** ({count})"
                 
                 # Use type='secondary' to hook into our new scoped CSS (Avoids Primary conflict)
-                if st.button(label, key=f"fdir_{unit['id']}", use_container_width=True, type="secondary"):
+                if st.button(label, key=f"fdir_{unit['id']}_{key_suffix}", use_container_width=True, type="secondary"):
                     st.session_state['lib_current_unit_id'] = unit['id']
                     st.session_state['lib_current_unit_name'] = unit['name']
                     st.session_state['lib_breadcrumbs'].append(unit)
@@ -729,7 +729,7 @@ def render_library_v2(assistant, key_suffix="default"):
                 selected_count = len(st.session_state['selected_files_for_chat'])
                 if selected_count > 0:
                     if st.button(f"🤖 Analizar {selected_count} archivo{'s' if selected_count > 1 else ''}", 
-                                key="batch_analyze", use_container_width=True, type="primary"):
+                                key=f"batch_analyze_{key_suffix}", use_container_width=True, type="primary"):
                         # Batch analysis logic (implemented below)
                         st.session_state['trigger_batch_analysis'] = True
                         st.rerun()
@@ -743,7 +743,7 @@ def render_library_v2(assistant, key_suffix="default"):
                 with r_check:
                     # Checkbox for multi-file selection
                     is_selected = f['id'] in st.session_state['selected_files_for_chat']
-                    if st.checkbox("", value=is_selected, key=f"select_{f['id']}", label_visibility="collapsed"):
+                    if st.checkbox("", value=is_selected, key=f"select_{f['id']}_{key_suffix}", label_visibility="collapsed"):
                         st.session_state['selected_files_for_chat'].add(f['id'])
                     else:
                         st.session_state['selected_files_for_chat'].discard(f['id'])
@@ -767,12 +767,12 @@ def render_library_v2(assistant, key_suffix="default"):
                     col_edit, col_ai = st.columns(2)
                     with col_edit:
                         if st.button("✏️ Editar" if not st.session_state[edit_key] else "👁️ Ver", 
-                                   key=f"toggle_edit_{f['id']}", use_container_width=True):
+                                   key=f"toggle_edit_{f['id']}_{key_suffix}", use_container_width=True):
                             st.session_state[edit_key] = not st.session_state[edit_key]
                             st.rerun()
                     
                     with col_ai:
-                        if st.button("🤖 Formatear", key=f"format_{f['id']}", use_container_width=True,
+                        if st.button("🤖 Formatear", key=f"format_{f['id']}_{key_suffix}", use_container_width=True,
                                    help="Aplica formato inteligente (párrafos, títulos)"):
                             with st.spinner("Formateando con IA..."):
                                 formatted_text = format_transcript_with_ai(file_content, assistant)
