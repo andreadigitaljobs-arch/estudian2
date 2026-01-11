@@ -2705,6 +2705,9 @@ with st.sidebar:
         components.html("""
         <script>
             setTimeout(function() {
+                // DEBUG ALERT FOR DEPLOYMENT CHECK
+                // alert('JS NAVIGATION V3 - INIT');
+
                 function createArrow(id, html, bottom, onClick) {
                     // Aggressive cleanup
                     const oldElements = window.parent.document.querySelectorAll('#' + id);
@@ -2781,7 +2784,7 @@ with st.sidebar:
     
     # Debug Version Indicator
     from datetime import datetime
-    st.sidebar.caption(f"Versión: {datetime.now().strftime('%H:%M:%S')}")
+    st.sidebar.caption(f"Versión V3: {datetime.now().strftime('%H:%M:%S')}")
 
 
 
