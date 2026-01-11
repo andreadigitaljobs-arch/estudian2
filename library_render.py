@@ -454,12 +454,13 @@ def render_library_v2(assistant):
             # --- V336: BATCH MODE (NO RELOAD) ---
             
             # Toggle for Batch Mode (State Persisted)
-            col_t1, col_t2 = st.columns([0.7, 0.3], vertical_alignment="bottom")
+            col_t1, col_t2 = st.columns([0.65, 0.35], vertical_alignment="bottom")
             with col_t1:
                  st.markdown(f"##### 📄 Archivos ({len(files)})")
             with col_t2:
-                # Use checkbox if toggle not available in older streamlit versions, but toggle is better
-                batch_mode = st.toggle("✅ Selección Múltiple", key="lib_batch_mode", help="Activa para borrar varios archivos sin recargar la página.")
+                # V337: Clear Visual Cue (User Request)
+                st.caption("👇 Haz clic para borrar varios")
+                batch_mode = st.toggle("✅ Selección Múltiple", key="lib_batch_mode")
             
             if batch_mode:
                 st.info("📦 Modo Lote: Marca las casillas y pulsa 'Eliminar' al final.")
