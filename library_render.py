@@ -422,52 +422,56 @@ def render_library_v2(assistant):
         f_cols = st.columns(3)
         for i, unit in enumerate(subfolders):
             with f_cols[i % 3]:
-                # Windows Explorer Style Folder Card
+                # Windows Explorer Style Folder Card (Light Theme)
                 count = unit_counts.get(unit['id'], 0)
                 
-                # Create clickable card using st.container and st.button hidden approach
+                # Create clickable card
                 folder_html = f"""
                 <div style="
-                    background: linear-gradient(180deg, #2a2a2a 0%, #1a1a1a 100%);
-                    border-radius: 12px;
-                    padding: 24px 16px;
+                    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+                    border: 1.5px solid #e2e8f0;
+                    border-radius: 16px;
+                    padding: 28px 20px;
                     text-align: center;
                     cursor: pointer;
                     transition: all 0.3s ease;
-                    min-height: 180px;
+                    min-height: 200px;
                     display: flex;
                     flex-direction: column;
                     align-items: center;
                     justify-content: center;
                     gap: 16px;
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-                " onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 8px 20px rgba(0,0,0,0.4)';" 
-                   onmouseout="this.style.transform=''; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.3)';">
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+                " onmouseover="this.style.transform='translateY(-4px)'; this.style.boxShadow='0 6px 16px rgba(0,0,0,0.12)';" 
+                   onmouseout="this.style.transform=''; this.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)';">
                     
                     <!-- Large Folder Icon -->
-                    <div style="font-size: 80px; line-height: 1; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
+                    <div style="font-size: 80px; line-height: 1; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));">
                         📁
                     </div>
                     
                     <!-- Folder Name -->
                     <div style="
-                        color: #ffffff;
-                        font-size: 14px;
-                        font-weight: 600;
+                        color: #1e293b;
+                        font-size: 15px;
+                        font-weight: 700;
                         line-height: 1.4;
                         font-family: 'Segoe UI', system-ui, sans-serif;
-                        text-shadow: 0 1px 2px rgba(0,0,0,0.5);
                     ">
-                        {unit['name']}<br>
-                        <span style="color: #b0b0b0; font-size: 12px;">({count} archivos)</span>
+                        {unit['name']}
+                    </div>
+                    
+                    <!-- File Count -->
+                    <div style="color: #64748b; font-size: 13px; font-weight: 500;">
+                        {count} archivos
                     </div>
                 </div>
                 """
                 
                 st.markdown(folder_html, unsafe_allow_html=True)
                 
-                # Invisible button overlay for click detection
-                if st.button(f"Open {unit['name']}", key=f"fdir_{unit['id']}", label_visibility="collapsed", use_container_width=True):
+                # Clickable button (will be hidden by CSS)
+                if st.button(f"📁 {unit['name']}", key=f"fdir_{unit['id']}", use_container_width=True):
                     st.session_state['lib_current_unit_id'] = unit['id']
                     st.session_state['lib_current_unit_name'] = unit['name']
                     st.session_state['lib_breadcrumbs'].append(unit)
