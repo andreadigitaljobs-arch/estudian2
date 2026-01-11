@@ -1,4 +1,5 @@
 import streamlit as st
+import os
 from supabase import create_client, Client
 import datetime
 
@@ -238,6 +239,7 @@ def create_unit(course_id, name, parent_id=None):
             data["parent_id"] = parent_id
             
         res = supabase.table("units").insert(data).execute()
+        get_units.clear() # CACHE FIX
         return res.data[0] if res.data else None
     except Exception as e:
         # CONSULTANT FIX: Suppress noisy RLS errors on the UI for auto-creation
@@ -248,6 +250,7 @@ def delete_unit(unit_id):
     supabase = init_supabase()
     try:
         supabase.table("units").delete().eq("id", unit_id).execute()
+        get_units.clear() # CACHE FIX
         return True
     except Exception as e: 
         print(f"Error deleting unit: {e}")
@@ -260,12 +263,24 @@ def get_full_course_backup(course_id):
     """
     supabase = init_supabase()
     try:
-        # 1. Get Units to map names
-        units = supabase.table("units").select("id, name").eq("course_id", course_id).execute().data
+        # 1. Get Units to map names recursively
+        units = supabase.table("units").select("id, name, parent_id").eq("course_id", course_id).execute().data
         if not units: return []
         
-        unit_map = {u['id']: u['name'] for u in units}
-        unit_ids = list(unit_map.keys())
+        # Build Path Map
+        # 1. Dict Access
+        u_dict = {u['id']: u for u in units}
+        
+        # 2. Recursive Path Builder
+        def get_path(uid):
+            if uid not in u_dict: return "Unknown"
+            curr = u_dict[uid]
+            if curr.get('parent_id'):
+                return f"{get_path(curr['parent_id'])}/{curr['name']}"
+            return curr['name']
+            
+        unit_path_map = {u['id']: get_path(u['id']) for u in units}
+        unit_ids = list(unit_path_map.keys())
         
         # 2. Get Files with Content (Heavy Fetch)
         # We need content_text
@@ -282,7 +297,7 @@ def get_full_course_backup(course_id):
             # Only export TEXT files or MARKDOWN
             # If type is 'text' or it has content
             if f.get('content_text'):
-                uname = unit_map.get(f['unit_id'], "Sin Unidad")
+                uname = unit_path_map.get(f['unit_id'], "Sin Unidad")
                 all_files.append({
                     "name": f['name'],
                     "content": f['content_text'],
@@ -298,6 +313,7 @@ def rename_unit(unit_id, new_name):
     supabase = init_supabase()
     try:
         supabase.table("units").update({"name": new_name}).eq("id", unit_id).execute()
+        get_units.clear() # CACHE FIX
         return True
     except: return False
 
@@ -404,9 +420,25 @@ def rename_file(file_id, new_name):
     supabase = init_supabase()
     try:
         supabase.table("library_files").update({"name": new_name}).eq("id", file_id).execute()
+        get_files.clear() # CACHE FIX
         return True
     except: return False
 rename_file_db = rename_file # Compatibility Alias
+
+def update_file_content(file_id, new_content):
+    """
+    Updates the content_text of a file.
+    Used for manual edits or AI formatting.
+    """
+    supabase = init_supabase()
+    try:
+        supabase.table("library_files").update({"content_text": new_content}).eq("id", file_id).execute()
+        get_files.clear()  # Invalidate cache
+        return True
+    except Exception as e:
+        error_msg = f"DB Error: {str(e)}"
+        print(error_msg)
+        return error_msg # Return the actual error message
 
 
 
@@ -445,17 +477,52 @@ def get_unit_context(unit_id):
     """
     supabase = init_supabase()
     try:
-        # Get unit name for labeling
-        u_res = supabase.table("units").select("name").eq("id", unit_id).single().execute()
-        u_name = u_res.data['name'] if u_res.data else "Unknown Unit"
+        # 1. Get Target Unit Info (to find course_id)
+        target = supabase.table("units").select("id, course_id, name").eq("id", unit_id).single().execute()
+        if not target.data: return ""
         
-        # Get files
-        files = supabase.table("library_files").select("name, content_text").eq("unit_id", unit_id).execute().data
+        c_id = target.data['course_id']
+        root_name = target.data['name']
         
-        unit_text = ""
+        # 2. Get ALL units for this course to build tree
+        all_units = supabase.table("units").select("id, parent_id, name").eq("course_id", c_id).execute().data
+        
+        # 3. Find Descendants
+        # iterative expansion
+        valid_ids = {unit_id} # Set for fast lookup
+        
+        # Simple loop to separate generations (crude but effective for shallow trees)
+        # Better: Build adjacency list
+        parent_map = {}
+        for u in all_units:
+            pid = u.get('parent_id')
+            if pid:
+                if pid not in parent_map: parent_map[pid] = []
+                parent_map[pid].append(u)
+        
+        # BFS/DFS
+        queue = [unit_id]
+        while queue:
+            curr = queue.pop(0)
+            children = parent_map.get(curr, [])
+            for child in children:
+                valid_ids.add(child['id'])
+                queue.append(child['id'])
+        
+        # 4. Fetch files for ALL valid units
+        files = supabase.table("library_files").select("name, content_text, unit_id").in_("unit_id", list(valid_ids)).execute().data
+        
+        # 5. Compile Text
+        # Create a map for unit names to be nice
+        unit_names = {u['id']: u['name'] for u in all_units}
+        
+        unit_text = f"--- CONTENIDO DE CARPETA MAESTRA: {root_name} (Incluyendo Subcarpetas) ---\n"
+        
         for f in files:
             if f['content_text']:
-                unit_text += f"\n--- ARCHIVO: {u_name}/{f['name']} ---\n{f['content_text']}\n"
+                u_sub_name = unit_names.get(f['unit_id'], "Unknown")
+                unit_text += f"\n--- ARCHIVO: {u_sub_name}/{f['name']} ---\n{f['content_text']}\n"
+                
         return unit_text
     except: return ""
 
@@ -655,6 +722,48 @@ def get_course_files(course_id, type_filter=None):
         print(f"Error fetching course files: {e}")
         return []
 
+def get_recent_files(course_id, limit=5):
+    """
+    Fetches the most recently created files for a course (Dashboard).
+    """
+    supabase = init_supabase()
+    try:
+        # 1. Get all unit IDs
+        units = supabase.table("units").select("id").eq("course_id", course_id).execute().data
+        if not units: return []
+        
+        unit_ids = [u['id'] for u in units]
+        
+        # 2. Query files
+        res = supabase.table("library_files") \
+            .select("id, name, type, created_at, unit_id") \
+            .in_("unit_id", unit_ids) \
+            .order("created_at", desc=True) \
+            .limit(limit) \
+            .execute()
+            
+        return res.data
+    except Exception as e:
+        print(f"Error fetching recent files: {e}")
+        return []
+
+def get_last_transcribed_file_name(course_id):
+    """
+    Returns the name of the last successfully transcribed file for a given course.
+    """
+    files = get_course_files(course_id, type_filter="transcript")
+    if files:
+        # get_course_files already orders by created_at desc
+        # We need to remove the .txt extension and numbering if present for clean display
+        import re
+        raw_name = files[0]['name']
+        # Remove extension
+        name = os.path.splitext(raw_name)[0]
+        # Remove leading "01. " numbering if present
+        name = re.sub(r'^\d+\.\s*', '', name)
+        return name
+    return None
+
 def upload_file_v2(unit_id, filename, content, f_type="note"):
     """
     Saves a file to the database (library_files).
@@ -784,3 +893,237 @@ def get_course_file_counts(course_id):
     except Exception as e:
         print(f"Error counting files: {e}")
         return {}
+# --- REORDERING LOGIC (MAGIC ARROWS) ---
+def ensure_unit_numbering(unit_id):
+    """
+    Ensures all files in a unit start with '01. ', '02. ', etc.
+    Returns the sorted list of files.
+    """
+    files = get_files(unit_id) # Uses cache, but we will invalidate it
+    if not files: return []
+    
+    # Check if already numbered
+    needs_renumbering = False
+    import re
+    
+    # Sort by current name to establish baseline order if not numbered
+    # If they have numbers, this respects them. If not, alphabetical.
+    files.sort(key=lambda x: x['name'])
+    
+    for idx, f in enumerate(files):
+        prefix = f"{idx+1:02d}. "
+        if not f['name'].startswith(prefix):
+            needs_renumbering = True
+            break
+            
+    if needs_renumbering:
+        # Renaming loop
+        # Renaming loop
+        for idx, f in enumerate(files):
+            # V139: Robust Regex - Handles "1. ", "01. ", "001. " to prevent duplication
+            clean_name = re.sub(r'^\d+\.\s*', '', f['name'])
+            new_name = f"{idx+1:02d}. {clean_name}"
+            if f['name'] != new_name:
+                rename_file_db(f['id'], new_name)
+        
+        # Invalidate cache locally
+        get_files.clear()
+        return get_files(unit_id) # Fetch fresh
+        
+    return files
+
+def move_file_up(unit_id, file_id):
+    files = ensure_unit_numbering(unit_id)
+    # Find current index
+    curr_idx = next((i for i, f in enumerate(files) if f['id'] == file_id), -1)
+    
+    if curr_idx <= 0: return # Already top or not found
+    
+    # Swap with prev
+    file_a = files[curr_idx]
+    file_b = files[curr_idx - 1] # The one above
+    
+    # We only swap NAMES (since numbering is in the name)
+    # But wait, ensure_unit_numbering guarantees "01. Foo", "02. Bar"
+    # To swap "02. Bar" UP, it becomes "01. Bar" and "01. Foo" becomes "02. Foo"
+    
+    # Extract raw names without prefix
+    import re
+    name_a_raw = re.sub(r'^\d{2}\.\s*', '', file_a['name'])
+    name_b_raw = re.sub(r'^\d{2}\.\s*', '', file_b['name'])
+    
+    # New names
+    # A moves up (takes B's index/prefix)
+    # B moves down (takes A's index/prefix)
+    
+    prefix_top = f"{curr_idx:02d}. "     # e.g. 01.
+    prefix_bot = f"{curr_idx+1:02d}. "   # e.g. 02.
+    
+    # Rename B (prev top) to Bot
+    rename_file_db(file_b['id'], prefix_bot + name_b_raw)
+    # Rename A (prev bot) to Top
+    rename_file_db(file_a['id'], prefix_top + name_a_raw)
+    
+    get_files.clear() # FORCE UI UPDATE
+    return True
+
+def move_file_down(unit_id, file_id):
+    files = ensure_unit_numbering(unit_id)
+    curr_idx = next((i for i, f in enumerate(files) if f['id'] == file_id), -1)
+    
+    if curr_idx == -1 or curr_idx == len(files) - 1: return # Not found or already bottom
+    
+    # Swap with next
+    file_a = files[curr_idx]
+    file_b = files[curr_idx + 1] # The one below
+    
+    import re
+    name_a_raw = re.sub(r'^\d{2}\.\s*', '', file_a['name'])
+    name_b_raw = re.sub(r'^\d{2}\.\s*', '', file_b['name'])
+    
+    # A moves down (takes B's index)
+    # B moves up (takes A's index)
+    
+    prefix_top = f"{curr_idx+1:02d}. "
+    prefix_bot = f"{curr_idx+2:02d}. "
+    
+    # Rename A to Bot
+    rename_file_db(file_a['id'], prefix_bot + name_a_raw)
+    # Rename B to Top
+    rename_file_db(file_b['id'], prefix_top + name_b_raw)
+    
+    get_files.clear() # FORCE UI UPDATE
+    return True
+
+# --- DASHBOARD V2 ANALYTICS ---
+
+def search_global(user_id, course_id, query_text):
+    """
+    Searches across Files and Chats for the dashboard.
+    Returns a unified list of results: [{'type': 'file'|'chat', 'id': '...', 'name': '...', 'preview': '...'}]
+    """
+    supabase = init_supabase()
+    results = []
+    
+    try:
+        # 1. Search Files (Name or Content)
+        # Get unit IDs for course
+        units = supabase.table("units").select("id").eq("course_id", course_id).execute().data
+        if units:
+            unit_ids = [u['id'] for u in units]
+            
+            # Search Name
+            res_name = supabase.table("library_files").select("id, name, unit_id, type").in_("unit_id", unit_ids).ilike("name", f"%{query_text}%").limit(5).execute()
+            
+            for f in res_name.data:
+                results.append({
+                    "type": "file", 
+                    "id": f['id'], 
+                    "name": f['name'], 
+                    "unit_id": f['unit_id'],
+                    "icon": "📄" if f['type'] == 'text' else "📎",
+                    "preview": "Archivo en biblioteca"
+                })
+
+        # 2. Search Chats (Name)
+        res_chats = supabase.table("chat_sessions").select("id, name, created_at").eq("user_id", user_id).ilike("name", f"%{query_text}%").limit(5).execute()
+        
+        for c in res_chats.data:
+            results.append({
+                "type": "chat",
+                "id": c['id'],
+                "name": c['name'],
+                "icon": "💬",
+                "preview": f"Chat iniciado el {c['created_at'][:10]}"
+            })
+            
+        return results
+    except Exception as e:
+        print(f"Global Search Error: {e}")
+        return []
+
+def get_weekly_activity(user_id, course_id):
+    """
+    Returns a pandas DataFrame with 'Date', 'Type' (Files/Chats), 'Count' for the last 30 days.
+    """
+    import pandas as pd
+    from datetime import datetime, timedelta
+    supabase = init_supabase()
+    
+    data = []
+    today = datetime.utcnow().date()
+    # Expand to 30 days for better visuals
+    range_days = 30
+    dates = [(today - timedelta(days=i)).isoformat() for i in range(range_days - 1, -1, -1)]
+    
+    try:
+        start_date = dates[0] + "T00:00:00"
+        
+        # 1. Fetch Files (Last 30 days)
+        # Get unit IDs for course
+        units = supabase.table("units").select("id").eq("course_id", course_id).execute().data
+        unit_ids = [u['id'] for u in units] if units else []
+        
+        if unit_ids:
+            res_files = supabase.table("library_files") \
+                .select("created_at") \
+                .in_("unit_id", unit_ids) \
+                .gte("created_at", start_date) \
+                .execute()
+            
+            for f in res_files.data:
+                d = f['created_at'][:10]
+                data.append({"Date": d, "Activity": "Archivos"})
+
+        # 2. Fetch Chats (Last 30 days)
+        res_chats = supabase.table("chat_sessions") \
+            .select("created_at") \
+            .eq("user_id", user_id) \
+            .gte("created_at", start_date) \
+            .execute()
+            
+        for c in res_chats.data:
+            d = c['created_at'][:10]
+            data.append({"Date": d, "Activity": "Chats"})
+            
+        # Create complete timeline to avoid gaps
+        df = pd.DataFrame(data)
+        
+        # If completely empty, make a dummy "zero" entry for today so chart renders flat but valid
+        if df.empty:
+            df = pd.DataFrame([{"Date": today.isoformat(), "Activity": "Archivos"}, {"Date": today.isoformat(), "Activity": "Chats"}])
+            df = df[0:0] # Empty it back out but keep columns? No, better to just return structured zeros
+            
+        # Grouping Logic
+        if not df.empty:
+            df['Count'] = 1
+            # Group by Date and Activity
+            grouped = df.groupby(['Date', 'Activity']).count().reset_index()
+            
+            # Pivot to fill missing dates with 0
+            pivot = grouped.pivot(index='Date', columns='Activity', values='Count').fillna(0)
+            
+            # Reindex to ensure all 30 days are present
+            idx = pd.Index(dates, name='Date')
+            pivot = pivot.reindex(idx, fill_value=0)
+            
+            # CRITICAL FIX: Ensure both columns exist for consistent coloring
+            expected_cols = ['Archivos', 'Chats']
+            for col in expected_cols:
+                if col not in pivot.columns:
+                    pivot[col] = 0
+            
+            # Enforce Order: Archivos (Purple), Chats (Orange)
+            pivot = pivot[expected_cols]
+            
+            pivot = pivot.reset_index()
+            
+            return pivot
+        else:
+             # Return empty DataFrame with structure
+             return pd.DataFrame({"Date": dates, "Archivos": [0]*range_days, "Chats": [0]*range_days})
+
+    except Exception as e:
+        print(f"Activity Error: {e}")
+        # Return mostly empty structure
+        return pd.DataFrame({"Date": dates, "Archivos": [0]*range_days, "Chats": [0]*range_days})

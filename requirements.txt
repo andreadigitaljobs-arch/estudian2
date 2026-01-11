@@ -6,4 +6,7 @@ Pillow
 streamlit-paste-button
 python-docx
 markdown
-# TRIGGER_REBUILD_QUIZ_MEMORY_V112_RESTORED
+imageio-ffmpeg
+streamlit-quill
+# TRIGGER_V314_FORCE_REBUILD
+

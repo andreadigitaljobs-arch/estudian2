@@ -654,25 +654,37 @@ Google ofrece una capa gratuita generosa, pero limitada.
 
         INSTRUCCIONES DE FORMATO ({override_instr}):
 
-        1. **DIRECTO AL GRANO**: No saludes, no analices, no concluyas.
-
-        2. **ESTRUCTURA OBLIGATORIA** (Usa exactamente este formato):
-
+        1. **DIRECTO AL GRANO**: No saludes.
         
+        2. **METADATOS OBLIGATORIOS (PARA EL SISTEMA)**:
+           Al principio de tu respuesta, DEBES incluir estos tags invisibles:
+           [[NUM:X]] -> Donde X es el número de la pregunta si es visible en la imagen (ej: [[NUM:5]]). Si no hay número, pon [[NUM:0]].
+           [[PREGUNTA:Texto]] -> Transcribe LA PREGUNTA completa aquí (ej: [[PREGUNTA:¿Qué es el ROI?]]). 
 
-        **✅ RESPUESTA:** [La opción correcta, ej: "B) 1945" o "Verdadero"]
+        3. **ESTRUCTURA VISIBLE** (Lo que lee el usuario):
 
+        **❓ PREGUNTA:** [Copia el texto de la pregunta aquí también]
+
+        **✅ RESPUESTA:** [La opción correcta]
+
+        **💡 POR QUÉ:** [Explicación breve]
+
+        **💡 POR QUÉ:** [Explicación breve]
         
+        **📚 FUENTE:** [Citar archivo exacto del contexto si aplica, o 'Conocimiento General']
 
-        **💡 POR QUÉ:** [1 o 2 frases MÁXIMO explicando el motivo clave. Sé quirúrgico.]
-
-        
-
-        **⛔ NO ES:** [Opcional. Brevemente por qué las otras distraen, si es necesario.]
+        **⛔ NO ES:** [Opcional]
 
         
 
         REGLAS DE RAZONAMIENTO:
+        
+        0. **ANÁLISIS VISUAL DE TIPO (CRÍTICO)**:
+           - Si ves **CÍRCULOS (Radio Buttons)** -> Es **SELECCIÓN ÚNICA**. ¡SOLO PUEDES ELEGIR 1! (Aunque varias parezcan ciertas, elige la MEJOR).
+           - Si ves **CUADRADOS (Checkboxes)** -> Es **SELECCIÓN MÚLTIPLE**.
+           - Si la pregunta dice "¿Cuál es...?" (Singular) -> Es ÚNICA.
+        
+        1. **ANÁLISIS DE CONTEXTO**:
 
         1. **ANÁLISIS DE CONTEXTO**:
 
