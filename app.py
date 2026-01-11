@@ -1014,7 +1014,18 @@ THEME_CSS = """
     }
 </style>
 """
-st.markdown(THEME_CSS, unsafe_allow_html=True)
+st.markdown(THEME_CSS + """
+<style>
+/* HIDE ROGUE HORIZONTAL LINES UNDER TABS */
+.stTabs ~ hr, .stTabs + .element-container hr {
+    display: none !important;
+}
+/* Ensure the Tab Border itself is visible (Line 1) */
+.stTabs [data-baseweb="tab-list"] {
+    border-bottom: 2px solid #F0F0F0 !important;
+}
+</style>
+""", unsafe_allow_html=True)
 
 
 
