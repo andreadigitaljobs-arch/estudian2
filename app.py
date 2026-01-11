@@ -2712,6 +2712,7 @@ with st.sidebar:
 
                     const btn = window.parent.document.createElement('button');
                     btn.id = id;
+                    btn.innerHTML = html; // RESTORED ICON
                     Object.assign(btn.style, {
                         position: 'fixed', bottom: bottom, right: '20px',
                         width: '50px', height: '50px', borderRadius: '50%',
@@ -2734,39 +2735,19 @@ with st.sidebar:
                     window.parent.document.head.appendChild(style);
                 }
 
-                // SMART SCROLL FINDER
+                // TARGETED SCROLL FINDER (Main Content Only)
                 function getScrollParent() {
-                    // 1. Try known Streamlit containers
+                    // Start with specific Main Content selectors to avoid Sidebar
                     const candidates = [
-                        '[data-testid="stAppViewContainer"]',
-                        '.main',
-                        'section[data-testid="stSidebar"] + section',
-                        '#root > div > div > div'
+                        'section.main', // Primary Streamlit content
+                        '[data-testid="stAppViewContainer"]' // Main scrolling wrapper
                     ];
                     
                     for (let sel of candidates) {
-                        try {
-                            const el = window.parent.document.querySelector(sel);
-                            if (el && el.scrollHeight > el.clientHeight) return el;
-                        } catch(e) {}
+                        const el = window.parent.document.querySelector(sel);
+                        if (el) return el;
                     }
                     
-                    // 2. Fallback: Find ANY large scrollable div
-                    const allDivs = window.parent.document.getElementsByTagName('div');
-                    let best = null;
-                    let maxH = 0;
-                    
-                    for (let div of allDivs) {
-                         if (div.scrollHeight > div.clientHeight && div.clientHeight > 100) {
-                             if (div.scrollHeight > maxH) {
-                                 maxH = div.scrollHeight;
-                                 best = div;
-                             }
-                         }
-                    }
-                    if (best) return best;
-                    
-                    // 3. Last resort
                     return window.parent.document.documentElement; 
                 }
 
