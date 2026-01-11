@@ -1,16 +1,10 @@
-[server]
-maxUploadSize = 2000
-enableCORS = false
-enableXsrfProtection = false
-
 [theme]
-base = "light"
-primaryColor = "#4B22DD"
-backgroundColor = "#F8F9FE"
-secondaryBackgroundColor = "#FFFFFF"
-textColor = "#1A1A1A"
-font = "sans serif"
+primaryColor="#6366f1"
+backgroundColor="#ffffff"
+secondaryBackgroundColor="#f8fafc"
+textColor="#1e293b"
+font="sans serif"
 
+# Force button styling
 [client]
 showErrorDetails = true
-toolbarMode = "viewer"
