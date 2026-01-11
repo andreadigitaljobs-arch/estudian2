@@ -430,11 +430,7 @@ def render_library_v2(assistant):
                     <div class="folder-hover-card" style="padding: 16px 8px; text-align: center; cursor: pointer; min-height: 180px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;">
                         <!-- Custom SVG Folder Icon -->
                         <div style="margin-bottom: 10px;">
-                            {f"""
-                            <svg width="80" height="80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M19.5 21H4.5C3.67157 21 3 20.3284 3 19.5V4.5C3 3.67157 3.67157 3 4.5 3H9.5C10.3284 3 11 3.67157 11 4.5V5H19.5C20.3284 5 21 5.67157 21 6.5V19.5C21 20.3284 20.3284 21 19.5 21Z" fill="{('#4B22DD' if i % 2 == 0 else '#00C853')}"/>
-                            </svg>
-                            """}
+                            <svg width="80" height="80" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M19.5 21H4.5C3.67157 21 3 20.3284 3 19.5V4.5C3 3.67157 3.67157 3 4.5 3H9.5C10.3284 3 11 3.67157 11 4.5V5H19.5C20.3284 5 21 5.67157 21 6.5V19.5C21 20.3284 20.3284 21 19.5 21Z" fill="{('#4B22DD' if i % 2 == 0 else '#00C853')}"/></svg>
                         </div>
                         <div style="color: #1e293b; font-size: 14px; font-weight: 700; line-height: 1.3; font-family: 'Segoe UI', system-ui, sans-serif; max-width: 180px; word-wrap: break-word;">{unit_name}</div>
                         <div style="color: #64748b; font-size: 12px; font-weight: 500;">{count} archivos</div>
