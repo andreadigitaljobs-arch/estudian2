@@ -3354,9 +3354,9 @@ with tab1:
             st.session_state['last_transcribed_file'] = get_last_transcribed_file_name(c_id)
         
         if st.session_state['last_transcribed_file']:
-            # V339: Layout Fix - robust columns
-            # ALIGNED LOGIC: Banner Left | Buttons Right (Centered)
-            c_ban, c_btn = st.columns([0.65, 0.35], gap="medium", vertical_alignment="center")
+            # V339: Layout Fix - Aesthetic Spacing
+            # More gap ("large"), slightly different ratio to push button right but keeping it accessible
+            c_ban, c_btn = st.columns([0.75, 0.25], gap="large", vertical_alignment="center")
 
             with c_ban:
                 st.markdown(f"""
@@ -3370,10 +3370,10 @@ with tab1:
                     </div>
                 """, unsafe_allow_html=True)
             
-            # RENDER BUTTONS NEXT TO BANNER (Vertical Stack)
+            # RENDER BUTTON NEXT TO BANNER
             with c_btn:
-
                  # 3. CLEAR VIEW (Simple)
+                 # Add top padding if vertical_alignment isn't perfect for some themes
                  if st.button("🧹 Limpiar Vista", key="clean_view_only_v2", help="Limpia la pantalla", use_container_width=True):
                     st.session_state['transcript_history'] = []
                     st.session_state['last_transcribed_file'] = None
@@ -3381,6 +3381,10 @@ with tab1:
                     import uuid
                     st.session_state['transcriptor_key'] = str(uuid.uuid4()) # Reset uploader
                     st.rerun()
+            
+            # Spacing below banner/button block to separate from Uploader
+            st.write("")
+            st.write("")
         
         # Dynamic Key for Uploader Reset
         if 'transcriptor_key' not in st.session_state: st.session_state['transcriptor_key'] = "up1"
