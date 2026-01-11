@@ -91,8 +91,72 @@ def render_library_v2(assistant):
     Refactored V270: Minimalist Toolbar UI
     """
     
-    # CSS removed - was causing global button pollution
-    # Library will use default Streamlit button styling for now
+    # --- CSS for Library Folders ONLY (Surgical Targeting via data-testid) ---
+    st.markdown("""
+    <style>
+    /* Target ONLY buttons with keys starting with "fdir_" (library folders) */
+    /* Streamlit generates data-testid like "stButton-fdir_123" for these buttons */
+    
+    /* 1. Base Button Style (Glassy & Bold) - LIBRARY FOLDERS ONLY */
+    button[data-testid*="-fdir_"] {
+        background-color: transparent !important;
+        border: 1px solid transparent !important;
+        border-radius: 12px !important;
+        color: #1e293b !important;
+        
+        display: block !important;
+        
+        padding: 0px !important;
+        width: 100% !important;
+        height: 180px !important;
+        
+        box-shadow: none !important;
+        font-family: 'Segoe UI', system-ui, sans-serif !important;
+        font-size: 16px !important;
+        font-weight: 700 !important;
+        line-height: normal !important;
+        white-space: pre-wrap !important;
+        overflow: visible !important;
+        transition: all 0.2s ease !important;
+    }
+    
+    /* Ensure inner containers allow line breaks and block display */
+    button[data-testid*="-fdir_"] > div,
+    button[data-testid*="-fdir_"] p {
+        display: block !important;
+        white-space: pre-wrap !important;
+    }
+    
+    /* 2. BIG ICON MAGIC - Multi-Targeting for Robustness */
+    button[data-testid*="-fdir_"]::first-line,
+    button[data-testid*="-fdir_"] > div::first-line,
+    button[data-testid*="-fdir_"] p::first-line {
+        font-size: 90px !important;
+        line-height: 1.2 !important;
+        font-weight: 400 !important;
+    }
+
+    /* 3. Hover Effect (Subtle Windows Highlight) */
+    button[data-testid*="-fdir_"]:hover {
+        background-color: #f1f5f9 !important;
+        border-color: #cbd5e1 !important;
+        transform: translateY(-2px);
+    }
+    
+    /* 4. COLOR HACK: Green & Purple Alternating */
+    /* We need to target the parent column to determine odd/even */
+    
+    /* EVEN Columns (2nd): Pink/Purple */
+    div[data-testid="column"]:nth-of-type(even) button[data-testid*="-fdir_"] {
+        filter: hue-rotate(260deg) saturate(1.2); 
+    }
+    
+    /* ODD Columns (1st & 3rd): Bright Green */
+    div[data-testid="column"]:nth-of-type(odd) button[data-testid*="-fdir_"] {
+        filter: hue-rotate(80deg) saturate(1.4); 
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
     current_course_id = st.session_state.get('current_course_id')
     
