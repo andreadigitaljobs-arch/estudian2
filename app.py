@@ -1451,7 +1451,7 @@ if not st.session_state['user']:
     c_spacer, c_login = st.columns([1.3, 1]) 
 
     with c_spacer:
-        st.image("assets/login_hero_final.png", use_container_width=True) 
+        st.image("assets/login_hero_v14.jpg", use_container_width=True) 
 
     with c_login:
         # ANCHOR FOR CSS TARGETING + VERTICAL CENTERING
@@ -1532,6 +1532,8 @@ if not st.session_state['user']:
         if (oldScroller) oldScroller.remove();
         
         // 2. ERASE NAVIGATION ARROWS ON LOGIN
+        /* REMOVED ARROW KILLER */
+        /*
         const killArrows = () => {
              const arrowIds = ['v231_auth_elevator', 'v223_global_elevator', 'v222_nav_elevator'];
              arrowIds.forEach(id => {
@@ -1539,8 +1541,9 @@ if not st.session_state['user']:
                  if (el) el.remove();
              });
         };
-        killArrows();
-        setInterval(killArrows, 500);
+        killArrows(); 
+        setInterval(killArrows, 500); 
+        */
 
         // 3. ATOMIC LIFT (V239): Force Container UP
         const forceLift = () => {
