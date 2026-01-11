@@ -3100,17 +3100,24 @@ with tab_home:
             if f.get('unit_id') in unit_counts:
                 unit_counts[f['unit_id']] += 1
                 
-        # --- WIDGET A: LEARNING PATH (Route) ---
+        # --- WIDGET A: LEARNING PATH (Route - COMPACT) ---
         st.write("")
-        st.subheader("🗺️ Tu Ruta de Aprendizaje")
+        st.subheader("🗺️ Tu Ruta de Aprendizaje (Activa)")
         
         if all_units:
+            # 1. Sort units by content count (Most active first)
+            # This ensures the dashboard always shows where the work is happening
+            sorted_units = sorted(all_units, key=lambda x: unit_counts.get(x['id'], 0), reverse=True)
+            
+            # 2. Slice Top 4
+            top_units = sorted_units[:4]
+            hidden_count = len(sorted_units) - 4
+            
             # Grid Layout for Units
-            # We'll do rows of 2 or 3 depending on logic, let's try columns of 2 for descriptive feel
             u_cols = st.columns(2)
-            for i, unit in enumerate(all_units):
+            for i, unit in enumerate(top_units):
                 count = unit_counts.get(unit['id'], 0)
-                # Calculate simple progress (mock target: 5 files per unit makes it look 'full')
+                # Calculate simple progress
                 progress = min(1.0, count / 5) 
                 
                 with u_cols[i % 2]:
@@ -3118,6 +3125,15 @@ with tab_home:
                         st.markdown(f"**📂 {unit['name']}**")
                         st.progress(progress)
                         st.caption(f"{count} Recursos")
+                        
+            # 3. See All Link (if needed)
+            if hidden_count > 0:
+                if st.button(f"Ver {hidden_count} carpetas más en la Biblioteca →", key="btn_see_all_units", type="tertiary"):
+                     st.session_state['redirect_target_name'] = "Biblioteca"
+                     st.session_state['force_chat_tab'] = True
+                     st.session_state['lib_auto_open_upload'] = False # Just view
+                     st.rerun()
+                     
         else:
             st.info("Aún no tienes unidades creadas. Ve a la Biblioteca para organizar tu curso.")
 
