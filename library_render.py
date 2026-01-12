@@ -430,7 +430,10 @@ def render_library_v2(assistant):
                              with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
                                  for item in data:
                                      path = f"{item['unit']}/{item['name']}"
-                                     zf.writestr(path, item['content'] or "")
+                                     # Clean HTML tags from content before exporting
+                                     raw_content = item['content'] or ""
+                                     clean_content = clean_markdown_v3(raw_content)
+                                     zf.writestr(path, clean_content)
                              buf.seek(0)
                              st.download_button("⬇️ Descargar ZIP", buf, "backup.zip", "application/zip")
                          else: st.warning("Biblioteca vacía.")
