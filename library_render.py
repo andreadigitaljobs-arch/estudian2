@@ -546,22 +546,15 @@ def render_library_v2(assistant):
     # A. Folders
     subfolders = get_units(current_course_id, parent_id=current_unit_id)
     
-    # DEBUG: Show current state
-    st.write(f"DEBUG - Current unit ID: {st.session_state.get('lib_current_unit_id')}")
-    st.write(f"DEBUG - Query params: {dict(st.query_params)}")
-    
     # Check for navigation via query params BEFORE rendering folders
     if "folder_id" in st.query_params:
         qp_folder_id = st.query_params["folder_id"]
-        st.write(f"DEBUG - Navigating to folder_id: {qp_folder_id}")
         
         # Search in ALL course folders using fetch_all=True
-        all_folders = get_units(current_course_id, fetch_all=True)  # Get ALL folders in course
-        st.write(f"DEBUG - Total folders found: {len(all_folders)}")
+        all_folders = get_units(current_course_id, fetch_all=True)
         target_folder = next((u for u in all_folders if str(u['id']) == qp_folder_id), None)
         
         if target_folder:
-            st.write(f"DEBUG - Found target folder: {target_folder['name']}")
             # Always update current folder
             st.session_state['lib_current_unit_id'] = target_folder['id']
             st.session_state['lib_current_unit_name'] = target_folder['name']
@@ -574,8 +567,6 @@ def render_library_v2(assistant):
             # Clear params and rerun
             st.query_params.clear()
             st.rerun()
-        else:
-            st.write(f"DEBUG - Target folder NOT FOUND for ID: {qp_folder_id}")
     
     if subfolders:
         st.markdown("##### 📁 Carpetas")
