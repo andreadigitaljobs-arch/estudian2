@@ -155,8 +155,11 @@ st.set_page_config(
 # =========================================================
 # V410: MOBILE NAVBAR (PRODUCTION - CLEAN & FUNCTIONAL)
 # =========================================================
+# =========================================================
+# V411: MOBILE NAVBAR (FIXED CLICK PROPAGATION)
+# =========================================================
 def setup_pwa():
-    """Injects Custom Sidebar Button (Production)."""
+    """Injects Custom Sidebar Button (Production Logic)."""
     try:
         # PWA & ICON
         import time
@@ -227,31 +230,34 @@ def setup_pwa():
                     e.preventDefault(); 
                     e.stopPropagation();
                     
-                    // 1. Subtle Feedback (No more yellow flash)
+                    // 1. Visual Feedback
                     btn.style.transform = 'scale(0.92)';
-                    if (navigator.vibrate) navigator.vibrate(10); // Tiny click feel
-                    
-                    setTimeout(() => {{
-                        btn.style.transform = 'scale(1)';
-                    }}, 150);
+                    if (navigator.vibrate) navigator.vibrate(10);
+                    setTimeout(() => {{ btn.style.transform = 'scale(1)'; }}, 150);
 
                     // 2. TRIGGER ACTIONS
-                    // A) Keyboard Shortcut
+                    // A) Keyboard Shortcut 'C' (Often works even if trusted is false)
                     doc.dispatchEvent(new KeyboardEvent('keydown', {{key: 'c', keyCode: 67, which: 67, code: 'KeyC', bubbles: true}}));
                     
-                    // B) Native Click Fallback
+                    // B) Native Click Fallback (Robust Selector List)
                     var selectors = [
                         '[data-testid="stSidebarCollapsedControl"]', 
                         '[data-testid="stSidebarOpen"]',
-                        'button[kind="header"]'
+                        'button[kind="header"]',
+                        '[data-testid="stHeader"] button'
                     ];
+                    
+                    var success = false;
                     for(var s of selectors) {{
-                        var el = doc.querySelector(s);
-                        if(el && el.click) {{ 
-                             // Try both click() and dispatch
-                             el.click();
-                             var mev = new MouseEvent('click', {{bubbles: true, cancelable: true, view: window.top}});
-                             el.dispatchEvent(mev);
+                        var allMatches = doc.querySelectorAll(s);
+                        for(var el of allMatches) {{
+                            // Only click likely candidates (avoid clicking settings menu)
+                            if (el.getAttribute('aria-haspopup') === 'true') continue; 
+                            
+                            if(el && typeof el.click === 'function') {{ 
+                                el.click();
+                                success = true;
+                            }}
                         }}
                     }}
                 }}
@@ -293,19 +299,17 @@ def setup_pwa():
         <style>
             .stApp > header { background-color: transparent !important; opacity: 0 !important; pointer-events: none !important; }
             
-            /* Hide Native Buttons Visually but keep them available for JS */
+            /* Hide Native Buttons Visually but keep them CLICKABLE via JS */
+            /* We move them offscreen but keep pointer-events: auto so .click() works */
             [data-testid="stSidebarCollapsedControl"], [data-testid="stSidebarOpen"] {
                 display: block !important;
                 visibility: visible !important;
                 opacity: 0 !important;
-                transform: scale(0); /* Shrink to nothing */
                 position: fixed !important;
-                top: -100px !important; /* Move offscreen */
-                pointer-events: none !important; /* Prevent accidental clicks */
-            }
-            /* Hide children too to prevent ghosting */
-            [data-testid="stSidebarCollapsedControl"] *, [data-testid="stSidebarOpen"] * {
-                opacity: 0 !important;
+                top: -150px !important; /* Move far offscreen */
+                left: 0 !important;
+                pointer-events: auto !important; /* CRITICAL: Enables JS click */
+                z-index: 100 !important;
             }
 
             footer, #MainMenu { display: none !important; }
