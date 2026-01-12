@@ -143,8 +143,11 @@ st.set_page_config(
 # =========================================================
 # V406: MOBILE NAVBAR (SMART BUTTON - ROTATING & SMALLER)
 # =========================================================
+# =========================================================
+# V407: MOBILE NAVBAR (THE MASTER KEY - MULTI-TRIGGERS)
+# =========================================================
 def setup_pwa():
-    """Injects Custom Sidebar Button via CSS/JS."""
+    """Injects Custom Sidebar Button that uses Multiple Trigger Methods."""
     try:
         # PWA & ICON CONFIG
         import time
@@ -177,7 +180,6 @@ def setup_pwa():
         b64_manifest = base64.b64encode(manifest_json.encode()).decode()
         manifest_href = f"data:application/manifest+json;base64,{b64_manifest}"
 
-        # CRITICAL JS: INJECT PWA TAGS + CUSTOM TOGGLE BUTTON
         js_pwa = f"""
         <script>
             (function() {{
@@ -185,7 +187,6 @@ def setup_pwa():
                 var head = doc.getElementsByTagName('head')[0];
                 if (!head) return;
 
-                // 1. INJECT PWA TAGS
                 function addTag(tagType, attributes) {{
                     var el = doc.createElement(tagType);
                     for (var key in attributes) {{ el.setAttribute(key, attributes[key]); }}
@@ -193,60 +194,73 @@ def setup_pwa():
                 }}
                 addTag('link', {{'rel': 'manifest', 'href': '{manifest_href}'}});
                 addTag('link', {{'rel': 'apple-touch-icon', 'href': '{icon_url}'}});
-                addTag('meta', {{'name': 'apple-mobile-web-app-capable', 'content': 'yes'}});
                 addTag('meta', {{'name': 'viewport', 'content': 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover'}});
 
-                // 2. INJECT CUSTOM SIDEBAR BUTTON (THE "V406" SOLUTION)
+                // --- CUSTOM BUTTON V407 ---
                 var btnId = 'custom-mobile-menu-btn';
                 if (!doc.getElementById(btnId)) {{
                     var btn = doc.createElement('div');
                     btn.id = btnId;
-                    // SMALLER ICON: Reduced width/height in SVG + slightly thinner stroke
                     btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 18L15 12L9 6" stroke="#4B22DD" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
                     
-                    // Style it
                     Object.assign(btn.style, {{
-                        position: 'fixed',
-                        top: '12px',
-                        left: '12px',
-                        zIndex: '999999999',
-                        width: '40px', /* Smaller container (was 44) */
-                        height: '40px', /* Smaller container (was 44) */
-                        backgroundColor: 'white',
-                        borderRadius: '50%',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                        border: '2px solid #4B22DD',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'pointer',
-                        transition: 'transform 0.3s ease' /* Smooth rotation */
+                        position: 'fixed', top: '12px', left: '12px', zIndex: '999999999',
+                        width: '40px', height: '40px', backgroundColor: 'white',
+                        borderRadius: '50%', boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                        border: '2px solid #4B22DD', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        cursor: 'pointer', transition: 'transform 0.3s ease'
                     }});
                     
-                    // Click Handler
-                    btn.onclick = function() {{
-                        var toggle = doc.querySelector('[data-testid="stSidebarCollapsedControl"]');
-                        if (!toggle) toggle = doc.querySelector('[data-testid="stSidebarOpen"]');
-                        if (toggle) toggle.click();
+                    // --- MASTER KEY CLICK HANDLER ---
+                    btn.onclick = function(e) {{
+                        e.preventDefault();
+                        e.stopPropagation();
+                        
+                        // Strategy 1: Find Native Button & Click (Try multiple selectors)
+                        var triggers = [
+                            '[data-testid="stSidebarCollapsedControl"]',
+                            '[data-testid="stSidebarOpen"]',
+                            'button[kind="header"]',
+                            '[aria-label="Collapsed sidebar"]'
+                        ];
+                        
+                        var clicked = false;
+                        for (var i = 0; i < triggers.length; i++) {{
+                            var el = doc.querySelector(triggers[i]);
+                            if (el) {{
+                                // Dispatch fully synthetic event set for React
+                                var eventOpts = {{bubbles: true, cancelable: true, view: window.parent}};
+                                el.dispatchEvent(new MouseEvent('mousedown', eventOpts));
+                                el.dispatchEvent(new MouseEvent('mouseup', eventOpts));
+                                el.click(); 
+                                clicked = true;
+                                break;
+                            }}
+                        }}
+                        
+                        // Strategy 2: If finding button fails, use Keyboard Shortcut 'C'
+                        // Streamlit listens for 'C' to toggle sidebar
+                        if (!clicked) {{
+                            doc.dispatchEvent(new KeyboardEvent('keydown', {{key: 'c', code: 'KeyC', keyCode: 67, which: 67, bubbles: true}}));
+                        }}
+                        
+                        // Visual Feedback
+                        btn.style.backgroundColor = '#f0ebff';
+                        setTimeout(() => btn.style.backgroundColor = 'white', 150);
                     }};
                     
                     doc.body.appendChild(btn);
 
-                    // 3. SMART ROTATION OBSERVER (Syncs with Real Sidebar State)
-                    // This ensures the arrow flips even if user clicks outside or swipes
+                    // SMART ROTATION
                     var observer = new MutationObserver(function(mutations) {{
                         var sidebar = doc.querySelector('[data-testid="stSidebar"]');
                         if (sidebar) {{
                             var isOpen = sidebar.getAttribute('aria-expanded') === 'true';
-                            // If open, rotate 180deg (point Left). If closed, 0deg (point Right).
                             btn.style.transform = isOpen ? 'rotate(180deg)' : 'rotate(0deg)';
                         }}
                     }});
-                    
-                    // Start observing the sidebar parent (body or main container) for changes
                     observer.observe(doc.body, {{ childList: true, subtree: true, attributes: true, attributeFilter: ['aria-expanded'] }});
                 }}
-                
             }})();
         </script>
         """
@@ -255,17 +269,17 @@ def setup_pwa():
         # --- CLEANUP CSS ---
         mobile_css = """
         <style>
-            /* Hide default header mess but keep sidebar logic working */
-            .stApp > header { background-color: transparent !important; height: 0px !important; pointer-events: none !important; }
+            /* Ensure the header exists but is invisible so the native button remains in DOM */
+            .stApp > header { background-color: transparent !important; opacity: 0 !important; pointer-events: none !important; }
             footer, #MainMenu { display: none !important; }
             img { object-fit: contain !important; }
         </style>
         """
         st.markdown(mobile_css, unsafe_allow_html=True)
         
-        # VISIBLE DEBUG MARKER (ORANGE = V406 SMART)
+        # VISIBLE DEBUG MARKER (PINK = V407 MASTER KEY)
         st.markdown(
-            '<div style="position:fixed; top:0; right:0; background:orange; color:white; padding:5px; z-index:999999;">v406</div>',
+            '<div style="position:fixed; top:0; right:0; background:#e040fb; color:white; padding:5px; z-index:999999;">v407</div>',
             unsafe_allow_html=True
         )
         
