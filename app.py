@@ -177,7 +177,6 @@ st.set_page_config(
 # =========================================================
 # V417: CLEAN PWA (NO VISUALS)
 # =========================================================
-def setup_pwa():
     """Injects only PWA Meta Tags. No visual overlays."""
     try:
         # PWA & ICON
@@ -633,12 +632,47 @@ st.markdown("""
         background-color: #4B22DD !important;
     }
 
-    /* TABS */
-    .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] {
-        color: #4B22DD !important;
-        border-bottom-color: #4B22DD !important;
+    /* TABS - FIX VISIBILITY V427 (SIMPLE WHITE ACTIVE) */
+    /* 1. Active Tab Container Style - WHITE BACKGROUND */
+    button[data-testid="stTab"][aria-selected="true"],
+    div[data-testid="stTabs"] button[aria-selected="true"],
+    .stTabs button[aria-selected="true"] {
+        background-color: white !important;
+        border-radius: 8px 8px 0px 0px !important;
+        border-top: 2px solid #4B22DD !important; /* Adding subtle indicator */
+        border-left: 1px solid #ddd !important;
+        border-right: 1px solid #ddd !important;
+        border-bottom: none !important;
     }
-    /* ------------------------------------------------------- */
+
+    /* 2. RECURSIVE FORCE PURPLE TEXT ON ACTIVE TAB */
+    button[data-testid="stTab"][aria-selected="true"] * {
+        color: #4B22DD !important;
+        fill: #4B22DD !important; /* For SVGs */
+    }
+    
+    /* 3. Inactive Tab Style */
+    button[data-testid="stTab"][aria-selected="false"],
+    div[data-testid="stTabs"] button[aria-selected="false"],
+    .stTabs button[aria-selected="false"] {
+        background-color: white !important;
+        opacity: 1 !important;
+    }
+
+    /* 4. Inactive Text Color (Grey) */
+    button[data-testid="stTab"][aria-selected="false"] * {
+        color: #555 !important;
+    }
+    
+    /* 5. Hover State */
+    button[data-testid="stTab"]:hover {
+        background-color: #f3e8ff !important;
+    }
+    button[data-testid="stTab"]:hover * {
+        color: #4B22DD !important;
+    }
+    
+
 
     /* --- SIDEBAR WIDTH CONTROL --- */
 
