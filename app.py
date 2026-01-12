@@ -3332,8 +3332,8 @@ with tab_home:
     
     # --- DAILY QUOTE ---
     import random
-    from datetime import datetime
-    today_str = datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d")
+    from datetime import datetime, timezone
+    today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     random.seed(today_str) # Seed with date for consistency
     quotes = [
         "“La educación es el arma más poderosa que puedes usar para cambiar el mundo.” – Nelson Mandela",
