@@ -126,57 +126,44 @@ st.set_page_config(
 # V400: MOBILE PWA & IMAGE FIXES
 # =========================================================
 # =========================================================
-# V400: MOBILE PWA & IMAGE FIXES
+# V401: MOBILE NAVBAR & PWA FIX
 # =========================================================
 def setup_pwa():
-    """Injects PWA Meta Tags, Manifest, and Mobile CSS Fixes."""
+    """Injects CS to FORCE sidebar button visibility + PWA Tags."""
     try:
-        import base64
-        import os
+        # STATIC ICON PATH (Must be enabled in config.toml)
+        import time
+        ts = int(time.time())
+        icon_url = f"app/static/pwa_icon.png?v={ts}"
         
-        # 1. Load Custom Icon (if exists), else use default
-        icon_path = "assets/pwa_icon.png"
-        icon_src_192 = "https://img.icons8.com/color/192/student-male--v1.png"
-        icon_src_512 = "https://img.icons8.com/color/512/student-male--v1.png"
-        
-        if os.path.exists(icon_path):
-            try:
-                with open(icon_path, "rb") as f:
-                    icon_b64 = base64.b64encode(f.read()).decode()
-                    # Data URI for JS injection
-                    icon_src_192 = f"data:image/png;base64,{icon_b64}"
-                    icon_src_512 = f"data:image/png;base64,{icon_b64}"
-            except Exception as e:
-                print(f"Error loading PWA Icon: {e}")
-
         # PWA Manifest (Data URI)
         manifest_json = f"""
         {{
-            "name": "Estudian2",
-            "short_name": "Estudian2",
+            "name": "E-Education",
+            "short_name": "E-Education",
             "start_url": "/",
             "display": "standalone",
             "background_color": "#ffffff",
             "theme_color": "#4B22DD",
             "icons": [
                 {{
-                    "src": "{icon_src_192}",
+                    "src": "{icon_url}",
                     "sizes": "192x192",
                     "type": "image/png"
                 }},
                 {{
-                    "src": "{icon_src_512}",
+                    "src": "{icon_url}",
                     "sizes": "512x512",
                     "type": "image/png"
                 }}
             ]
         }}
         """
+        import base64
         b64_manifest = base64.b64encode(manifest_json.encode()).decode()
         manifest_href = f"data:application/manifest+json;base64,{b64_manifest}"
 
         # JAVASCRIPT INJECTION TO PARENT HEAD
-        # This is critical for iOS "Add to Home Screen" to see the tags
         js_pwa = f"""
         <script>
             (function() {{
@@ -194,28 +181,26 @@ def setup_pwa():
                 // 1. Manifest
                 addTag('link', {{'rel': 'manifest', 'href': '{manifest_href}'}});
 
-                // 2. Apple Touch Icon (Critical for iOS Share Sheet)
-                addTag('link', {{'rel': 'apple-touch-icon', 'href': '{icon_src_192}'}});
-                addTag('link', {{'rel': 'apple-touch-icon', 'sizes': '192x192', 'href': '{icon_src_192}'}});
+                // 2. Apple Touch Icon
+                addTag('link', {{'rel': 'apple-touch-icon', 'href': '{icon_url}'}});
+                addTag('link', {{'rel': 'apple-touch-icon', 'sizes': '192x192', 'href': '{icon_url}'}});
+                addTag('link', {{'rel': 'apple-touch-icon', 'sizes': '192x192', 'href': '{icon_url}'}});
 
                 // 3. Apple Mobile Tags
                 addTag('meta', {{'name': 'apple-mobile-web-app-capable', 'content': 'yes'}});
-                addTag('meta', {{'name': 'apple-mobile-web-app-title', 'content': 'Estudian2'}});
+                addTag('meta', {{'name': 'apple-mobile-web-app-title', 'content': 'E-Education'}});
                 addTag('meta', {{'name': 'apple-mobile-web-app-status-bar-style', 'content': 'white-translucent'}});
                 
-                // 4. Viewport (Prevent Zoom)
-                // Existing viewport might conflict, so we append a prioritized one or force it
+                // 4. Viewport
                 addTag('meta', {{'name': 'viewport', 'content': 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover'}});
             }})();
         </script>
         """
         
-        
-        # Inject JS to modify Parent Head via Iframe (Reliable execution)
+        # Inject JS to modify Parent Head via Iframe
         components.html(js_pwa, height=0, width=0)
-
-
-        # CSS Fixes (These can stay in st.markdown for the body, works fine)
+        
+        # --- CRITICAL CSS FOR SIDEBAR BUTTON ---
         mobile_css = """
         <style>
             /* V401: GLOBAL IMAGE FIXES (No cropping) */
