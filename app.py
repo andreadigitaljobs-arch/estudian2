@@ -158,8 +158,11 @@ st.set_page_config(
 # =========================================================
 # V411: MOBILE NAVBAR (FIXED CLICK PROPAGATION)
 # =========================================================
+# =========================================================
+# V412: MOBILE NAVBAR (PHYSICAL OVERLAY STRATEGY)
+# =========================================================
 def setup_pwa():
-    """Injects Custom Sidebar Button (Production Logic)."""
+    """Injects Visual Button & Forces Native Button to Overlay it."""
     try:
         # PWA & ICON
         import time
@@ -197,17 +200,15 @@ def setup_pwa():
             (function() {{
                 var doc = window.top.document;
                 
-                // --- CUSTOM BUTTON CLEANUP & CREATION ---
+                // --- 1. THE VISUAL DECOY (Underlayer) ---
                 var btnId = 'custom-mobile-menu-btn';
                 var oldBtn = doc.getElementById(btnId);
                 if (oldBtn) oldBtn.remove();
 
-                var btn = doc.createElement('button');
+                var btn = doc.createElement('div'); // Just visual now
                 btn.id = btnId;
-                // SVG Icon
                 btn.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 18L15 12L9 6" stroke="#4B22DD" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
                 
-                // Styles (Premium Feel)
                 Object.assign(btn.style, {{
                     position: 'fixed', top: '15px', left: '15px', 
                     width: '46px', height: '46px', 
@@ -216,58 +217,11 @@ def setup_pwa():
                     boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
                     border: '1.5px solid #4B22DD', 
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    zIndex: '2147483647',
-                    cursor: 'pointer',
-                    userSelect: 'none',
-                    webkitTapHighlightColor: 'transparent',
-                    transition: 'transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94), background-color 0.2s',
-                    padding: '0', margin: '0',
-                    appearance: 'none', outline: 'none'
+                    zIndex: '2147483646', // Just below the native overlay
+                    pointerEvents: 'none', // Let touches pass through to overlay
                 }});
-
-                // --- INTERACTION LOGIC ---
-                function activate(e) {{
-                    e.preventDefault(); 
-                    e.stopPropagation();
-                    
-                    // 1. Visual Feedback
-                    btn.style.transform = 'scale(0.92)';
-                    if (navigator.vibrate) navigator.vibrate(10);
-                    setTimeout(() => {{ btn.style.transform = 'scale(1)'; }}, 150);
-
-                    // 2. TRIGGER ACTIONS
-                    // A) Keyboard Shortcut 'C' (Often works even if trusted is false)
-                    doc.dispatchEvent(new KeyboardEvent('keydown', {{key: 'c', keyCode: 67, which: 67, code: 'KeyC', bubbles: true}}));
-                    
-                    // B) Native Click Fallback (Robust Selector List)
-                    var selectors = [
-                        '[data-testid="stSidebarCollapsedControl"]', 
-                        '[data-testid="stSidebarOpen"]',
-                        'button[kind="header"]',
-                        '[data-testid="stHeader"] button'
-                    ];
-                    
-                    var success = false;
-                    for(var s of selectors) {{
-                        var allMatches = doc.querySelectorAll(s);
-                        for(var el of allMatches) {{
-                            // Only click likely candidates (avoid clicking settings menu)
-                            if (el.getAttribute('aria-haspopup') === 'true') continue; 
-                            
-                            if(el && typeof el.click === 'function') {{ 
-                                el.click();
-                                success = true;
-                            }}
-                        }}
-                    }}
-                }}
-
-                btn.addEventListener('touchstart', activate, {{passive: false}});
-                btn.addEventListener('click', activate);
                 
-                doc.body.appendChild(btn);
-                
-                // Smart Rotation
+                // Smart Rotation (Visual Only)
                 var observer = new MutationObserver(function(mutations) {{
                     var sidebar = doc.querySelector('[data-testid="stSidebar"]');
                     if (sidebar) {{
@@ -278,6 +232,25 @@ def setup_pwa():
                     }}
                 }});
                 observer.observe(doc.body, {{ childList: true, subtree: true, attributes: true, attributeFilter: ['aria-expanded'] }});
+                
+                doc.body.appendChild(btn);
+
+                // --- 2. DEBUG DIAGNOSTIC ---
+                // Count how many sidebar buttons we actually found to overlay
+                setTimeout(function() {{
+                   var selectors = ['[data-testid="stSidebarCollapsedControl"]', '[data-testid="stSidebarOpen"]', 'button[kind="header"]'];
+                   var count = 0;
+                   selectors.forEach(s => count += doc.querySelectorAll(s).length);
+                   
+                   var debug = doc.createElement('div');
+                   debug.innerHTML = 'Btn Found: ' + count;
+                   Object.assign(debug.style, {{
+                       position: 'fixed', bottom: '10px', right: '10px',
+                       background: 'rgba(0,0,0,0.7)', color: 'lime',
+                       fontSize: '10px', padding: '4px', zIndex: '999999999'
+                   }});
+                   doc.body.appendChild(debug);
+                }}, 2000);
 
                 // PWA Tags
                 var head = doc.head;
@@ -294,22 +267,27 @@ def setup_pwa():
         """
         components.html(js_pwa, height=0, width=0)
         
-        # --- CSS CLEANUP ---
+        # --- CSS OVERLAY TRAP ---
         mobile_css = """
         <style>
             .stApp > header { background-color: transparent !important; opacity: 0 !important; pointer-events: none !important; }
             
-            /* Hide Native Buttons Visually but keep them CLICKABLE via JS */
-            /* We move them offscreen but keep pointer-events: auto so .click() works */
-            [data-testid="stSidebarCollapsedControl"], [data-testid="stSidebarOpen"] {
+            /* THE TRAP: Expand native buttons and place them EXACTLY over our decoy */
+            [data-testid="stSidebarCollapsedControl"], [data-testid="stSidebarOpen"], button[kind="header"] {
                 display: block !important;
                 visibility: visible !important;
-                opacity: 0 !important;
+                opacity: 0.01 !important; /* Almost invisible but interactive */
+                background: red !important; /* Debug: if opacity fails, we see red */
+                
                 position: fixed !important;
-                top: -150px !important; /* Move far offscreen */
-                left: 0 !important;
-                pointer-events: auto !important; /* CRITICAL: Enables JS click */
-                z-index: 100 !important;
+                top: 10px !important;
+                left: 10px !important;
+                width: 60px !important;
+                height: 60px !important;
+                
+                z-index: 2147483647 !important; /* Above everything */
+                pointer-events: auto !important; /* CATCH ALL TOUCHES */
+                cursor: pointer !important;
             }
 
             footer, #MainMenu { display: none !important; }
