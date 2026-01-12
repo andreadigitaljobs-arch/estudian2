@@ -2672,7 +2672,7 @@ with st.sidebar:
         
         st.write("")  # Spacing before buttons
         
-        col_save, col_clear = st.columns(2, gap="medium")
+        col_save, col_clear = st.columns([1, 1], gap="small")
         with col_save:
             if st.button("✅", use_container_width=True, type="primary", key="btn_save_api", help="Guardar API Key"):
                 if api_input and api_input.startswith("AIza"):
