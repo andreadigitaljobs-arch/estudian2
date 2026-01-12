@@ -3830,7 +3830,7 @@ with tab1:
                                                 st.error(f"❌ Error CRÍTICO: No se pudo guardar '{custom_n}' en la base de datos.")
                                         
                                         if saved_id:
-                                            st.toast(f"✅ Listo: {final_name}") 
+                                            # st.toast(f"✅ Listo: {final_name}")  # Removed to avoid spam
                                             # V336: Store ID for Deep Clean
                                             st.session_state['transcript_history'].append({"name": custom_n, "text": trans_text, "id": saved_id})
                                             st.session_state['last_transcribed_file'] = custom_n # Update last processed
