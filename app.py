@@ -241,8 +241,20 @@ st.markdown("""
 
 # --- INSTANTIATE AI ENGINES (GLOBAL Fix) ---
 try:
-    # Use secrets key by default
-    _api_key = st.secrets.get("GEMINI_API_KEY")
+    # V350: PRIORITY ORDER FOR API KEY
+    # 1. Custom user key (from sidebar)
+    # 2. System secrets key
+    # 3. Local file
+    
+    _api_key = None
+    
+    # Check custom key first
+    if st.session_state.get('custom_api_key'):
+        _api_key = st.session_state['custom_api_key']
+    # Fallback to system secrets
+    elif st.secrets.get("GEMINI_API_KEY"):
+        _api_key = st.secrets.get("GEMINI_API_KEY")
+    
     if _api_key:
          # V290: Explicitly use Stable 1.5 Flash
          transcriber = Transcriber(api_key=_api_key, model_name="gemini-1.5-flash-latest")
@@ -2633,6 +2645,50 @@ with st.sidebar:
                                 st.rerun()
 
 
+
+    st.markdown('<div class="aesthetic-sep"></div>', unsafe_allow_html=True)
+
+    # --- 2.5 API KEY PERSONALIZADA (RESTORED) ---
+    st.markdown("#### 🔑 API Key Personalizada")
+    st.caption("Usa tu propia API de Gemini para evitar límites compartidos.")
+    
+    # Check if user has custom key in session
+    custom_key = st.session_state.get('custom_api_key', '')
+    
+    with st.expander("⚙️ Configurar API Key"):
+        api_input = st.text_input(
+            "Tu API Key de Google:", 
+            value=custom_key,
+            type="password",
+            placeholder="AIza...",
+            key="api_key_input_sidebar",
+            help="Obtén tu key gratis en: https://aistudio.google.com/app/apikey"
+        )
+        
+        col_save, col_clear = st.columns(2)
+        with col_save:
+            if st.button("💾 Guardar", use_container_width=True):
+                if api_input and api_input.startswith("AIza"):
+                    st.session_state['custom_api_key'] = api_input
+                    # Force re-init engines
+                    st.cache_resource.clear()
+                    st.success("✅ Key guardada!")
+                    st.rerun()
+                else:
+                    st.error("Key inválida")
+        
+        with col_clear:
+            if st.button("🗑️ Borrar", use_container_width=True):
+                st.session_state['custom_api_key'] = None
+                st.cache_resource.clear()
+                st.info("Usando key del sistema")
+                st.rerun()
+    
+    # Show status
+    if st.session_state.get('custom_api_key'):
+        st.success("🔐 Usando tu API Key personal", icon="✅")
+    else:
+        st.info("🌐 Usando API Key compartida del sistema")
 
     st.markdown('<div class="aesthetic-sep"></div>', unsafe_allow_html=True)
 
