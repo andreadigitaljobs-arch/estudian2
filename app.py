@@ -164,8 +164,11 @@ st.set_page_config(
 # =========================================================
 # V413: MOBILE NAVBAR (KEYBOARD SHORTCUT STRATEGY)
 # =========================================================
+# =========================================================
+# V414: MOBILE NAVBAR (HYBRID OVERLAY + DEBUG)
+# =========================================================
 def setup_pwa():
-    """Injects Custom Sidebar Button (Keyboard Trigger)."""
+    """Injects Visual Button & Forces Native Button to Overlay it."""
     try:
         # PWA & ICON
         import time
@@ -203,12 +206,12 @@ def setup_pwa():
             (function() {{
                 var doc = window.top.document;
                 
-                // --- CUSTOM BUTTON CREATION ---
+                // --- 1. THE VISUAL DECOY (Underlayer) ---
                 var btnId = 'custom-mobile-menu-btn';
                 var oldBtn = doc.getElementById(btnId);
                 if (oldBtn) oldBtn.remove();
 
-                var btn = doc.createElement('button');
+                var btn = doc.createElement('div'); // Just visual now
                 btn.id = btnId;
                 btn.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 18L15 12L9 6" stroke="#4B22DD" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
                 
@@ -220,42 +223,11 @@ def setup_pwa():
                     boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
                     border: '1.5px solid #4B22DD', 
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    zIndex: '2147483647',
-                    cursor: 'pointer',
-                    userSelect: 'none',
-                    webkitTapHighlightColor: 'transparent',
-                    transition: 'transform 0.15s ease',
-                    padding: '0', margin: '0',
-                    appearance: 'none', outline: 'none'
+                    zIndex: '2147483646', // Just below the native overlay
+                    pointerEvents: 'none', // Let touches pass through to overlay
                 }});
-
-                // --- INTERACTION LOGIC (KEYBOARD 'C') ---
-                function activate(e) {{
-                    e.preventDefault(); 
-                    e.stopPropagation();
-                    
-                    // 1. Visual Response
-                    btn.style.transform = 'scale(0.9)';
-                    if (navigator.vibrate) navigator.vibrate(10);
-                    setTimeout(() => {{ btn.style.transform = 'scale(1)'; }}, 150);
-
-                    // 2. TRIGGER SIDEBAR via 'C' Shortcut
-                    // We send keydown/keyup to cover all bases
-                    var k = {{key: 'c', keyCode: 67, which: 67, code: 'KeyC', bubbles: true, cancelable: true, view: window.top}};
-                    doc.dispatchEvent(new KeyboardEvent('keydown', k));
-                    doc.dispatchEvent(new KeyboardEvent('keypress', k));
-                    doc.dispatchEvent(new KeyboardEvent('keyup', k));
-                    
-                    // Fallback: Also try on body directly
-                    doc.body.dispatchEvent(new KeyboardEvent('keydown', k));
-                }}
-
-                btn.addEventListener('touchstart', activate, {{passive: false}});
-                btn.addEventListener('click', activate);
                 
-                doc.body.appendChild(btn);
-                
-                // Smart Rotation
+                // Smart Rotation (Visual Only)
                 var observer = new MutationObserver(function(mutations) {{
                     var sidebar = doc.querySelector('[data-testid="stSidebar"]');
                     if (sidebar) {{
@@ -266,8 +238,27 @@ def setup_pwa():
                     }}
                 }});
                 observer.observe(doc.body, {{ childList: true, subtree: true, attributes: true, attributeFilter: ['aria-expanded'] }});
+                
+                doc.body.appendChild(btn);
 
-                // PWA Tags & Viewport
+                // --- 2. DEBUG DIAGNOSTIC (V414) ---
+                setTimeout(function() {{
+                   var selectors = ['[data-testid="stSidebarCollapsedControl"]', '[data-testid="stSidebarOpen"]', 'button[kind="header"]'];
+                   var count = 0;
+                   selectors.forEach(s => count += doc.querySelectorAll(s).length);
+                   
+                   var debug = doc.createElement('div');
+                   debug.innerHTML = 'V414 Found: ' + count;
+                   Object.assign(debug.style, {{
+                       position: 'fixed', bottom: '10px', right: '10px',
+                       background: 'rgba(0,0,0,0.8)', color: '#00ffcc', fontWeight: 'bold',
+                       fontSize: '12px', padding: '6px', zIndex: '999999999',
+                       borderRadius: '4px', border: '1px solid #00ffcc'
+                   }});
+                   doc.body.appendChild(debug);
+                }}, 2500);
+
+                // PWA Tags
                 var head = doc.head;
                 function addTag(tagType, attributes) {{
                     var el = doc.createElement(tagType);
@@ -276,21 +267,39 @@ def setup_pwa():
                 }}
                 addTag('link', {{'rel': 'manifest', 'href': '{manifest_href}'}});
                 addTag('link', {{'rel': 'apple-touch-icon', 'href': '{icon_url}'}});
+                
                 // Force mobile scaling
                 var meta = doc.querySelector('meta[name="viewport"]');
                 if (meta) {{ meta.content = 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover'; }}
                 else {{ addTag('meta', {{'name': 'viewport', 'content': 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover'}}); }}
-
             }})();
         </script>
         """
         components.html(js_pwa, height=0, width=0)
         
-        # --- CLEAN CSS (No Overlay Traps) ---
+        # --- CSS OVERLAY TRAP (Restored) ---
         mobile_css = """
         <style>
-            /* Just hide header cleanly */
             .stApp > header { background-color: transparent !important; opacity: 0 !important; pointer-events: none !important; }
+            
+            /* THE TRAP: Expand native buttons and place them EXACTLY over our decoy */
+            [data-testid="stSidebarCollapsedControl"], [data-testid="stSidebarOpen"], button[kind="header"] {
+                display: block !important;
+                visibility: visible !important;
+                opacity: 0.01 !important; /* Almost invisible but interactive */
+                background: #FF00FF !important; /* Debug tint if visible */
+                
+                position: fixed !important;
+                top: 10px !important;
+                left: 10px !important;
+                width: 60px !important;
+                height: 60px !important;
+                
+                z-index: 2147483647 !important; /* Above everything */
+                pointer-events: auto !important; /* CATCH ALL TOUCHES */
+                cursor: pointer !important;
+            }
+
             footer, #MainMenu { display: none !important; }
             img { object-fit: contain !important; }
         </style>
