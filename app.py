@@ -140,6 +140,9 @@ st.set_page_config(
 # =========================================================
 # V405: MOBILE NAVBAR (JS INJECTION - THE GUARANTEE)
 # =========================================================
+# =========================================================
+# V406: MOBILE NAVBAR (SMART BUTTON - ROTATING & SMALLER)
+# =========================================================
 def setup_pwa():
     """Injects Custom Sidebar Button via CSS/JS."""
     try:
@@ -193,13 +196,13 @@ def setup_pwa():
                 addTag('meta', {{'name': 'apple-mobile-web-app-capable', 'content': 'yes'}});
                 addTag('meta', {{'name': 'viewport', 'content': 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover'}});
 
-                // 2. INJECT CUSTOM SIDEBAR BUTTON (THE "V405" SOLUTION)
-                // We create a new button element and append it to body to bypass Streamlit structure
+                // 2. INJECT CUSTOM SIDEBAR BUTTON (THE "V406" SOLUTION)
                 var btnId = 'custom-mobile-menu-btn';
                 if (!doc.getElementById(btnId)) {{
                     var btn = doc.createElement('div');
                     btn.id = btnId;
-                    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 18L15 12L9 6" stroke="#4B22DD" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+                    // SMALLER ICON: Reduced width/height in SVG + slightly thinner stroke
+                    btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 18L15 12L9 6" stroke="#4B22DD" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
                     
                     // Style it
                     Object.assign(btn.style, {{
@@ -207,36 +210,41 @@ def setup_pwa():
                         top: '12px',
                         left: '12px',
                         zIndex: '999999999',
-                        width: '44px',
-                        height: '44px',
+                        width: '40px', /* Smaller container (was 44) */
+                        height: '40px', /* Smaller container (was 44) */
                         backgroundColor: 'white',
                         borderRadius: '50%',
-                        boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
                         border: '2px solid #4B22DD',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         cursor: 'pointer',
-                        transition: 'transform 0.1s ease'
+                        transition: 'transform 0.3s ease' /* Smooth rotation */
                     }});
                     
-                    // Click Handler: Find the REAL Streamlit toggle and click it
+                    // Click Handler
                     btn.onclick = function() {{
-                        // Try typical Streamlit selectors
                         var toggle = doc.querySelector('[data-testid="stSidebarCollapsedControl"]');
                         if (!toggle) toggle = doc.querySelector('[data-testid="stSidebarOpen"]');
-                        if (toggle) {{
-                            toggle.click();
-                            btn.style.transform = 'scale(0.9)';
-                            setTimeout(() => btn.style.transform = 'scale(1)', 150);
-                        }} else {{
-                            // Backup: Try specific button inside
-                            var innerBtn = doc.querySelector('button[kind="header"]');
-                            if (innerBtn) innerBtn.click();
-                        }}
+                        if (toggle) toggle.click();
                     }};
                     
                     doc.body.appendChild(btn);
+
+                    // 3. SMART ROTATION OBSERVER (Syncs with Real Sidebar State)
+                    // This ensures the arrow flips even if user clicks outside or swipes
+                    var observer = new MutationObserver(function(mutations) {{
+                        var sidebar = doc.querySelector('[data-testid="stSidebar"]');
+                        if (sidebar) {{
+                            var isOpen = sidebar.getAttribute('aria-expanded') === 'true';
+                            // If open, rotate 180deg (point Left). If closed, 0deg (point Right).
+                            btn.style.transform = isOpen ? 'rotate(180deg)' : 'rotate(0deg)';
+                        }}
+                    }});
+                    
+                    // Start observing the sidebar parent (body or main container) for changes
+                    observer.observe(doc.body, {{ childList: true, subtree: true, attributes: true, attributeFilter: ['aria-expanded'] }});
                 }}
                 
             }})();
@@ -244,7 +252,7 @@ def setup_pwa():
         """
         components.html(js_pwa, height=0, width=0)
         
-        # --- CLEANUP CSS (Hide original elements to avoid duplicates) ---
+        # --- CLEANUP CSS ---
         mobile_css = """
         <style>
             /* Hide default header mess but keep sidebar logic working */
@@ -255,9 +263,9 @@ def setup_pwa():
         """
         st.markdown(mobile_css, unsafe_allow_html=True)
         
-        # VISIBLE DEBUG MARKER (PURPLE = V405 JS INJECTED)
+        # VISIBLE DEBUG MARKER (ORANGE = V406 SMART)
         st.markdown(
-            '<div style="position:fixed; top:0; right:0; background:purple; color:white; padding:5px; z-index:999999;">v405</div>',
+            '<div style="position:fixed; top:0; right:0; background:orange; color:white; padding:5px; z-index:999999;">v406</div>',
             unsafe_allow_html=True
         )
         
