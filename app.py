@@ -582,7 +582,48 @@ st.markdown("""
     }
     """ if not st.session_state.get('user') else "") + """
     
-    /* TAB SCROLL ARROWS */
+    /* --- V420: FORCE PURPLE THEME (OVERRIDE DEFAULT RED) --- */
+    
+    /* Primary Buttons (Buscar, Subir, etc.) */
+    div.stButton > button[kind="primary"] {
+        background-color: #4B22DD !important;
+        border-color: #4B22DD !important;
+        color: white !important;
+    }
+    div.stButton > button[kind="primary"]:hover {
+        background-color: #3a1aae !important;
+        border-color: #3a1aae !important;
+    }
+    div.stButton > button[kind="primary"]:focus {
+        box-shadow: 0 0 0 0.2rem rgba(75, 34, 221, 0.5) !important;
+        outline: none !important;
+    }
+
+    /* Text Input Focus Borders */
+    div[data-baseweb="input"] > div:focus-within,
+    div[data-baseweb="base-input"] > div:focus-within {
+        border-color: #4B22DD !important;
+        caret-color: #4B22DD !important;
+    }
+    
+    /* Checkboxes & Toggles */
+    div[data-testid="stCheckbox"] label > span:first-child > div[role="checkbox"][aria-checked="true"] {
+        background-color: #4B22DD !important;
+    }
+    div[data-testid="stToggle"] label > span > div[aria-checked="true"] {
+        background-color: #4B22DD !important;
+    }
+
+    /* Selectbox Focus */
+    div[data-baseweb="select"] > div:focus-within {
+        border-color: #4B22DD !important;
+    }
+
+    /* Tab Scroll Arrows & Active Tab */
+    .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] {
+        color: #4B22DD !important;
+        border-bottom-color: #4B22DD !important;
+    }
     .stTabs [data-baseweb="tab-list"] button:not([role="tab"]) {
         background-color: #4B22DD !important;
         color: white !important;
@@ -592,6 +633,9 @@ st.markdown("""
         border: none !important;
         display: flex !important;
     }
+    /* ------------------------------------------------------- */
+
+    /* --- SIDEBAR WIDTH CONTROL --- */
 
     /* --- SIDEBAR WIDTH CONTROL --- */
     section[data-testid="stSidebar"] {
@@ -4026,6 +4070,10 @@ with tab1:
                             pass # If rerun fails (e.g. RerunData error), just continue to avoid crashing content
                         
                 except BaseException as e:
+                    # IGNORAR EXCEPCIONES DE CONTROL DE FLUJO DE STREAMLIT
+                    if type(e).__name__ in ["RerunData", "StopException", "RerunException"]:
+                        raise e
+                        
                     st.error(f"💥 Error Fatal en la aplicación (Nivel Sistema): {e}")
                     import traceback
                     st.code(traceback.format_exc())
