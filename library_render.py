@@ -324,7 +324,10 @@ def render_library_v2(assistant):
                         st.write(f"Encontrados **{len(results)}** resultados:")
                         for r in results:
                             with st.expander(f"{r['name']} (En: {r.get('unit_name', 'Unknown')})"):
-                                st.markdown(r.get('content')[:500] + "...")
+                                # Safe content handling
+                                content = r.get('content') or r.get('content_text') or ""
+                                preview = content[:500] if content else "(Sin contenido)"
+                                st.markdown(preview + ("..." if len(content) > 500 else ""))
                                 # Action to jump to folder?
                                 if st.button("Ir a la carpeta", key=f"jump_{r['id']}"):
                                      # Not easy to jump fully without parent ID chain logic, 
