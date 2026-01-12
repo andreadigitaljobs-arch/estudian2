@@ -2672,6 +2672,20 @@ with st.sidebar:
         
         st.write("")  # Spacing before buttons
         
+        # Custom CSS for perfect button alignment
+        st.markdown("""
+        <style>
+        div[data-testid="column"] button {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            height: 2.5rem !important;
+            min-height: 2.5rem !important;
+            max-height: 2.5rem !important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+        
         col_save, col_clear = st.columns([1, 1], gap="small")
         with col_save:
             if st.button("✅", use_container_width=True, type="primary", key="btn_save_api", help="Guardar API Key"):
