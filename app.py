@@ -2674,7 +2674,7 @@ with st.sidebar:
         
         col_save, col_clear = st.columns(2, gap="medium")
         with col_save:
-            if st.button("✅ OK", use_container_width=True, type="primary", key="btn_save_api", help="Guardar API Key"):
+            if st.button("✅", use_container_width=True, type="primary", key="btn_save_api", help="Guardar API Key"):
                 if api_input and api_input.startswith("AIza"):
                     st.session_state['custom_api_key'] = api_input
                     # Force re-init engines
@@ -2685,7 +2685,7 @@ with st.sidebar:
                     st.error("Key inválida")
         
         with col_clear:
-            if st.button("❌ Borrar", use_container_width=True, key="btn_clear_api", help="Limpiar API Key"):
+            if st.button("❌", use_container_width=True, key="btn_clear_api", help="Borrar API Key"):
                 st.session_state['custom_api_key'] = None
                 st.cache_resource.clear()
                 st.info("Usando key del sistema")
