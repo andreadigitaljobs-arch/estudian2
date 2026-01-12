@@ -9,42 +9,62 @@ from transcriber import Transcriber
 # Helper: Play Sound
 # Helper: Play Sound
 def play_sound(mode='success'):
-    """Reproduces a loud notification sound using HTML5 Web Audio API."""
+    """Reproduces a notification sound. mode: 'loud' (chirp) or 'soft' (beep)."""
     try:
-        # Visual Notification
-        st.toast("🔔 **¡Transcripción Finalizada!**", icon="✅")
-        
-        # Audio Notification (Loud Chirp)
-        # We use Javascript's AudioContext to generate a sound on the client side.
-        # This bypasses the need for files and allows volume control.
-        # Frequency: 600Hz -> 900Hz (Chirp) for visibility.
-        sound_script = """
-            <script>
-                (function() {
-                    try {
-                        const AudioContext = window.AudioContext || window.webkitAudioContext;
-                        if (!AudioContext) return;
-                        
-                        const ctx = new AudioContext();
-                        const osc = ctx.createOscillator();
-                        const gain = ctx.createGain();
-                        
-                        osc.type = 'sine';
-                        osc.frequency.setValueAtTime(600, ctx.currentTime);
-                        osc.frequency.linearRampToValueAtTime(900, ctx.currentTime + 0.1); // "Ding" effect
-                        
-                        gain.gain.setValueAtTime(0.5, ctx.currentTime);
-                        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.8);
-                        
-                        osc.connect(gain);
-                        gain.connect(ctx.destination);
-                        
-                        osc.start();
-                        osc.stop(ctx.currentTime + 0.8);
-                    } catch(e) { console.error("Audio play failed", e); }
-                })();
-            </script>
-        """
+        # Determine Sound Type
+        if mode == 'loud':
+            # Visual Notification for Major Success
+            st.toast("🔔 **¡Proceso Completado!**", icon="✅")
+            
+            # Loud Chirp (600Hz -> 900Hz)
+            sound_script = """
+                <script>
+                    (function() {
+                        try {
+                            const AudioContext = window.AudioContext || window.webkitAudioContext;
+                            if (!AudioContext) return;
+                            const ctx = new AudioContext();
+                            const osc = ctx.createOscillator();
+                            const gain = ctx.createGain();
+                            osc.type = 'sine';
+                            osc.frequency.setValueAtTime(600, ctx.currentTime);
+                            osc.frequency.linearRampToValueAtTime(900, ctx.currentTime + 0.1); 
+                            gain.gain.setValueAtTime(0.5, ctx.currentTime);
+                            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.8);
+                            osc.connect(gain);
+                            gain.connect(ctx.destination);
+                            osc.start();
+                            osc.stop(ctx.currentTime + 0.8);
+                        } catch(e) { console.error("Audio play failed", e); }
+                    })();
+                </script>
+            """
+        else:
+            # Soft Beep (400Hz, Short)
+            # No toast for minor steps to avoid clutter, or maybe a small one?
+            # User wants sound distinction.
+            sound_script = """
+                <script>
+                    (function() {
+                        try {
+                            const AudioContext = window.AudioContext || window.webkitAudioContext;
+                            if (!AudioContext) return;
+                            const ctx = new AudioContext();
+                            const osc = ctx.createOscillator();
+                            const gain = ctx.createGain();
+                            osc.type = 'sine';
+                            osc.frequency.setValueAtTime(400, ctx.currentTime);
+                            gain.gain.setValueAtTime(0.2, ctx.currentTime); # Lower volume
+                            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3); # Short
+                            osc.connect(gain);
+                            gain.connect(ctx.destination);
+                            osc.start();
+                            osc.stop(ctx.currentTime + 0.3);
+                        } catch(e) { console.error("Audio play failed", e); }
+                    })();
+                </script>
+            """
+            
         components.html(sound_script, height=0, width=0)
         
     except Exception as e:
@@ -3814,8 +3834,8 @@ with tab1:
                                             # V336: Store ID for Deep Clean
                                             st.session_state['transcript_history'].append({"name": custom_n, "text": trans_text, "id": saved_id})
                                             st.session_state['last_transcribed_file'] = custom_n # Update last processed
-                                            # V206: Play Sound
-                                            play_sound('success')
+                                            # V206: Play Sound (Soft for individual files)
+                                            play_sound('soft')
                                         
                                         # Cleanup handled by logic
                                         # if os.path.exists(txt_path): os.remove(txt_path) # DEPRECATED V174
