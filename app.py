@@ -168,10 +168,10 @@ st.set_page_config(
 # V414: MOBILE NAVBAR (HYBRID OVERLAY + DEBUG)
 # =========================================================
 # =========================================================
-# V415: MOBILE NAVBAR (PARENT SCOPE + DOM AUDIT)
+# V416: MOBILE NAVBAR (ARIA-LABEL HUNTER)
 # =========================================================
 def setup_pwa():
-    """Injects Button & Audits DOM to find the missing native toggle."""
+    """Injects Button & Hunts for Native Toggle via Aria-Labels."""
     try:
         # PWA & ICON
         import time
@@ -207,11 +207,10 @@ def setup_pwa():
         js_pwa = f"""
         <script>
             (function() {{
-                // V415: Try PARENT document first, then TOP.
                 var doc = window.parent.document;
                 if (!doc) doc = window.top.document;
                 
-                // --- VISUAL BUTTON ---
+                // --- CUSTOM BUTTON ---
                 var btnId = 'custom-mobile-menu-btn';
                 var oldBtn = doc.getElementById(btnId);
                 if (oldBtn) oldBtn.remove();
@@ -226,59 +225,58 @@ def setup_pwa():
                     borderRadius: '12px', 
                     backgroundColor: 'white',
                     boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                    border: '1px solid #E0E0E0', 
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    zIndex: '999999',
-                    cursor: 'pointer'
+                    border: '1.5px solid #4B22DD', 
+                    zIndex: '999999', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
                 }});
                 
-                // CLICK HANDLER: Try to click the native button if found
+                // CLICK HANDLER: HUNTER MODE
                 btn.onclick = function(e) {{
-                    e.preventDefault();
-                    e.stopPropagation();
+                    e.preventDefault(); e.stopPropagation();
                     
-                    // Try to find the native button aggressively
-                    var nativeSelector = '[data-testid="stSidebarCollapsedControl"], [data-testid="stSidebarOpen"], button[kind="header"]';
-                    var nativeBtn = doc.querySelector(nativeSelector);
-                    
-                    if (nativeBtn) {{
-                        nativeBtn.click();
-                        // Visual feedback
+                    // Strategy 1: Find by Aria Label (Most Robust)
+                    var targets = Array.from(doc.querySelectorAll('button'));
+                    var sidebarBtn = targets.find(b => {{
+                        var label = (b.getAttribute('aria-label') || '').toLowerCase();
+                        return label.includes('sidebar') || label.includes('menu');
+                    }});
+
+                    if (sidebarBtn) {{
+                        sidebarBtn.click();
                         btn.style.transform = "scale(0.9)";
                         setTimeout(() => btn.style.transform = "scale(1)", 100);
                     }} else {{
-                        // Fallback: Keyboard 'C'
-                        var k = {{ key: 'c', keyCode: 67, bubbles: true, view: window.parent }};
-                        doc.dispatchEvent(new KeyboardEvent('keydown', k));
-                        doc.dispatchEvent(new KeyboardEvent('keyup', k));
-                        alert('Fallback trigger sent (No native btn found)');
+                        // Strategy 2: Keyboard Fallback (Aggressive)
+                        ['keydown', 'keypress', 'keyup'].forEach(eventType => {{
+                            doc.dispatchEvent(new KeyboardEvent(eventType, {{key: 'c', keyCode: 67, code: 'KeyC', bubbles: true, cancelable: true, view: window.parent}}));
+                        }});
                     }}
                 }};
-                
                 doc.body.appendChild(btn);
 
-                // --- DOM AUDIT: WHAT BUTTONS EXIST? ---
+                // --- DEEP AUDIT V416 ---
                 setTimeout(function() {{
-                   var debug = doc.createElement('div');
+                   var debug = doc.getElementById('v415-debug') || doc.createElement('div');
                    debug.id = 'v415-debug';
                    
+                   // Audit Aria Labels
                    var allButtons = Array.from(doc.querySelectorAll('button'));
-                   var btnInfo = allButtons.map((b, i) => `[${{i}}] ${{b.className.substring(0,10)}}... ${{b.getAttribute("data-testid") || "no-id"}}`).join('<br>');
+                   var interesting = allButtons.map(b => {{
+                       var label = b.getAttribute('aria-label') || 'no-label';
+                       var testid = b.getAttribute('data-testid') || 'no-testid';
+                       return `<div style="margin-bottom:4px;border-bottom:1px solid #444;">Label: <strong>${{label}}</strong><br>ID: ${{testid}}</div>`;
+                   }}).join('');
                    
-                   var targetCount = doc.querySelectorAll('[data-testid="stSidebarCollapsedControl"]').length;
-                   
-                   debug.innerHTML = '<strong>V415 Audit</strong><br>Doc Title: ' + doc.title + '<br>Targets Found: ' + targetCount + '<br><div style="max-height:100px;overflow:auto;margin-top:5px;font-size:9px;">' + btnInfo + '</div>';
+                   debug.innerHTML = '<strong>V416 Deep Audit</strong><br>Total Buttons: ' + allButtons.length + '<br><div style="max-height:150px;overflow:auto;margin-top:5px;font-size:10px;">' + interesting + '</div>';
                    
                    Object.assign(debug.style, {{
-                       position: 'fixed', bottom: '60px', right: '10px', width: '200px',
-                       background: 'rgba(0,0,0,0.85)', color: '#00ffcc',
-                       fontSize: '11px', padding: '8px', zIndex: '999999999',
-                       borderRadius: '6px', border: '1px solid #00ffcc', fontFamily: 'monospace'
+                       position: 'fixed', bottom: '60px', right: '10px', width: '220px',
+                       background: 'rgba(0,0,0,0.9)', color: '#00ffcc',
+                       fontSize: '11px', padding: '10px', zIndex: '999999999',
+                       borderRadius: '8px', border: '1px solid #00ffcc', fontFamily: 'monospace'
                    }});
-                   doc.body.appendChild(debug);
-                }}, 3000);
+                   if(!debug.parentNode) doc.body.appendChild(debug);
+                }}, 3500);
 
-                // PWA Tags
                 var head = doc.head;
                 function addTag(tagType, attributes) {{
                     var el = doc.createElement(tagType);
@@ -296,15 +294,17 @@ def setup_pwa():
         """
         components.html(js_pwa, height=0, width=0)
         
-        # --- CSS: HIDE HEADER BUT KEEP IT INTERACTIVE FOR SCRIPT ---
+        # --- CSS: ENSURE HEADER EXISTS FOR SCRIPT TO FIND IT ---
         mobile_css = """
         <style>
-            /* We do NOT set pointer-events: none here, to allow script to click inside if needed */
             .stApp > header { background-color: transparent !important; opacity: 0.01 !important; }
             footer, #MainMenu { display: none !important; }
         </style>
         """
         st.markdown(mobile_css, unsafe_allow_html=True)
+        
+    except Exception as e:
+        print(f"PWA Setup Error: {e}")
         
     except Exception as e:
         print(f"PWA Setup Error: {e}")
