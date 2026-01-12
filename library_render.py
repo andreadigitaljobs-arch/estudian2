@@ -328,13 +328,30 @@ def render_library_v2(assistant):
                                 content = r.get('content') or r.get('content_text') or ""
                                 preview = content[:500] if content else "(Sin contenido)"
                                 st.markdown(preview + ("..." if len(content) > 500 else ""))
-                                # Action to jump to folder?
-                                if st.button("Ir a la carpeta", key=f"jump_{r['id']}"):
-                                     # Not easy to jump fully without parent ID chain logic, 
-                                     # but we can try setting current unit if we had unit_id
-                                     # search_library returns unit_name usually. 
-                                     # Let's keep it simple.
-                                     pass
+                                
+                                # Navigate to folder button
+                                if st.button("📂 Ir a la carpeta", key=f"jump_{r['id']}", type="primary"):
+                                    # Get the unit_id from search result
+                                    target_unit_id = r.get('unit_id')
+                                    target_unit_name = r.get('unit_name', 'Carpeta')
+                                    
+                                    if target_unit_id:
+                                        # Set current unit to the target folder
+                                        st.session_state['lib_current_unit_id'] = target_unit_id
+                                        st.session_state['lib_current_unit_name'] = target_unit_name
+                                        
+                                        # Build breadcrumb trail (simplified - just add the target unit)
+                                        # For a full path, we'd need to query parent units recursively
+                                        st.session_state['lib_breadcrumbs'] = [{'id': target_unit_id, 'name': target_unit_name}]
+                                        
+                                        # Close search tool
+                                        st.session_state['lib_active_tool'] = None
+                                        
+                                        st.success(f"Navegando a: {target_unit_name}")
+                                        time.sleep(0.5)
+                                        st.rerun()
+                                    else:
+                                        st.warning("No se pudo determinar la ubicación del archivo")
                     else:
                         st.caption("No se encontraron resultados.")
 
