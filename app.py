@@ -167,8 +167,11 @@ st.set_page_config(
 # =========================================================
 # V414: MOBILE NAVBAR (HYBRID OVERLAY + DEBUG)
 # =========================================================
+# =========================================================
+# V415: MOBILE NAVBAR (PARENT SCOPE + DOM AUDIT)
+# =========================================================
 def setup_pwa():
-    """Injects Visual Button & Forces Native Button to Overlay it."""
+    """Injects Button & Audits DOM to find the missing native toggle."""
     try:
         # PWA & ICON
         import time
@@ -204,59 +207,76 @@ def setup_pwa():
         js_pwa = f"""
         <script>
             (function() {{
-                var doc = window.top.document;
+                // V415: Try PARENT document first, then TOP.
+                var doc = window.parent.document;
+                if (!doc) doc = window.top.document;
                 
-                // --- 1. THE VISUAL DECOY (Underlayer) ---
+                // --- VISUAL BUTTON ---
                 var btnId = 'custom-mobile-menu-btn';
                 var oldBtn = doc.getElementById(btnId);
                 if (oldBtn) oldBtn.remove();
 
-                var btn = doc.createElement('div'); // Just visual now
+                var btn = doc.createElement('button');
                 btn.id = btnId;
-                btn.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 18L15 12L9 6" stroke="#4B22DD" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+                btn.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 6H20M4 12H20M4 18H20" stroke="#4B22DD" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
                 
                 Object.assign(btn.style, {{
                     position: 'fixed', top: '15px', left: '15px', 
                     width: '46px', height: '46px', 
-                    borderRadius: '50%', 
+                    borderRadius: '12px', 
                     backgroundColor: 'white',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                    border: '1.5px solid #4B22DD', 
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+                    border: '1px solid #E0E0E0', 
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    zIndex: '2147483646', // Just below the native overlay
-                    pointerEvents: 'none', // Let touches pass through to overlay
+                    zIndex: '999999',
+                    cursor: 'pointer'
                 }});
                 
-                // Smart Rotation (Visual Only)
-                var observer = new MutationObserver(function(mutations) {{
-                    var sidebar = doc.querySelector('[data-testid="stSidebar"]');
-                    if (sidebar) {{
-                        var isOpen = sidebar.getAttribute('aria-expanded') === 'true';
-                        var svg = btn.querySelector('svg');
-                        if(svg) svg.style.transform = isOpen ? 'rotate(180deg)' : 'rotate(0deg)';
-                        if(svg) svg.style.transition = 'transform 0.3s ease';
+                // CLICK HANDLER: Try to click the native button if found
+                btn.onclick = function(e) {{
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    // Try to find the native button aggressively
+                    var nativeSelector = '[data-testid="stSidebarCollapsedControl"], [data-testid="stSidebarOpen"], button[kind="header"]';
+                    var nativeBtn = doc.querySelector(nativeSelector);
+                    
+                    if (nativeBtn) {{
+                        nativeBtn.click();
+                        // Visual feedback
+                        btn.style.transform = "scale(0.9)";
+                        setTimeout(() => btn.style.transform = "scale(1)", 100);
+                    }} else {{
+                        // Fallback: Keyboard 'C'
+                        var k = {{ key: 'c', keyCode: 67, bubbles: true, view: window.parent }};
+                        doc.dispatchEvent(new KeyboardEvent('keydown', k));
+                        doc.dispatchEvent(new KeyboardEvent('keyup', k));
+                        alert('Fallback trigger sent (No native btn found)');
                     }}
-                }});
-                observer.observe(doc.body, {{ childList: true, subtree: true, attributes: true, attributeFilter: ['aria-expanded'] }});
+                }};
                 
                 doc.body.appendChild(btn);
 
-                // --- 2. DEBUG DIAGNOSTIC (V414) ---
+                // --- DOM AUDIT: WHAT BUTTONS EXIST? ---
                 setTimeout(function() {{
-                   var selectors = ['[data-testid="stSidebarCollapsedControl"]', '[data-testid="stSidebarOpen"]', 'button[kind="header"]'];
-                   var count = 0;
-                   selectors.forEach(s => count += doc.querySelectorAll(s).length);
-                   
                    var debug = doc.createElement('div');
-                   debug.innerHTML = 'V414 Found: ' + count;
+                   debug.id = 'v415-debug';
+                   
+                   var allButtons = Array.from(doc.querySelectorAll('button'));
+                   var btnInfo = allButtons.map((b, i) => `[${{i}}] ${{b.className.substring(0,10)}}... ${{b.getAttribute("data-testid") || "no-id"}}`).join('<br>');
+                   
+                   var targetCount = doc.querySelectorAll('[data-testid="stSidebarCollapsedControl"]').length;
+                   
+                   debug.innerHTML = '<strong>V415 Audit</strong><br>Doc Title: ' + doc.title + '<br>Targets Found: ' + targetCount + '<br><div style="max-height:100px;overflow:auto;margin-top:5px;font-size:9px;">' + btnInfo + '</div>';
+                   
                    Object.assign(debug.style, {{
-                       position: 'fixed', bottom: '10px', right: '10px',
-                       background: 'rgba(0,0,0,0.8)', color: '#00ffcc', fontWeight: 'bold',
-                       fontSize: '12px', padding: '6px', zIndex: '999999999',
-                       borderRadius: '4px', border: '1px solid #00ffcc'
+                       position: 'fixed', bottom: '60px', right: '10px', width: '200px',
+                       background: 'rgba(0,0,0,0.85)', color: '#00ffcc',
+                       fontSize: '11px', padding: '8px', zIndex: '999999999',
+                       borderRadius: '6px', border: '1px solid #00ffcc', fontFamily: 'monospace'
                    }});
                    doc.body.appendChild(debug);
-                }}, 2500);
+                }}, 3000);
 
                 // PWA Tags
                 var head = doc.head;
@@ -268,7 +288,6 @@ def setup_pwa():
                 addTag('link', {{'rel': 'manifest', 'href': '{manifest_href}'}});
                 addTag('link', {{'rel': 'apple-touch-icon', 'href': '{icon_url}'}});
                 
-                // Force mobile scaling
                 var meta = doc.querySelector('meta[name="viewport"]');
                 if (meta) {{ meta.content = 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover'; }}
                 else {{ addTag('meta', {{'name': 'viewport', 'content': 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover'}}); }}
@@ -277,31 +296,12 @@ def setup_pwa():
         """
         components.html(js_pwa, height=0, width=0)
         
-        # --- CSS OVERLAY TRAP (Restored) ---
+        # --- CSS: HIDE HEADER BUT KEEP IT INTERACTIVE FOR SCRIPT ---
         mobile_css = """
         <style>
-            .stApp > header { background-color: transparent !important; opacity: 0 !important; pointer-events: none !important; }
-            
-            /* THE TRAP: Expand native buttons and place them EXACTLY over our decoy */
-            [data-testid="stSidebarCollapsedControl"], [data-testid="stSidebarOpen"], button[kind="header"] {
-                display: block !important;
-                visibility: visible !important;
-                opacity: 0.01 !important; /* Almost invisible but interactive */
-                background: #FF00FF !important; /* Debug tint if visible */
-                
-                position: fixed !important;
-                top: 10px !important;
-                left: 10px !important;
-                width: 60px !important;
-                height: 60px !important;
-                
-                z-index: 2147483647 !important; /* Above everything */
-                pointer-events: auto !important; /* CATCH ALL TOUCHES */
-                cursor: pointer !important;
-            }
-
+            /* We do NOT set pointer-events: none here, to allow script to click inside if needed */
+            .stApp > header { background-color: transparent !important; opacity: 0.01 !important; }
             footer, #MainMenu { display: none !important; }
-            img { object-fit: contain !important; }
         </style>
         """
         st.markdown(mobile_css, unsafe_allow_html=True)
