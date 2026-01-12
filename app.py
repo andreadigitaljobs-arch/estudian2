@@ -122,6 +122,141 @@ st.set_page_config(
     initial_sidebar_state="expanded" if st.session_state.get('user') else "collapsed"
 )
 
+# =========================================================
+# V400: MOBILE PWA & IMAGE FIXES
+# =========================================================
+# =========================================================
+# V400: MOBILE PWA & IMAGE FIXES
+# =========================================================
+def setup_pwa():
+    """Injects PWA Meta Tags, Manifest, and Mobile CSS Fixes."""
+    try:
+        import base64
+        import os
+        
+        # 1. Load Custom Icon (if exists), else use default
+        icon_path = "assets/pwa_icon.png"
+        icon_src_192 = "https://img.icons8.com/color/192/student-male--v1.png"
+        icon_src_512 = "https://img.icons8.com/color/512/student-male--v1.png"
+        
+        if os.path.exists(icon_path):
+            try:
+                with open(icon_path, "rb") as f:
+                    icon_b64 = base64.b64encode(f.read()).decode()
+                    # Data URI for JS injection
+                    icon_src_192 = f"data:image/png;base64,{icon_b64}"
+                    icon_src_512 = f"data:image/png;base64,{icon_b64}"
+            except Exception as e:
+                print(f"Error loading PWA Icon: {e}")
+
+        # PWA Manifest (Data URI)
+        manifest_json = f"""
+        {{
+            "name": "Estudian2",
+            "short_name": "Estudian2",
+            "start_url": "/",
+            "display": "standalone",
+            "background_color": "#ffffff",
+            "theme_color": "#4B22DD",
+            "icons": [
+                {{
+                    "src": "{icon_src_192}",
+                    "sizes": "192x192",
+                    "type": "image/png"
+                }},
+                {{
+                    "src": "{icon_src_512}",
+                    "sizes": "512x512",
+                    "type": "image/png"
+                }}
+            ]
+        }}
+        """
+        b64_manifest = base64.b64encode(manifest_json.encode()).decode()
+        manifest_href = f"data:application/manifest+json;base64,{b64_manifest}"
+
+        # JAVASCRIPT INJECTION TO PARENT HEAD
+        # This is critical for iOS "Add to Home Screen" to see the tags
+        js_pwa = f"""
+        <script>
+            (function() {{
+                var head = window.parent.document.getElementsByTagName('head')[0];
+                if (!head) return;
+
+                function addTag(tagType, attributes) {{
+                    var el = window.parent.document.createElement(tagType);
+                    for (var key in attributes) {{
+                        el.setAttribute(key, attributes[key]);
+                    }}
+                    head.appendChild(el);
+                }}
+
+                // 1. Manifest
+                addTag('link', {{'rel': 'manifest', 'href': '{manifest_href}'}});
+
+                // 2. Apple Touch Icon (Critical for iOS Share Sheet)
+                addTag('link', {{'rel': 'apple-touch-icon', 'href': '{icon_src_192}'}});
+                addTag('link', {{'rel': 'apple-touch-icon', 'sizes': '192x192', 'href': '{icon_src_192}'}});
+
+                // 3. Apple Mobile Tags
+                addTag('meta', {{'name': 'apple-mobile-web-app-capable', 'content': 'yes'}});
+                addTag('meta', {{'name': 'apple-mobile-web-app-title', 'content': 'Estudian2'}});
+                addTag('meta', {{'name': 'apple-mobile-web-app-status-bar-style', 'content': 'white-translucent'}});
+                
+                // 4. Viewport (Prevent Zoom)
+                // Existing viewport might conflict, so we append a prioritized one or force it
+                addTag('meta', {{'name': 'viewport', 'content': 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover'}});
+            }})();
+        </script>
+        """
+        
+        
+        # Inject JS to modify Parent Head via Iframe (Reliable execution)
+        components.html(js_pwa, height=0, width=0)
+
+
+        # CSS Fixes (These can stay in st.markdown for the body, works fine)
+        mobile_css = """
+        <style>
+            /* V401: GLOBAL IMAGE FIXES (No cropping) */
+            img {
+                max-width: 100%;
+                height: auto;
+                object-fit: contain !important; 
+            }
+            
+            /* Specific fix for folder icons */
+            .folder-hover-card svg, .folder-hover-card img {
+                max-width: 80px; 
+                max-height: 80px;
+            }
+
+            /* MOBILE OPTIMIZATIONS */
+            @media (max-width: 640px) {
+                .block-container {
+                    padding-left: 0.5rem !important;
+                    padding-right: 0.5rem !important;
+                    padding-top: 3rem !important;
+                }
+                div[data-testid="stToast"] {
+                    width: 90vw !important;
+                    left: 50% !important;
+                    transform: translateX(-50%) !important;
+                }
+                h1 { font-size: 1.8rem !important; }
+                h2 { font-size: 1.5rem !important; }
+                h3 { font-size: 1.25rem !important; }
+                p, .stMarkdown { font-size: 1rem !important; }
+            }
+        </style>
+        """
+        st.markdown(mobile_css, unsafe_allow_html=True)
+        
+    except Exception as e:
+        print(f"PWA Setup Error: {e}")
+
+setup_pwa()
+
 # --- V252: VISUAL MARKER ---
 if 'v316_marker' not in st.session_state:
     # st.toast("✅ Aplicación Actualizada a V316")
@@ -3881,7 +4016,10 @@ with tab1:
                         play_sound('loud') # Only ring loud when everything is done
                         
                         time.sleep(2)
-                        st.rerun()
+                        try:
+                            st.rerun()
+                        except Exception:
+                            pass # If rerun fails (e.g. RerunData error), just continue to avoid crashing content
                         
                 except BaseException as e:
                     st.error(f"💥 Error Fatal en la aplicación (Nivel Sistema): {e}")

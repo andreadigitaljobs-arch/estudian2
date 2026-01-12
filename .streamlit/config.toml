@@ -1,10 +1,2 @@
-[theme]
-primaryColor="#6366f1"
-backgroundColor="#ffffff"
-secondaryBackgroundColor="#f8fafc"
-textColor="#1e293b"
-font="sans serif"
-
-# Force button styling
-[client]
-showErrorDetails = true
+[server]
+enableStaticServing = true
