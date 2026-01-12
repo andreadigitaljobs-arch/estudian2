@@ -146,8 +146,11 @@ st.set_page_config(
 # =========================================================
 # V407: MOBILE NAVBAR (THE MASTER KEY - MULTI-TRIGGERS)
 # =========================================================
+# =========================================================
+# V408: MOBILE NAVBAR (TOUCH & FEEL - THE "BUTTON" FEEL)
+# =========================================================
 def setup_pwa():
-    """Injects Custom Sidebar Button that uses Multiple Trigger Methods."""
+    """Injects Custom Sidebar Button with NATIVE-LIKE TOUCH RESPONSE."""
     try:
         # PWA & ICON CONFIG
         import time
@@ -184,9 +187,81 @@ def setup_pwa():
         <script>
             (function() {{
                 var doc = window.parent.document;
-                var head = doc.getElementsByTagName('head')[0];
-                if (!head) return;
+                
+                // --- CUSTOM BUTTON V408 ---
+                var btnId = 'custom-mobile-menu-btn';
+                // Remove old button if exists to ensure updates apply
+                var oldBtn = doc.getElementById(btnId);
+                if (oldBtn) oldBtn.remove();
 
+                var btn = doc.createElement('div');
+                btn.id = btnId;
+                btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 18L15 12L9 6" stroke="#4B22DD" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+                
+                // Style via JS for robustness + CSS Class for Animation
+                Object.assign(btn.style, {{
+                    position: 'fixed', top: '15px', left: '15px', 
+                    width: '44px', height: '44px', 
+                    borderRadius: '50%', 
+                    backgroundColor: 'white',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                    border: '2px solid #4B22DD', 
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    zIndex: '2147483647', /* MAX INT Z-INDEX */
+                    cursor: 'pointer',
+                    userSelect: 'none',
+                    webkitTapHighlightColor: 'transparent',
+                    transition: 'transform 0.1s, background-color 0.1s'
+                }});
+
+                // Add active state styles dynamically
+                var style = doc.createElement('style');
+                style.innerHTML = `
+                    #{btnId}:active {{ transform: scale(0.90) !important; background-color: #f0ebff !important; }}
+                    #{btnId} svg {{ pointer-events: none; }} /* Pass clicks to parent */
+                `;
+                doc.head.appendChild(style);
+                
+                // --- ACTION HANDLER (Supports Touch & Click) ---
+                function triggerSidebar(e) {{
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    // Visual feedback MANUAL (in case :active misses)
+                    btn.style.transform = 'scale(0.90)';
+                    setTimeout(() => btn.style.transform = 'scale(1)', 150);
+
+                    // 1. Try hitting the Keyboard Shortcut 'C' (Most reliable)
+                    doc.dispatchEvent(new KeyboardEvent('keydown', {{key: 'c', code: 'KeyC', keyCode: 67, charCode: 67, which: 67, bubbles: true}}));
+                    
+                    // 2. Fallback: Find & Click Native Buttons
+                    var triggers = ['[data-testid="stSidebarCollapsedControl"]', '[data-testid="stSidebarOpen"]', 'button[kind="header"]'];
+                    triggers.forEach(sel => {{
+                        var el = doc.querySelector(sel);
+                        if (el) {{ el.click(); }}
+                    }});
+                }}
+
+                // Attach listeners
+                btn.onclick = triggerSidebar;
+                btn.ontouchstart = triggerSidebar; // Immediate response on mobile
+                
+                doc.body.appendChild(btn);
+
+                // Smart Rotation Logic
+                var observer = new MutationObserver(function(mutations) {{
+                    var sidebar = doc.querySelector('[data-testid="stSidebar"]');
+                    if (sidebar) {{
+                        var isOpen = sidebar.getAttribute('aria-expanded') === 'true';
+                        var svg = btn.querySelector('svg');
+                        if(svg) svg.style.transform = isOpen ? 'rotate(180deg)' : 'rotate(0deg)';
+                        if(svg) svg.style.transition = 'transform 0.3s ease';
+                    }}
+                }});
+                observer.observe(doc.body, {{ childList: true, subtree: true, attributes: true, attributeFilter: ['aria-expanded'] }});
+
+                // Inject PWA Tags
+                var head = doc.head;
                 function addTag(tagType, attributes) {{
                     var el = doc.createElement(tagType);
                     for (var key in attributes) {{ el.setAttribute(key, attributes[key]); }}
@@ -195,72 +270,6 @@ def setup_pwa():
                 addTag('link', {{'rel': 'manifest', 'href': '{manifest_href}'}});
                 addTag('link', {{'rel': 'apple-touch-icon', 'href': '{icon_url}'}});
                 addTag('meta', {{'name': 'viewport', 'content': 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover'}});
-
-                // --- CUSTOM BUTTON V407 ---
-                var btnId = 'custom-mobile-menu-btn';
-                if (!doc.getElementById(btnId)) {{
-                    var btn = doc.createElement('div');
-                    btn.id = btnId;
-                    btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 18L15 12L9 6" stroke="#4B22DD" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-                    
-                    Object.assign(btn.style, {{
-                        position: 'fixed', top: '12px', left: '12px', zIndex: '999999999',
-                        width: '40px', height: '40px', backgroundColor: 'white',
-                        borderRadius: '50%', boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                        border: '2px solid #4B22DD', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        cursor: 'pointer', transition: 'transform 0.3s ease'
-                    }});
-                    
-                    // --- MASTER KEY CLICK HANDLER ---
-                    btn.onclick = function(e) {{
-                        e.preventDefault();
-                        e.stopPropagation();
-                        
-                        // Strategy 1: Find Native Button & Click (Try multiple selectors)
-                        var triggers = [
-                            '[data-testid="stSidebarCollapsedControl"]',
-                            '[data-testid="stSidebarOpen"]',
-                            'button[kind="header"]',
-                            '[aria-label="Collapsed sidebar"]'
-                        ];
-                        
-                        var clicked = false;
-                        for (var i = 0; i < triggers.length; i++) {{
-                            var el = doc.querySelector(triggers[i]);
-                            if (el) {{
-                                // Dispatch fully synthetic event set for React
-                                var eventOpts = {{bubbles: true, cancelable: true, view: window.parent}};
-                                el.dispatchEvent(new MouseEvent('mousedown', eventOpts));
-                                el.dispatchEvent(new MouseEvent('mouseup', eventOpts));
-                                el.click(); 
-                                clicked = true;
-                                break;
-                            }}
-                        }}
-                        
-                        // Strategy 2: If finding button fails, use Keyboard Shortcut 'C'
-                        // Streamlit listens for 'C' to toggle sidebar
-                        if (!clicked) {{
-                            doc.dispatchEvent(new KeyboardEvent('keydown', {{key: 'c', code: 'KeyC', keyCode: 67, which: 67, bubbles: true}}));
-                        }}
-                        
-                        // Visual Feedback
-                        btn.style.backgroundColor = '#f0ebff';
-                        setTimeout(() => btn.style.backgroundColor = 'white', 150);
-                    }};
-                    
-                    doc.body.appendChild(btn);
-
-                    // SMART ROTATION
-                    var observer = new MutationObserver(function(mutations) {{
-                        var sidebar = doc.querySelector('[data-testid="stSidebar"]');
-                        if (sidebar) {{
-                            var isOpen = sidebar.getAttribute('aria-expanded') === 'true';
-                            btn.style.transform = isOpen ? 'rotate(180deg)' : 'rotate(0deg)';
-                        }}
-                    }});
-                    observer.observe(doc.body, {{ childList: true, subtree: true, attributes: true, attributeFilter: ['aria-expanded'] }});
-                }}
             }})();
         </script>
         """
@@ -269,7 +278,6 @@ def setup_pwa():
         # --- CLEANUP CSS ---
         mobile_css = """
         <style>
-            /* Ensure the header exists but is invisible so the native button remains in DOM */
             .stApp > header { background-color: transparent !important; opacity: 0 !important; pointer-events: none !important; }
             footer, #MainMenu { display: none !important; }
             img { object-fit: contain !important; }
@@ -277,9 +285,9 @@ def setup_pwa():
         """
         st.markdown(mobile_css, unsafe_allow_html=True)
         
-        # VISIBLE DEBUG MARKER (PINK = V407 MASTER KEY)
+        # VISIBLE DEBUG MARKER (CYAN = V408 TOUCH)
         st.markdown(
-            '<div style="position:fixed; top:0; right:0; background:#e040fb; color:white; padding:5px; z-index:999999;">v407</div>',
+            '<div style="position:fixed; top:0; right:0; background:cyan; color:black; padding:5px; z-index:999999;">v408</div>',
             unsafe_allow_html=True
         )
         
