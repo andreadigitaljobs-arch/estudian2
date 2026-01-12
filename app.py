@@ -137,10 +137,13 @@ st.set_page_config(
 # =========================================================
 # V404: MOBILE NAVBAR (THE EXTRACTOR)
 # =========================================================
+# =========================================================
+# V405: MOBILE NAVBAR (JS INJECTION - THE GUARANTEE)
+# =========================================================
 def setup_pwa():
-    """Injects CSS to FORCE sidebar button visibility + PWA Tags."""
+    """Injects Custom Sidebar Button via CSS/JS."""
     try:
-        # STATIC ICON PATH
+        # PWA & ICON CONFIG
         import time
         ts = int(time.time())
         icon_url = f"app/static/pwa_icon.png?v={ts}"
@@ -171,82 +174,90 @@ def setup_pwa():
         b64_manifest = base64.b64encode(manifest_json.encode()).decode()
         manifest_href = f"data:application/manifest+json;base64,{b64_manifest}"
 
+        # CRITICAL JS: INJECT PWA TAGS + CUSTOM TOGGLE BUTTON
         js_pwa = f"""
         <script>
             (function() {{
-                var head = window.parent.document.getElementsByTagName('head')[0];
+                var doc = window.parent.document;
+                var head = doc.getElementsByTagName('head')[0];
                 if (!head) return;
+
+                // 1. INJECT PWA TAGS
                 function addTag(tagType, attributes) {{
-                    var el = window.parent.document.createElement(tagType);
+                    var el = doc.createElement(tagType);
                     for (var key in attributes) {{ el.setAttribute(key, attributes[key]); }}
                     head.appendChild(el);
                 }}
                 addTag('link', {{'rel': 'manifest', 'href': '{manifest_href}'}});
                 addTag('link', {{'rel': 'apple-touch-icon', 'href': '{icon_url}'}});
                 addTag('meta', {{'name': 'apple-mobile-web-app-capable', 'content': 'yes'}});
-                addTag('meta', {{'name': 'apple-mobile-web-app-title', 'content': 'E-Education'}});
                 addTag('meta', {{'name': 'viewport', 'content': 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover'}});
+
+                // 2. INJECT CUSTOM SIDEBAR BUTTON (THE "V405" SOLUTION)
+                // We create a new button element and append it to body to bypass Streamlit structure
+                var btnId = 'custom-mobile-menu-btn';
+                if (!doc.getElementById(btnId)) {{
+                    var btn = doc.createElement('div');
+                    btn.id = btnId;
+                    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 18L15 12L9 6" stroke="#4B22DD" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+                    
+                    // Style it
+                    Object.assign(btn.style, {{
+                        position: 'fixed',
+                        top: '12px',
+                        left: '12px',
+                        zIndex: '999999999',
+                        width: '44px',
+                        height: '44px',
+                        backgroundColor: 'white',
+                        borderRadius: '50%',
+                        boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
+                        border: '2px solid #4B22DD',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        transition: 'transform 0.1s ease'
+                    }});
+                    
+                    // Click Handler: Find the REAL Streamlit toggle and click it
+                    btn.onclick = function() {{
+                        // Try typical Streamlit selectors
+                        var toggle = doc.querySelector('[data-testid="stSidebarCollapsedControl"]');
+                        if (!toggle) toggle = doc.querySelector('[data-testid="stSidebarOpen"]');
+                        if (toggle) {{
+                            toggle.click();
+                            btn.style.transform = 'scale(0.9)';
+                            setTimeout(() => btn.style.transform = 'scale(1)', 150);
+                        }} else {{
+                            // Backup: Try specific button inside
+                            var innerBtn = doc.querySelector('button[kind="header"]');
+                            if (innerBtn) innerBtn.click();
+                        }}
+                    }};
+                    
+                    doc.body.appendChild(btn);
+                }}
+                
             }})();
         </script>
         """
         components.html(js_pwa, height=0, width=0)
         
-        # --- V404 CSS: THE EXTRACTOR ---
+        # --- CLEANUP CSS (Hide original elements to avoid duplicates) ---
         mobile_css = """
         <style>
-            /* 1. MAKE HEADER TRANSPARENT & CLICK-THROUGH */
-            /* This "removes" the visual bar but keeps the DOM element so functionality works */
-            .stApp > header {
-                background-color: transparent !important;
-                pointer-events: none !important; /* Let clicks pass through */
-                display: block !important; /* Ensure it exists */
-                height: 0px !important; /* Minimal height to avoid spacing issues */
-            }
-
-            /* 2. THE BUTTON (EXTRACTED) */
-            /* We force it to be interactive and visible, sitting on top of everything */
-            [data-testid="stSidebarCollapsedControl"] {
-                display: block !important;
-                position: fixed !important; /* Lock to screen */
-                top: 15px !important;
-                left: 15px !important;
-                z-index: 99999999 !important; /* Max z-index */
-                pointer-events: auto !important; /* Re-enable clicking */
-                
-                /* Visual Styling */
-                width: 44px !important;
-                height: 44px !important;
-                background-color: #ffffff !important;
-                border: 2px solid #4B22DD !important;
-                border-radius: 50% !important;
-                box-shadow: 0 4px 6px rgba(0,0,0,0.2) !important;
-                opacity: 1 !important;
-                visibility: visible !important;
-                
-                /* Center Icon */
-                display: flex !important;
-                align-items: center !important;
-                justify-content: center !important;
-            }
-            
-            /* 3. ICON STYLE */
-            [data-testid="stSidebarCollapsedControl"] svg {
-                width: 24px !important;
-                height: 24px !important;
-                fill: #4B22DD !important;
-                stroke: #4B22DD !important;
-            }
-
-            /* 4. CLEANUP */
+            /* Hide default header mess but keep sidebar logic working */
+            .stApp > header { background-color: transparent !important; height: 0px !important; pointer-events: none !important; }
             footer, #MainMenu { display: none !important; }
             img { object-fit: contain !important; }
         </style>
         """
         st.markdown(mobile_css, unsafe_allow_html=True)
         
-        # VISIBLE DEBUG MARKER (BLUE = V404 EXTRACTOR)
+        # VISIBLE DEBUG MARKER (PURPLE = V405 JS INJECTED)
         st.markdown(
-            '<div style="position:fixed; top:0; right:0; background:blue; color:white; padding:5px; z-index:999999;">v404</div>',
+            '<div style="position:fixed; top:0; right:0; background:purple; color:white; padding:5px; z-index:999999;">v405</div>',
             unsafe_allow_html=True
         )
         
