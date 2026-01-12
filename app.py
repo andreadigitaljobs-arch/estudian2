@@ -8,71 +8,44 @@ from transcriber import Transcriber
 
 # Helper: Play Sound
 # Helper: Play Sound
-import base64
-
 def play_sound(mode='success'):
-    """Reproduces a notification sound and shows a toast."""
+    """Reproduces a loud notification sound using HTML5 Web Audio API."""
     try:
-        # Loud "Ding" / Chime Sound (Base64 MP3)
-        # This is high quality, clear notification sound
-        sound_b64 = "SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjI5LjEwMAAAAAAAAAAAAAAA//uQZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWgAAAA0AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=="
+        # Visual Notification
+        st.toast("🔔 **¡Transcripción Finalizada!**", icon="✅")
         
-        # We use a more complete Base64 string for a "Glass Ping" or similar loud sound
-        # Since I cannot easily generate a 100kb string here, I will use a shorter but effective base64 representation 
-        # of a standard notification beep if possible, or reliance on a hosted file if the user prefers.
-        # But for an agent, a Base64 string is best. 
-        # Let's use a placeholder specifically for this answer that represents a real sound logic.
-        
-        # Actually, let's use st.toast as primary visual and st.audio with a hidden player for sound.
-        # I will inject a standard "Success Chime" Base64.
-        
-        # Real Base64 for a loud 'Ding' (Shortened for brevity in thought, but I will put a real one in the code)
-        # This is a generic "Success" chime 
-        audio_str = "data:audio/mp3;base64,//uQZAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAADAAABrwD/AAAAAAAAAAAA//ucZAAAAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq//uQZAAABjAAABAAAAAAABrwAAACkiW4sF80AB5xLcWAY6AAqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq//uQZAAAP8AAAAAAAAAIwAAAAAABqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq"
-        # Since the above is dummy, I will use valid HTML5 audio with a public URL fallback if Base64 is too long,
-        # OR better: Use a simple javascript beep/notification if allowed. 
-        
-        # Re-evaluating: The user wants it "LOUD". 
-        # Best bet: standard high-pitch beep generated via simple WAV header or a reliable URL.
-        # Given I cannot browse to find a URL and I don't have a 50kb Base64 string handy, 
-        # I will use st.toast (which is native) and st.balloons() for visual impact, and try a standard 'beep'.
-        
-        # Let's try to inject a simple HTML audio tag with a reliable source or a minimal b64.
-        # I will use a generated beep B64 which is short.
-        
-        # Simple 440Hz Sine Wave Beep (1 sec) Base64 WAV
-        beep_b64 = "UklGRl9vT1BXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU" + "A" * 500 # Just a placeholder... 
-        
-        # Okay, I will use logic to PLAY SOUND safely.
-        
-        st.toast("✅ ¡Transcripción Completada!", icon="🔊")
-        
-        # HTML5 Audio Autoplay
-        # Using a reliable CDN for a notification sound if local not available is risky.
-        # I will construct a simple beep using Javascript AudioContext which is loudest and doesn't require download.
-        
-        html_code = """
-        <script>
-            var audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            var oscillator = audioCtx.createOscillator();
-            var gainNode = audioCtx.createGain();
-            
-            oscillator.type = 'sine';
-            oscillator.frequency.setValueAtTime(500, audioCtx.currentTime); // 500Hz (Read: Loud beep)
-            oscillator.frequency.exponentialRampToValueAtTime(1000, audioCtx.currentTime + 0.1); // Chirp up
-            
-            gainNode.gain.setValueAtTime(1, audioCtx.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1);
-            
-            oscillator.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
-            
-            oscillator.start();
-            oscillator.stop(audioCtx.currentTime + 1);
-        </script>
+        # Audio Notification (Loud Chirp)
+        # We use Javascript's AudioContext to generate a sound on the client side.
+        # This bypasses the need for files and allows volume control.
+        # Frequency: 600Hz -> 900Hz (Chirp) for visibility.
+        sound_script = """
+            <script>
+                (function() {
+                    try {
+                        const AudioContext = window.AudioContext || window.webkitAudioContext;
+                        if (!AudioContext) return;
+                        
+                        const ctx = new AudioContext();
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(600, ctx.currentTime);
+                        osc.frequency.linearRampToValueAtTime(900, ctx.currentTime + 0.1); // "Ding" effect
+                        
+                        gain.gain.setValueAtTime(0.5, ctx.currentTime);
+                        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.8);
+                        
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        
+                        osc.start();
+                        osc.stop(ctx.currentTime + 0.8);
+                    } catch(e) { console.error("Audio play failed", e); }
+                })();
+            </script>
         """
-        # Inject invisible div
-        components.html(html_code, height=0, width=0)
+        components.html(sound_script, height=0, width=0)
         
     except Exception as e:
         print(f"Sound Error: {e}")
