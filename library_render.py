@@ -549,8 +549,9 @@ def render_library_v2(assistant):
     # Check for navigation via query params BEFORE rendering folders
     if "folder_id" in st.query_params:
         qp_folder_id = st.query_params["folder_id"]
-        # Find the target folder
-        target_folder = next((u for u in subfolders if str(u['id']) == qp_folder_id), None)
+        # Search in ALL course folders, not just current level
+        all_folders = get_units(current_course_id)  # Get all folders in course
+        target_folder = next((u for u in all_folders if str(u['id']) == qp_folder_id), None)
         if target_folder:
             st.session_state['lib_current_unit_id'] = target_folder['id']
             st.session_state['lib_current_unit_name'] = target_folder['name']
