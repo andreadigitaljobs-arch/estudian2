@@ -2672,26 +2672,49 @@ with st.sidebar:
         
         st.write("")  # Spacing before buttons
         
-        # Custom CSS for perfect button alignment
+        # Custom HTML buttons for perfect alignment
         st.markdown("""
         <style>
-        div[data-testid="column"] button {
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-            height: 2.5rem !important;
-            min-height: 2.5rem !important;
-            max-height: 2.5rem !important;
+        .api-key-buttons {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            justify-content: stretch;
+        }
+        .api-key-buttons button {
+            flex: 1;
+            height: 2.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-save {
+            background: #4B22DD;
+            color: white;
+        }
+        .btn-save:hover {
+            background: #3A1AAA;
+            transform: scale(1.02);
+        }
+        .btn-clear {
+            background: #E53935;
+            color: white;
+        }
+        .btn-clear:hover {
+            background: #C62828;
+            transform: scale(1.02);
         }
         </style>
         """, unsafe_allow_html=True)
         
+        # Use columns for Streamlit buttons with fixed alignment
         col_save, col_clear = st.columns([1, 1], gap="small")
         with col_save:
             if st.button("✅", use_container_width=True, type="primary", key="btn_save_api", help="Guardar API Key"):
                 if api_input and api_input.startswith("AIza"):
                     st.session_state['custom_api_key'] = api_input
-                    # Force re-init engines
                     st.cache_resource.clear()
                     st.success("✅ Key guardada!")
                     st.rerun()
@@ -2699,7 +2722,7 @@ with st.sidebar:
                     st.error("Key inválida")
         
         with col_clear:
-            if st.button("❌", use_container_width=True, key="btn_clear_api", help="Borrar API Key"):
+            if st.button("❌", use_container_width=True, type="primary", key="btn_clear_api", help="Borrar API Key"):
                 st.session_state['custom_api_key'] = None
                 st.cache_resource.clear()
                 st.info("Usando key del sistema")
