@@ -177,6 +177,7 @@ st.set_page_config(
 # =========================================================
 # V417: CLEAN PWA (NO VISUALS)
 # =========================================================
+def setup_pwa():
     """Injects only PWA Meta Tags. No visual overlays."""
     try:
         # PWA & ICON
