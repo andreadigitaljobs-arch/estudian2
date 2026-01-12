@@ -208,12 +208,26 @@ def render_library_v2(assistant):
             if tool == 'upload':
                 st.markdown("#### 📤 Subir Contenido")
                 
+                # Show current location
+                current_location = st.session_state.get('lib_current_unit_name', 'Raíz')
+                if current_unit_id:
+                    st.info(f"📍 Subirás archivos a: **{current_location}**")
+                else:
+                    st.warning("⚠️ Estás en la raíz. Los archivos se subirán a la primera carpeta disponible o se creará una carpeta 'General'.")
+                
                 # Tabs for different upload types
                 up_t1, up_t2, up_t3 = st.tabs(["📂 Archivos", "✍🏻 Nota Rápida", "📥 Importar Chat"])
                 
                 with up_t1:
                     upl_files = st.file_uploader("Arrastra tus archivos aquí (PDF, Word, TXT, MD, etc):", accept_multiple_files=True)
-                    if st.button("Subir a esta carpeta", type="primary"):
+                    
+                    # Dynamic button text
+                    if current_unit_id:
+                        btn_text = f"📤 Subir a '{current_location}'"
+                    else:
+                        btn_text = "📤 Subir (se creará carpeta si es necesario)"
+                    
+                    if st.button(btn_text, type="primary"):
                         target = current_unit_id
                         if not target:
                              # If at root, check if we need to enforce folder? 
