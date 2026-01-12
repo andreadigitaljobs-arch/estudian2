@@ -545,6 +545,20 @@ def render_library_v2(assistant):
     
     # A. Folders
     subfolders = get_units(current_course_id, parent_id=current_unit_id)
+    
+    # Check for navigation via query params BEFORE rendering folders
+    if "folder_id" in st.query_params:
+        qp_folder_id = st.query_params["folder_id"]
+        # Find the target folder
+        target_folder = next((u for u in subfolders if str(u['id']) == qp_folder_id), None)
+        if target_folder:
+            st.session_state['lib_current_unit_id'] = target_folder['id']
+            st.session_state['lib_current_unit_name'] = target_folder['name']
+            st.session_state['lib_breadcrumbs'].append(target_folder)
+            # Clear params and rerun
+            st.query_params.clear()
+            st.rerun()
+    
     if subfolders:
         st.markdown("##### 📁 Carpetas")
         
@@ -560,8 +574,6 @@ def render_library_v2(assistant):
                 unit_name = unit['name']
                 
                 # Use st.markdown with anchor tag for clickable functionality (avoids iframe issues and key error)
-                # Use st.markdown with anchor tag for clickable functionality (avoids iframe issues and key error)
-                # Use st.markdown with anchor tag for clickable functionality (avoids iframe issues and key error)
                 # CSS class .folder-hover-card handles the hover effects (defined at top of file)
                 html_content = f"""
                 <a href="?folder_id={unit_id}" target="_self" style="text-decoration: none; color: inherit; display: block;">
@@ -576,17 +588,6 @@ def render_library_v2(assistant):
                 </a>
                 """
                 st.markdown(html_content, unsafe_allow_html=True)
-                
-                # Check for navigation via query params
-                if "folder_id" in st.query_params:
-                    qp_folder_id = st.query_params["folder_id"]
-                    if qp_folder_id == str(unit_id):
-                        st.session_state['lib_current_unit_id'] = unit_id
-                        st.session_state['lib_current_unit_name'] = unit_name
-                        st.session_state['lib_breadcrumbs'].append(unit)
-                        # Clear params and rerun
-                        st.query_params.clear()
-                        st.rerun()
 
 
     if current_unit_id:
