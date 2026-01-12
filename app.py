@@ -3877,6 +3877,12 @@ with tab1:
                                 time.sleep(10)
                                 
                         status_text.success("¡Misión Cumplida! Todos los archivos han sido procesados. 🏁")
+                        # V350: BATCH COMPLETE NOTIFICATION
+                        play_sound('loud') # Only ring loud when everything is done
+                        
+                        time.sleep(2)
+                        st.rerun()
+                        
                 except BaseException as e:
                     st.error(f"💥 Error Fatal en la aplicación (Nivel Sistema): {e}")
                     import traceback
