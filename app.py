@@ -128,10 +128,13 @@ st.set_page_config(
 # =========================================================
 # V401: MOBILE NAVBAR & PWA FIX
 # =========================================================
+# =========================================================
+# V402: MOBILE NAVBAR (NUCLEAR OPTION)
+# =========================================================
 def setup_pwa():
-    """Injects CS to FORCE sidebar button visibility + PWA Tags."""
+    """Injects CSS to FORCE sidebar button visibility + PWA Tags."""
     try:
-        # STATIC ICON PATH (Must be enabled in config.toml)
+        # STATIC ICON PATH
         import time
         ts = int(time.time())
         icon_url = f"app/static/pwa_icon.png?v={ts}"
@@ -177,65 +180,64 @@ def setup_pwa():
                     }}
                     head.appendChild(el);
                 }}
-
-                // 1. Manifest
                 addTag('link', {{'rel': 'manifest', 'href': '{manifest_href}'}});
-
-                // 2. Apple Touch Icon
                 addTag('link', {{'rel': 'apple-touch-icon', 'href': '{icon_url}'}});
-                addTag('link', {{'rel': 'apple-touch-icon', 'sizes': '192x192', 'href': '{icon_url}'}});
-                addTag('link', {{'rel': 'apple-touch-icon', 'sizes': '192x192', 'href': '{icon_url}'}});
-
-                // 3. Apple Mobile Tags
                 addTag('meta', {{'name': 'apple-mobile-web-app-capable', 'content': 'yes'}});
                 addTag('meta', {{'name': 'apple-mobile-web-app-title', 'content': 'E-Education'}});
-                addTag('meta', {{'name': 'apple-mobile-web-app-status-bar-style', 'content': 'white-translucent'}});
-                
-                // 4. Viewport
                 addTag('meta', {{'name': 'viewport', 'content': 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover'}});
             }})();
         </script>
         """
         
-        # Inject JS to modify Parent Head via Iframe
+        # Inject JS
         components.html(js_pwa, height=0, width=0)
         
-        # --- CRITICAL CSS FOR SIDEBAR BUTTON ---
+        # --- NUCLEAR CSS FOR SIDEBAR BUTTON ---
         mobile_css = """
         <style>
-            /* V401: GLOBAL IMAGE FIXES (No cropping) */
-            img {
-                max-width: 100%;
-                height: auto;
-                object-fit: contain !important; 
+            /* 1. FORCE TOGGLE VISIBILITY (Fixed Position) */
+            [data-testid="stSidebarCollapsedControl"] {
+                position: fixed !important;
+                display: block !important;
+                visibility: visible !important;
+                z-index: 9999999 !important;
+                top: 10px !important;
+                left: 10px !important;
+                width: 50px !important;
+                height: 50px !important;
+                background-color: white !important;
+                border-radius: 50% !important;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+                border: 2px solid #4B22DD !important;
+                text-align: center !important;
+                line-height: 50px !important;
             }
             
-            /* Specific fix for folder icons */
-            .folder-hover-card svg, .folder-hover-card img {
-                max-width: 80px; 
-                max-height: 80px;
+            /* 2. Style the Icon inside */
+            [data-testid="stSidebarCollapsedControl"] svg {
+                fill: #4B22DD !important;
+                stroke: #4B22DD !important;
+                width: 30px !important;
+                height: 30px !important;
+                margin-top: 10px !important;
             }
 
-            /* MOBILE OPTIMIZATIONS */
-            @media (max-width: 640px) {
-                .block-container {
-                    padding-left: 0.5rem !important;
-                    padding-right: 0.5rem !important;
-                    padding-top: 3rem !important;
-                }
-                div[data-testid="stToast"] {
-                    width: 90vw !important;
-                    left: 50% !important;
-                    transform: translateX(-50%) !important;
-                }
-                h1 { font-size: 1.8rem !important; }
-                h2 { font-size: 1.5rem !important; }
-                h3 { font-size: 1.25rem !important; }
-                p, .stMarkdown { font-size: 1rem !important; }
-            }
+            /* 3. Hide Footer/Header Clutter */
+            footer {display: none !important;}
+            #MainMenu {display: none !important;}
+            .stApp > header {display: none !important;}
+            
+            /* 4. Global Image Fit */
+            img { object-fit: contain !important; }
         </style>
         """
         st.markdown(mobile_css, unsafe_allow_html=True)
+        
+        # VISIBLE DEBUG MARKER (To verify deployment)
+        st.markdown(
+            '<div style="position:fixed; top:0; right:0; background:red; color:white; padding:5px; z-index:999999;">v402</div>',
+            unsafe_allow_html=True
+        )
         
     except Exception as e:
         print(f"PWA Setup Error: {e}")
