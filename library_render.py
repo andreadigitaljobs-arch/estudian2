@@ -139,50 +139,53 @@ def render_library_v2(assistant):
         else:
             st.session_state['lib_active_tool'] = tool_name
 
-    # Toolbar Layout
-    # v113: Added Cleaner Tool -> 7 cols
-    t_c1, t_c2, t_c3, t_c4, t_c5, t_c6, t_c7 = st.columns([0.15, 0.14, 0.14, 0.14, 0.14, 0.14, 0.15])
+    # Toolbar Layout - REFACTORED FOR MOBILE (2 Rows)
+    # Row 1: Primary Actions (Navigation & Upload)
+    r1_col1, r1_col2, r1_col3 = st.columns([0.33, 0.33, 0.33])
     
     # Define button styles based on active state
     def get_type(tool_name):
         return "primary" if st.session_state['lib_active_tool'] == tool_name else "secondary"
 
-    with t_c1:
+    with r1_col1:
         if st.button("📂 Raíz", use_container_width=True, help="Ir a la carpeta principal"):
             st.session_state['lib_current_unit_id'] = None
             st.session_state['lib_current_unit_name'] = None
             st.session_state['lib_breadcrumbs'] = []
-            st.session_state['lib_active_tool'] = None # Close tools
+            st.session_state['lib_active_tool'] = None 
             st.rerun()
 
-    with t_c2:
-        if st.button("📤 Subir", type=get_type('upload'), use_container_width=True, help="Subir archivos o crear notas"):
+    with r1_col2:
+        if st.button("📤 Subir", type=get_type('upload'), use_container_width=True, help="Subir archivos"):
             set_tool('upload')
             st.rerun()
-
-    with t_c3:
-        if st.button("✨ Nueva", type=get_type('create'), use_container_width=True, help="Crear nueva carpeta"):
-            set_tool('create')
-            st.rerun()
-
-    with t_c4:
-        if st.button("⚙️ Gestión", type=get_type('manage'), use_container_width=True, help="Renombrar o borrar carpetas"):
-            set_tool('manage')
-            st.rerun()
-
-    with t_c5:
-        if st.button("🔍 Buscar", type=get_type('search'), use_container_width=True, help="Buscar en toda la biblioteca"):
+            
+    with r1_col3:
+        if st.button("🔍 Buscar", type=get_type('search'), use_container_width=True, help="Buscar"):
             set_tool('search')
             st.rerun()
 
-    with t_c6:
-        # CLEANER BUTTON
-        if st.button("🧹 Limpieza", type=get_type('cleaner'), use_container_width=True, help="Encontrar y eliminar duplicados"):
-            set_tool('cleaner')
+    # Row 2: Management Tools (Smaller/Secondary)
+    # Using smaller columns or expander? No, just a second row.
+    r2_col1, r2_col2, r2_col3, r2_col4 = st.columns([0.25, 0.25, 0.25, 0.25])
+    
+    with r2_col1:
+        if st.button("✨ Nueva", type=get_type('create'), use_container_width=True, help="Crear carpeta"):
+            set_tool('create')
             st.rerun()
 
-    with t_c7:
-         if st.button("📦 Backup", type=get_type('backup'), use_container_width=True, help="Descargar todo"):
+    with r2_col2:
+        if st.button("⚙️ Gestión", type=get_type('manage'), use_container_width=True, help="Gestionar"):
+            set_tool('manage')
+            st.rerun()
+
+    with r2_col3:
+         if st.button("🧹 Limpieza", type=get_type('cleaner'), use_container_width=True, help="Limpiar"):
+            set_tool('cleaner')
+            st.rerun()
+            
+    with r2_col4:
+         if st.button("📦 Backup", type=get_type('backup'), use_container_width=True, help="Exportar"):
             set_tool('backup')
             st.rerun()
 
@@ -341,7 +344,8 @@ def render_library_v2(assistant):
                                 # Safe content handling
                                 content = r.get('content') or r.get('content_text') or ""
                                 preview = content[:500] if content else "(Sin contenido)"
-                                st.markdown(preview + ("..." if len(content) > 500 else ""))
+                                # Allow HTML in preview to render the spans correctly
+                                st.markdown(preview + ("..." if len(content) > 500 else ""), unsafe_allow_html=True)
                                 
                                 # Navigate to folder button
                                 if st.button("📂 Ir a la carpeta", key=f"jump_{r['id']}", type="primary"):
