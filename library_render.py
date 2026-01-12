@@ -377,14 +377,46 @@ def render_library_v2(assistant):
                 if not subs:
                     st.info("No hay carpetas aquí para gestionar.")
                 else:
-                    st.write("Selecciona carpetas para borrar o renombrar (Ver interfaz clásica para renombrar individualmente).")
-                    opts = {u['name']: u['id'] for u in subs}
-                    sel_dels = st.multiselect("Seleccionar carpetas:", list(opts.keys()))
-                    if sel_dels and st.button(f"🗑️ Borrar {len(sel_dels)} carpetas"):
-                         for n in sel_dels:
-                             delete_unit(opts[n])
-                         st.success("Eliminadas.")
-                         st.rerun()
+                    # Tabs for different actions
+                    tab_rename, tab_delete = st.tabs(["✏️ Renombrar", "🗑️ Borrar"])
+                    
+                    with tab_rename:
+                        st.caption("Selecciona una carpeta para renombrar:")
+                        folder_names = [u['name'] for u in subs]
+                        selected_folder = st.selectbox("Carpeta:", folder_names, key="rename_folder_select")
+                        
+                        if selected_folder:
+                            # Find the selected folder's ID
+                            selected_unit = next((u for u in subs if u['name'] == selected_folder), None)
+                            
+                            new_name = st.text_input("Nuevo nombre:", value=selected_folder, key="rename_input")
+                            
+                            col1, col2 = st.columns(2)
+                            with col1:
+                                if st.button("✅ Renombrar", type="primary", use_container_width=True):
+                                    if new_name and new_name != selected_folder:
+                                        rename_unit(selected_unit['id'], new_name)
+                                        st.success(f"Carpeta renombrada: '{selected_folder}' → '{new_name}'")
+                                        time.sleep(1)
+                                        st.rerun()
+                                    elif new_name == selected_folder:
+                                        st.warning("El nombre es el mismo")
+                                    else:
+                                        st.error("Ingresa un nombre válido")
+                    
+                    with tab_delete:
+                        st.caption("Selecciona carpetas para eliminar:")
+                        opts = {u['name']: u['id'] for u in subs}
+                        sel_dels = st.multiselect("Carpetas a borrar:", list(opts.keys()), key="delete_folders_select")
+                        
+                        if sel_dels:
+                            st.warning(f"⚠️ Se eliminarán **{len(sel_dels)}** carpetas y todo su contenido")
+                            if st.button(f"🗑️ Borrar {len(sel_dels)} carpetas", type="primary"):
+                                for n in sel_dels:
+                                    delete_unit(opts[n])
+                                st.success("Carpetas eliminadas.")
+                                time.sleep(1)
+                                st.rerun()
 
             # --- BACKUP TOOL ---
             elif tool == 'backup':
