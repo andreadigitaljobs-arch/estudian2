@@ -131,6 +131,9 @@ st.set_page_config(
 # =========================================================
 # V402: MOBILE NAVBAR (NUCLEAR OPTION)
 # =========================================================
+# =========================================================
+# V403: MOBILE NAVBAR (HEADER RESTORED)
+# =========================================================
 def setup_pwa():
     """Injects CSS to FORCE sidebar button visibility + PWA Tags."""
     try:
@@ -192,7 +195,7 @@ def setup_pwa():
         # Inject JS
         components.html(js_pwa, height=0, width=0)
         
-        # --- NUCLEAR CSS FOR SIDEBAR BUTTON ---
+        # --- CSS FIX: RESTORE HEADER BUT HIDE CLUTTER ---
         mobile_css = """
         <style>
             /* 1. FORCE TOGGLE VISIBILITY (Fixed Position) */
@@ -222,10 +225,10 @@ def setup_pwa():
                 margin-top: 10px !important;
             }
 
-            /* 3. Hide Footer/Header Clutter */
+            /* 3. Hide Footer ONLY (Keep Header visible for the toggle) */
             footer {display: none !important;}
             #MainMenu {display: none !important;}
-            .stApp > header {display: none !important;}
+            /* .stApp > header {display: none !important;}  <-- THIS WAS THE CULPRIT */
             
             /* 4. Global Image Fit */
             img { object-fit: contain !important; }
@@ -233,9 +236,9 @@ def setup_pwa():
         """
         st.markdown(mobile_css, unsafe_allow_html=True)
         
-        # VISIBLE DEBUG MARKER (To verify deployment)
+        # VISIBLE DEBUG MARKER (GREEN = HEADERS BACK)
         st.markdown(
-            '<div style="position:fixed; top:0; right:0; background:red; color:white; padding:5px; z-index:999999;">v402</div>',
+            '<div style="position:fixed; top:0; right:0; background:green; color:white; padding:5px; z-index:999999;">v403</div>',
             unsafe_allow_html=True
         )
         
