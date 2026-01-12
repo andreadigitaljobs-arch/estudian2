@@ -152,8 +152,11 @@ st.set_page_config(
 # =========================================================
 # V409: MOBILE NAVBAR (HYBRID - ALIVE & CLICKABLE)
 # =========================================================
+# =========================================================
+# V410: MOBILE NAVBAR (PRODUCTION - CLEAN & FUNCTIONAL)
+# =========================================================
 def setup_pwa():
-    """Injects JS Button + CSS to Ensure Native Button Exists."""
+    """Injects Custom Sidebar Button (Production)."""
     try:
         # PWA & ICON
         import time
@@ -189,77 +192,68 @@ def setup_pwa():
         js_pwa = f"""
         <script>
             (function() {{
-                // Use TOP window to ensure we are at root
                 var doc = window.top.document;
                 
-                // --- CUSTOM BUTTON V409 ---
+                // --- CUSTOM BUTTON CLEANUP & CREATION ---
                 var btnId = 'custom-mobile-menu-btn';
                 var oldBtn = doc.getElementById(btnId);
                 if (oldBtn) oldBtn.remove();
 
-                // Use BUTTON tag for native native behavior
                 var btn = doc.createElement('button');
                 btn.id = btnId;
+                // SVG Icon
                 btn.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 18L15 12L9 6" stroke="#4B22DD" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
                 
-                // Styles
+                // Styles (Premium Feel)
                 Object.assign(btn.style, {{
                     position: 'fixed', top: '15px', left: '15px', 
                     width: '46px', height: '46px', 
                     borderRadius: '50%', 
                     backgroundColor: 'white',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
-                    border: '2px solid #4B22DD', 
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                    border: '1.5px solid #4B22DD', 
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     zIndex: '2147483647',
                     cursor: 'pointer',
                     userSelect: 'none',
                     webkitTapHighlightColor: 'transparent',
-                    transition: 'all 0.1s cubic-bezier(0.4, 0, 0.2, 1)',
-                    padding: '0',
-                    margin: '0',
-                    appearance: 'none',
-                    outline: 'none'
+                    transition: 'transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94), background-color 0.2s',
+                    padding: '0', margin: '0',
+                    appearance: 'none', outline: 'none'
                 }});
 
-                // --- FEEDBACK & LOGIC ---
+                // --- INTERACTION LOGIC ---
                 function activate(e) {{
                     e.preventDefault(); 
                     e.stopPropagation();
                     
-                    // 1. VISUAL & HAPTIC FEEDBACK
-                    btn.style.backgroundColor = '#FFD700'; // Flash YELLOW
-                    btn.style.transform = 'scale(0.85)';
-                    if (navigator.vibrate) navigator.vibrate(50); // Bzzzt!
+                    // 1. Subtle Feedback (No more yellow flash)
+                    btn.style.transform = 'scale(0.92)';
+                    if (navigator.vibrate) navigator.vibrate(10); // Tiny click feel
                     
                     setTimeout(() => {{
-                        btn.style.backgroundColor = 'white';
                         btn.style.transform = 'scale(1)';
                     }}, 150);
 
-                    // 2. TRIGGER LOGIC
-                    // A) Try Keyboard 'C'
+                    // 2. TRIGGER ACTIONS
+                    // A) Keyboard Shortcut
                     doc.dispatchEvent(new KeyboardEvent('keydown', {{key: 'c', keyCode: 67, which: 67, code: 'KeyC', bubbles: true}}));
                     
-                    // B) Try Click Native Elements (Forced visible by CSS below)
+                    // B) Native Click Fallback
                     var selectors = [
                         '[data-testid="stSidebarCollapsedControl"]', 
                         '[data-testid="stSidebarOpen"]',
                         'button[kind="header"]'
                     ];
-                    var clicked = false;
                     for(var s of selectors) {{
                         var el = doc.querySelector(s);
-                        if(el) {{ 
-                            // Create MouseEvent for React
-                            var ev = new MouseEvent('click', {{bubbles: true, cancelable: true, view: window.top}});
-                            el.dispatchEvent(ev);
-                            clicked = true; 
+                        if(el && el.click) {{ 
+                             // Try both click() and dispatch
+                             el.click();
+                             var mev = new MouseEvent('click', {{bubbles: true, cancelable: true, view: window.top}});
+                             el.dispatchEvent(mev);
                         }}
                     }}
-                    
-                    // Optional: Debug Alert if fails
-                    // if(!clicked) alert('Error: Native button not found!');
                 }}
 
                 btn.addEventListener('touchstart', activate, {{passive: false}});
@@ -274,6 +268,7 @@ def setup_pwa():
                         var isOpen = sidebar.getAttribute('aria-expanded') === 'true';
                         var svg = btn.querySelector('svg');
                         if(svg) svg.style.transform = isOpen ? 'rotate(180deg)' : 'rotate(0deg)';
+                        if(svg) svg.style.transition = 'transform 0.3s ease';
                     }}
                 }});
                 observer.observe(doc.body, {{ childList: true, subtree: true, attributes: true, attributeFilter: ['aria-expanded'] }});
@@ -288,27 +283,29 @@ def setup_pwa():
                 addTag('link', {{'rel': 'manifest', 'href': '{manifest_href}'}});
                 addTag('link', {{'rel': 'apple-touch-icon', 'href': '{icon_url}'}});
                 addTag('meta', {{'name': 'viewport', 'content': 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover'}});
-
             }})();
         </script>
         """
         components.html(js_pwa, height=0, width=0)
         
-        # --- CRITICAL CSS: FORCE NATIVE BUTTON EXISTENCE ---
-        # We must ensure the native button is technically "visible" in DOM so JS can click it
+        # --- CSS CLEANUP ---
         mobile_css = """
         <style>
-            /* 1. Header is invisible but exists */
-            .stApp > header { background: transparent !important; opacity: 0 !important; pointer-events: none !important; }
+            .stApp > header { background-color: transparent !important; opacity: 0 !important; pointer-events: none !important; }
             
-            /* 2. FORCE Sidebar Buttons to be in DOM (Opacity 0 used normally, we ensure block display) */
+            /* Hide Native Buttons Visually but keep them available for JS */
             [data-testid="stSidebarCollapsedControl"], [data-testid="stSidebarOpen"] {
                 display: block !important;
                 visibility: visible !important;
-                opacity: 0 !important; /* Hide visually, but keep clickable by JS */
+                opacity: 0 !important;
+                transform: scale(0); /* Shrink to nothing */
                 position: fixed !important;
-                top: 0 !important; right: 0 !important;
-                pointer-events: auto !important;
+                top: -100px !important; /* Move offscreen */
+                pointer-events: none !important; /* Prevent accidental clicks */
+            }
+            /* Hide children too to prevent ghosting */
+            [data-testid="stSidebarCollapsedControl"] *, [data-testid="stSidebarOpen"] * {
+                opacity: 0 !important;
             }
 
             footer, #MainMenu { display: none !important; }
@@ -316,12 +313,6 @@ def setup_pwa():
         </style>
         """
         st.markdown(mobile_css, unsafe_allow_html=True)
-        
-        # VISIBLE DEBUG MARKER (GREEN = V409 HYBRID)
-        st.markdown(
-            '<div style="position:fixed; top:0; right:0; background:green; color:white; padding:5px; z-index:999999;">v409</div>',
-            unsafe_allow_html=True
-        )
         
     except Exception as e:
         print(f"PWA Setup Error: {e}")
