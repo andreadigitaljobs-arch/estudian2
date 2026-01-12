@@ -2648,14 +2648,19 @@ with st.sidebar:
 
     st.markdown('<div class="aesthetic-sep"></div>', unsafe_allow_html=True)
 
-    # --- 2.5 API KEY PERSONALIZADA (RESTORED) ---
+    # --- 2.5 API KEY PERSONALIZADA (REDESIGNED) ---
     st.markdown("#### 🔑 API Key Personalizada")
     st.caption("Usa tu propia API de Gemini para evitar límites compartidos.")
+    
+    # Add spacing
+    st.write("")
     
     # Check if user has custom key in session
     custom_key = st.session_state.get('custom_api_key', '')
     
-    with st.expander("⚙️ Configurar API Key"):
+    with st.expander("⚙️ Configurar API Key", expanded=False):
+        st.write("")  # Top padding
+        
         api_input = st.text_input(
             "Tu API Key de Google:", 
             value=custom_key,
@@ -2665,9 +2670,11 @@ with st.sidebar:
             help="Obtén tu key gratis en: https://aistudio.google.com/app/apikey"
         )
         
-        col_save, col_clear = st.columns(2)
+        st.write("")  # Spacing before buttons
+        
+        col_save, col_clear = st.columns(2, gap="medium")
         with col_save:
-            if st.button("💾 Guardar", use_container_width=True):
+            if st.button("💾 Guardar", use_container_width=True, type="primary"):
                 if api_input and api_input.startswith("AIza"):
                     st.session_state['custom_api_key'] = api_input
                     # Force re-init engines
@@ -2683,13 +2690,17 @@ with st.sidebar:
                 st.cache_resource.clear()
                 st.info("Usando key del sistema")
                 st.rerun()
+        
+        st.write("")  # Bottom padding
     
-    # Show status
+    # Show status with better spacing
+    st.write("")
     if st.session_state.get('custom_api_key'):
         st.success("🔐 Usando tu API Key personal", icon="✅")
     else:
         st.info("🌐 Usando API Key compartida del sistema")
 
+    st.write("")  # Extra spacing after section
     st.markdown('<div class="aesthetic-sep"></div>', unsafe_allow_html=True)
 
     # --- 3. SPOTLIGHT ACADÉMICO ---
