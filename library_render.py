@@ -553,9 +553,14 @@ def render_library_v2(assistant):
         all_folders = get_units(current_course_id)  # Get all folders in course
         target_folder = next((u for u in all_folders if str(u['id']) == qp_folder_id), None)
         if target_folder:
-            st.session_state['lib_current_unit_id'] = target_folder['id']
-            st.session_state['lib_current_unit_name'] = target_folder['name']
-            st.session_state['lib_breadcrumbs'].append(target_folder)
+            # Check if folder is already in breadcrumbs to avoid duplicates
+            folder_already_in_breadcrumbs = any(b['id'] == target_folder['id'] for b in st.session_state['lib_breadcrumbs'])
+            
+            if not folder_already_in_breadcrumbs:
+                st.session_state['lib_current_unit_id'] = target_folder['id']
+                st.session_state['lib_current_unit_name'] = target_folder['name']
+                st.session_state['lib_breadcrumbs'].append(target_folder)
+            
             # Clear params and rerun
             st.query_params.clear()
             st.rerun()
