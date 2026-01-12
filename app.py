@@ -134,6 +134,9 @@ st.set_page_config(
 # =========================================================
 # V403: MOBILE NAVBAR (HEADER RESTORED)
 # =========================================================
+# =========================================================
+# V404: MOBILE NAVBAR (THE EXTRACTOR)
+# =========================================================
 def setup_pwa():
     """Injects CSS to FORCE sidebar button visibility + PWA Tags."""
     try:
@@ -142,7 +145,6 @@ def setup_pwa():
         ts = int(time.time())
         icon_url = f"app/static/pwa_icon.png?v={ts}"
         
-        # PWA Manifest (Data URI)
         manifest_json = f"""
         {{
             "name": "E-Education",
@@ -169,18 +171,14 @@ def setup_pwa():
         b64_manifest = base64.b64encode(manifest_json.encode()).decode()
         manifest_href = f"data:application/manifest+json;base64,{b64_manifest}"
 
-        # JAVASCRIPT INJECTION TO PARENT HEAD
         js_pwa = f"""
         <script>
             (function() {{
                 var head = window.parent.document.getElementsByTagName('head')[0];
                 if (!head) return;
-
                 function addTag(tagType, attributes) {{
                     var el = window.parent.document.createElement(tagType);
-                    for (var key in attributes) {{
-                        el.setAttribute(key, attributes[key]);
-                    }}
+                    for (var key in attributes) {{ el.setAttribute(key, attributes[key]); }}
                     head.appendChild(el);
                 }}
                 addTag('link', {{'rel': 'manifest', 'href': '{manifest_href}'}});
@@ -191,54 +189,64 @@ def setup_pwa():
             }})();
         </script>
         """
-        
-        # Inject JS
         components.html(js_pwa, height=0, width=0)
         
-        # --- CSS FIX: RESTORE HEADER BUT HIDE CLUTTER ---
+        # --- V404 CSS: THE EXTRACTOR ---
         mobile_css = """
         <style>
-            /* 1. FORCE TOGGLE VISIBILITY (Fixed Position) */
-            [data-testid="stSidebarCollapsedControl"] {
-                position: fixed !important;
-                display: block !important;
-                visibility: visible !important;
-                z-index: 9999999 !important;
-                top: 10px !important;
-                left: 10px !important;
-                width: 50px !important;
-                height: 50px !important;
-                background-color: white !important;
-                border-radius: 50% !important;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
-                border: 2px solid #4B22DD !important;
-                text-align: center !important;
-                line-height: 50px !important;
-            }
-            
-            /* 2. Style the Icon inside */
-            [data-testid="stSidebarCollapsedControl"] svg {
-                fill: #4B22DD !important;
-                stroke: #4B22DD !important;
-                width: 30px !important;
-                height: 30px !important;
-                margin-top: 10px !important;
+            /* 1. MAKE HEADER TRANSPARENT & CLICK-THROUGH */
+            /* This "removes" the visual bar but keeps the DOM element so functionality works */
+            .stApp > header {
+                background-color: transparent !important;
+                pointer-events: none !important; /* Let clicks pass through */
+                display: block !important; /* Ensure it exists */
+                height: 0px !important; /* Minimal height to avoid spacing issues */
             }
 
-            /* 3. Hide Footer ONLY (Keep Header visible for the toggle) */
-            footer {display: none !important;}
-            #MainMenu {display: none !important;}
-            /* .stApp > header {display: none !important;}  <-- THIS WAS THE CULPRIT */
+            /* 2. THE BUTTON (EXTRACTED) */
+            /* We force it to be interactive and visible, sitting on top of everything */
+            [data-testid="stSidebarCollapsedControl"] {
+                display: block !important;
+                position: fixed !important; /* Lock to screen */
+                top: 15px !important;
+                left: 15px !important;
+                z-index: 99999999 !important; /* Max z-index */
+                pointer-events: auto !important; /* Re-enable clicking */
+                
+                /* Visual Styling */
+                width: 44px !important;
+                height: 44px !important;
+                background-color: #ffffff !important;
+                border: 2px solid #4B22DD !important;
+                border-radius: 50% !important;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.2) !important;
+                opacity: 1 !important;
+                visibility: visible !important;
+                
+                /* Center Icon */
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+            }
             
-            /* 4. Global Image Fit */
+            /* 3. ICON STYLE */
+            [data-testid="stSidebarCollapsedControl"] svg {
+                width: 24px !important;
+                height: 24px !important;
+                fill: #4B22DD !important;
+                stroke: #4B22DD !important;
+            }
+
+            /* 4. CLEANUP */
+            footer, #MainMenu { display: none !important; }
             img { object-fit: contain !important; }
         </style>
         """
         st.markdown(mobile_css, unsafe_allow_html=True)
         
-        # VISIBLE DEBUG MARKER (GREEN = HEADERS BACK)
+        # VISIBLE DEBUG MARKER (BLUE = V404 EXTRACTOR)
         st.markdown(
-            '<div style="position:fixed; top:0; right:0; background:green; color:white; padding:5px; z-index:999999;">v403</div>',
+            '<div style="position:fixed; top:0; right:0; background:blue; color:white; padding:5px; z-index:999999;">v404</div>',
             unsafe_allow_html=True
         )
         
