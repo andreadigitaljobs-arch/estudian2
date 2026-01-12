@@ -555,8 +555,9 @@ def render_library_v2(assistant):
         qp_folder_id = st.query_params["folder_id"]
         st.write(f"DEBUG - Navigating to folder_id: {qp_folder_id}")
         
-        # Search in ALL course folders, not just current level
-        all_folders = get_units(current_course_id)  # Get all folders in course
+        # Search in ALL course folders using fetch_all=True
+        all_folders = get_units(current_course_id, fetch_all=True)  # Get ALL folders in course
+        st.write(f"DEBUG - Total folders found: {len(all_folders)}")
         target_folder = next((u for u in all_folders if str(u['id']) == qp_folder_id), None)
         
         if target_folder:
