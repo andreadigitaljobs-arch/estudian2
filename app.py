@@ -170,8 +170,11 @@ st.set_page_config(
 # =========================================================
 # V416: MOBILE NAVBAR (ARIA-LABEL HUNTER)
 # =========================================================
+# =========================================================
+# V417: CLEAN PWA (NO VISUALS)
+# =========================================================
 def setup_pwa():
-    """Injects Button & Hunts for Native Toggle via Aria-Labels."""
+    """Injects only PWA Meta Tags. No visual overlays."""
     try:
         # PWA & ICON
         import time
@@ -210,73 +213,16 @@ def setup_pwa():
                 var doc = window.parent.document;
                 if (!doc) doc = window.top.document;
                 
-                // --- CUSTOM BUTTON ---
+                // --- CLEANUP: REMOVE ANY LEFTOVER OVERLAYS ---
                 var btnId = 'custom-mobile-menu-btn';
                 var oldBtn = doc.getElementById(btnId);
                 if (oldBtn) oldBtn.remove();
-
-                var btn = doc.createElement('button');
-                btn.id = btnId;
-                btn.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 6H20M4 12H20M4 18H20" stroke="#4B22DD" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
                 
-                Object.assign(btn.style, {{
-                    position: 'fixed', top: '15px', left: '15px', 
-                    width: '46px', height: '46px', 
-                    borderRadius: '12px', 
-                    backgroundColor: 'white',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                    border: '1.5px solid #4B22DD', 
-                    zIndex: '999999', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
-                }});
-                
-                // CLICK HANDLER: HUNTER MODE
-                btn.onclick = function(e) {{
-                    e.preventDefault(); e.stopPropagation();
-                    
-                    // Strategy 1: Find by Aria Label (Most Robust)
-                    var targets = Array.from(doc.querySelectorAll('button'));
-                    var sidebarBtn = targets.find(b => {{
-                        var label = (b.getAttribute('aria-label') || '').toLowerCase();
-                        return label.includes('sidebar') || label.includes('menu');
-                    }});
+                var debugId = 'v415-debug';
+                var oldDebug = doc.getElementById(debugId);
+                if (oldDebug) oldDebug.remove();
 
-                    if (sidebarBtn) {{
-                        sidebarBtn.click();
-                        btn.style.transform = "scale(0.9)";
-                        setTimeout(() => btn.style.transform = "scale(1)", 100);
-                    }} else {{
-                        // Strategy 2: Keyboard Fallback (Aggressive)
-                        ['keydown', 'keypress', 'keyup'].forEach(eventType => {{
-                            doc.dispatchEvent(new KeyboardEvent(eventType, {{key: 'c', keyCode: 67, code: 'KeyC', bubbles: true, cancelable: true, view: window.parent}}));
-                        }});
-                    }}
-                }};
-                doc.body.appendChild(btn);
-
-                // --- DEEP AUDIT V416 ---
-                setTimeout(function() {{
-                   var debug = doc.getElementById('v415-debug') || doc.createElement('div');
-                   debug.id = 'v415-debug';
-                   
-                   // Audit Aria Labels
-                   var allButtons = Array.from(doc.querySelectorAll('button'));
-                   var interesting = allButtons.map(b => {{
-                       var label = b.getAttribute('aria-label') || 'no-label';
-                       var testid = b.getAttribute('data-testid') || 'no-testid';
-                       return `<div style="margin-bottom:4px;border-bottom:1px solid #444;">Label: <strong>${{label}}</strong><br>ID: ${{testid}}</div>`;
-                   }}).join('');
-                   
-                   debug.innerHTML = '<strong>V416 Deep Audit</strong><br>Total Buttons: ' + allButtons.length + '<br><div style="max-height:150px;overflow:auto;margin-top:5px;font-size:10px;">' + interesting + '</div>';
-                   
-                   Object.assign(debug.style, {{
-                       position: 'fixed', bottom: '60px', right: '10px', width: '220px',
-                       background: 'rgba(0,0,0,0.9)', color: '#00ffcc',
-                       fontSize: '11px', padding: '10px', zIndex: '999999999',
-                       borderRadius: '8px', border: '1px solid #00ffcc', fontFamily: 'monospace'
-                   }});
-                   if(!debug.parentNode) doc.body.appendChild(debug);
-                }}, 3500);
-
+                // PWA Tags
                 var head = doc.head;
                 function addTag(tagType, attributes) {{
                     var el = doc.createElement(tagType);
@@ -294,14 +240,18 @@ def setup_pwa():
         """
         components.html(js_pwa, height=0, width=0)
         
-        # --- CSS: ENSURE HEADER EXISTS FOR SCRIPT TO FIND IT ---
+        # --- CSS: RESTORE DEFAULT HEADER VISIBILITY ---
         mobile_css = """
         <style>
-            .stApp > header { background-color: transparent !important; opacity: 0.01 !important; }
+            /* Restore header so they can use the app normally */
+            /* .stApp > header { opacity: 1 !important; visibility: visible !important; } */
             footer, #MainMenu { display: none !important; }
         </style>
         """
         st.markdown(mobile_css, unsafe_allow_html=True)
+        
+    except Exception as e:
+        print(f"PWA Setup Error: {e}")
         
     except Exception as e:
         print(f"PWA Setup Error: {e}")
