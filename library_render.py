@@ -85,7 +85,8 @@ def clean_markdown_v3(text):
     text = re.sub(r'\n{3,}', '\n\n', text)
     return text.strip()
 
-def render_library_v2(assistant):
+def render_library_v3(assistant):
+    # st.toast("DEBUG: LOADED V3") # Confirm load
     """
     Renders the dedicated "Digital Library" (Drive-style) tab.
     Refactored V270: Minimalist Toolbar UI
@@ -129,7 +130,7 @@ def render_library_v2(assistant):
         # st.toast("Modo de subida activado")
 
     # ==========================================
-    # 1. TOOLBAR (Minimalist Top Menu)
+    # 1. TOOLBAR (Minimalist Icon Strip)
     # ==========================================
     
     # Helper to set tool
@@ -139,62 +140,61 @@ def render_library_v2(assistant):
         else:
             st.session_state['lib_active_tool'] = tool_name
 
-    # Toolbar Layout - REFACTORED FOR MOBILE (2 Rows)
-    # Row 1: Primary Actions (Navigation & Upload)
-    r1_col1, r1_col2, r1_col3 = st.columns([0.33, 0.33, 0.33])
-    
-    # Define button styles based on active state
+    # Define button styles (Highlight active tool)
     def get_type(tool_name):
         return "primary" if st.session_state['lib_active_tool'] == tool_name else "secondary"
 
-    with r1_col1:
-        if st.button("📂 Raíz", use_container_width=True, help="Ir a la carpeta principal"):
+    # Layout: Compact Row of Icons
+    # [Raíz] | [Subir] [Buscar] [Nueva] [Gestión] [Limpieza] [Backup]
+    # Small columns for icons to keep them square-ish
+    
+    # CSS to make these specific buttons rounder/smaller could be added here or globally
+    # For now, using standard buttons with emojis + help text is the cleanest "native" way to reduce width.
+    
+    grid = st.columns([0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.08, 0.44])
+    
+    with grid[0]:
+        if st.button("📂", help="Ir a Raíz", use_container_width=True):
             st.session_state['lib_current_unit_id'] = None
             st.session_state['lib_current_unit_name'] = None
             st.session_state['lib_breadcrumbs'] = []
             st.session_state['lib_active_tool'] = None 
             st.rerun()
 
-    with r1_col2:
-        if st.button("📤 Subir", type=get_type('upload'), use_container_width=True, help="Subir archivos"):
+    with grid[1]:
+        if st.button("📤", type=get_type('upload'), help="Subir Archivos", use_container_width=True):
             set_tool('upload')
             st.rerun()
             
-    with r1_col3:
-        if st.button("🔍 Buscar", type=get_type('search'), use_container_width=True, help="Buscar"):
+    with grid[2]:
+        if st.button("🔍", type=get_type('search'), help="Buscar", use_container_width=True):
             set_tool('search')
             st.rerun()
 
-    # Row 2: Management Tools (Smaller/Secondary)
-    # Using smaller columns or expander? No, just a second row.
-    r2_col1, r2_col2, r2_col3, r2_col4 = st.columns([0.25, 0.25, 0.25, 0.25])
-    
-    with r2_col1:
-        if st.button("✨ Nueva", type=get_type('create'), use_container_width=True, help="Crear carpeta"):
+    with grid[3]:
+        if st.button("✨", type=get_type('create'), help="Nueva Carpeta", use_container_width=True):
             set_tool('create')
             st.rerun()
 
-    with r2_col2:
-        if st.button("⚙️ Gestión", type=get_type('manage'), use_container_width=True, help="Gestionar"):
+    with grid[4]:
+        if st.button("⚙️", type=get_type('manage'), help="Gestionar Carpetas", use_container_width=True):
             set_tool('manage')
             st.rerun()
 
-    with r2_col3:
-         if st.button("🧹 Limpieza", type=get_type('cleaner'), use_container_width=True, help="Limpiar"):
+    with grid[5]:
+         if st.button("🧹", type=get_type('cleaner'), help="Limpieza de Duplicados", use_container_width=True):
             set_tool('cleaner')
             st.rerun()
             
-    with r2_col4:
-         if st.button("📦 Backup", type=get_type('backup'), use_container_width=True, help="Exportar"):
+    with grid[6]:
+         if st.button("📦", type=get_type('backup'), help="Descargar Backup ZIP", use_container_width=True):
             set_tool('backup')
             st.rerun()
 
     # Custom Separator (Minimalist)
-    # Only show if a tool is active to separate it, otherwise just a thin line or nothing if very tight
     if st.session_state['lib_active_tool']:
          st.markdown("---")
     else:
-         # Ultra thin separator when no tool is open
          st.markdown("<hr style='margin: 0px 0 10px 0; border: none; border-top: 1px solid #f1f5f9;'>", unsafe_allow_html=True)
 
     # ==========================================

@@ -103,7 +103,7 @@ import extra_streamlit_components as stx  # --- PERSISTENCE ---
 import importlib
 import library_render
 importlib.reload(library_render)
-from library_render import render_library_v2 as render_library # --- LIBRARY UI V2 (RELOADED) ---
+from library_render import render_library_v3 as render_library # --- LIBRARY UI V3 (RELOADED) ---
 import db_handler as database
 from db_handler import (
     get_user_courses, create_course, delete_course, rename_course, 
