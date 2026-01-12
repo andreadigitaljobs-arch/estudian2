@@ -149,10 +149,13 @@ st.set_page_config(
 # =========================================================
 # V408: MOBILE NAVBAR (TOUCH & FEEL - THE "BUTTON" FEEL)
 # =========================================================
+# =========================================================
+# V409: MOBILE NAVBAR (HYBRID - ALIVE & CLICKABLE)
+# =========================================================
 def setup_pwa():
-    """Injects Custom Sidebar Button with NATIVE-LIKE TOUCH RESPONSE."""
+    """Injects JS Button + CSS to Ensure Native Button Exists."""
     try:
-        # PWA & ICON CONFIG
+        # PWA & ICON
         import time
         ts = int(time.time())
         icon_url = f"app/static/pwa_icon.png?v={ts}"
@@ -186,81 +189,96 @@ def setup_pwa():
         js_pwa = f"""
         <script>
             (function() {{
-                var doc = window.parent.document;
+                // Use TOP window to ensure we are at root
+                var doc = window.top.document;
                 
-                // --- CUSTOM BUTTON V408 ---
+                // --- CUSTOM BUTTON V409 ---
                 var btnId = 'custom-mobile-menu-btn';
-                // Remove old button if exists to ensure updates apply
                 var oldBtn = doc.getElementById(btnId);
                 if (oldBtn) oldBtn.remove();
 
-                var btn = doc.createElement('div');
+                // Use BUTTON tag for native native behavior
+                var btn = doc.createElement('button');
                 btn.id = btnId;
-                btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 18L15 12L9 6" stroke="#4B22DD" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+                btn.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 18L15 12L9 6" stroke="#4B22DD" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
                 
-                // Style via JS for robustness + CSS Class for Animation
+                // Styles
                 Object.assign(btn.style, {{
                     position: 'fixed', top: '15px', left: '15px', 
-                    width: '44px', height: '44px', 
+                    width: '46px', height: '46px', 
                     borderRadius: '50%', 
                     backgroundColor: 'white',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
                     border: '2px solid #4B22DD', 
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    zIndex: '2147483647', /* MAX INT Z-INDEX */
+                    zIndex: '2147483647',
                     cursor: 'pointer',
                     userSelect: 'none',
                     webkitTapHighlightColor: 'transparent',
-                    transition: 'transform 0.1s, background-color 0.1s'
+                    transition: 'all 0.1s cubic-bezier(0.4, 0, 0.2, 1)',
+                    padding: '0',
+                    margin: '0',
+                    appearance: 'none',
+                    outline: 'none'
                 }});
 
-                // Add active state styles dynamically
-                var style = doc.createElement('style');
-                style.innerHTML = `
-                    #{btnId}:active {{ transform: scale(0.90) !important; background-color: #f0ebff !important; }}
-                    #{btnId} svg {{ pointer-events: none; }} /* Pass clicks to parent */
-                `;
-                doc.head.appendChild(style);
-                
-                // --- ACTION HANDLER (Supports Touch & Click) ---
-                function triggerSidebar(e) {{
-                    e.preventDefault();
+                // --- FEEDBACK & LOGIC ---
+                function activate(e) {{
+                    e.preventDefault(); 
                     e.stopPropagation();
                     
-                    // Visual feedback MANUAL (in case :active misses)
-                    btn.style.transform = 'scale(0.90)';
-                    setTimeout(() => btn.style.transform = 'scale(1)', 150);
-
-                    // 1. Try hitting the Keyboard Shortcut 'C' (Most reliable)
-                    doc.dispatchEvent(new KeyboardEvent('keydown', {{key: 'c', code: 'KeyC', keyCode: 67, charCode: 67, which: 67, bubbles: true}}));
+                    // 1. VISUAL & HAPTIC FEEDBACK
+                    btn.style.backgroundColor = '#FFD700'; // Flash YELLOW
+                    btn.style.transform = 'scale(0.85)';
+                    if (navigator.vibrate) navigator.vibrate(50); // Bzzzt!
                     
-                    // 2. Fallback: Find & Click Native Buttons
-                    var triggers = ['[data-testid="stSidebarCollapsedControl"]', '[data-testid="stSidebarOpen"]', 'button[kind="header"]'];
-                    triggers.forEach(sel => {{
-                        var el = doc.querySelector(sel);
-                        if (el) {{ el.click(); }}
-                    }});
+                    setTimeout(() => {{
+                        btn.style.backgroundColor = 'white';
+                        btn.style.transform = 'scale(1)';
+                    }}, 150);
+
+                    // 2. TRIGGER LOGIC
+                    // A) Try Keyboard 'C'
+                    doc.dispatchEvent(new KeyboardEvent('keydown', {{key: 'c', keyCode: 67, which: 67, code: 'KeyC', bubbles: true}}));
+                    
+                    // B) Try Click Native Elements (Forced visible by CSS below)
+                    var selectors = [
+                        '[data-testid="stSidebarCollapsedControl"]', 
+                        '[data-testid="stSidebarOpen"]',
+                        'button[kind="header"]'
+                    ];
+                    var clicked = false;
+                    for(var s of selectors) {{
+                        var el = doc.querySelector(s);
+                        if(el) {{ 
+                            // Create MouseEvent for React
+                            var ev = new MouseEvent('click', {{bubbles: true, cancelable: true, view: window.top}});
+                            el.dispatchEvent(ev);
+                            clicked = true; 
+                        }}
+                    }}
+                    
+                    // Optional: Debug Alert if fails
+                    // if(!clicked) alert('Error: Native button not found!');
                 }}
 
-                // Attach listeners
-                btn.onclick = triggerSidebar;
-                btn.ontouchstart = triggerSidebar; // Immediate response on mobile
+                btn.addEventListener('touchstart', activate, {{passive: false}});
+                btn.addEventListener('click', activate);
                 
                 doc.body.appendChild(btn);
-
-                // Smart Rotation Logic
+                
+                // Smart Rotation
                 var observer = new MutationObserver(function(mutations) {{
                     var sidebar = doc.querySelector('[data-testid="stSidebar"]');
                     if (sidebar) {{
                         var isOpen = sidebar.getAttribute('aria-expanded') === 'true';
                         var svg = btn.querySelector('svg');
                         if(svg) svg.style.transform = isOpen ? 'rotate(180deg)' : 'rotate(0deg)';
-                        if(svg) svg.style.transition = 'transform 0.3s ease';
                     }}
                 }});
                 observer.observe(doc.body, {{ childList: true, subtree: true, attributes: true, attributeFilter: ['aria-expanded'] }});
 
-                // Inject PWA Tags
+                // PWA Tags
                 var head = doc.head;
                 function addTag(tagType, attributes) {{
                     var el = doc.createElement(tagType);
@@ -270,24 +288,38 @@ def setup_pwa():
                 addTag('link', {{'rel': 'manifest', 'href': '{manifest_href}'}});
                 addTag('link', {{'rel': 'apple-touch-icon', 'href': '{icon_url}'}});
                 addTag('meta', {{'name': 'viewport', 'content': 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover'}});
+
             }})();
         </script>
         """
         components.html(js_pwa, height=0, width=0)
         
-        # --- CLEANUP CSS ---
+        # --- CRITICAL CSS: FORCE NATIVE BUTTON EXISTENCE ---
+        # We must ensure the native button is technically "visible" in DOM so JS can click it
         mobile_css = """
         <style>
-            .stApp > header { background-color: transparent !important; opacity: 0 !important; pointer-events: none !important; }
+            /* 1. Header is invisible but exists */
+            .stApp > header { background: transparent !important; opacity: 0 !important; pointer-events: none !important; }
+            
+            /* 2. FORCE Sidebar Buttons to be in DOM (Opacity 0 used normally, we ensure block display) */
+            [data-testid="stSidebarCollapsedControl"], [data-testid="stSidebarOpen"] {
+                display: block !important;
+                visibility: visible !important;
+                opacity: 0 !important; /* Hide visually, but keep clickable by JS */
+                position: fixed !important;
+                top: 0 !important; right: 0 !important;
+                pointer-events: auto !important;
+            }
+
             footer, #MainMenu { display: none !important; }
             img { object-fit: contain !important; }
         </style>
         """
         st.markdown(mobile_css, unsafe_allow_html=True)
         
-        # VISIBLE DEBUG MARKER (CYAN = V408 TOUCH)
+        # VISIBLE DEBUG MARKER (GREEN = V409 HYBRID)
         st.markdown(
-            '<div style="position:fixed; top:0; right:0; background:cyan; color:black; padding:5px; z-index:999999;">v408</div>',
+            '<div style="position:fixed; top:0; right:0; background:green; color:white; padding:5px; z-index:999999;">v409</div>',
             unsafe_allow_html=True
         )
         
