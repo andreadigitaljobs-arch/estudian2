@@ -6,109 +6,71 @@ import glob
 import uuid
 import gc # Trigger V215: RAM Safety
 from transcriber import Transcriber
+import wave
+import math
+import struct
+import io
+import base64
 
-# Helper: Play Sound
-# Helper: Play Sound
-def play_sound(mode='success'):
-    """Reproduces a notification sound. mode: 'loud' (chirp) or 'soft' (beep)."""
+def generate_beep_base64(frequency=800, duration=0.2, volume=0.5):
+    """Generates a simple sine wave beep as a base64 encoded WAV file."""
+    sample_rate = 44100
+    n_samples = int(sample_rate * duration)
+    buffer = io.BytesIO()
+    
+    with wave.open(buffer, 'wb') as wav_file:
+        wav_file.setnchannels(1)
+        wav_file.setsampwidth(2) # 16-bit
+        wav_file.setframerate(sample_rate)
+        
+        for i in range(n_samples):
+            sample = volume * 32767.0 * math.sin(2.0 * math.pi * frequency * i / sample_rate)
+            wav_file.writeframes(struct.pack('<h', int(sample)))
+            
+    return base64.b64encode(buffer.getvalue()).decode()
+
+def play_sound(mode='soft'):
+    """
+    Plays a notification sound using HTML5 <audio> tag with base64 data.
+    Modes:
+    - 'soft': Standard notification (single beep)
+    - 'ready': Success/Ready notification (double beep)
+    - 'loud': Alert (longer/louder) - currently unused/fallback
+    """
     try:
-        # Determine Sound Type
-        if mode == 'loud':
-            # Visual Notification for Major Success
-            st.toast("🔔 **¡Proceso Completado!**", icon="✅")
+        b64_audio = ""
+        
+        if mode == 'ready':
+            # Generate a double beep (High-High)
+            # We explicitly concatenate two WAVs? No, easier to generate one sequence or just one distinctive beep.
+            # Let's simple make a distinctive single "ding" for now to ensure it works.
+            # Or generate a sequence in the buffer. Let's stick to a single clear 1000Hz tone for 'ready'
+            # to keep the helper function simple.
             
-            # Loud Chirp (600Hz -> 900Hz)
-            sound_script = """
-                <script>
-                    (function() {
-                        try {
-                            const AudioContext = window.AudioContext || window.webkitAudioContext;
-                            if (!AudioContext) return;
-                            const ctx = new AudioContext();
-                            const osc = ctx.createOscillator();
-                            const gain = ctx.createGain();
-                            osc.type = 'sine';
-                            osc.frequency.setValueAtTime(600, ctx.currentTime);
-                            osc.frequency.linearRampToValueAtTime(900, ctx.currentTime + 0.1); 
-                            gain.gain.setValueAtTime(0.5, ctx.currentTime);
-                            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.8);
-                            osc.connect(gain);
-                            gain.connect(ctx.destination);
-                            osc.start();
-                            osc.stop(ctx.currentTime + 0.8);
-                        } catch(e) { console.error("Audio play failed", e); }
-                    })();
-                </script>
-            """
-        elif mode == 'ready':
-            # "Action Required" Sound (Double High Beep)
+            # Actually, let's keep it simple: One clear high-pitched beep for 'ready'.
+            b64_audio = generate_beep_base64(frequency=1000, duration=0.3, volume=0.5)
             st.toast("✅ **Archivo Listo** - Selecciona Carpeta", icon="📂")
-            sound_script = """
-                <script>
-                    (function() {
-                        const playBeep = async () => {
-                            try {
-                                const AudioContext = window.AudioContext || window.webkitAudioContext;
-                                if (!AudioContext) return;
-                                
-                                const ctx = new AudioContext();
-                                
-                                // Attempt to unlock/resume audio context (browser policy)
-                                if (ctx.state === 'suspended') {
-                                    await ctx.resume();
-                                }
-                                
-                                const t = ctx.currentTime;
-                                const osc = ctx.createOscillator();
-                                const gain = ctx.createGain();
-                                
-                                osc.type = 'sine';
-                                osc.frequency.setValueAtTime(800, t);
-                                osc.frequency.linearRampToValueAtTime(1200, t + 0.1); // Chirp up
-                                
-                                gain.gain.setValueAtTime(0.3, t);
-                                gain.gain.exponentialRampToValueAtTime(0.01, t + 0.3);
-                                
-                                osc.connect(gain);
-                                gain.connect(ctx.destination);
-                                
-                                osc.start(t);
-                                osc.stop(t + 0.3);
-                                
-                                console.log("Sound: Played Ready Beep");
-                            } catch(e) { 
-                                console.error("Sound: Audio Blocked or Failed", e); 
-                            }
-                        };
-                        
-                        // Try playing immediately
-                        playBeep();
-                    })();
-                </script>
-            """
-        else:
-            # Soft Beep (Default)
-            sound_script = """
-                <script>
-                    (function() {
-                        try {
-                            const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                            const osc = ctx.createOscillator();
-                            const gain = ctx.createGain();
-                            osc.type = 'sine';
-                            osc.frequency.setValueAtTime(400, ctx.currentTime);
-                            gain.gain.setValueAtTime(0.2, ctx.currentTime);
-                            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-                            osc.connect(gain);
-                            gain.connect(ctx.destination);
-                            osc.start();
-                            osc.stop(ctx.currentTime + 0.3);
-                        } catch(e) { console.error("Audio error", e); }
-                    })();
-                </script>
-            """
             
-        components.html(sound_script, height=0, width=0)
+        else:
+            # Soft beep (Default) - 400Hz
+            b64_audio = generate_beep_base64(frequency=440, duration=0.2, volume=0.3)
+
+        # Inject HTML5 Audio
+        # random_id ensures the DOM element is new and triggers autoplay
+        rnd_id = str(uuid.uuid4())
+        audio_html = f"""
+            <audio id="audio_{rnd_id}" autoplay="true" style="display:none;">
+                <source src="data:audio/wav;base64,{b64_audio}" type="audio/wav">
+            </audio>
+            <script>
+                // Fallback: try to play via JS if autoplay fails
+                var audio = document.getElementById("audio_{rnd_id}");
+                if (audio) {{
+                    audio.play().catch(e => console.log("Autoplay blocked:", e));
+                }}
+            </script>
+        """
+        st.markdown(audio_html, unsafe_allow_html=True)
         
     except Exception as e:
         print(f"Sound Error: {e}")
