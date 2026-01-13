@@ -40,31 +40,37 @@ def play_sound(mode='success'):
                     })();
                 </script>
             """
-        else:
-            # Soft Beep (400Hz, Short)
-            # No toast for minor steps to avoid clutter, or maybe a small one?
-            # User wants sound distinction.
+        elif mode == 'ready':
+            # "Action Required" Sound (Double High Beep)
+            st.toast("✅ **Archivo Listo** - Selecciona Carpeta", icon="📂")
             sound_script = """
                 <script>
                     (function() {
                         try {
-                            const AudioContext = window.AudioContext || window.webkitAudioContext;
-                            if (!AudioContext) return;
-                            const ctx = new AudioContext();
-                            const osc = ctx.createOscillator();
-                            const gain = ctx.createGain();
-                            osc.type = 'sine';
-                            osc.frequency.setValueAtTime(400, ctx.currentTime);
-                            gain.gain.setValueAtTime(0.2, ctx.currentTime); # Lower volume
-                            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3); # Short
-                            osc.connect(gain);
-                            gain.connect(ctx.destination);
-                            osc.start();
-                            osc.stop(ctx.currentTime + 0.3);
-                        } catch(e) { console.error("Audio play failed", e); }
+                            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                            const t = ctx.currentTime;
+                            
+                            function beep(freq, start, dur) {
+                                const osc = ctx.createOscillator();
+                                const gain = ctx.createGain();
+                                osc.frequency.value = freq;
+                                gain.gain.setValueAtTime(0.1, start);
+                                gain.gain.linearRampToValueAtTime(0, start + dur);
+                                osc.connect(gain);
+                                gain.connect(ctx.destination);
+                                osc.start(start);
+                                osc.stop(start + dur);
+                            }
+                            
+                            beep(800, t, 0.15);      # Beep 1
+                            beep(1200, t + 0.2, 0.2); # Beep 2 (Higher)
+                            
+                        } catch(e) { console.error("Audio error", e); }
                     })();
                 </script>
             """
+        else:
+            # Soft Beep (Default)
             
         components.html(sound_script, height=0, width=0)
         
@@ -3879,7 +3885,7 @@ with tab1:
             curr_count = len(uploaded_files)
             if curr_count > st.session_state['last_upload_count']:
                 # New file arrived!
-                play_sound('start')
+                play_sound('ready')
                 st.session_state['last_upload_count'] = curr_count
             elif curr_count < st.session_state['last_upload_count']:
                 # Files removed, just sync
