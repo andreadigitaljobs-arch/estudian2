@@ -337,10 +337,32 @@ def render_library_v3(assistant):
                 q = st.text_input("Buscar archivo:", placeholder="Escribe el nombre...", key="search_bar_glob")
                 if q:
                     results = search_library(current_course_id, q)
+                    
+                    # V360: Full Path Resolution for Results
+                    # Fetch all units to build path map
+                    all_units = get_units(current_course_id, fetch_all=True)
+                    unit_map = {u['id']: u for u in all_units} if all_units else {}
+
+                    def resolve_path(uid):
+                        if not uid or uid not in unit_map:
+                            return "Desconocido"
+                        parts = []
+                        curr = unit_map[uid]
+                        depth = 0
+                        while curr and depth < 10:
+                            parts.insert(0, curr['name'])
+                            pid = curr.get('parent_id')
+                            curr = unit_map.get(pid) if pid else None
+                            depth += 1
+                        return " > ".join(parts)
+
                     if results:
                         st.write(f"Encontrados **{len(results)}** resultados:")
                         for r in results:
-                            with st.expander(f"{r['name']} (En: {r.get('unit_name', 'Unknown')})"):
+                            # Resolve full path
+                            full_path = resolve_path(r.get('unit_id'))
+                            
+                            with st.expander(f"{r['name']} (📂 {full_path})"):
                                 # Safe content handling
                                 content = r.get('content') or r.get('content_text') or ""
                                 preview = content[:500] if content else "(Sin contenido)"
