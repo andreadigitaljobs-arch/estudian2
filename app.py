@@ -46,26 +46,43 @@ def play_sound(mode='success'):
             sound_script = """
                 <script>
                     (function() {
-                        try {
-                            const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                            const t = ctx.currentTime;
-                            
-                            function beep(freq, start, dur) {
+                        const playBeep = async () => {
+                            try {
+                                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                                if (!AudioContext) return;
+                                
+                                const ctx = new AudioContext();
+                                
+                                // Attempt to unlock/resume audio context (browser policy)
+                                if (ctx.state === 'suspended') {
+                                    await ctx.resume();
+                                }
+                                
+                                const t = ctx.currentTime;
                                 const osc = ctx.createOscillator();
                                 const gain = ctx.createGain();
-                                osc.frequency.value = freq;
-                                gain.gain.setValueAtTime(0.1, start);
-                                gain.gain.linearRampToValueAtTime(0, start + dur);
+                                
+                                osc.type = 'sine';
+                                osc.frequency.setValueAtTime(800, t);
+                                osc.frequency.linearRampToValueAtTime(1200, t + 0.1); // Chirp up
+                                
+                                gain.gain.setValueAtTime(0.3, t);
+                                gain.gain.exponentialRampToValueAtTime(0.01, t + 0.3);
+                                
                                 osc.connect(gain);
                                 gain.connect(ctx.destination);
-                                osc.start(start);
-                                osc.stop(start + dur);
+                                
+                                osc.start(t);
+                                osc.stop(t + 0.3);
+                                
+                                console.log("Sound: Played Ready Beep");
+                            } catch(e) { 
+                                console.error("Sound: Audio Blocked or Failed", e); 
                             }
-                            
-                            beep(800, t, 0.15);      # Beep 1
-                            beep(1200, t + 0.2, 0.2); # Beep 2 (Higher)
-                            
-                        } catch(e) { console.error("Audio error", e); }
+                        };
+                        
+                        // Try playing immediately
+                        playBeep();
                     })();
                 </script>
             """
