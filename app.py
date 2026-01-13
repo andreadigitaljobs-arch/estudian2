@@ -3303,7 +3303,8 @@ import pandas as pd # FIX: Missing import for charts
 with tab_home:
     # Load Stats
     current_c_id = st.session_state.get('current_course_id')
-    current_c_name = st.session_state.get('current_course', 'General')
+    current_course = st.session_state.get('current_course')
+    current_c_name = current_course.get('name', 'General') if current_course and isinstance(current_course, dict) else 'General'
     
     # --- NICKNAME LOGIC ---
     # 1. Try to load from User Metadata (Persistent)
@@ -3332,7 +3333,7 @@ with tab_home:
                      st.session_state['user_nickname'] = new_nick
                      st.rerun()
 
-    st.markdown(f"Estás estudiando: **{current_c_name.strip()}**")
+    st.markdown(f"Estás estudiando: **{current_c_name}**")
     
     # --- DAILY QUOTE ---
     import random
