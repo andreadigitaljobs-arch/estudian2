@@ -1,0 +1,11 @@
+# Backup System Disabled
+
+Los backups ZIP han sido deshabilitados porque:
+- Son muy grandes (300+ GB)
+- Se corrompen fácilmente
+- No son confiables para restaurar
+
+En su lugar, usamos Git para puntos de restauración.
+Ver: COMO_RESTAURAR_VERSIONES.md
+
+Si necesitas habilitar backups ZIP nuevamente, elimina este archivo.
