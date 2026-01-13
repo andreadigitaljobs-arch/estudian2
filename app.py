@@ -36,24 +36,27 @@ def play_sound(mode='soft'):
     - 'soft': Standard notification (single beep)
     - 'ready': Success/Ready notification (double beep)
     - 'loud': Alert (longer/louder) - currently unused/fallback
+    - 'start': Action engaged (quick blip)
     """
     try:
         b64_audio = ""
         
         if mode == 'ready':
-            # Generate a double beep (High-High)
-            # We explicitly concatenate two WAVs? No, easier to generate one sequence or just one distinctive beep.
-            # Let's simple make a distinctive single "ding" for now to ensure it works.
-            # Or generate a sequence in the buffer. Let's stick to a single clear 1000Hz tone for 'ready'
-            # to keep the helper function simple.
+            # "File Done" - Clear high beep
+            b64_audio = generate_beep_base64(frequency=880, duration=0.25, volume=0.5)
+            # st.toast("✅ Archivo procesado", icon="🎵") # Optional toast
             
-            # Actually, let's keep it simple: One clear high-pitched beep for 'ready'.
-            b64_audio = generate_beep_base64(frequency=1000, duration=0.3, volume=0.5)
-            st.toast("✅ **Archivo Listo** - Selecciona Carpeta", icon="📂")
-            
+        elif mode == 'loud':
+             # "Batch Done" / Alert - Long, loud high beep
+             b64_audio = generate_beep_base64(frequency=1000, duration=0.6, volume=0.8)
+        
+        elif mode == 'start':
+             # "Action Started" - Quick upward blip
+             b64_audio = generate_beep_base64(frequency=600, duration=0.1, volume=0.4)
+             
         else:
-            # Soft beep (Default) - 400Hz
-            b64_audio = generate_beep_base64(frequency=440, duration=0.2, volume=0.3)
+            # Soft beep (Default) - 440Hz
+            b64_audio = generate_beep_base64(frequency=440, duration=0.15, volume=0.3)
 
         # Inject HTML5 Audio
         # random_id ensures the DOM element is new and triggers autoplay
@@ -74,6 +77,12 @@ def play_sound(mode='soft'):
         
     except Exception as e:
         print(f"Sound Error: {e}")
+
+# --- SOUND QUEUE MANAGER ---
+# Allows other modules (like library_render) to request a sound on next rerun
+if 'sound_queue' in st.session_state and st.session_state['sound_queue']:
+    play_sound(st.session_state['sound_queue'])
+    st.session_state['sound_queue'] = None
 
 # --- CRASH LOGGER (V218) ---
 CRASH_LOG_FILE = "crash_log.txt"
@@ -3319,11 +3328,12 @@ with tab_home:
             st.session_state['user_nickname'] = current_user.email.split('@')[0].capitalize()
         
     # Header with Edit Button
-    h_col1, h_col2 = st.columns([0.8, 0.2], vertical_alignment="center")
+    # Optimized for minimalist look (Button closer to text)
+    h_col1, h_col2 = st.columns([0.4, 0.6], gap="small", vertical_alignment="center")
     with h_col1:
         st.markdown(f"## ¡Hola, {st.session_state['user_nickname']}! 👋🏻")
     with h_col2:
-        with st.popover("✏️", help="Editar tu apodo"):
+        with st.popover("✎", help="Editar tu apodo"):
             new_nick = st.text_input("¿Cómo quieres que te llame?", value=st.session_state['user_nickname'])
             if new_nick != st.session_state['user_nickname']:
                  # SAVE TO DB
@@ -3799,15 +3809,32 @@ with tab1:
         
         # File Uploader
         # Added .waptt (WhatsApp), .opus, .aac, .wma
+        # File Uploader
+        # Added .waptt (WhatsApp), .opus, .aac, .wma
         uploaded_files = st.file_uploader("Upload", type=['mp4', 'mov', 'avi', 'mkv', 'mp3', 'wav', 'm4a', 'flac', 'ogg', 'opus', 'waptt', 'aac', 'wma'], accept_multiple_files=True, key=st.session_state['transcriptor_key'], label_visibility="collapsed")
         
+        # --- SOUND & STATE LOGIC (Moved outside to handle clears) ---
+        if 'last_upload_count' not in st.session_state:
+            st.session_state['last_upload_count'] = 0
+        
+        curr_count = len(uploaded_files) if uploaded_files else 0
+        
+        if curr_count > st.session_state['last_upload_count']:
+            # New file arrived!
+            play_sound('ready')
+            st.toast(f"✅ ¡Carga lista! ({curr_count} archivos)", icon="📂")
+            st.session_state['last_upload_count'] = curr_count
+        elif curr_count < st.session_state['last_upload_count']:
+            # Files removed, just sync
+            st.session_state['last_upload_count'] = curr_count
+
         if uploaded_files:
             # VISUAL MODE TOGGLE (DISABLED V178: User Request - Too slow/Tokens limit)
             # st.caption("Opciones de Procesamiento:")
             # use_visual = st.checkbox(...) 
             use_visual = False # Hardcoded off for speed
             # st.divider()
-
+            
             # --- MEMORY SAFETY CHECK (TRAFFIC CONTROL) ---
             # --- MEMORY SAFETY CHECK (TRAFFIC CONTROL) ---
             total_size_bytes = sum(f.size for f in uploaded_files)
@@ -3817,16 +3844,16 @@ with tab1:
             
             if total_size_mb > SAFE_RAM_LIMIT_MB:
                 st.error(
-                    f"⛔ **LÍMITE EXCEDIDO ({total_size_mb:.0f} MB)**\n\n"
-                    f"El servidor no puede procesar más de {SAFE_RAM_LIMIT_MB} MB de golpe.\n"
+                    f"⛔ **LÍMITE EXCEDIDO ({total_size_mb:.0f} MB)**\\n\\n"
+                    f"El servidor no puede procesar más de {SAFE_RAM_LIMIT_MB} MB de golpe.\\n"
                     f"👉 **Solución:** Sube los archivos en grupos más pequeños (ej: de 3 en 3).", 
                     icon="🛑"
                 )
                 st.stop() # Force execution stop
             elif total_size_mb > WARNING_LIMIT_MB:
                 st.warning(
-                    f"⚠️ **ZONA DE RIESGO ({total_size_mb:.0f} MB)**\n\n"
-                    f"Estás subiendo muchos megas. Si ves la pantalla de 'Oh no', reduce la cantidad.\n"
+                    f"⚠️ **ZONA DE RIESGO ({total_size_mb:.0f} MB)**\\n\\n"
+                    f"Estás subiendo muchos megas. Si ves la pantalla de 'Oh no', reduce la cantidad.\\n"
                     f"Consejo: Convierte videos pesados a MP3 antes de subir para ir más rápido.",
                     icon="⚖️"
                 )
@@ -3885,19 +3912,8 @@ with tab1:
                 else:
                     st.warning("⚠️ Por favor selecciona un diplomado en la barra lateral.")
 
-            # V208: Sound on Upload Complete
-            if 'last_upload_count' not in st.session_state:
-                st.session_state['last_upload_count'] = 0
+            # V208: Sound logic moved up
             
-            curr_count = len(uploaded_files)
-            if curr_count > st.session_state['last_upload_count']:
-                # New file arrived!
-                play_sound('ready')
-                st.session_state['last_upload_count'] = curr_count
-            elif curr_count < st.session_state['last_upload_count']:
-                # Files removed, just sync
-                st.session_state['last_upload_count'] = curr_count
-
             st.info(f"📂 {len(uploaded_files)} archivo(s) cargado(s).")
             
             # --- RENAME FEATURE ---

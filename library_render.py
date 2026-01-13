@@ -282,6 +282,7 @@ def render_library_v3(assistant):
                             
                             st.success("¡Archivos Subidos!")
                             st.session_state['lib_active_tool'] = None # Close panel
+                            st.session_state['sound_queue'] = 'ready' # Queue success sound
                             time.sleep(1)
                             st.rerun()
 
@@ -302,6 +303,7 @@ def render_library_v3(assistant):
                              upload_file_to_db(real_target, final_name, note_body, "text")
                              st.success("Nota guardada")
                              st.session_state['lib_active_tool'] = None
+                             st.session_state['sound_queue'] = 'soft'
                              time.sleep(1)
                              st.rerun()
 
@@ -316,6 +318,7 @@ def render_library_v3(assistant):
                              real_target = current_unit_id or (get_units(current_course_id)[0]['id'] if get_units(current_course_id) else create_unit(current_course_id, "Importados")['id'])
                              upload_file_to_db(real_target, i_file.name, content, "text")
                              st.success("Importado correctamente")
+                             st.session_state['sound_queue'] = 'ready'
                              st.rerun()
 
             # --- CREATE FOLDER TOOL ---
