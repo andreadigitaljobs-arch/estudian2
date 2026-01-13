@@ -71,6 +71,25 @@ def play_sound(mode='success'):
             """
         else:
             # Soft Beep (Default)
+            sound_script = """
+                <script>
+                    (function() {
+                        try {
+                            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                            const osc = ctx.createOscillator();
+                            const gain = ctx.createGain();
+                            osc.type = 'sine';
+                            osc.frequency.setValueAtTime(400, ctx.currentTime);
+                            gain.gain.setValueAtTime(0.2, ctx.currentTime);
+                            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+                            osc.connect(gain);
+                            gain.connect(ctx.destination);
+                            osc.start();
+                            osc.stop(ctx.currentTime + 0.3);
+                        } catch(e) { console.error("Audio error", e); }
+                    })();
+                </script>
+            """
             
         components.html(sound_script, height=0, width=0)
         
