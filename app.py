@@ -3830,51 +3830,59 @@ with tab1:
                     icon="⚖️"
                 )
 
-            # --- FOLDER SELECTION ---
+            # --- QUICK MODE & FOLDER SELECTION ---
+            quick_mode = st.checkbox("⚡ Modo Rápido (No guardar en biblioteca)", 
+                                   help="Activa esto para transcribir archivos sin guardarlos en ninguna carpeta del diplomado. Ideal para uso casual.", 
+                                   value=False)
+            
             c_id = st.session_state.get('current_course_id')
             selected_unit_id = None
             
-            if c_id:
-                # from db_handler import get_units (Available Global)
-                # RECURSIVE UNITS FETCH
-                units = get_units(c_id, fetch_all=True) # Fetch ALL folders
-                if units:
-                    # Build Path Map
-                    id_to_unit = {u['id']: u for u in units}
-                    
-                    def get_path(u):
-                         parts = [u['name']]
-                         curr = u
-                         # Safety limit for depth
-                         depth = 0
-                         while curr.get('parent_id') and depth < 10:
-                             pid = curr['parent_id']
-                             parent = id_to_unit.get(pid)
-                             if parent:
-                                 parts.insert(0, parent['name'])
-                                 curr = parent
-                                 depth += 1
-                             else:
-                                 break
-                         return " / ".join(parts)
-                    
-                    # Create Map: Path String -> ID
-                    u_map = {get_path(u): u['id'] for u in units}
-                    keys = sorted(list(u_map.keys()))
-                    
-                    # Default
-                    def_idx = 0
-                    for i, k in enumerate(keys):
-                         if "Transcriptor" in k:
-                             def_idx = i
-                             break
-                    
-                    sel_name = st.selectbox("📂 ¿Dónde guardar la transcripción?", keys, index=def_idx, help="Elige cualquier carpeta o subcarpeta")
-                    selected_unit_id = u_map[sel_name]
-                else:
-                    st.warning("⚠️ Tu diplomado no tiene carpetas. Se crearán automáticamente.")
+            if quick_mode:
+                st.info("ℹ️ **Modo Rápido Activo:** Los resultados aparecerán abajo, pero **no se guardarán** en la base de datos.")
             else:
-                st.warning("⚠️ Por favor selecciona un diplomado en la barra lateral.")
+                # Standard Folder Selection
+                if c_id:
+                    # from db_handler import get_units (Available Global)
+                    # RECURSIVE UNITS FETCH
+                    units = get_units(c_id, fetch_all=True) # Fetch ALL folders
+                    if units:
+                        # Build Path Map
+                        id_to_unit = {u['id']: u for u in units}
+                        
+                        def get_path(u):
+                             parts = [u['name']]
+                             curr = u
+                             # Safety limit for depth
+                             depth = 0
+                             while curr.get('parent_id') and depth < 10:
+                                 pid = curr['parent_id']
+                                 parent = id_to_unit.get(pid)
+                                 if parent:
+                                     parts.insert(0, parent['name'])
+                                     curr = parent
+                                     depth += 1
+                                 else:
+                                     break
+                             return " / ".join(parts)
+                        
+                        # Create Map: Path String -> ID
+                        u_map = {get_path(u): u['id'] for u in units}
+                        keys = sorted(list(u_map.keys()))
+                        
+                        # Default
+                        def_idx = 0
+                        for i, k in enumerate(keys):
+                             if "Transcriptor" in k:
+                                 def_idx = i
+                                 break
+                        
+                        sel_name = st.selectbox("📂 ¿Dónde guardar la transcripción?", keys, index=def_idx, help="Elige cualquier carpeta o subcarpeta")
+                        selected_unit_id = u_map[sel_name]
+                    else:
+                        st.warning("⚠️ Tu diplomado no tiene carpetas. Se crearán automáticamente.")
+                else:
+                    st.warning("⚠️ Por favor selecciona un diplomado en la barra lateral.")
 
             # V208: Sound on Upload Complete
             if 'last_upload_count' not in st.session_state:
@@ -3902,12 +3910,12 @@ with tab1:
                          file_renames[uf.name] = new_n
             
 
-            if st.button("▶️ Iniciar Transcripción Inteligente", type="primary", key="btn_start_transcription", use_container_width=True, disabled=(not selected_unit_id)):
+            if st.button("▶️ Iniciar Transcripción Inteligente", type="primary", key="btn_start_transcription", use_container_width=True, disabled=(not selected_unit_id and not quick_mode)):
                 try:
                     # V207: Start Sound (Blip)
                     play_sound('start')
                     
-                    if not selected_unit_id:
+                    if not selected_unit_id and not quick_mode:
                         st.error("Error: Carpeta no seleccionada.")
                     else:
                         progress_bar = st.progress(0)
@@ -4042,19 +4050,25 @@ with tab1:
                                         final_name = f"{custom_n}.txt"
                                         
                                         # ROBUST UPLOAD: Retry with timestamp if fails (likely duplicate)
-                                        saved_id = upload_file_to_db(t_unit_id, final_name, trans_text, "transcript")
-                                        if not saved_id:
-                                            # Retry with suffix
-                                            import time
-                                            suffix = int(time.time())
-                                            final_name_retry = f"{custom_n}_{suffix}.txt"
-                                            saved_id = upload_file_to_db(t_unit_id, final_name_retry, trans_text, "transcript")
-                                            
-                                            if saved_id:
-                                                st.toast(f"⚠️ Nombre duplicado. Guardado como: {final_name_retry}", icon="📝")
-                                                final_name = final_name_retry
-                                            else:
-                                                st.error(f"❌ Error CRÍTICO: No se pudo guardar '{custom_n}' en la base de datos.")
+                                        # ROBUST UPLOAD: Retry with timestamp if fails (likely duplicate)
+                                        if quick_mode:
+                                            # Bypass DB logic
+                                            saved_id = f"quick_{int(time.time())}"
+                                            st.toast("✅ Transcripción rápida lista (Temporal)", icon="⚡")
+                                        else:
+                                            saved_id = upload_file_to_db(t_unit_id, final_name, trans_text, "transcript")
+                                            if not saved_id:
+                                                # Retry with suffix
+                                                import time
+                                                suffix = int(time.time())
+                                                final_name_retry = f"{custom_n}_{suffix}.txt"
+                                                saved_id = upload_file_to_db(t_unit_id, final_name_retry, trans_text, "transcript")
+                                                
+                                                if saved_id:
+                                                    st.toast(f"⚠️ Nombre duplicado. Guardado como: {final_name_retry}", icon="📝")
+                                                    final_name = final_name_retry
+                                                else:
+                                                    st.error(f"❌ Error CRÍTICO: No se pudo guardar '{custom_n}' en la base de datos.")
                                         
                                         if saved_id:
                                             # st.toast(f"✅ Listo: {final_name}")  # Removed to avoid spam
