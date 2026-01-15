@@ -458,7 +458,15 @@ def render_library_v3(assistant):
                              buf = io.BytesIO()
                              with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
                                  for item in data:
-                                     path = f"{item['unit']}/{item['name']}"
+                                     # Ensure filename has .txt extension
+                                     filename = item['name']
+                                     if '.' not in filename:
+                                         filename = f"{filename}.txt"
+                                     elif not filename.endswith(('.txt', '.md', '.html', '.json', '.csv')):
+                                         # If it has an extension but not a text one, add .txt
+                                         filename = f"{filename}.txt"
+                                     
+                                     path = f"{item['unit']}/{filename}"
                                      # Clean HTML tags from content before exporting
                                      raw_content = item['content'] or ""
                                      clean_content = clean_markdown_v3(raw_content)
