@@ -144,50 +144,80 @@ def clean_markdown_v3(text):
 
 def render_library_v3(assistant):
     
-    # --- REPAIR UI: SMART DIAGNOSTIC ---
-    # Only show if there are courses named "Prueba"
+    # --- REPAIR UI: SMART DIAGNOSTIC (V2 - BROADER) ---
     courses = get_user_courses(st.session_state['user'].id) if 'user' in st.session_state else []
-    prueba_courses = [c for c in courses if "Prueba" in c['name']]
-    if len(prueba_courses) > 0:
-        with st.expander("🛠️ RECUPERACIÓN DE CURSOS 'PRUEBA' (CLIC AQUÍ)", expanded=True):
-            st.warning(f"⚠️ Detecté {len(prueba_courses)} diplomados llamados 'Prueba'. Revisa su contenido y renómbralos aquí:")
+    
+    suspicious_courses = []
+    
+    # 1. Identify Candidates
+    for c in courses:
+        reason = None
+        c_name = c['name'].lower()
+        
+        # A. Generic Names (Prueba, Test, Untitled) - Case Insensitive
+        if "prueba" in c_name or "test" in c_name or "sin nombre" in c_name:
+            reason = "Nombre genérico"
+        
+        # B. Content Mismatch Analysis
+        # Fetch units to see what's inside
+        c_units = get_units(c['id'], fetch_all=True)
+        u_names = [u['name'] for u in c_units]
+        
+        # Keywords
+        has_marketing = any(k in n.lower() for n in u_names for k in ["marketing", "blogs", "videos", "compendio", "08", "09"])
+        has_ia = any(k in n.lower() for n in u_names for k in ["ia ", "ingenier", "prompt", "generativa", "gpt"])
+        
+        # Detect Mismatch: Named IA but has Marketing files
+        if "ia" in c_name and has_marketing and not has_ia:
+             reason = "Nombre dice 'IA' pero contiene 'Marketing'"
+             
+        # Detect Mismatch: Named Marketing but has IA files
+        if "marketing" in c_name and has_ia and not has_marketing:
+             reason = "Nombre dice 'Marketing' pero contiene 'IA'"
+             
+        if reason:
+            c['diagnosis_reason'] = reason
+            c['units_list'] = u_names
+            c['is_mkt'] = has_marketing
+            c['is_ia'] = has_ia
+            suspicious_courses.append(c)
+
+    # 2. Render UI
+    if len(suspicious_courses) > 0:
+        with st.expander("🛠️ DIAGNÓSTICO DE CURSOS: (CLIC AQUÍ PARA CORREGIR)", expanded=True):
+            st.warning(f"⚠️ Detecté {len(suspicious_courses)} cursos que podrían tener el nombre incorrecto o estar mezclados.")
             
-            for p in prueba_courses:
-                # Analyze content
-                p_units = get_units(p['id'], fetch_all=True)
-                u_names = [u['name'] for u in p_units]
+            for p in suspicious_courses:
+                st.markdown(f"**Curso:** `{p['name']}`")
+                st.info(f"🔍 **Diagnóstico:** {p['diagnosis_reason']}")
                 
-                # Heuristics
-                is_mkt = any("Marketing" in n or "Blogs" in n or "Videos" in n or "Compendio" in n or "08" in n or "09" in n for n in u_names)
-                is_ia = any("IA" in n or "Ingeniería" in n or "Prompt" in n or "Generativa" in n for n in u_names)
-                
-                # Count files (approx via units)
-                n_units = len(p_units)
-                
-                # Card UI
-                st.markdown(f"**ID:** `{p['id'][:8]}...` | **Creado:** {p['created_at'][:10]}")
-                st.markdown(f"📂 **{n_units} Carpetas:** {', '.join(u_names[:5])}...")
+                # Show content preview
+                u_preview = ", ".join(p['units_list'][:5])
+                st.caption(f"📂 **Contenido:** {u_preview}...")
                 
                 c1, c2 = st.columns([0.5, 0.5])
                 
-                # Action Buttons
-                suggestion = "Diplomado Desconocido"
-                if is_mkt: suggestion = "Diplomado Marketing Digital"
-                if is_ia: suggestion = "Diplomado IA Generativa"
+                # Smart Suggestions
+                suggestion = None
+                if p['is_mkt']: suggestion = "Diplomado Marketing Digital"
+                elif p['is_ia']: suggestion = "Diplomado IA Generativa"
                 
                 with c1:
-                    if st.button(f"🏷️ Renombrar a: {suggestion}", key=f"ren_{p['id']}"):
-                        rename_course(p['id'], suggestion)
-                        st.success("✅ Renombrado!")
-                        time.sleep(1)
-                        st.rerun()
+                    if suggestion and suggestion.lower() != p['name'].lower():
+                        if st.button(f"✅ Cambiar nombre a: {suggestion}", key=f"fix_ren_{p['id']}"):
+                            rename_course(p['id'], suggestion)
+                            st.success("Corregido.")
+                            time.sleep(1)
+                            st.rerun()
+                    else:
+                        st.caption("Sin sugerencia automática clara.")
                         
                 with c2:
-                    new_name_custom = st.text_input("O escribe otro nombre:", key=f"input_{p['id']}", placeholder="Ej: Mi Curso Personal")
-                    if st.button("Guardar nombre personalizado", key=f"save_{p['id']}"):
+                    new_name_custom = st.text_input("Corrección manual:", key=f"fix_input_{p['id']}", placeholder="Escribe el nombre correcto")
+                    if st.button("Guardar Nombre", key=f"fix_save_{p['id']}"):
                         if new_name_custom:
                             rename_course(p['id'], new_name_custom)
-                            st.success("✅ Renombrado!")
+                            st.success("Guardado.")
                             time.sleep(1)
                             st.rerun()
                 
