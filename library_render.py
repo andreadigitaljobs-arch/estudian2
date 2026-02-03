@@ -229,14 +229,15 @@ def render_library_v3(assistant):
             st.info("Si no ves tus cursos correctamente, intenta recargar la página.")
 
     
-    # 3. PANIC BUTTON / FULL LIST INSPECTOR (Emergency Feature)
-    with st.expander("📋 VER TODOS MIS DIPLOMADOS (Lista Completa de BD)", expanded=False):
+    with st.expander("📋 VER TODOS MIS DIPLOMADOS (Lista Completa de BD)", expanded=True):
         st.info("Aquí está la lista cruda de TODO lo que tienes en la base de datos:")
+        
+        # 1. KNOWN COURSES table
         if courses:
-            # Create a simple dataframe-like display
             data = []
+            known_ids = set()
             for c in courses:
-                # Count content simple query
+                known_ids.add(c['id'])
                 u_c = len(get_units(c['id'], fetch_all=True))
                 data.append({
                     "Nombre": c['name'],
@@ -247,6 +248,53 @@ def render_library_v3(assistant):
             st.table(data)
         else:
             st.error("No se encontraron cursos en la base de datos.")
+            known_ids = set()
+
+        st.divider()
+        st.subheader("🕵️ Análisis Forense de Datos Perdidos")
+        
+        # 2. ORPHAN SCANNER
+        if st.checkbox("Escanear datos huérfanos (Carpetas sin diplomado)"):
+            try:
+                # Blind fetch of all units (Subject to RLS)
+                all_units_res = st.session_state['supabase_client_instance'].table("units").select("course_id, name, id").execute()
+                all_units = all_units_res.data
+                
+                orphans = {} # course_id -> [names]
+                merged_suspects = []
+
+                for u in all_units:
+                    cid = u['course_id']
+                    if cid not in known_ids:
+                        if cid not in orphans: orphans[cid] = []
+                        orphans[cid].append(u['name'])
+                
+                if orphans:
+                    st.error(f"¡ENCONTRÉ DATOS PERDIDOS! Hay {len(orphans)} diplomados 'fantasma'.")
+                    for oid, names in orphans.items():
+                        st.write(f"👻 **Diplomado Fantasma ID:** `{oid}`")
+                        st.write(f"📂 Contiene {len(names)} carpetas: {', '.join(names[:5])}...")
+                        if st.button(f"♻️ RESTAURAR ESTE DIPLOMADO (ID: {oid})", key=f"rest_{oid}"):
+                            # Re-create the course row
+                            st.session_state['supabase_client_instance'].table("courses").insert({"id": oid, "name": "Diplomado RECUPERADO", "user_id": st.session_state['user'].id}).execute()
+                            st.success("¡Restaurado! Refresca la página.")
+                else:
+                    st.info("No se encontraron carpetas huérfanas visibles (El sistema de seguridad podría estar ocultándolas o fueron borradas permanentemente).")
+            except Exception as e:
+                st.error(f"Error en escaneo: {e}")
+
+        # 3. CONTENT AUDITOR (Check for mixed content)
+        st.markdown("---")
+        st.write("¿Crees que tu diplomado de Marketing está mezclado dentro del de IA?")
+        if courses:
+            course_to_check = st.selectbox("Selecciona un diplomado para inspeccionar:", [c['name'] for c in courses], key="inspect_c_sel")
+            cid_check = next(c['id'] for c in courses if c['name'] == course_to_check)
+            
+            if st.button("Ver carpetas de este diplomado"):
+                units_check = get_units(cid_check, fetch_all=True)
+                u_names = [u['name'] for u in units_check]
+                st.write(f"Mostrando {len(u_names)} carpetas:")
+                st.dataframe(u_names)
     
     # --- CSS for Windows Explorer Style Folders ---
     st.markdown("""
