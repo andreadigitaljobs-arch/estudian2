@@ -229,6 +229,25 @@ def render_library_v3(assistant):
             st.info("Si no ves tus cursos correctamente, intenta recargar la página.")
 
     
+    # 3. PANIC BUTTON / FULL LIST INSPECTOR (Emergency Feature)
+    with st.expander("📋 VER TODOS MIS DIPLOMADOS (Lista Completa de BD)", expanded=False):
+        st.info("Aquí está la lista cruda de TODO lo que tienes en la base de datos:")
+        if courses:
+            # Create a simple dataframe-like display
+            data = []
+            for c in courses:
+                # Count content simple query
+                u_c = len(get_units(c['id'], fetch_all=True))
+                data.append({
+                    "Nombre": c['name'],
+                    "Fecha Creación": c.get('created_at', '')[:10],
+                    "Carpetas": u_c,
+                    "ID": c['id']
+                })
+            st.table(data)
+        else:
+            st.error("No se encontraron cursos en la base de datos.")
+    
     # --- CSS for Windows Explorer Style Folders ---
     st.markdown("""
     <style>
