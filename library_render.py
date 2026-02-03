@@ -12,9 +12,28 @@ from db_handler import (
     rename_file, rename_unit, delete_unit, create_chat_session, save_chat_message, 
     search_library, update_user_footprint, get_course_files, move_file, 
     get_course_file_counts, move_file_up, move_file_down, ensure_unit_numbering,
-    get_full_course_backup, update_file_content
+    get_full_course_backup, update_file_content, get_user_courses
 )
 import streamlit.components.v1 as components
+
+# --- DEBUG INJECTION ---
+def debug_log_courses():
+    try:
+        if 'user' in st.session_state and st.session_state['user']:
+            uid = st.session_state['user'].id
+            courses = get_user_courses(uid)
+            with open("debug_courses_log.txt", "w", encoding="utf-8") as f:
+                f.write(f"USER_ID: {uid}\n")
+                f.write(f"TIMESTAMP: {time.time()}\n")
+                if courses:
+                    for c in courses:
+                        f.write(f"ID: {c['id']} | NAME: '{c['name']}' | CREATED: {c['created_at']}\n")
+                else:
+                    f.write("NO COURSES FOUND\n")
+            print("DEBUG LOG WRITTEN")
+    except Exception as e:
+        print(f"DEBUG LOG ERROR: {e}")
+
 
 # V308: Safe import with fallback
 try:
@@ -86,11 +105,9 @@ def clean_markdown_v3(text):
     return text.strip()
 
 def render_library_v3(assistant):
-    # st.toast("DEBUG: LOADED V3") # Confirm load
-    """
-    Renders the dedicated "Digital Library" (Drive-style) tab.
-    Refactored V270: Minimalist Toolbar UI
-    """
+    
+    # --- DEBUG: RUN LOGGER ---
+    debug_log_courses()
     
     # --- CSS for Windows Explorer Style Folders ---
     st.markdown("""
