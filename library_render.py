@@ -12,27 +12,65 @@ from db_handler import (
     rename_file, rename_unit, delete_unit, create_chat_session, save_chat_message, 
     search_library, update_user_footprint, get_course_files, move_file, 
     get_course_file_counts, move_file_up, move_file_down, ensure_unit_numbering,
-    get_full_course_backup, update_file_content, get_user_courses
+    get_full_course_backup, update_file_content, get_user_courses,
+    delete_course, rename_course
 )
 import streamlit.components.v1 as components
 
-# --- DEBUG INJECTION ---
-def debug_log_courses():
+# --- REPAIR TOOL INJECTION ---
+def run_repair_logic(user_id):
     try:
-        if 'user' in st.session_state and st.session_state['user']:
-            uid = st.session_state['user'].id
-            courses = get_user_courses(uid)
-            with open("debug_courses_log.txt", "w", encoding="utf-8") as f:
-                f.write(f"USER_ID: {uid}\n")
-                f.write(f"TIMESTAMP: {time.time()}\n")
-                if courses:
-                    for c in courses:
-                        f.write(f"ID: {c['id']} | NAME: '{c['name']}' | CREATED: {c['created_at']}\n")
-                else:
-                    f.write("NO COURSES FOUND\n")
-            print("DEBUG LOG WRITTEN")
+        courses = get_user_courses(user_id)
+        if not courses: return "No se encontraron cursos."
+        
+        log = []
+        pruebas = []
+        
+        # 1. Analyze Courses
+        for c in courses:
+            # Check content by looking for units
+            units = get_units(c['id'], fetch_all=True)
+            unit_names = [u['name'] for u in units]
+            is_marketing = any("Proyecto" in n or "Compendio" in n for n in unit_names)
+            
+            info = {
+                "id": c['id'],
+                "name": c['name'],
+                "units": len(unit_names),
+                "is_marketing_candidate": is_marketing
+            }
+            
+            if "Prueba" in c['name'] or c['name'].strip() == "Prueba":
+                pruebas.append(info)
+            
+            log.append(f"Checked: {c['name']} ({c['id']}) - Units: {len(unit_names)}")
+
+        # 2. Fix Logic
+        if len(pruebas) > 0:
+            # Find the best candidate for Marketing
+            marketing_candidate = next((p for p in pruebas if p['is_marketing_candidate']), None)
+            
+            # If no obvious candidate, take the one with most units
+            if not marketing_candidate:
+                pruebas.sort(key=lambda x: x['units'], reverse=True)
+                marketing_candidate = pruebas[0]
+            
+            # Rename the winner
+            rename_course(marketing_candidate['id'], "Diplomado Marketing (Recuperado)")
+            log.append(f"RENAMED {marketing_candidate['id']} to Marketing (Recuperado)")
+            
+            # Delete the others (Impostors)
+            for p in pruebas:
+                if p['id'] != marketing_candidate['id']:
+                    delete_course(p['id'])
+                    log.append(f"DELETED duplicate {p['id']}")
+            
+            return f"✅ REPARACIÓN EXITOSA:\n" + "\n".join(log)
+        else:
+            return "No se encontraron cursos llamados 'Prueba' para reparar."
+            
     except Exception as e:
-        print(f"DEBUG LOG ERROR: {e}")
+        return f"Error Reparación: {str(e)}"
 
 
 # V308: Safe import with fallback
@@ -106,8 +144,18 @@ def clean_markdown_v3(text):
 
 def render_library_v3(assistant):
     
-    # --- DEBUG: RUN LOGGER ---
-    debug_log_courses()
+    # --- REPAIR UI ---
+    if st.button("🛠️ REPARAR CURSOS DUPLICADOS (CLICK AQUí)", type="primary", use_container_width=True):
+        if 'user' in st.session_state:
+            with st.spinner("Reparando base de datos..."):
+                res = run_repair_logic(st.session_state['user'].id)
+            if "EXITOSA" in res:
+                st.success(res)
+                st.toast("✅ Sistema Reparado")
+                time.sleep(3)
+                st.rerun()
+            else:
+                st.info(res)
     
     # --- CSS for Windows Explorer Style Folders ---
     st.markdown("""
