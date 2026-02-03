@@ -222,6 +222,12 @@ def render_library_v3(assistant):
                             st.rerun()
                 
                 st.divider()
+    else:
+        # FORCE SHOW FOR DEBUG/CONFIRMATION
+        with st.expander("✅ Diagnóstico de Cursos (Sistema Activo)", expanded=False):
+            st.success("El sistema de diagnóstico no detectó problemas obvios, pero está activo.")
+            st.info("Si no ves tus cursos correctamente, intenta recargar la página.")
+
     
     # --- CSS for Windows Explorer Style Folders ---
     st.markdown("""
