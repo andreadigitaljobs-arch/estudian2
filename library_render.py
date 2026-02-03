@@ -390,13 +390,31 @@ def render_library_v3(assistant):
             elif tool == 'create':
                 st.markdown("#### ✨ Nueva Carpeta")
                 c_f1, c_f2 = st.columns([0.7, 0.3])
-                name = c_f1.text_input("Nombre de la carpeta:", label_visibility="collapsed", placeholder="Ej: Unidad 2")
+                
+                # Key for input persistence/clearing
+                if 'create_folder_name' not in st.session_state:
+                    st.session_state['create_folder_name'] = ""
+                
+                name = c_f1.text_input("Nombre de la carpeta:", 
+                                     label_visibility="collapsed", 
+                                     placeholder="Ej: Unidad 2",
+                                     key="create_folder_name")
+                
                 if c_f2.button("Crear", type="primary", use_container_width=True):
                     if name:
                         create_unit(current_course_id, name, parent_id=current_unit_id)
                         st.success(f"Carpeta '{name}' creada")
-                        st.session_state['lib_active_tool'] = None
-                        time.sleep(1)
+                        
+                        # UX FIX: Data Preservation & Workflow Streamlining
+                        # 1. DO NOT CLOSE TOOL (User wants to create multiple)
+                        # st.session_state['lib_active_tool'] = None 
+                        
+                        # 2. CLEAR INPUT (Force reset key for next entry)
+                        # We delete the key so it re-initializes empty on rerun
+                        if 'create_folder_name' in st.session_state:
+                            del st.session_state['create_folder_name']
+                            
+                        time.sleep(0.5)
                         st.rerun()
 
             # --- SEARCH TOOL ---
