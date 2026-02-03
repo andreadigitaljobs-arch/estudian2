@@ -144,18 +144,54 @@ def clean_markdown_v3(text):
 
 def render_library_v3(assistant):
     
-    # --- REPAIR UI ---
-    if st.button("🛠️ REPARAR CURSOS DUPLICADOS (CLICK AQUí)", type="primary", use_container_width=True):
-        if 'user' in st.session_state:
-            with st.spinner("Reparando base de datos..."):
-                res = run_repair_logic(st.session_state['user'].id)
-            if "EXITOSA" in res:
-                st.success(res)
-                st.toast("✅ Sistema Reparado")
-                time.sleep(3)
-                st.rerun()
-            else:
-                st.info(res)
+    # --- REPAIR UI: SMART DIAGNOSTIC ---
+    # Only show if there are courses named "Prueba"
+    courses = get_user_courses(st.session_state['user'].id) if 'user' in st.session_state else []
+    prueba_courses = [c for c in courses if "Prueba" in c['name']]
+    if len(prueba_courses) > 0:
+        with st.expander("🛠️ RECUPERACIÓN DE CURSOS 'PRUEBA' (CLIC AQUÍ)", expanded=True):
+            st.warning(f"⚠️ Detecté {len(prueba_courses)} diplomados llamados 'Prueba'. Revisa su contenido y renómbralos aquí:")
+            
+            for p in prueba_courses:
+                # Analyze content
+                p_units = get_units(p['id'], fetch_all=True)
+                u_names = [u['name'] for u in p_units]
+                
+                # Heuristics
+                is_mkt = any("Marketing" in n or "Blogs" in n or "Videos" in n or "Compendio" in n or "08" in n or "09" in n for n in u_names)
+                is_ia = any("IA" in n or "Ingeniería" in n or "Prompt" in n or "Generativa" in n for n in u_names)
+                
+                # Count files (approx via units)
+                n_units = len(p_units)
+                
+                # Card UI
+                st.markdown(f"**ID:** `{p['id'][:8]}...` | **Creado:** {p['created_at'][:10]}")
+                st.markdown(f"📂 **{n_units} Carpetas:** {', '.join(u_names[:5])}...")
+                
+                c1, c2 = st.columns([0.5, 0.5])
+                
+                # Action Buttons
+                suggestion = "Diplomado Desconocido"
+                if is_mkt: suggestion = "Diplomado Marketing Digital"
+                if is_ia: suggestion = "Diplomado IA Generativa"
+                
+                with c1:
+                    if st.button(f"🏷️ Renombrar a: {suggestion}", key=f"ren_{p['id']}"):
+                        rename_course(p['id'], suggestion)
+                        st.success("✅ Renombrado!")
+                        time.sleep(1)
+                        st.rerun()
+                        
+                with c2:
+                    new_name_custom = st.text_input("O escribe otro nombre:", key=f"input_{p['id']}", placeholder="Ej: Mi Curso Personal")
+                    if st.button("Guardar nombre personalizado", key=f"save_{p['id']}"):
+                        if new_name_custom:
+                            rename_course(p['id'], new_name_custom)
+                            st.success("✅ Renombrado!")
+                            time.sleep(1)
+                            st.rerun()
+                
+                st.divider()
     
     # --- CSS for Windows Explorer Style Folders ---
     st.markdown("""
